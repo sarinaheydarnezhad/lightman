@@ -1,17 +1,16 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, BookOpen, House, Settings2, SquareStack } from 'lucide-react-native';
 
-import { useThemeMode } from '@/shared/theme/theme-provider';
-import { palette } from '@/shared/theme/tokens';
+import { useThemeColors } from '@/shared/theme/theme-provider';
 
 export default function TabsLayout() {
-  const colors = palette[useThemeMode()];
+  const colors = useThemeColors();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.secondaryText,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         sceneStyle: { backgroundColor: colors.background },
       }}

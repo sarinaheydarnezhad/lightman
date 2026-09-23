@@ -7,8 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { logger } from '@/core/infrastructure/platform';
-import { useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
-import { palette } from '@/shared/theme/tokens';
+import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
 import { Button } from '@/shared/ui/button';
 import { Screen } from '@/shared/ui/screen';
 import { Text } from '@/shared/ui/text';
@@ -22,8 +21,8 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
     <SafeAreaProvider>
       <ThemeProvider>
         <Screen>
-          <Text className="mb-3 text-2xl font-semibold">Something went wrong</Text>
-          <Text tone="secondary" className="mb-6">
+          <Text variant="headingMedium" className="mb-md">Something went wrong</Text>
+          <Text tone="secondary" className="mb-xl">
             Please try again to continue.
           </Text>
           <Button label="Try again" onPress={() => void retry()} />
@@ -35,15 +34,16 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 
 function Navigation() {
   const mode = useThemeMode();
-  const colors = palette[mode];
+  const colors = useThemeColors();
   return (
     <>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not found' }} />
+        <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Not found', headerStyle: { backgroundColor: colors.surface }, headerTintColor: colors.primaryText }} />
+        <Stack.Screen name="design-system" options={{ headerShown: true, title: 'Design system', headerStyle: { backgroundColor: colors.surface }, headerTintColor: colors.primaryText }} />
       </Stack>
     </>
   );

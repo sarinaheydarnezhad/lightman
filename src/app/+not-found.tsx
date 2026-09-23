@@ -6,11 +6,11 @@ import { Text } from '@/shared/ui/text';
 export default function NotFound() {
   return (
     <Screen>
-      <Text className="mb-3 text-3xl font-bold">Page not found</Text>
-      <Text tone="secondary" className="mb-6">
+      <Text variant="headingLarge" className="mb-md">Page not found</Text>
+      <Text tone="secondary" className="mb-xl">
         The page you requested isn’t here.
       </Text>
-      <Link href="/" className="font-semibold text-accent">
+      <Link href="/" className="text-labelLarge text-primary">
         Return home
       </Link>
     </Screen>

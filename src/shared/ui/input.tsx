@@ -1,24 +1,72 @@
+import { useState } from 'react';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
-import { useThemeMode } from '@/shared/theme/theme-provider';
-import { palette } from '@/shared/theme/tokens';
+import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
+import { interaction } from '@/shared/theme/tokens';
 import { Text } from './text';
 
-type InputProps = TextInputProps & { label: string; error?: string };
+type InputProps = TextInputProps & {
+  label: string;
+  error?: string;
+  helperText?: string;
+  disabled?: boolean;
+};
 
-export function Input({ label, error, ...props }: InputProps) {
-  const colors = palette[useThemeMode()];
+export function Input({
+  label,
+  error,
+  helperText,
+  disabled,
+  editable = true,
+  multiline,
+  onFocus,
+  onBlur,
+  className,
+  style,
+  accessibilityLabel,
+  accessibilityHint,
+  keyboardAppearance,
+  ...props
+}: InputProps) {
+  const colors = useThemeColors();
+  const mode = useThemeMode();
+  const [focused, setFocused] = useState(false);
+  const unavailable = disabled || !editable;
   return (
-    <View className="gap-2">
-      <Text className="font-medium">{label}</Text>
+    <View className="gap-sm">
+      <Text variant="labelMedium">{label}</Text>
       <TextInput
-        accessibilityLabel={label}
-        className={`min-h-12 rounded-xl border bg-surface px-4 text-foreground ${error ? 'border-error' : 'border-border'}`}
-        placeholderTextColor={colors.muted}
-        selectionColor={colors.accent}
         {...props}
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityHint={accessibilityHint ?? error ?? helperText}
+        accessibilityState={{ disabled: unavailable }}
+        allowFontScaling
+        keyboardAppearance={keyboardAppearance ?? (mode === 'light' ? 'light' : 'dark')}
+        editable={!unavailable}
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : 'center'}
+        onFocus={(event) => {
+          setFocused(true);
+          onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setFocused(false);
+          onBlur?.(event);
+        }}
+        className={`min-h-input rounded-md border bg-surface px-lg py-md text-bodyMedium text-primaryText ${error ? 'border-error' : focused ? 'border-primary' : 'border-border'} ${className ?? ''}`}
+        style={[style, unavailable && { opacity: interaction.disabledOpacity }]}
+        placeholderTextColor={colors.tertiaryText}
+        selectionColor={colors.primary}
       />
-      {error ? <Text tone="error">{error}</Text> : null}
+      {error ? (
+        <Text variant="bodySmall" tone="error" accessibilityLiveRegion="polite">
+          {error}
+        </Text>
+      ) : helperText ? (
+        <Text variant="bodySmall" tone="secondary">
+          {helperText}
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import type { ThemePreference } from '@/shared/theme/tokens';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+export type { ThemePreference } from '@/shared/theme/tokens';
 
 interface UiState {
   themePreference: ThemePreference;

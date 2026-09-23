@@ -1,16 +1,16 @@
 import { ActivityIndicator, View } from 'react-native';
 
-import { useThemeMode } from '@/shared/theme/theme-provider';
-import { palette } from '@/shared/theme/tokens';
+import { useThemeColors } from '@/shared/theme/theme-provider';
 import { Text } from './text';
 
 export function LoadingState({ label = 'Loading' }: { label?: string }) {
   return (
     <View
-      className="flex-1 items-center justify-center gap-3 bg-background"
+      className="items-center justify-center gap-md py-3xl"
       accessibilityRole="progressbar"
+      accessibilityLabel={label}
     >
-      <ActivityIndicator color={palette[useThemeMode()].accent} />
+      <ActivityIndicator color={useThemeColors().primary} />
       <Text tone="secondary">{label}</Text>
     </View>
   );

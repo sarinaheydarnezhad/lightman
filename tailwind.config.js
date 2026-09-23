@@ -1,22 +1,30 @@
+const tokens = require('./src/shared/theme/values.json');
+const pixels = (entries) => Object.fromEntries(Object.entries(entries).map(([name, size]) => [name, `${size}px`]));
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{ts,tsx}'],
-  darkMode: 'class',
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
-      colors: {
-        background: 'rgb(var(--color-background) / <alpha-value>)',
-        surface: 'rgb(var(--color-surface) / <alpha-value>)',
-        foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
-        muted: 'rgb(var(--color-muted) / <alpha-value>)',
-        border: 'rgb(var(--color-border) / <alpha-value>)',
-        accent: 'rgb(var(--color-accent) / <alpha-value>)',
-        'accent-contrast': 'rgb(var(--color-accent-contrast) / <alpha-value>)',
-        success: 'rgb(var(--color-success) / <alpha-value>)',
-        error: 'rgb(var(--color-error) / <alpha-value>)',
-        warning: 'rgb(var(--color-warning) / <alpha-value>)',
-      },
+      colors: Object.fromEntries(
+        Object.keys(tokens.colors.light).map((name) => [
+          name,
+          `rgb(var(--color-${name}) / <alpha-value>)`,
+        ]),
+      ),
+      spacing: pixels(tokens.spacing),
+      borderRadius: pixels(tokens.radii),
+      height: pixels(tokens.heights),
+      width: pixels(tokens.heights),
+      minHeight: pixels(tokens.heights),
+      minWidth: pixels({ iconButton: tokens.heights.iconButton }),
+      fontSize: Object.fromEntries(
+        Object.entries(tokens.typography).map(([name, [size, lineHeight, fontWeight]]) => [
+          name,
+          [`${size}px`, { lineHeight: `${lineHeight}px`, fontWeight }],
+        ]),
+      ),
     },
   },
   plugins: [],

@@ -22,3 +22,11 @@ Install Node.js 22.13+ and pnpm 10.15.1 (for example, using Corepack), then run 
 Store identifiers in `app.json` are provisional and must be owned by the publisher before release. EAS credentials and project linkage are configured when builds begin.
 
 SDK 57's `expo-build-properties` plugin enables iOS scene support for builds made with Xcode 27. Regenerate native projects after changing app config. Store artwork, signing credentials, and on-device QA are release work outside this foundation.
+
+## Design system
+
+`src/shared/theme/values.json` is the single source of visual values. `tokens.ts` exposes typed colors, typography, spacing, radii, heights, and elevation. The NativeWind configuration reads the same values: semantic colors map to CSS variables that `ThemeProvider` sets on its root view for light, dark, or OLED. Use semantic utilities such as `bg-surface`, `text-primaryText`, `p-xl`, `rounded-md`, and `text-headingLarge`; avoid one-off values. Native properties that need color props (Lucide icons, indicators, text selection, navigation) read `useThemeColors()`. Cards use the shared shadow tokens via native style for iOS shadow and Android elevation.
+
+The appearance preference lives only in `useUiStore` for this session. `system` resolves system light to light and system dark to dark; OLED is explicit and uses `#000000` as its base. Storage can be added at the store boundary later. Settings exposes all four preferences. In development, Settings links to `/design-system`, which previews every primitive and appearance; the route is intentionally available by direct URL for internal inspection.
+
+Core primitives live in `src/shared/ui`: `Screen`, `Text`, `Button`, `IconButton`, `Card`, `Input`, `Divider`, `Badge`, `Chip`, `Tab`, `EmptyState`, and `LoadingState`. `Screen` uses safe area insets on all edges and a fluid centered content limit for phones and tablets. `Text` and `Input` support alignment, including RTL-aware start/end text alignment in `Text`; flex row components preserve native RTL mirroring. The UI uses font scaling, roles and state for actions/tabs, labels for icon controls, and readable theme-specific semantic contrast. Full localization, persisted preference, and full accessibility/device audits remain future work.
