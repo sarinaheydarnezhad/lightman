@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Lightman",
+    "slug": "lightman",
+    "scheme": "lightman",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.example.lightman" },
+    "android": { "package": "com.example.lightman" },
+    "web": { "bundler": "metro", "output": "single" },
+    "plugins": [
+      "expo-router",
+      ["expo-build-properties", { "ios": { "enableSceneSupport": true } }]
+    ],
+    "experiments": { "typedRoutes": true }
+  }
+}
