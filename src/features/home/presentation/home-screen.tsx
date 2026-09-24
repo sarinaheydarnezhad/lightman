@@ -13,9 +13,11 @@ import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useHomeViewModel } from './use-home-view-model';
 import { languageLabel } from '@/features/decks/presentation/deck-presentation';
+import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 
 export function HomeScreen() {
   const home = useHomeViewModel();
+  const study = useStartStudy();
   const metrics = [
     { label: 'Cards', value: home.cardCount },
     { label: 'Reviews recorded', value: home.reviewCount },
@@ -51,7 +53,23 @@ export function HomeScreen() {
               </Card>
             ))}
           </View>
-          <Button label="Start study" onPress={() => router.push('/study')} />
+          <Button
+            label="Start study"
+            loading={study.starting}
+            onPress={() => void study.start({ kind: 'all-decks' })}
+          />
+          {study.error ? (
+            <Card className="gap-sm" accessibilityLiveRegion="polite">
+              <Text tone="error">{study.error}</Text>
+              {study.activeSession ? (
+                <Button
+                  label="Resume session"
+                  variant="secondary"
+                  onPress={() => study.activeSession && openStudySession(study.activeSession)}
+                />
+              ) : null}
+            </Card>
+          ) : null}
         </View>
 
         <View className="gap-md">

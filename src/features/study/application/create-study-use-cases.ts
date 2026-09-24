@@ -27,6 +27,8 @@ import {
   startStudySession as createSession,
 } from '../domain/study-session-workflow';
 
+export type { CurrentStudyItem, StudyProgress } from '../domain/study-session-workflow';
+
 interface StudyDependencies {
   readonly repositories: Repositories;
   readonly clock: AppClock;
@@ -102,6 +104,9 @@ export function createStudyUseCases({
 
   return {
     getStudyQueue,
+    async getActiveStudySession(): Promise<StudySession | null> {
+      return persistence(() => sessions.getActive());
+    },
     async startStudySession(scope: StudyScope): Promise<StudySession> {
       validateStudyScope(scope);
       if (await persistence(() => sessions.getActive()))
@@ -114,6 +119,14 @@ export function createStudyUseCases({
       );
     },
     getStudySession,
+    async getStudySnapshot(sessionId: string) {
+      const session = await getStudySession(sessionId);
+      return {
+        session,
+        currentItem: getCurrentStudyItem(session),
+        progress: getStudyProgress(session),
+      };
+    },
     async getCurrentStudyItem(sessionId: string) {
       return getCurrentStudyItem(await getStudySession(sessionId));
     },

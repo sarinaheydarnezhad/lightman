@@ -14,10 +14,12 @@ import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { deckAlignment, deckTypography, languageLabel } from './deck-presentation';
 import { useDeckActions, useDeckDetailsViewModel } from './use-decks-view-model';
+import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 
 export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   const { data, loading, error, refresh } = useDeckDetailsViewModel(deckId);
   const actions = useDeckActions();
+  const study = useStartStudy();
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, setArchiving] = useState(false);
@@ -102,7 +104,23 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           />
         </View>
         <View className="gap-sm">
-          <Button label="Start study" onPress={() => router.push('/study')} />
+          <Button
+            label="Start study"
+            loading={study.starting}
+            onPress={() => void study.start({ kind: 'specific-deck', deckId })}
+          />
+          {study.error ? (
+            <Card className="gap-sm" accessibilityLiveRegion="polite">
+              <Text tone="error">{study.error}</Text>
+              {study.activeSession ? (
+                <Button
+                  label="Resume session"
+                  variant="secondary"
+                  onPress={() => study.activeSession && openStudySession(study.activeSession)}
+                />
+              ) : null}
+            </Card>
+          ) : null}
           <Button
             label="Add card"
             variant="secondary"

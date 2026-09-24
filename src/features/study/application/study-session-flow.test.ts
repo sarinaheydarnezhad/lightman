@@ -57,6 +57,11 @@ test('session starts at the first snapshot item, reports progress and prevents a
     kind: 'initial',
     presentationId: `${session.id}:0`,
   });
+  expect(await app.getStudySnapshot(session.id)).toMatchObject({
+    session: { id: session.id, scope: deckScope },
+    currentItem: { cardId: 'A', presentationId: `${session.id}:0` },
+    progress: { currentPosition: 1, completed: 0, remaining: 2 },
+  });
   expect(await app.getStudyProgress(session.id)).toMatchObject({
     currentPosition: 1,
     initialQueueSize: 2,

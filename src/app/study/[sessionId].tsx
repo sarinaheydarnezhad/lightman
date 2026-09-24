@@ -1,21 +1,8 @@
-import { router, useLocalSearchParams } from 'expo-router';
-
-import { Button } from '@/shared/ui/button';
-import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
+import { useLocalSearchParams } from 'expo-router';
+import { StudySessionScreen } from '@/features/study/presentation/study-session-screen';
 
 export default function StudySessionRoute() {
   const { sessionId } = useLocalSearchParams<'/study/[sessionId]'>();
 
-  return (
-    <FeaturePlaceholder
-      title="Study session"
-      description={
-        sessionId === 'preview'
-          ? 'This is a session preview. Study sessions will be available in a future update.'
-          : "This session isn't available yet."
-      }
-    >
-      <Button label="Return to study" onPress={() => router.replace('/study')} />
-    </FeaturePlaceholder>
-  );
+  return <StudySessionScreen sessionId={typeof sessionId === 'string' ? sessionId : ''} />;
 }

@@ -66,7 +66,10 @@ function Navigation() {
           options={{ title: 'Card details' }}
         />
         <Stack.Screen name="decks/[deckId]/cards/[cardId]/edit" options={{ title: 'Edit card' }} />
-        <Stack.Screen name="study/[sessionId]" options={{ title: 'Study session' }} />
+        <Stack.Screen
+          name="study/[sessionId]"
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
         <Stack.Screen
           name="vocabulary/helper"
           options={{ title: 'Vocabulary helper', presentation: 'modal' }}
