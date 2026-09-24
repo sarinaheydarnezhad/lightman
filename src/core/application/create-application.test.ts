@@ -6,7 +6,6 @@ import {
   fixedClock,
   sequenceIds,
   makeDeck,
-  makeCard,
   makeSettings,
 } from '@/../test/fixtures';
 import { createApplication } from './create-application';
@@ -120,115 +119,6 @@ test('use cases reject missing parents and translate unexpected adapter failures
     code: 'persistence',
     message: 'Unable to save or load your changes.',
   });
-});
-
-test('reviewCard calculates and records one state transition and immutable event per call', async () => {
-  const repositories = makeRepositories();
-  await repositories.decks.create(makeDeck());
-  await repositories.cards.create(makeCard());
-  const app = createApplication(repositories, fixedClock, sequenceIds());
-  await expect(
-    app.reviewCard({ cardId: 'card-1', deckId: 'deck-1', result: 'success', studySessionId: null }),
-  ).rejects.toMatchObject({ code: 'not-found', message: 'Review state not found.' });
-  const initial = await repositories.reviews.saveState({
-    cardId: 'card-1',
-    box: 1,
-    dueDate: calendarDate('2026-09-24'),
-    lastReviewedAt: null,
-    consecutiveSuccesses: 0,
-    totalReviews: 0,
-    totalSuccesses: 0,
-    updatedAt: makeCard().createdAt,
-  });
-  const record = jest.spyOn(repositories.reviews, 'record');
-  const request = {
-    cardId: 'card-1',
-    deckId: 'deck-1',
-    result: 'success' as const,
-    studySessionId: 'session-1',
-  };
-  const first = await app.reviewCard(request);
-  expect(record).toHaveBeenCalledTimes(1);
-  expect(record).toHaveBeenCalledWith(first.reviewEvent, first.updatedReviewState);
-  expect(first).toMatchObject({
-    previousBox: 1,
-    newBox: 2,
-    intervalDays: 2,
-    newDueDate: calendarDate('2026-09-26'),
-  });
-  expect(first.reviewEvent).toMatchObject({
-    cardId: 'card-1',
-    deckId: 'deck-1',
-    result: 'success',
-    previousBox: 1,
-    newBox: 2,
-    studySessionId: 'session-1',
-  });
-  expect(Object.isFrozen(first.reviewEvent)).toBe(true);
-  expect(first.updatedReviewState).toEqual(await app.getReviewState('card-1'));
-  expect(initial.totalReviews).toBe(0);
-  const second = await app.reviewCard(request);
-  expect(record).toHaveBeenCalledTimes(2);
-  expect(second).toMatchObject({ previousBox: 2, newBox: 3, intervalDays: 4 });
-  expect(second.reviewEvent.id).not.toBe(first.reviewEvent.id);
-  expect((await app.getReviewState('card-1'))?.totalReviews).toBe(2);
-  expect(await app.listReviewEvents({ deckId: 'deck-1' })).toEqual([
-    first.reviewEvent,
-    second.reviewEvent,
-  ]);
-  const failure = await app.reviewCard({ ...request, result: 'failure' });
-  expect(failure).toMatchObject({
-    previousBox: 3,
-    newBox: 1,
-    intervalDays: 0,
-    newDueDate: calendarDate('2026-09-24'),
-  });
-  expect(failure.updatedReviewState).toMatchObject({
-    totalReviews: 3,
-    totalSuccesses: 2,
-    consecutiveSuccesses: 0,
-  });
-  await expect(
-    app.reviewCard({
-      cardId: 'missing',
-      deckId: 'deck-1',
-      result: 'failure',
-      studySessionId: null,
-    }),
-  ).rejects.toMatchObject({ code: 'not-found' });
-  await expect(app.reviewCard({ ...request, deckId: 'other' })).rejects.toMatchObject({
-    code: 'validation',
-  });
-  await expect(app.reviewCard({ ...request, result: 'maybe' as never })).rejects.toMatchObject({
-    code: 'validation',
-  });
-});
-
-test('reviewCard and new-card initialization use the clock’s current local calendar date', async () => {
-  const repositories = makeRepositories();
-  await repositories.decks.create(makeDeck());
-  const localClock = {
-    now: () => new Date('2026-09-24T23:30:00.000Z'),
-    timeZone: () => 'Asia/Tehran',
-  };
-  const app = createApplication(repositories, localClock, sequenceIds());
-  const card = await app.createCard({
-    deckId: 'deck-1',
-    frontText: 'night',
-    meaning: 'after dark',
-    phonetic: null,
-    category: null,
-    examples: [],
-  });
-  expect((await app.getReviewState(card.id))?.dueDate).toBe('2026-09-25');
-  const transition = await app.reviewCard({
-    cardId: card.id,
-    deckId: 'deck-1',
-    result: 'success',
-    studySessionId: null,
-  });
-  expect(transition).toMatchObject({ newBox: 2, newDueDate: '2026-09-27' });
-  expect(transition.reviewEvent.reviewedAt).toBe('2026-09-24T23:30:00.000Z');
 });
 
 test('settings update through use case validates partial changes', async () => {

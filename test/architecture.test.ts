@@ -31,3 +31,15 @@ test('domain and application stay independent of platform and adapters; presenta
     expect(readFileSync(file, 'utf8')).not.toMatch(/from ['"][^'"]*\/data\//);
   }
 });
+
+test('SRS scheduling module has no device clock, random, network, or file side effects', () => {
+  const engine = readFileSync(
+    join(__dirname, '..', 'src', 'features', 'study', 'domain', 'leitner-srs.ts'),
+    'utf8',
+  );
+  expect(engine).not.toMatch(/\b(?:Date\.now|Math\.random|fetch|XMLHttpRequest)\s*\(/);
+  expect(engine).not.toMatch(/\b(?:new Date|require\s*\()/);
+  expect(engine).not.toMatch(
+    /from ['"][^'"]*(node:fs|node:http|react-native|expo|zustand|\/data\/)/,
+  );
+});

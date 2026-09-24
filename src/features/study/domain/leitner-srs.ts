@@ -134,9 +134,12 @@ export function createReviewEvent(
   transition: ReviewTransition,
   input: Pick<ReviewEvent, 'id' | 'cardId' | 'deckId' | 'reviewedAt' | 'studySessionId'>,
 ): ReviewEvent {
+  const state = validateReviewState(transition.updatedReviewState);
   if (
-    input.cardId !== transition.updatedReviewState.cardId ||
-    input.reviewedAt !== transition.updatedReviewState.lastReviewedAt
+    input.cardId !== state.cardId ||
+    input.reviewedAt !== state.lastReviewedAt ||
+    transition.newBox !== state.box ||
+    transition.newDueDate !== state.dueDate
   )
     throw new AppError('validation', 'Review event and transition disagree.');
   return validateReviewEvent({
