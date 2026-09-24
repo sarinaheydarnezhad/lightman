@@ -7,7 +7,9 @@ import { Badge } from '@/shared/ui/badge';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
 import type { Card as StudyCardData } from '../domain/card';
+import type { ReviewResult } from '../domain/review';
 import { FlipCard } from './flip-card';
+import { SwipeableStudyCard } from './swipeable-study-card';
 
 interface StudyCardProps {
   readonly card: StudyCardData;
@@ -15,6 +17,9 @@ interface StudyCardProps {
   readonly revealed: boolean;
   readonly backTab: 'meaning' | 'examples';
   readonly onSelectBackTab: (tab: 'meaning' | 'examples') => void;
+  readonly swipePending?: boolean;
+  readonly onSwipeStart?: () => void;
+  readonly onSwipeAnswer?: (result: ReviewResult) => void;
 }
 
 type ContentAlignment = {
@@ -29,14 +34,23 @@ const frontTypography: Record<TypographySize, TypographyVariant> = {
 };
 
 /** Supplies card content and presentation settings without owning the animation or session. */
-export function StudyCard({ card, deck, revealed, backTab, onSelectBackTab }: StudyCardProps) {
+export function StudyCard({
+  card,
+  deck,
+  revealed,
+  backTab,
+  onSelectBackTab,
+  swipePending = false,
+  onSwipeStart,
+  onSwipeAnswer,
+}: StudyCardProps) {
   const alignment: ContentAlignment = {
     textAlign: deckAlignment[deck.textAlignment],
     writingDirection: deck.textAlignment === 'rtl' ? 'rtl' : 'ltr',
   };
   const size = deckTypography[deck.typographySize];
 
-  return (
+  const content = (
     <FlipCard
       key={card.id}
       revealed={revealed}
@@ -52,6 +66,18 @@ export function StudyCard({ card, deck, revealed, backTab, onSelectBackTab }: St
         />
       }
     />
+  );
+  if (!onSwipeStart || !onSwipeAnswer) return content;
+  return (
+    <SwipeableStudyCard
+      revealed={revealed}
+      active={!swipePending}
+      pending={swipePending}
+      onCommitStart={onSwipeStart}
+      onAnswer={onSwipeAnswer}
+    >
+      {content}
+    </SwipeableStudyCard>
   );
 }
 

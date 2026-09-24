@@ -1,5 +1,6 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
+import { Pressable, View } from 'react-native';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
 import NotFound from '@/app/+not-found';
@@ -25,6 +26,7 @@ import { application } from '@/core/composition/application';
 import { AppError } from '@/core/errors/app-error';
 import { languageTag } from '@/core/domain/values';
 import { useUiStore } from '@/store/ui-store';
+import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
 
 jest.mock('react-native-safe-area-context', () => {
   // Jest hoists the factory above imports.
@@ -536,6 +538,53 @@ test('answer failure keeps the current card available for a safe retry', async (
     submission.mockRestore();
   }
 });
+
+test('a committed physical-left swipe uses the same review path as a Success button on retry', async () => {
+  // Jest cannot dispatch UI-thread worklets. The swipe surface itself is tested separately;
+  // here its committed result exercises the real view model and application use case.
+  jest
+    .spyOn(swipeSurface, 'SwipeableStudyCard')
+    .mockImplementation(({ children, revealed, onCommitStart, onAnswer }) => (
+      <View>
+        {children}
+        {revealed ? (
+          <Pressable
+            testID="commit-left-swipe"
+            onPress={() => {
+              onCommitStart();
+              onAnswer('failure');
+            }}
+          />
+        ) : null}
+      </View>
+    ));
+  const { deck, cards } = await studyFixture(1);
+  renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
+  await screen.findByRole('header', { name: deck.name });
+  fireEvent.press(screen.getByRole('button', { name: 'Start study' }));
+  await screen.findByRole('header', { name: cards[0]!.frontText });
+  const session = (await application.getActiveStudySession())!;
+  fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
+  const successButton = screen.getByRole('button', { name: 'Success' });
+  fireEvent.press(screen.getByTestId('commit-left-swipe'));
+  expect(screen.getByRole('button', { name: 'Success' }).props.accessibilityState.disabled).toBe(
+    true,
+  );
+  fireEvent.press(successButton);
+  await waitFor(async () => {
+    expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(1);
+  });
+  expect((await application.listReviewEvents({ cardId: cards[0]!.id }))[0]?.result).toBe('failure');
+  expect((await application.getCurrentStudyItem(session.id))?.kind).toBe('retry');
+  await screen.findByText('One more try');
+  fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Success' }));
+  expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+  expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(2);
+  expect(
+    (await application.listReviewEvents({ cardId: cards[0]!.id })).map((e) => e.result),
+  ).toEqual(['failure', 'success']);
+}, 20_000);
 
 test('unknown session IDs show a safe error with navigation out', async () => {
   renderRouter(routes, { initialUrl: '/study/session-does-not-exist' });

@@ -123,7 +123,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           <Button
             label="Exit study"
             variant="tertiary"
-            disabled={study.submitting}
+            disabled={study.submitting || study.swipePending}
             onPress={study.leave}
           />
         </View>
@@ -144,12 +144,15 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           )}
         </View>
         <StudyCard
-          key={item.presentationId}
+          key={`${item.presentationId}-${study.swipeResetKey}`}
           card={card}
           deck={deck}
           revealed={study.revealed}
           backTab={study.backTab}
           onSelectBackTab={study.selectBackTab}
+          swipePending={study.swipePending || study.submitting}
+          onSwipeStart={study.beginSwipe}
+          onSwipeAnswer={(result) => void study.submitSwipe(result)}
         />
         {study.actionError ? (
           <Text tone="error" accessibilityLiveRegion="polite">
@@ -161,7 +164,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
         ) : (
           <StudyControls
             revealed={study.revealed}
-            submitting={study.submitting}
+            submitting={study.submitting || study.swipePending}
             onReveal={study.reveal}
             onFailure={() => void study.submit('failure')}
             onSuccess={() => void study.submit('success')}

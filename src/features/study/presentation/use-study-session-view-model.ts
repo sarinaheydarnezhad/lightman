@@ -33,11 +33,14 @@ export function useStudySessionViewModel(sessionId: string) {
   const [revealed, setRevealed] = useState(false);
   const [backTab, setBackTab] = useState<BackTab>('meaning');
   const [submitting, setSubmitting] = useState(false);
+  const [swipePending, setSwipePending] = useState(false);
+  const [swipeResetKey, setSwipeResetKey] = useState(0);
   const [cancelling, setCancelling] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const swipePendingRef = useRef(false);
   const request = useRef(0);
   const start = useStartStudy();
 
@@ -94,9 +97,24 @@ export function useStudySessionViewModel(sessionId: string) {
     };
   }, [load]);
 
-  const submit = useCallback(
-    async (result: ReviewResult) => {
-      if (inFlight.current || !revealed || !item || phase !== 'ready') return;
+  const beginSwipe = useCallback(() => {
+    if (inFlight.current || swipePendingRef.current || !revealed || !item || phase !== 'ready')
+      return;
+    swipePendingRef.current = true;
+    setSwipePending(true);
+  }, [item, phase, revealed]);
+
+  const submitAnswer = useCallback(
+    async (result: ReviewResult, source: 'button' | 'swipe') => {
+      if (
+        inFlight.current ||
+        !revealed ||
+        !item ||
+        phase !== 'ready' ||
+        (source === 'button' && swipePendingRef.current) ||
+        (source === 'swipe' && !swipePendingRef.current)
+      )
+        return;
       inFlight.current = true;
       setSubmitting(true);
       setActionError(null);
@@ -110,16 +128,29 @@ export function useStudySessionViewModel(sessionId: string) {
         await load();
       } catch (cause) {
         setActionError(safeError(cause, 'Unable to save your answer. Try again.'));
+        // Remount only the card surface; the revealed answer stays available for retry.
+        setSwipeResetKey((key) => key + 1);
       } finally {
         inFlight.current = false;
         setSubmitting(false);
+        swipePendingRef.current = false;
+        setSwipePending(false);
       }
     },
     [item, load, phase, revealed, sessionId],
   );
 
+  const submit = useCallback(
+    (result: ReviewResult) => submitAnswer(result, 'button'),
+    [submitAnswer],
+  );
+  const submitSwipe = useCallback(
+    (result: ReviewResult) => submitAnswer(result, 'swipe'),
+    [submitAnswer],
+  );
+
   const cancel = useCallback(async () => {
-    if (inFlight.current) return;
+    if (inFlight.current || swipePendingRef.current) return;
     inFlight.current = true;
     setCancelling(true);
     setActionError(null);
@@ -137,7 +168,7 @@ export function useStudySessionViewModel(sessionId: string) {
   }, [sessionId]);
 
   const leave = useCallback(() => {
-    if (inFlight.current) return;
+    if (inFlight.current || swipePendingRef.current) return;
     if (session?.status === 'in-progress') {
       if (progress?.completed) setConfirmExit(true);
       else void cancel();
@@ -166,6 +197,8 @@ export function useStudySessionViewModel(sessionId: string) {
     revealed,
     backTab,
     submitting,
+    swipePending,
+    swipeResetKey,
     cancelling,
     confirmExit,
     error,
@@ -178,5 +211,7 @@ export function useStudySessionViewModel(sessionId: string) {
     reveal: () => setRevealed(true),
     selectBackTab: setBackTab,
     submit,
+    beginSwipe,
+    submitSwipe,
   };
 }
