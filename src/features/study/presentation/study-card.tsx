@@ -2,12 +2,12 @@ import { ScrollView, View } from 'react-native';
 
 import type { Deck, TypographySize } from '@/features/decks/domain/deck';
 import { deckAlignment, deckTypography } from '@/features/decks/presentation/deck-presentation';
+import type { TypographyVariant } from '@/shared/theme/tokens';
 import { Badge } from '@/shared/ui/badge';
-import { Card } from '@/shared/ui/card';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
-import type { TypographyVariant } from '@/shared/theme/tokens';
 import type { Card as StudyCardData } from '../domain/card';
+import { FlipCard } from './flip-card';
 
 interface StudyCardProps {
   readonly card: StudyCardData;
@@ -17,22 +17,57 @@ interface StudyCardProps {
   readonly onSelectBackTab: (tab: 'meaning' | 'examples') => void;
 }
 
+type ContentAlignment = {
+  readonly textAlign: 'left' | 'right' | 'center';
+  readonly writingDirection: 'ltr' | 'rtl';
+};
+
 const frontTypography: Record<TypographySize, TypographyVariant> = {
   small: 'headingMedium',
   medium: 'headingLarge',
   large: 'display',
 };
 
-/** Displays only the current presentation; the session and review rules live outside this component. */
+/** Supplies card content and presentation settings without owning the animation or session. */
 export function StudyCard({ card, deck, revealed, backTab, onSelectBackTab }: StudyCardProps) {
-  const alignment = {
+  const alignment: ContentAlignment = {
     textAlign: deckAlignment[deck.textAlignment],
-    writingDirection: deck.textAlignment === 'rtl' ? ('rtl' as const) : ('ltr' as const),
+    writingDirection: deck.textAlignment === 'rtl' ? 'rtl' : 'ltr',
   };
   const size = deckTypography[deck.typographySize];
 
   return (
-    <Card className="min-h-0 flex-1 gap-lg" accessibilityLabel={`Flashcard: ${card.frontText}`}>
+    <FlipCard
+      key={card.id}
+      revealed={revealed}
+      accessibilityLabel={`Flashcard: ${card.frontText}`}
+      front={<FrontContent card={card} deck={deck} alignment={alignment} size={size} />}
+      back={
+        <BackContent
+          card={card}
+          alignment={alignment}
+          size={size}
+          backTab={backTab}
+          onSelectBackTab={onSelectBackTab}
+        />
+      }
+    />
+  );
+}
+
+function FrontContent({
+  card,
+  deck,
+  alignment,
+  size,
+}: {
+  card: StudyCardData;
+  deck: Deck;
+  alignment: ContentAlignment;
+  size: TypographyVariant;
+}) {
+  return (
+    <View className="min-h-0 flex-1 gap-lg">
       <Text variant="labelMedium" tone="secondary">
         FRONT
       </Text>
@@ -40,7 +75,7 @@ export function StudyCard({ card, deck, revealed, backTab, onSelectBackTab }: St
         nestedScrollEnabled
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-        accessibilityLabel={revealed ? 'Flashcard front and answer' : 'Flashcard front'}
+        accessibilityLabel="Flashcard front"
       >
         <View className="gap-md py-md">
           <Text
@@ -70,59 +105,76 @@ export function StudyCard({ card, deck, revealed, backTab, onSelectBackTab }: St
               <Badge label={card.category} />
             </View>
           ) : null}
-          {revealed ? (
-            <View className="gap-lg pt-xl" accessibilityLiveRegion="polite">
-              <Text variant="labelMedium" tone="secondary">
-                BACK
-              </Text>
-              <View className="flex-row border-b border-border" accessibilityRole="tablist">
-                <Tab
-                  label="Meaning"
-                  active={backTab === 'meaning'}
-                  onPress={() => onSelectBackTab('meaning')}
-                />
-                <Tab
-                  label="Examples"
-                  active={backTab === 'examples'}
-                  onPress={() => onSelectBackTab('examples')}
-                />
-              </View>
-              {backTab === 'meaning' ? (
-                <Text variant={size} style={alignment}>
-                  {card.meaning || 'No definition added'}
-                </Text>
-              ) : card.examples.length ? (
-                <View className="gap-md">
-                  {card.examples.map((example, index) => (
-                    <View
-                      key={`${card.id}-example-${index}`}
-                      className="gap-sm rounded-md border border-border p-md"
-                    >
-                      <Text variant={size} style={alignment}>
-                        {example.sentence}
-                      </Text>
-                      {example.translation ? (
-                        <Text tone="secondary" variant={size} style={alignment}>
-                          {example.translation}
-                        </Text>
-                      ) : null}
-                      {example.notes ? (
-                        <Text tone="tertiary" variant="bodySmall" style={alignment}>
-                          {example.notes}
-                        </Text>
-                      ) : null}
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text tone="secondary" style={alignment}>
-                  No examples added yet.
-                </Text>
-              )}
-            </View>
-          ) : null}
         </View>
       </ScrollView>
-    </Card>
+    </View>
+  );
+}
+
+function BackContent({
+  card,
+  alignment,
+  size,
+  backTab,
+  onSelectBackTab,
+}: {
+  card: StudyCardData;
+  alignment: ContentAlignment;
+  size: TypographyVariant;
+  backTab: 'meaning' | 'examples';
+  onSelectBackTab: (tab: 'meaning' | 'examples') => void;
+}) {
+  return (
+    <View className="min-h-0 flex-1 gap-lg" accessibilityLiveRegion="polite">
+      <Text variant="labelMedium" tone="secondary">
+        BACK
+      </Text>
+      <View className="flex-row border-b border-border" accessibilityRole="tablist">
+        <Tab
+          label="Meaning"
+          active={backTab === 'meaning'}
+          onPress={() => onSelectBackTab('meaning')}
+        />
+        <Tab
+          label="Examples"
+          active={backTab === 'examples'}
+          onPress={() => onSelectBackTab('examples')}
+        />
+      </View>
+      <ScrollView nestedScrollEnabled style={{ flex: 1 }} accessibilityLabel="Flashcard answer">
+        {backTab === 'meaning' ? (
+          <Text variant={size} style={alignment}>
+            {card.meaning || 'No definition added'}
+          </Text>
+        ) : card.examples.length ? (
+          <View className="gap-md">
+            {card.examples.map((example, index) => (
+              <View
+                key={`${card.id}-example-${index}`}
+                className="gap-sm rounded-md border border-border p-md"
+              >
+                <Text variant={size} style={alignment}>
+                  {example.sentence}
+                </Text>
+                {example.translation ? (
+                  <Text tone="secondary" variant={size} style={alignment}>
+                    {example.translation}
+                  </Text>
+                ) : null}
+                {example.notes ? (
+                  <Text tone="tertiary" variant="bodySmall" style={alignment}>
+                    {example.notes}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text tone="secondary" style={alignment}>
+            No examples added yet.
+          </Text>
+        )}
+      </ScrollView>
+    </View>
   );
 }

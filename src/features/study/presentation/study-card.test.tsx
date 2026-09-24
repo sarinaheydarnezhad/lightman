@@ -1,8 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ScrollView } from 'react-native';
+import { useReducedMotion, withTiming } from 'react-native-reanimated';
 
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
+import { useUiStore } from '@/store/ui-store';
 import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
 
@@ -14,6 +17,9 @@ const card = makeCard({
     { sentence: 'A second example.', notes: 'Conversation.' },
   ],
 });
+
+beforeEach(() => jest.mocked(useReducedMotion).mockReturnValue(false));
+afterEach(() => useUiStore.setState({ themePreference: 'system' }));
 
 function show(overrides: Partial<Parameters<typeof StudyCard>[0]> = {}) {
   const select = jest.fn();
@@ -65,12 +71,14 @@ test.each([
 ] as const)(
   'deck %s / %s controls only card alignment and semantic typography',
   (direction, size, alignment, frontClass, backClass) => {
-    show({ deck: makeDeck({ textAlignment: direction, typographySize: size }), revealed: true });
+    show({ deck: makeDeck({ textAlignment: direction, typographySize: size }) });
     expect(screen.getByRole('header', { name: 'hello' }).props.style).toMatchObject({
       textAlign: alignment,
     });
     expect(screen.getByRole('header', { name: 'hello' }).props.className).toContain(frontClass);
-    expect(screen.getByText('greeting').props.className).toContain(backClass);
+    expect(screen.getByText('greeting', { includeHiddenElements: true }).props.className).toContain(
+      backClass,
+    );
   },
 );
 
@@ -91,8 +99,150 @@ test('long study content remains inside a scrollable card on compact layouts', (
     revealed: true,
   });
   expect(screen.getByText('definition '.repeat(100))).toBeTruthy();
-  expect(screen.UNSAFE_getByType(ScrollView).props.style).toMatchObject({ flex: 1 });
+  expect(screen.UNSAFE_getAllByType(ScrollView)).toHaveLength(2);
+  for (const scroll of screen.UNSAFE_getAllByType(ScrollView)) {
+    expect(scroll.props.style).toMatchObject({ flex: 1 });
+  }
 });
+
+test('front and back occupy separate faces and only the logical face is accessible', () => {
+  const { rerender } = render(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed={false}
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  const front = screen.getByTestId('flip-card-front');
+  const back = screen.getByTestId('flip-card-back', { includeHiddenElements: true });
+  expect(front.props.style[2].transform[1]).toEqual({ rotateY: '0deg' });
+  expect(back.props.style[2].transform[1]).toEqual({ rotateY: '180deg' });
+  expect(front.props.style[0].backfaceVisibility).toBe('hidden');
+  expect(back.props.style[0].backfaceVisibility).toBe('hidden');
+  expect(front.props.importantForAccessibility).toBe('auto');
+  expect(back.props.importantForAccessibility).toBe('no-hide-descendants');
+  expect(screen.queryByRole('tab', { name: 'Meaning' })).toBeNull();
+
+  rerender(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  expect(withTiming).toHaveBeenCalledWith(180, expect.objectContaining({ duration: 300 }));
+  expect(
+    screen.getByTestId('flip-card-front', { includeHiddenElements: true }).props
+      .importantForAccessibility,
+  ).toBe('no-hide-descendants');
+  expect(screen.getByTestId('flip-card-back').props.importantForAccessibility).toBe('auto');
+  expect(screen.queryByRole('header', { name: 'hello' })).toBeNull();
+  expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
+
+  rerender(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed={false}
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  expect(withTiming).toHaveBeenCalledWith(0, expect.any(Object));
+  expect(screen.getByRole('header', { name: 'hello' })).toBeTruthy();
+  expect(screen.queryByRole('tab', { name: 'Meaning' })).toBeNull();
+});
+
+test('a different card mounts on its front even after the previous one was revealed', () => {
+  const { rerender } = render(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed
+        backTab="examples"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  rerender(
+    <ThemeProvider>
+      <StudyCard
+        card={makeCard({ id: 'new', frontText: 'next term' })}
+        deck={makeDeck()}
+        revealed={false}
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  expect(screen.getByRole('header', { name: 'next term' })).toBeTruthy();
+  expect(screen.queryByRole('tab', { name: 'Examples' })).toBeNull();
+  expect(screen.getByTestId('flip-card-front').props.style[2].transform[1]).toEqual({
+    rotateY: '0deg',
+  });
+});
+
+test('reduced motion switches the accessible face without a spatial flip', () => {
+  jest.mocked(useReducedMotion).mockReturnValue(true);
+  const { rerender } = render(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed={false}
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  expect(screen.getByRole('header', { name: 'hello' })).toBeTruthy();
+  expect(screen.queryByTestId('flip-card-front')).toBeNull();
+  rerender(
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  expect(screen.getByText('greeting')).toBeTruthy();
+  expect(screen.queryByRole('header', { name: 'hello' })).toBeNull();
+  expect(screen.queryByTestId('flip-card-back')).toBeNull();
+});
+
+test('RTL alignment is preserved on the answer face', () => {
+  show({ deck: makeDeck({ textAlignment: 'rtl' }), revealed: true });
+  expect(screen.getByText('greeting').props.style).toMatchObject({
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  });
+});
+
+test.each(['light', 'dark', 'oled'] as const)(
+  '%s surface is opaque on both animated faces',
+  (mode) => {
+    useUiStore.setState({ themePreference: mode });
+    show();
+    const front = screen.getByTestId('flip-card-front');
+    const back = screen.getByTestId('flip-card-back', { includeHiddenElements: true });
+    expect(front.props.style[1].backgroundColor).toBe(palette[mode].surface);
+    expect(back.props.style[1].backgroundColor).toBe(palette[mode].surface);
+  },
+);
 
 test('controls reveal before offering labeled Success and Failure actions', () => {
   const reveal = jest.fn();

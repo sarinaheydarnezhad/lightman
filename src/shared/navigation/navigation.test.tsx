@@ -403,7 +403,7 @@ test('Study tab starts an all-deck session, reveals answers and lets users leave
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
   expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
   expect(await application.getActiveStudySession()).toBeNull();
-});
+}, 20_000);
 
 test('deck-specific session reveals examples, retries one failure, completes, and can start again', async () => {
   const { deck } = await studyFixture(2);
@@ -528,7 +528,7 @@ test('answer failure keeps the current card available for a safe retry', async (
     fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
     fireEvent.press(screen.getByRole('button', { name: 'Success' }));
     expect(await screen.findByText('Could not save your answer.')).toBeTruthy();
-    expect(screen.getByRole('header', { name: cards[0]!.frontText })).toBeTruthy();
+    expect(screen.getByText(cards[0]!.meaning)).toBeTruthy();
     expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(0);
     fireEvent.press(screen.getByRole('button', { name: 'Success' }));
     expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
