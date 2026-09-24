@@ -12,7 +12,7 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { cardCountLabel, deckAlignment, deckTypography, languageLabel } from './deck-presentation';
+import { deckAlignment, deckTypography, languageLabel } from './deck-presentation';
 import { useDeckActions, useDeckDetailsViewModel } from './use-decks-view-model';
 
 export function DeckDetailsScreen({ deckId }: { deckId: string }) {
@@ -67,7 +67,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
       <View className="gap-2xl pb-3xl">
         <ScreenHeader title={deck.name} description={deck.description} />
         <Card className="gap-md">
-          <Badge label={cardCountLabel(data.cards.length)} />
+          <Badge label={`${data.cardCount} ${data.cardCount === 1 ? 'card' : 'cards'}`} />
           <Text variant="labelLarge">Deck settings</Text>
           <Text tone="secondary">
             {languageLabel(deck.language)} · {deck.textAlignment.toUpperCase()} ·{' '}
@@ -87,34 +87,19 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           <Text variant="headingMedium" accessibilityRole="header">
             Cards
           </Text>
-          {data.cards.length === 0 ? (
+          {data.cardCount === 0 ? (
             <Card className="gap-sm">
               <Text variant="headingSmall">No cards yet</Text>
               <Text tone="secondary">Add a card to start building this deck.</Text>
             </Card>
           ) : (
-            data.cards.map((card) => (
-              <Card
-                key={card.id}
-                variant="interactive"
-                accessibilityLabel={`Open ${card.frontText} card`}
-                onPress={() =>
-                  router.push({
-                    pathname: '/decks/[deckId]/cards/[cardId]',
-                    params: { deckId, cardId: card.id },
-                  })
-                }
-                className="gap-sm"
-              >
-                <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>
-                  {card.frontText}
-                </Text>
-                <Text tone="secondary" style={contentStyle}>
-                  {card.meaning}
-                </Text>
-              </Card>
-            ))
+            <Text tone="secondary">Browse the cards in this deck or add another.</Text>
           )}
+          <Button
+            label="View cards"
+            variant="secondary"
+            onPress={() => router.push({ pathname: '/decks/[deckId]/cards', params: { deckId } })}
+          />
         </View>
         <View className="gap-sm">
           <Button label="Start study" onPress={() => router.push('/study')} />

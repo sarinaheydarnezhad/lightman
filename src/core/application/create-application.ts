@@ -90,9 +90,24 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
       return persistence(() => cards.create(card));
     },
     getCard,
-    async listCardsForDeck(deckId: string, options?: { search?: string }): Promise<Card[]> {
+    async listCardsForDeck(
+      deckId: string,
+      options?: { search?: string; category?: string },
+    ): Promise<Card[]> {
       await getDeck(deckId);
       return persistence(() => cards.listByDeck(deckId, options));
+    },
+    async searchCards(deckId: string, search: string, category?: string): Promise<Card[]> {
+      await getDeck(deckId);
+      return persistence(() => cards.listByDeck(deckId, { search, category }));
+    },
+    async countActiveCardsForDeck(deckId: string): Promise<number> {
+      await getDeck(deckId);
+      return persistence(() => cards.countByDeck(deckId));
+    },
+    async listCardCategoriesForDeck(deckId: string): Promise<string[]> {
+      await getDeck(deckId);
+      return persistence(() => cards.listCategoriesByDeck(deckId));
     },
     async updateCard(id: string, changes: UpdateCardInput): Promise<Card> {
       const card = await getCard(id);
@@ -156,13 +171,13 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
     },
     async getHomeSummary() {
       const deckList = await persistence(() => decks.list());
-      const cardsByDeck = await Promise.all(
-        deckList.map((deck) => persistence(() => cards.listByDeck(deck.id))),
+      const countsByDeck = await Promise.all(
+        deckList.map((deck) => persistence(() => cards.countByDeck(deck.id))),
       );
       const reviewEvents = await persistence(() => reviews.listEvents());
       return {
         decks: deckList,
-        cardCount: cardsByDeck.reduce((count, list) => count + list.length, 0),
+        cardCount: countsByDeck.reduce((count, deckCount) => count + deckCount, 0),
         reviewCount: reviewEvents.length,
       };
     },

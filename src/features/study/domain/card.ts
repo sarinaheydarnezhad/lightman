@@ -26,22 +26,36 @@ export function validateCardText(value: string, side: 'front' | 'back'): string 
   return requiredText(value, `Card ${side}`, MAX_CARD_TEXT_LENGTH);
 }
 
-export function validateCard(card: Card): Card {
-  requiredId(card.id, 'Card ID');
-  requiredId(card.deckId, 'Deck ID');
-  const frontText = validateCardText(card.frontText, 'front');
-  const meaning = validateCardText(card.meaning, 'back');
-  if (card.phonetic && card.phonetic.length > 500)
+/** Shared field validation for the form and complete entity validation. */
+export function validateCardContent(
+  content: Pick<Card, 'frontText' | 'meaning' | 'phonetic' | 'category' | 'examples'>,
+) {
+  const frontText = validateCardText(content.frontText, 'front');
+  const meaning = validateCardText(content.meaning, 'back');
+  const { phonetic, category } = content;
+  if (phonetic && phonetic.length > 500)
     throw new AppError('validation', 'Phonetic text is too long.');
-  if (card.category && card.category.length > 120)
-    throw new AppError('validation', 'Category is too long.');
-  if (!Array.isArray(card.examples) || card.examples.length > 20)
+  if (category && category.length > 120) throw new AppError('validation', 'Category is too long.');
+  if (!Array.isArray(content.examples) || content.examples.length > 20)
     throw new AppError('validation', 'Invalid card examples.');
-  const examples = card.examples.map((example) => ({
+  const examples = content.examples.map((example) => ({
     sentence: requiredText(example.sentence, 'Example sentence', MAX_CARD_TEXT_LENGTH),
     ...(example.translation ? { translation: example.translation.trim() } : {}),
     ...(example.notes ? { notes: example.notes.trim() } : {}),
   }));
+  return {
+    frontText,
+    meaning,
+    phonetic: phonetic?.trim() || null,
+    category: category?.trim() || null,
+    examples,
+  };
+}
+
+export function validateCard(card: Card): Card {
+  requiredId(card.id, 'Card ID');
+  requiredId(card.deckId, 'Deck ID');
+  const content = validateCardContent(card);
   instant(card.createdAt);
   instant(card.updatedAt);
   if (card.updatedAt < card.createdAt)
@@ -53,10 +67,6 @@ export function validateCard(card: Card): Card {
   }
   return {
     ...card,
-    frontText,
-    meaning,
-    phonetic: card.phonetic?.trim() || null,
-    category: card.category?.trim() || null,
-    examples,
+    ...content,
   };
 }

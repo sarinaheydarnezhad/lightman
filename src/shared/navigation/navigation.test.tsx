@@ -13,6 +13,7 @@ import CreateDeck from '@/app/decks/create';
 import DeckDetails from '@/app/decks/[deckId]/index';
 import EditDeck from '@/app/decks/[deckId]/edit';
 import CreateCard from '@/app/decks/[deckId]/cards/create';
+import CardList from '@/app/decks/[deckId]/cards/index';
 import CardDetails from '@/app/decks/[deckId]/cards/[cardId]/index';
 import EditCard from '@/app/decks/[deckId]/cards/[cardId]/edit';
 import StudySession from '@/app/study/[sessionId]';
@@ -42,6 +43,7 @@ const routes = {
   'decks/[deckId]/index': DeckDetails,
   'decks/[deckId]/edit': EditDeck,
   'decks/[deckId]/cards/create': CreateCard,
+  'decks/[deckId]/cards/index': CardList,
   'decks/[deckId]/cards/[cardId]/index': CardDetails,
   'decks/[deckId]/cards/[cardId]/edit': EditCard,
   'study/[sessionId]': StudySession,
@@ -148,6 +150,97 @@ test('editing a deck retains its regional language and updates the detail screen
   expect((await application.getDeck('travel-basics')).language).toBe('fa-IR');
 });
 
+test('card list opens from deck details, searches and filters without mixing decks', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/everyday-phrases' });
+  await screen.findByRole('header', { name: 'Everyday phrases' });
+  fireEvent.press(screen.getByRole('button', { name: 'View cards' }));
+  expect(rendered.getPathname()).toBe('/decks/everyday-phrases/cards');
+  expect(await screen.findByRole('button', { name: /Open Hello card/ })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /Open Thank you card/ })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Open port card/ })).toBeNull();
+  fireEvent.changeText(screen.getByLabelText('Search cards'), '  /HƏˈLOʊ/  ');
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: /Open Thank you card/ })).toBeNull(),
+  );
+  expect(screen.getByRole('button', { name: /Open Hello card/ })).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Search cards'), '');
+  fireEvent.press(await screen.findByRole('button', { name: 'Courtesy' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: /Open Hello card/ })).toBeNull());
+  expect(screen.getByRole('button', { name: /Open Thank you card/ })).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Search cards'), 'nowhere');
+  expect(await screen.findByRole('header', { name: 'No matching cards' })).toBeTruthy();
+}, 60_000);
+
+test('an empty deck has a card action and invalid card routes show a retry', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/fresh-collection/cards' });
+  expect(await screen.findByRole('header', { name: 'No cards yet' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Add card' }));
+  expect(await screen.findByRole('header', { name: 'Create a card' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/decks/fresh-collection/cards/create');
+});
+
+test('missing deck and mismatched card routes show safe unavailable states', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/missing/cards' });
+  expect(await screen.findByRole('header', { name: 'Cards unavailable' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Browse decks' }));
+  expect(await screen.findByRole('header', { name: 'Decks' })).toBeTruthy();
+  rendered.unmount();
+  renderRouter(routes, { initialUrl: '/decks/travel-basics/cards/phrase-hello' });
+  expect(await screen.findByRole('header', { name: 'Card unavailable' })).toBeTruthy();
+});
+
+test('card form validates required fields and previews RTL content with examples', async () => {
+  renderRouter(routes, { initialUrl: '/decks/travel-basics/cards/create' });
+  await screen.findByRole('header', { name: 'Create a card' });
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(screen.getByText('Enter a term.')).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Front text'), '  New term  ');
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(screen.getByText('Enter a meaning.')).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Meaning'), '  Definition  ');
+  fireEvent.press(screen.getByRole('button', { name: 'Add example' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(screen.getByText('Enter a sentence or remove this example.')).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Sentence 1'), '  A  sentence  ');
+  fireEvent.changeText(screen.getByLabelText('Translation 1 (optional)'), '  ترجمه  ');
+  fireEvent.press(screen.getByRole('button', { name: 'Preview card' }));
+  expect(screen.getByText('New term')).toHaveStyle({ textAlign: 'right', writingDirection: 'rtl' });
+  expect(screen.getByText('A  sentence')).toBeTruthy();
+});
+
+test('editing existing examples keeps translation and notes and rejects mismatched deck IDs', async () => {
+  const rendered = renderRouter(routes, {
+    initialUrl: '/decks/everyday-phrases/cards/phrase-hello',
+  });
+  await screen.findByRole('header', { name: 'Hello' });
+  fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
+  await screen.findByRole('header', { name: 'Edit card' });
+  expect(screen.getByLabelText('Translation 1 (optional)').props.value).toBe(
+    'A friendly greeting.',
+  );
+  expect(screen.getByLabelText('Notes 2 (optional)').props.value).toBe(
+    'A longer conversational example.',
+  );
+  fireEvent.changeText(screen.getByLabelText('Sentence 2'), '  Changed  with  spacing.  ');
+  fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
+  expect(await screen.findByText('Changed  with  spacing.')).toBeTruthy();
+  expect(screen.getByText('A friendly greeting.')).toBeTruthy();
+  expect(screen.getByText('A longer conversational example.')).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/decks/everyday-phrases/cards/phrase-hello');
+});
+
+test('editing a card can remove a usage example without adding placeholder content', async () => {
+  renderRouter(routes, { initialUrl: '/decks/word-roots/cards/root-port' });
+  await screen.findByRole('header', { name: 'port' });
+  fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
+  await screen.findByRole('header', { name: 'Edit card' });
+  fireEvent.press(screen.getByRole('button', { name: 'Remove example 1' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
+  expect(await screen.findByRole('header', { name: 'port' })).toBeTruthy();
+  expect(screen.queryByText('Transport means to carry across.')).toBeNull();
+  expect((await application.getCard('root-port')).examples).toEqual([]);
+});
+
 test('appearance selection uses the existing session preference', async () => {
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByRole('header', { name: 'Settings' });
@@ -209,8 +302,16 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
+    expect(screen.getByText('It will be removed from the active cards in this deck.')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Keep card' }));
+    expect(screen.getByRole('header', { name: 'Flow word' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
+    expect(await screen.findByRole('header', { name: 'No cards yet' })).toBeTruthy();
+    expect(screen.getByText('0 of 0 cards')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'View deck' }));
     expect(await screen.findByRole('header', { name: 'Flow deck' })).toBeTruthy();
-    expect(screen.getAllByText('No cards yet').length).toBeGreaterThan(0);
+    expect(screen.getByText('0 cards')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit deck' }));
     await screen.findByRole('header', { name: 'Edit Flow deck' });
@@ -231,3 +332,22 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     idMock.mockRestore();
   }
 }, 120_000);
+
+test('rapid save taps create one card', async () => {
+  const ids = jest.spyOn(idGenerator, 'create').mockReturnValue('rapid-card-id');
+  try {
+    renderRouter(routes, { initialUrl: '/decks/fresh-collection/cards/create' });
+    await screen.findByRole('header', { name: 'Create a card' });
+    const before = await application.countActiveCardsForDeck('fresh-collection');
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'One card only');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Saved once');
+    const save = screen.getByRole('button', { name: 'Create card' });
+    fireEvent.press(save);
+    fireEvent.press(save);
+    expect(await screen.findByRole('header', { name: 'One card only' })).toBeTruthy();
+    expect(await application.countActiveCardsForDeck('fresh-collection')).toBe(before + 1);
+    expect(ids).toHaveBeenCalledTimes(1);
+  } finally {
+    ids.mockRestore();
+  }
+});

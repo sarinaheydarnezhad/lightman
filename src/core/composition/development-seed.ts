@@ -1,6 +1,7 @@
 import { calendarDate, instant, languageTag } from '@/core/domain/values';
 import { defaultSettings } from './default-settings';
 import type { Repositories } from '@/core/ports/repositories';
+import type { Card } from '@/features/study/domain/card';
 
 /** Explicit, disposable sample data. Production repositories begin empty. */
 export async function seedDevelopmentData({
@@ -35,6 +36,14 @@ export async function seedDevelopmentData({
       textAlignment: 'rtl' as const,
       typographySize: 'large' as const,
     },
+    {
+      id: 'fresh-collection',
+      name: 'Fresh collection',
+      description: 'A space to add your first cards.',
+      language: languageTag('en'),
+      textAlignment: 'ltr' as const,
+      typographySize: 'medium' as const,
+    },
   ];
   for (const deck of samples) {
     if (!(await decks.getById(deck.id)))
@@ -45,18 +54,32 @@ export async function seedDevelopmentData({
         archivedAt: null,
       });
   }
-  const sampleCards = [
+  const sampleCards: Pick<
+    Card,
+    'id' | 'deckId' | 'frontText' | 'meaning' | 'phonetic' | 'category' | 'examples'
+  >[] = [
     {
       id: 'phrase-hello',
       deckId: 'everyday-phrases',
       frontText: 'Hello',
+      phonetic: '/həˈloʊ/',
+      category: 'Greetings',
       meaning: 'A greeting',
-      examples: [{ sentence: 'Hello, how are you?', translation: 'A friendly greeting.' }],
+      examples: [
+        { sentence: 'Hello, how are you?', translation: 'A friendly greeting.' },
+        {
+          sentence:
+            'She greeted everyone at the door with a warm hello before introducing herself to the rest of the group.',
+          notes: 'A longer conversational example.',
+        },
+      ],
     },
     {
       id: 'phrase-thanks',
       deckId: 'everyday-phrases',
       frontText: 'Thank you',
+      phonetic: null,
+      category: 'Courtesy',
       meaning: 'Express gratitude',
       examples: [],
     },
@@ -64,6 +87,8 @@ export async function seedDevelopmentData({
       id: 'root-port',
       deckId: 'word-roots',
       frontText: 'port',
+      phonetic: null,
+      category: 'Word roots',
       meaning: 'To carry',
       examples: [{ sentence: 'Transport means to carry across.' }],
     },
@@ -71,6 +96,8 @@ export async function seedDevelopmentData({
       id: 'travel-salaam',
       deckId: 'travel-basics',
       frontText: 'سلام',
+      phonetic: null,
+      category: null,
       meaning: 'Hello',
       examples: [],
     },
@@ -79,8 +106,6 @@ export async function seedDevelopmentData({
     if (!(await cards.getById(card.id)))
       await cards.create({
         ...card,
-        phonetic: null,
-        category: null,
         createdAt,
         updatedAt: createdAt,
         archivedAt: null,

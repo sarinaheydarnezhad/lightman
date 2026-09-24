@@ -32,6 +32,9 @@ test('the complete create, load, update, archive and reload flow uses only repos
     examples: [{ sentence: 'In a sentence.' }],
   });
   expect(await app.listCardsForDeck(deck.id)).toEqual([card]);
+  expect(await app.countActiveCardsForDeck(deck.id)).toBe(1);
+  expect((await app.searchCards(deck.id, '  TERM  ')).map((item) => item.id)).toEqual([card.id]);
+  expect(await app.listCardCategoriesForDeck(deck.id)).toEqual([]);
   expect((await app.getCard(card.id)).frontText).toBe('term');
   expect((await app.updateDeck(deck.id, { name: 'Updated deck' })).name).toBe('Updated deck');
   expect((await app.updateCard(card.id, { meaning: 'Updated meaning' })).meaning).toBe(
@@ -40,7 +43,12 @@ test('the complete create, load, update, archive and reload flow uses only repos
   expect((await app.getHomeSummary()).cardCount).toBe(1);
   await app.archiveCard(card.id);
   expect(await app.listCardsForDeck(deck.id)).toEqual([]);
+  expect(await app.countActiveCardsForDeck(deck.id)).toBe(0);
+  expect(await app.searchCards(deck.id, 'term')).toEqual([]);
   await expect(app.getCard(card.id)).rejects.toMatchObject({ code: 'not-found' });
+  await expect(app.countActiveCardsForDeck('missing-deck')).rejects.toMatchObject({
+    code: 'not-found',
+  });
   await app.archiveDeck(deck.id);
   expect(await app.listDecks()).toEqual([]);
   await expect(app.getDeck(deck.id)).rejects.toMatchObject({ code: 'not-found' });
@@ -163,13 +171,17 @@ test('development seeding is explicit, small and idempotent', async () => {
   expect(await repositories.decks.list()).toEqual([]);
   await seedDevelopmentData(repositories);
   await seedDevelopmentData(repositories);
-  expect(await repositories.decks.list()).toHaveLength(3);
+  expect(await repositories.decks.list()).toHaveLength(4);
   expect((await repositories.decks.list()).map((deck) => deck.typographySize)).toEqual([
     'small',
     'medium',
     'large',
+    'medium',
   ]);
   expect(await repositories.cards.listByDeck('everyday-phrases')).toHaveLength(2);
+  expect(await repositories.cards.countByDeck('fresh-collection')).toBe(0);
+  expect((await repositories.cards.getById('phrase-hello'))?.examples).toHaveLength(2);
+  expect((await repositories.cards.getById('phrase-hello'))?.category).toBe('Greetings');
   expect((await repositories.cards.listByDeck('travel-basics'))[0]?.examples).toEqual([]);
   expect(await repositories.reviews.listEvents()).toHaveLength(2);
   expect((await repositories.reviews.getState('phrase-hello'))?.box).toBe(3);

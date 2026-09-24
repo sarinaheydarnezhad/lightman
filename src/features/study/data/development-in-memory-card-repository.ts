@@ -14,21 +14,45 @@ export class InMemoryCardRepository implements CardRepository {
 
   async listByDeck(
     deckId: string,
-    options: { search?: string; includeArchived?: boolean } = {},
+    options: { search?: string; category?: string; includeArchived?: boolean } = {},
   ): Promise<Card[]> {
     requiredId(deckId, 'Deck ID');
-    const search = options.search?.trim().toLocaleLowerCase();
+    const normalized = (value: string) => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    const search = options.search ? normalized(options.search) : '';
+    const category = options.category ? normalized(options.category) : '';
     return Array.from(this.cards.values())
       .filter(
         (card) =>
           card.deckId === deckId &&
           (options.includeArchived || !card.archivedAt) &&
+          (!category || (card.category !== null && normalized(card.category) === category)) &&
           (!search ||
-            `${card.frontText} ${card.meaning} ${card.category ?? ''}`
-              .toLocaleLowerCase()
-              .includes(search)),
+            normalized(
+              `${card.frontText} ${card.phonetic ?? ''} ${card.category ?? ''} ${card.meaning}`,
+            ).includes(search)),
       )
       .map((card) => ({ ...card, examples: card.examples.map((example) => ({ ...example })) }));
+  }
+
+  async countByDeck(deckId: string): Promise<number> {
+    requiredId(deckId, 'Deck ID');
+    let count = 0;
+    for (const card of this.cards.values()) {
+      if (card.deckId === deckId && !card.archivedAt) count++;
+    }
+    return count;
+  }
+
+  async listCategoriesByDeck(deckId: string): Promise<string[]> {
+    requiredId(deckId, 'Deck ID');
+    const categories = new Map<string, string>();
+    for (const card of this.cards.values()) {
+      if (card.deckId === deckId && !card.archivedAt && card.category) {
+        const key = card.category.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+        if (!categories.has(key)) categories.set(key, card.category);
+      }
+    }
+    return [...categories.values()].sort((a, b) => a.localeCompare(b));
   }
 
   async create(card: Card): Promise<Card> {

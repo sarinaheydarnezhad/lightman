@@ -56,6 +56,7 @@ function Navigation() {
         />
         <Stack.Screen name="decks/[deckId]/index" options={{ title: 'Deck details' }} />
         <Stack.Screen name="decks/[deckId]/edit" options={{ title: 'Edit deck' }} />
+        <Stack.Screen name="decks/[deckId]/cards/index" options={{ title: 'Cards' }} />
         <Stack.Screen
           name="decks/[deckId]/cards/create"
           options={{ title: 'Create card', presentation: 'modal' }}

@@ -25,7 +25,7 @@ export function useDecksViewModel(search = '', sort: DeckSort = 'recently-update
           await Promise.all(
             decks.map(async (deck) => ({
               ...deck,
-              cardCount: (await application.listCardsForDeck(deck.id)).length,
+              cardCount: await application.countActiveCardsForDeck(deck.id),
             })),
           ),
           sort,
@@ -46,18 +46,9 @@ export function useDeckDetailsViewModel(deckId: string) {
     useCallback(
       async () => ({
         deck: await application.getDeck(deckId),
-        cards: await application.listCardsForDeck(deckId),
+        cardCount: await application.countActiveCardsForDeck(deckId),
       }),
       [deckId],
     ),
-  );
-}
-
-export function useCardDetailsViewModel(cardId: string) {
-  return useFocusedResource(
-    useCallback(async () => {
-      const card = await application.getCard(cardId);
-      return { card, deck: await application.getDeck(card.deckId) };
-    }, [cardId]),
   );
 }
