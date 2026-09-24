@@ -39,6 +39,12 @@ export function leitnerBox(value: number): LeitnerBox {
   return value as LeitnerBox;
 }
 
+export function reviewResult(value: unknown): ReviewResult {
+  if (value !== 'success' && value !== 'failure')
+    throw new AppError('validation', 'Invalid review result.');
+  return value;
+}
+
 export function validateReviewState(state: CardReviewState): CardReviewState {
   requiredId(state.cardId, 'Card ID');
   leitnerBox(state.box);
@@ -68,8 +74,7 @@ export function validateReviewEvent(event: ReviewEvent): Readonly<ReviewEvent> {
   if (event.studySessionId !== null) requiredId(event.studySessionId, 'Study session ID');
   leitnerBox(event.previousBox);
   leitnerBox(event.newBox);
-  if (event.result !== 'success' && event.result !== 'failure')
-    throw new AppError('validation', 'Invalid review result.');
+  reviewResult(event.result);
   instant(event.reviewedAt);
   return Object.freeze({ ...event });
 }

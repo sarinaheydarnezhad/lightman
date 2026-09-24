@@ -1,16 +1,21 @@
-import { now, requiredId, type CalendarDate } from '@/core/domain/values';
+import { calendarDateAtInstant, now, requiredId } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import { validateDeck, type Deck } from '@/features/decks/domain/deck';
 import { validateCard, type Card } from '@/features/study/domain/card';
 import {
-  validateReviewState,
+  reviewResult,
   type CardReviewState,
   type ReviewEvent,
   type ReviewResult,
-  type LeitnerBox,
 } from '@/features/study/domain/review';
+import {
+  calculateReviewTransition,
+  createInitialReviewState,
+  createReviewEvent,
+  type ReviewTransition,
+} from '@/features/study/domain/leitner-srs';
 import { validateUserSettings, type UserSettings } from '@/features/settings/domain/user-settings';
 
 export type CreateDeckInput = Pick<
@@ -23,6 +28,15 @@ export type CreateCardInput = Pick<
   'deckId' | 'frontText' | 'phonetic' | 'category' | 'meaning' | 'examples'
 >;
 export type UpdateCardInput = Partial<Omit<CreateCardInput, 'deckId'>>;
+export interface ReviewCardInput {
+  readonly cardId: string;
+  readonly deckId: string;
+  readonly result: ReviewResult;
+  readonly studySessionId: string | null;
+}
+export interface ReviewCardOutput extends ReviewTransition {
+  readonly reviewEvent: ReviewEvent;
+}
 
 /** Use cases depend on domain contracts. The caller supplies the current adapters. */
 export function createApplication(repositories: Repositories, clock: AppClock, ids: IdGenerator) {
@@ -87,7 +101,14 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
         updatedAt: time,
         archivedAt: null,
       });
-      return persistence(() => cards.create(card));
+      const initialState = createInitialReviewState(
+        card.id,
+        calendarDateAtInstant(time, clock.timeZone()),
+        time,
+      );
+      const created = await persistence(() => cards.create(card));
+      await persistence(() => reviews.saveState(initialState));
+      return created;
     },
     getCard,
     async listCardsForDeck(
@@ -126,40 +147,32 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
     async listReviewEvents(options?: { cardId?: string; deckId?: string }): Promise<ReviewEvent[]> {
       return persistence(() => reviews.listEvents(options));
     },
-    /** Scheduling is supplied by the future engine; this use case records validated facts atomically. */
-    async recordReview(input: {
-      cardId: string;
-      result: ReviewResult;
-      newBox: LeitnerBox;
-      dueDate: CalendarDate;
-      studySessionId: string | null;
-      consecutiveSuccesses: number;
-    }): Promise<ReviewEvent> {
+    async reviewCard(input: ReviewCardInput): Promise<ReviewCardOutput> {
+      requiredId(input.cardId, 'Card ID');
+      requiredId(input.deckId, 'Deck ID');
+      reviewResult(input.result);
+      if (input.studySessionId !== null) requiredId(input.studySessionId, 'Study session ID');
       const card = await getCard(input.cardId);
+      if (card.deckId !== input.deckId)
+        throw new AppError('validation', 'Card does not belong to the requested deck.');
       const previous = await persistence(() => reviews.getState(card.id));
+      if (!previous) throw new AppError('not-found', 'Review state not found.');
       const time = now(clock);
-      const event: ReviewEvent = {
+      const transition = calculateReviewTransition(
+        previous,
+        input.result,
+        calendarDateAtInstant(time, clock.timeZone()),
+        time,
+      );
+      const reviewEvent = createReviewEvent(transition, {
         id: ids.create(),
         cardId: card.id,
         deckId: card.deckId,
-        previousBox: previous?.box ?? 1,
-        newBox: input.newBox,
-        result: input.result,
         reviewedAt: time,
         studySessionId: input.studySessionId,
-      };
-      const state = validateReviewState({
-        cardId: card.id,
-        box: input.newBox,
-        dueDate: input.dueDate,
-        lastReviewedAt: time,
-        consecutiveSuccesses: input.consecutiveSuccesses,
-        totalReviews: (previous?.totalReviews ?? 0) + 1,
-        totalSuccesses: (previous?.totalSuccesses ?? 0) + (input.result === 'success' ? 1 : 0),
-        updatedAt: time,
       });
-      await persistence(() => reviews.record(event, state));
-      return Object.freeze({ ...event });
+      await persistence(() => reviews.record(reviewEvent, transition.updatedReviewState));
+      return { ...transition, reviewEvent };
     },
     getSettings(): Promise<UserSettings | null> {
       return persistence(() => settings.get());

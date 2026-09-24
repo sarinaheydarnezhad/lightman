@@ -92,7 +92,7 @@ export function makeRepositories(): Repositories {
   };
 }
 
-export const fixedClock: AppClock = { now: () => new Date(timestamp) };
+export const fixedClock: AppClock = { now: () => new Date(timestamp), timeZone: () => 'UTC' };
 export function sequenceIds(): IdGenerator {
   let next = 0;
   return { create: () => `generated-${++next}` };

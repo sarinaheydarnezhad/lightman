@@ -29,6 +29,37 @@ export function calendarDate(value: string): CalendarDate {
   return value as CalendarDate;
 }
 
+/** Add calendar days in the date-only space; no local elapsed-hour arithmetic is involved. */
+export function addCalendarDays(date: CalendarDate, days: number): CalendarDate {
+  calendarDate(date);
+  if (!Number.isSafeInteger(days))
+    throw new AppError('validation', 'Calendar-day interval must be a safe integer.');
+  const [year, month, day] = date.split('-').map(Number);
+  const value = new Date(0);
+  value.setUTCFullYear(year!, month! - 1, day! + days);
+  const next = `${String(value.getUTCFullYear()).padStart(4, '0')}-${String(
+    value.getUTCMonth() + 1,
+  ).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`;
+  return calendarDate(next);
+}
+
+/** Interpret a UTC review instant in the user's current IANA time zone. */
+export function calendarDateAtInstant(value: Instant, timeZone: string): CalendarDate {
+  instant(value);
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(new Date(value));
+    const part = (type: string) => parts.find((item) => item.type === type)?.value;
+    return calendarDate(`${part('year')}-${part('month')}-${part('day')}`);
+  } catch {
+    throw new AppError('validation', 'Invalid review time zone.');
+  }
+}
+
 export function localTime(value: string): LocalTime {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
     throw new AppError('validation', 'Local time must use HH:mm (24-hour time).');

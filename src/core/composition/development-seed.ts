@@ -2,6 +2,7 @@ import { calendarDate, instant, languageTag } from '@/core/domain/values';
 import { defaultSettings } from './default-settings';
 import type { Repositories } from '@/core/ports/repositories';
 import type { Card } from '@/features/study/domain/card';
+import { createInitialReviewState } from '@/features/study/domain/leitner-srs';
 
 /** Explicit, disposable sample data. Production repositories begin empty. */
 export async function seedDevelopmentData({
@@ -115,7 +116,7 @@ export async function seedDevelopmentData({
     await reviews.saveState({
       cardId: 'phrase-hello',
       box: 3,
-      dueDate: calendarDate('2026-01-10'),
+      dueDate: calendarDate('2026-01-05'),
       lastReviewedAt: createdAt,
       consecutiveSuccesses: 2,
       totalReviews: 2,
@@ -123,17 +124,12 @@ export async function seedDevelopmentData({
       updatedAt: createdAt,
     });
   }
-  if (!(await reviews.getState('phrase-thanks'))) {
-    await reviews.saveState({
-      cardId: 'phrase-thanks',
-      box: 1,
-      dueDate: calendarDate('2026-01-02'),
-      lastReviewedAt: null,
-      consecutiveSuccesses: 0,
-      totalReviews: 0,
-      totalSuccesses: 0,
-      updatedAt: createdAt,
-    });
+  for (const cardId of ['phrase-thanks', 'root-port', 'travel-salaam']) {
+    if (!(await reviews.getState(cardId))) {
+      await reviews.saveState(
+        createInitialReviewState(cardId, calendarDate('2026-01-01'), createdAt),
+      );
+    }
   }
   const existingEventIds = new Set(
     (await reviews.listEvents({ cardId: 'phrase-hello' })).map((event) => event.id),

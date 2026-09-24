@@ -6,6 +6,7 @@ import {
   fixedClock,
   sequenceIds,
   makeDeck,
+  makeCard,
   makeSettings,
 } from '@/../test/fixtures';
 import { createApplication } from './create-application';
@@ -36,6 +37,12 @@ test('the complete create, load, update, archive and reload flow uses only repos
   expect((await app.searchCards(deck.id, '  TERM  ')).map((item) => item.id)).toEqual([card.id]);
   expect(await app.listCardCategoriesForDeck(deck.id)).toEqual([]);
   expect((await app.getCard(card.id)).frontText).toBe('term');
+  expect(await app.getReviewState(card.id)).toMatchObject({
+    box: 1,
+    dueDate: calendarDate('2026-09-24'),
+    lastReviewedAt: null,
+    totalReviews: 0,
+  });
   expect((await app.updateDeck(deck.id, { name: 'Updated deck' })).name).toBe('Updated deck');
   expect((await app.updateCard(card.id, { meaning: 'Updated meaning' })).meaning).toBe(
     'Updated meaning',
@@ -115,44 +122,113 @@ test('use cases reject missing parents and translate unexpected adapter failures
   });
 });
 
-test('review use case records facts and state without calculating an SRS schedule', async () => {
+test('reviewCard calculates and records one state transition and immutable event per call', async () => {
   const repositories = makeRepositories();
   await repositories.decks.create(makeDeck());
-  await repositories.cards.create({
-    id: 'card-1',
+  await repositories.cards.create(makeCard());
+  const app = createApplication(repositories, fixedClock, sequenceIds());
+  await expect(
+    app.reviewCard({ cardId: 'card-1', deckId: 'deck-1', result: 'success', studySessionId: null }),
+  ).rejects.toMatchObject({ code: 'not-found', message: 'Review state not found.' });
+  const initial = await repositories.reviews.saveState({
+    cardId: 'card-1',
+    box: 1,
+    dueDate: calendarDate('2026-09-24'),
+    lastReviewedAt: null,
+    consecutiveSuccesses: 0,
+    totalReviews: 0,
+    totalSuccesses: 0,
+    updatedAt: makeCard().createdAt,
+  });
+  const record = jest.spyOn(repositories.reviews, 'record');
+  const request = {
+    cardId: 'card-1',
     deckId: 'deck-1',
-    frontText: 'word',
-    meaning: 'meaning',
+    result: 'success' as const,
+    studySessionId: 'session-1',
+  };
+  const first = await app.reviewCard(request);
+  expect(record).toHaveBeenCalledTimes(1);
+  expect(record).toHaveBeenCalledWith(first.reviewEvent, first.updatedReviewState);
+  expect(first).toMatchObject({
+    previousBox: 1,
+    newBox: 2,
+    intervalDays: 2,
+    newDueDate: calendarDate('2026-09-26'),
+  });
+  expect(first.reviewEvent).toMatchObject({
+    cardId: 'card-1',
+    deckId: 'deck-1',
+    result: 'success',
+    previousBox: 1,
+    newBox: 2,
+    studySessionId: 'session-1',
+  });
+  expect(Object.isFrozen(first.reviewEvent)).toBe(true);
+  expect(first.updatedReviewState).toEqual(await app.getReviewState('card-1'));
+  expect(initial.totalReviews).toBe(0);
+  const second = await app.reviewCard(request);
+  expect(record).toHaveBeenCalledTimes(2);
+  expect(second).toMatchObject({ previousBox: 2, newBox: 3, intervalDays: 4 });
+  expect(second.reviewEvent.id).not.toBe(first.reviewEvent.id);
+  expect((await app.getReviewState('card-1'))?.totalReviews).toBe(2);
+  expect(await app.listReviewEvents({ deckId: 'deck-1' })).toEqual([
+    first.reviewEvent,
+    second.reviewEvent,
+  ]);
+  const failure = await app.reviewCard({ ...request, result: 'failure' });
+  expect(failure).toMatchObject({
+    previousBox: 3,
+    newBox: 1,
+    intervalDays: 0,
+    newDueDate: calendarDate('2026-09-24'),
+  });
+  expect(failure.updatedReviewState).toMatchObject({
+    totalReviews: 3,
+    totalSuccesses: 2,
+    consecutiveSuccesses: 0,
+  });
+  await expect(
+    app.reviewCard({
+      cardId: 'missing',
+      deckId: 'deck-1',
+      result: 'failure',
+      studySessionId: null,
+    }),
+  ).rejects.toMatchObject({ code: 'not-found' });
+  await expect(app.reviewCard({ ...request, deckId: 'other' })).rejects.toMatchObject({
+    code: 'validation',
+  });
+  await expect(app.reviewCard({ ...request, result: 'maybe' as never })).rejects.toMatchObject({
+    code: 'validation',
+  });
+});
+
+test('reviewCard and new-card initialization use the clock’s current local calendar date', async () => {
+  const repositories = makeRepositories();
+  await repositories.decks.create(makeDeck());
+  const localClock = {
+    now: () => new Date('2026-09-24T23:30:00.000Z'),
+    timeZone: () => 'Asia/Tehran',
+  };
+  const app = createApplication(repositories, localClock, sequenceIds());
+  const card = await app.createCard({
+    deckId: 'deck-1',
+    frontText: 'night',
+    meaning: 'after dark',
     phonetic: null,
     category: null,
     examples: [],
-    createdAt: makeDeck().createdAt,
-    updatedAt: makeDeck().createdAt,
-    archivedAt: null,
   });
-  const app = createApplication(repositories, fixedClock, sequenceIds());
-  const event = await app.recordReview({
-    cardId: 'card-1',
+  expect((await app.getReviewState(card.id))?.dueDate).toBe('2026-09-25');
+  const transition = await app.reviewCard({
+    cardId: card.id,
+    deckId: 'deck-1',
     result: 'success',
-    newBox: 2,
-    dueDate: calendarDate('2026-09-25'),
     studySessionId: null,
-    consecutiveSuccesses: 1,
   });
-  expect(event.previousBox).toBe(1);
-  expect(Object.isFrozen(event)).toBe(true);
-  expect((await app.getReviewState('card-1'))?.box).toBe(2);
-  expect(await app.listReviewEvents({ deckId: 'deck-1' })).toEqual([event]);
-  await expect(
-    app.recordReview({
-      cardId: 'missing',
-      result: 'failure',
-      newBox: 1,
-      dueDate: calendarDate('2026-09-25'),
-      studySessionId: null,
-      consecutiveSuccesses: 0,
-    }),
-  ).rejects.toMatchObject({ code: 'not-found' });
+  expect(transition).toMatchObject({ newBox: 2, newDueDate: '2026-09-27' });
+  expect(transition.reviewEvent.reviewedAt).toBe('2026-09-24T23:30:00.000Z');
 });
 
 test('settings update through use case validates partial changes', async () => {
@@ -185,6 +261,13 @@ test('development seeding is explicit, small and idempotent', async () => {
   expect((await repositories.cards.listByDeck('travel-basics'))[0]?.examples).toEqual([]);
   expect(await repositories.reviews.listEvents()).toHaveLength(2);
   expect((await repositories.reviews.getState('phrase-hello'))?.box).toBe(3);
+  for (const cardId of ['phrase-thanks', 'root-port', 'travel-salaam']) {
+    expect(await repositories.reviews.getState(cardId)).toMatchObject({
+      box: 1,
+      dueDate: calendarDate('2026-01-01'),
+      totalReviews: 0,
+    });
+  }
   expect((await repositories.settings.get())?.theme).toBe('system');
 });
 

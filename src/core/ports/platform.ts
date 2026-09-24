@@ -5,6 +5,8 @@ export interface AppLogger {
 
 export interface AppClock {
   now(): Date;
+  /** IANA time zone currently used to interpret local review calendar days. */
+  timeZone(): string;
 }
 
 export interface IdGenerator {

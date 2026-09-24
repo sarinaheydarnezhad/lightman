@@ -4,7 +4,8 @@ import { leitnerBox, validateReviewEvent, validateReviewState } from './review';
 
 test('Leitner boxes accept only integer values 1 through 5', () => {
   expect([1, 2, 3, 4, 5].map(leitnerBox)).toEqual([1, 2, 3, 4, 5]);
-  for (const value of [-1, 0, 1.5, 6, NaN]) expect(() => leitnerBox(value)).toThrow(AppError);
+  for (const value of [-1, 0, 1.5, 6, NaN, Infinity, -Infinity])
+    expect(() => leitnerBox(value)).toThrow(AppError);
 });
 
 test('review state enforces valid counts, identifiers, and calendar dates', () => {
