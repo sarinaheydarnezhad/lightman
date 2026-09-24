@@ -47,6 +47,21 @@ test('the complete create, load, update, archive and reload flow uses only repos
   expect((await repositories.decks.list({ includeArchived: true }))[0]?.name).toBe('Updated deck');
 });
 
+test('separate decks may share a name without overwriting either ID', async () => {
+  const app = createApplication(makeRepositories(), fixedClock, sequenceIds());
+  const input = {
+    name: 'Practice',
+    description: '',
+    language: languageTag('en'),
+    textAlignment: 'ltr' as const,
+    typographySize: 'medium' as const,
+  };
+  const first = await app.createDeck(input);
+  const second = await app.createDeck(input);
+  expect(first.id).not.toBe(second.id);
+  expect((await app.listDecks()).map((deck) => deck.id)).toEqual([first.id, second.id]);
+});
+
 test('use cases reject missing parents and translate unexpected adapter failures', async () => {
   const repositories = makeRepositories();
   const app = createApplication(repositories, fixedClock, sequenceIds());
@@ -149,9 +164,33 @@ test('development seeding is explicit, small and idempotent', async () => {
   await seedDevelopmentData(repositories);
   await seedDevelopmentData(repositories);
   expect(await repositories.decks.list()).toHaveLength(3);
+  expect((await repositories.decks.list()).map((deck) => deck.typographySize)).toEqual([
+    'small',
+    'medium',
+    'large',
+  ]);
   expect(await repositories.cards.listByDeck('everyday-phrases')).toHaveLength(2);
   expect((await repositories.cards.listByDeck('travel-basics'))[0]?.examples).toEqual([]);
   expect(await repositories.reviews.listEvents()).toHaveLength(2);
   expect((await repositories.reviews.getState('phrase-hello'))?.box).toBe(3);
   expect((await repositories.settings.get())?.theme).toBe('system');
+});
+
+test('development seed fills only missing review events when partially seeded', async () => {
+  const repositories = makeRepositories();
+  await repositories.reviews.addEvent({
+    id: 'seed-review-2',
+    cardId: 'phrase-hello',
+    deckId: 'everyday-phrases',
+    previousBox: 2,
+    newBox: 3,
+    result: 'success',
+    reviewedAt: makeDeck().createdAt,
+    studySessionId: null,
+  });
+  await seedDevelopmentData(repositories);
+  expect((await repositories.reviews.listEvents()).map((event) => event.id).sort()).toEqual([
+    'seed-review-1',
+    'seed-review-2',
+  ]);
 });

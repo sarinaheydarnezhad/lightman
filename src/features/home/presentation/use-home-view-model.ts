@@ -9,6 +9,6 @@ export function useHomeViewModel() {
     greeting: 'A little practice, every day.',
     cardCount: resource.data?.cardCount ?? 0,
     reviewCount: resource.data?.reviewCount ?? 0,
-    recentDecks: resource.data?.decks.slice(0, 2) ?? [],
+    featuredDecks: resource.data?.decks.slice(0, 2) ?? [],
   };
 }

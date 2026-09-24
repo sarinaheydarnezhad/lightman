@@ -1,8 +1,19 @@
 import { useCallback } from 'react';
 import { application } from '@/core/composition/application';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
+import { sortDecks, type DeckSort } from './deck-presentation';
 
-export function useDecksViewModel(search = '') {
+/** Screen commands are routed through the feature boundary; only composition binds adapters. */
+export function useDeckActions() {
+  return {
+    get: application.getDeck,
+    create: application.createDeck,
+    update: application.updateDeck,
+    archive: application.archiveDeck,
+  };
+}
+
+export function useDecksViewModel(search = '', sort: DeckSort = 'recently-updated') {
   const resource = useFocusedResource(
     useCallback(async () => {
       const [decks, all] = await Promise.all([
@@ -10,16 +21,18 @@ export function useDecksViewModel(search = '') {
         application.listDecks(),
       ]);
       return {
-        decks: await Promise.all(
-          decks.map(async (deck) => ({
-            ...deck,
-            title: deck.name,
-            cardCount: (await application.listCardsForDeck(deck.id)).length,
-          })),
+        decks: sortDecks(
+          await Promise.all(
+            decks.map(async (deck) => ({
+              ...deck,
+              cardCount: (await application.listCardsForDeck(deck.id)).length,
+            })),
+          ),
+          sort,
         ),
         totalCount: all.length,
       };
-    }, [search]),
+    }, [search, sort]),
   );
   return {
     ...resource,

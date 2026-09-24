@@ -12,13 +12,13 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useHomeViewModel } from './use-home-view-model';
+import { languageLabel } from '@/features/decks/presentation/deck-presentation';
 
 export function HomeScreen() {
   const home = useHomeViewModel();
   const metrics = [
     { label: 'Cards', value: home.cardCount },
     { label: 'Reviews recorded', value: home.reviewCount },
-    { label: 'Current streak', value: '—' },
   ];
 
   return (
@@ -31,7 +31,7 @@ export function HomeScreen() {
 
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Today’s study
+            Your collection
           </Text>
           {home.loading ? <LoadingState label="Loading study overview" /> : null}
           {home.error ? (
@@ -56,9 +56,9 @@ export function HomeScreen() {
 
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Continue studying
+            Your decks
           </Text>
-          {home.recentDecks.map((deck) => (
+          {home.featuredDecks.map((deck) => (
             <Card
               key={deck.id}
               variant="interactive"
@@ -71,10 +71,13 @@ export function HomeScreen() {
               <Text variant="headingSmall">{deck.name}</Text>
               <Text tone="secondary">{deck.description}</Text>
               <Text tone="tertiary" variant="caption">
-                {deck.language}
+                {languageLabel(deck.language)}
               </Text>
             </Card>
           ))}
+          {!home.loading && !home.error && home.featuredDecks.length === 0 ? (
+            <Text tone="secondary">Create a deck to keep your learning in one place.</Text>
+          ) : null}
           <Button
             label="Browse all decks"
             variant="tertiary"

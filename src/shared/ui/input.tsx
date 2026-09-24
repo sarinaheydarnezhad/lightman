@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
@@ -12,22 +12,25 @@ type InputProps = TextInputProps & {
   disabled?: boolean;
 };
 
-export function Input({
-  label,
-  error,
-  helperText,
-  disabled,
-  editable = true,
-  multiline,
-  onFocus,
-  onBlur,
-  className,
-  style,
-  accessibilityLabel,
-  accessibilityHint,
-  keyboardAppearance,
-  ...props
-}: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  {
+    label,
+    error,
+    helperText,
+    disabled,
+    editable = true,
+    multiline,
+    onFocus,
+    onBlur,
+    className,
+    style,
+    accessibilityLabel,
+    accessibilityHint,
+    keyboardAppearance,
+    ...props
+  }: InputProps,
+  ref,
+) {
   const colors = useThemeColors();
   const mode = useThemeMode();
   const [focused, setFocused] = useState(false);
@@ -36,6 +39,7 @@ export function Input({
     <View className="gap-sm">
       <Text variant="labelMedium">{label}</Text>
       <TextInput
+        ref={ref}
         {...props}
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={accessibilityHint ?? error ?? helperText}
@@ -69,4 +73,4 @@ export function Input({
       ) : null}
     </View>
   );
-}
+});

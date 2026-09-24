@@ -17,6 +17,7 @@ export async function seedDevelopmentData({
       description: 'Short phrases for everyday conversations.',
       language: languageTag('en'),
       textAlignment: 'ltr' as const,
+      typographySize: 'small' as const,
     },
     {
       id: 'word-roots',
@@ -24,6 +25,7 @@ export async function seedDevelopmentData({
       description: 'Recognize familiar patterns in new words.',
       language: languageTag('en'),
       textAlignment: 'center' as const,
+      typographySize: 'medium' as const,
     },
     {
       id: 'travel-basics',
@@ -31,13 +33,13 @@ export async function seedDevelopmentData({
       description: 'Useful words for getting around.',
       language: languageTag('fa-IR'),
       textAlignment: 'rtl' as const,
+      typographySize: 'large' as const,
     },
   ];
   for (const deck of samples) {
     if (!(await decks.getById(deck.id)))
       await decks.create({
         ...deck,
-        typographySize: 'medium',
         createdAt,
         updatedAt: createdAt,
         archivedAt: null,
@@ -112,8 +114,6 @@ export async function seedDevelopmentData({
     (await reviews.listEvents({ cardId: 'phrase-hello' })).map((event) => event.id),
   );
   if (!existingEventIds.has('seed-review-1')) {
-  }
-  if (!existingEventIds.has('seed-review-2')) {
     await reviews.addEvent({
       id: 'seed-review-1',
       cardId: 'phrase-hello',
@@ -124,6 +124,8 @@ export async function seedDevelopmentData({
       reviewedAt: createdAt,
       studySessionId: null,
     });
+  }
+  if (!existingEventIds.has('seed-review-2')) {
     await reviews.addEvent({
       id: 'seed-review-2',
       cardId: 'phrase-hello',

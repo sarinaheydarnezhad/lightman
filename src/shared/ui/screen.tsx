@@ -3,7 +3,12 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { layout } from '@/shared/theme/tokens';
 
-type ScreenProps = PropsWithChildren<{ scroll?: boolean; testID?: string; edges?: Edge[] }>;
+type ScreenProps = PropsWithChildren<{
+  scroll?: boolean;
+  keyboardAware?: boolean;
+  testID?: string;
+  edges?: Edge[];
+}>;
 
 const defaultEdges: Edge[] = ['top', 'bottom', 'left', 'right'];
 const contentStyle = {
@@ -12,13 +17,21 @@ const contentStyle = {
   alignSelf: 'center' as const,
 };
 
-export function Screen({ children, scroll = false, testID, edges = defaultEdges }: ScreenProps) {
+export function Screen({
+  children,
+  scroll = false,
+  keyboardAware = false,
+  testID,
+  edges = defaultEdges,
+}: ScreenProps) {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={edges} testID={testID}>
       {scroll ? (
         <ScrollView
           contentContainerClassName="flex-grow items-center"
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={keyboardAware}
         >
           <View className="w-full flex-1 px-xl py-xl" style={contentStyle}>
             {children}

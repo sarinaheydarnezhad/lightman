@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
@@ -20,6 +20,7 @@ import VocabularyHelper from '@/app/vocabulary/helper';
 import Appearance from '@/app/settings/appearance';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
+import { application } from '@/core/composition/application';
 import { useUiStore } from '@/store/ui-store';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -85,7 +86,7 @@ test('selecting a tab updates its accessible selected state', async () => {
 test('a deck opens its typed secondary route', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/decks' });
   await screen.findByRole('header', { name: 'Decks' });
-  fireEvent.press(screen.getByRole('button', { name: 'Open Everyday phrases deck' }));
+  fireEvent.press(screen.getByRole('button', { name: /Open Everyday phrases deck/ }));
   expect(await screen.findByRole('header', { name: 'Everyday phrases' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/decks/everyday-phrases');
 });
@@ -96,6 +97,55 @@ test('create deck opens its secondary route', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
   expect(await screen.findByText('Create a deck')).toBeTruthy();
   expect(rendered.getPathname()).toBe('/decks/create');
+});
+
+test('deck search ignores case and surrounding whitespace and shows a no-match state', async () => {
+  renderRouter(routes, { initialUrl: '/decks' });
+  await screen.findByRole('button', { name: /Open Everyday phrases deck/ });
+  fireEvent.changeText(screen.getByLabelText('Search decks'), '  EVERYDAY  ');
+  expect(await screen.findByRole('button', { name: /Open Everyday phrases deck/ })).toBeTruthy();
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: /Open Travel basics deck/ })).toBeNull(),
+  );
+  fireEvent.changeText(screen.getByLabelText('Search decks'), 'unlikely-deck-name');
+  expect(await screen.findByRole('header', { name: 'No matching decks' })).toBeTruthy();
+});
+
+test('the empty collection invites creation', async () => {
+  const list = jest.spyOn(application, 'listDecks').mockResolvedValue([]);
+  try {
+    renderRouter(routes, { initialUrl: '/decks' });
+    expect(await screen.findByRole('header', { name: 'No decks yet' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Create deck' })).toBeTruthy();
+  } finally {
+    list.mockRestore();
+  }
+});
+
+test('create form shows field errors and keeps the user on the form', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/create' });
+  await screen.findByRole('header', { name: 'Create a deck' });
+  fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
+  expect(await screen.findByText('Enter a deck name.')).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Deck name'), 'A valid deck');
+  fireEvent.press(screen.getByRole('button', { name: 'Other' }));
+  fireEvent.changeText(screen.getByLabelText('Language tag'), 'invalid tag!');
+  fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
+  expect(await screen.findByText('Enter a valid language tag, such as es or fr-CA.')).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/decks/create');
+});
+
+test('editing a deck retains its regional language and updates the detail screen', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/travel-basics' });
+  await screen.findByRole('header', { name: 'Travel basics' });
+  fireEvent.press(screen.getByRole('button', { name: 'Edit deck' }));
+  await screen.findByRole('header', { name: 'Edit Travel basics' });
+  expect(screen.getByRole('button', { name: 'Persian', selected: true })).toBeTruthy();
+  fireEvent.changeText(screen.getByLabelText('Description (optional)'), 'Updated for travel.');
+  fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
+  expect(await screen.findByText('Updated for travel.')).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/decks/travel-basics');
+  expect((await application.getDeck('travel-basics')).language).toBe('fa-IR');
 });
 
 test('appearance selection uses the existing session preference', async () => {
@@ -140,10 +190,13 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     await screen.findByRole('header', { name: 'Create a deck' });
     fireEvent.changeText(screen.getByLabelText('Deck name'), 'Flow deck');
     fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
+    expect(await screen.findByRole('button', { name: /Open Flow deck deck/ })).toBeTruthy();
+    expect(rendered.getPathname()).toBe('/decks');
+    fireEvent.press(screen.getByRole('button', { name: /Open Flow deck deck/ }));
     expect(await screen.findByRole('header', { name: 'Flow deck' })).toBeTruthy();
     const deckId = rendered.getPathname().split('/').at(-1)!;
 
-    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Add card' }));
     await screen.findByRole('header', { name: 'Create a card' });
     fireEvent.changeText(screen.getByLabelText('Front text'), 'Flow word');
     fireEvent.changeText(screen.getByLabelText('Meaning'), 'Initial meaning');
@@ -157,7 +210,7 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
     expect(await screen.findByRole('header', { name: 'Flow deck' })).toBeTruthy();
-    expect(screen.getByText('0 cards')).toBeTruthy();
+    expect(screen.getAllByText('No cards yet').length).toBeGreaterThan(0);
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit deck' }));
     await screen.findByRole('header', { name: 'Edit Flow deck' });
@@ -165,9 +218,14 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
     expect(await screen.findByRole('header', { name: 'Updated flow deck' })).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Archive deck' }));
+    expect(screen.getByText('It will be removed from your active deck list.')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Keep deck' }));
+    expect(screen.getByRole('header', { name: 'Updated flow deck' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Archive deck' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
     expect(await screen.findByRole('header', { name: 'Decks' })).toBeTruthy();
     expect(rendered.getPathname()).toBe('/decks');
-    expect(screen.queryByRole('button', { name: 'Open Updated flow deck deck' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Open Updated flow deck deck/ })).toBeNull();
     expect(deckId).toBeTruthy();
   } finally {
     idMock.mockRestore();
