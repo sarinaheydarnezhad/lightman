@@ -6,6 +6,8 @@ import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
+import { EmptyState } from '@/shared/ui/empty-state';
+import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
@@ -14,9 +16,9 @@ import { useHomeViewModel } from './use-home-view-model';
 export function HomeScreen() {
   const home = useHomeViewModel();
   const metrics = [
-    { label: 'Cards due', value: home.cardsDue },
-    { label: 'Reviewed today', value: home.reviewedToday },
-    { label: 'Current streak', value: home.currentStreak },
+    { label: 'Cards', value: home.cardCount },
+    { label: 'Reviews recorded', value: home.reviewCount },
+    { label: 'Current streak', value: '—' },
   ];
 
   return (
@@ -24,13 +26,17 @@ export function HomeScreen() {
       <View className="gap-2xl">
         <View className="gap-lg">
           <ScreenHeader title="Welcome back" description={home.greeting} />
-          <Badge label="Sample values" />
+          <Badge label="Study overview" />
         </View>
 
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
             Today’s study
           </Text>
+          {home.loading ? <LoadingState label="Loading study overview" /> : null}
+          {home.error ? (
+            <EmptyState title="Unable to load overview" description={home.error} />
+          ) : null}
           <View className="flex-row flex-wrap gap-sm">
             {metrics.map((metric) => (
               <Card
@@ -56,16 +62,16 @@ export function HomeScreen() {
             <Card
               key={deck.id}
               variant="interactive"
-              accessibilityLabel={`Open ${deck.title} deck`}
+              accessibilityLabel={`Open ${deck.name} deck`}
               onPress={() =>
                 router.push({ pathname: '/decks/[deckId]', params: { deckId: deck.id } })
               }
               className="gap-sm"
             >
-              <Text variant="headingSmall">{deck.title}</Text>
+              <Text variant="headingSmall">{deck.name}</Text>
               <Text tone="secondary">{deck.description}</Text>
               <Text tone="tertiary" variant="caption">
-                {deck.activityLabel}
+                {deck.language}
               </Text>
             </Card>
           ))}

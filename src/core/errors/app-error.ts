@@ -1,4 +1,5 @@
-export type AppErrorCode = 'validation' | 'not-found' | 'unavailable' | 'unexpected';
+export type AppErrorCode =
+  'validation' | 'not-found' | 'conflict' | 'persistence' | 'unavailable' | 'unexpected';
 
 export class AppError extends Error {
   constructor(

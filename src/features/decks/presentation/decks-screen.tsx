@@ -10,6 +10,7 @@ import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { IconButton } from '@/shared/ui/icon-button';
 import { Input } from '@/shared/ui/input';
+import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
@@ -17,7 +18,7 @@ import { useDecksViewModel } from './use-decks-view-model';
 
 export function DecksScreen() {
   const [search, setSearch] = useState('');
-  const { decks, totalCount } = useDecksViewModel(search);
+  const { decks, totalCount, error, loading, refresh } = useDecksViewModel(search);
 
   return (
     <Screen scroll edges={tabScreenEdges}>
@@ -31,12 +32,15 @@ export function DecksScreen() {
         />
         <View className="flex-row items-center justify-between gap-sm">
           <Text tone="secondary" variant="labelMedium">
-            {decks.length} of {totalCount} sample decks
+            {decks.length} of {totalCount} decks
           </Text>
           <IconButton icon={ListFilter} label="Sort and filter decks (coming later)" disabled />
         </View>
 
-        {decks.length ? (
+        {loading && !decks.length ? <LoadingState label="Loading decks" /> : null}
+        {error ? <EmptyState title="Unable to load decks" description={error} /> : null}
+        {error ? <Button label="Try again" onPress={refresh} /> : null}
+        {!loading && !error && decks.length ? (
           <View className="gap-md">
             {decks.map((deck) => (
               <Card
@@ -50,16 +54,16 @@ export function DecksScreen() {
               >
                 <Text variant="headingSmall">{deck.title}</Text>
                 <Text tone="secondary">{deck.description}</Text>
-                <Badge label={`${deck.cardCount} sample cards`} />
+                <Badge label={`${deck.cardCount} cards`} />
               </Card>
             ))}
           </View>
-        ) : (
+        ) : !loading && !error ? (
           <EmptyState
             title={search ? 'No matching decks' : 'No decks yet'}
             description={search ? 'Try a different search.' : 'Your decks will appear here.'}
           />
-        )}
+        ) : null}
         <Button label="Create deck" onPress={() => router.push('/decks/create')} />
       </View>
     </Screen>

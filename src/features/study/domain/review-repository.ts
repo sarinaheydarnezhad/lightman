@@ -1,11 +1,9 @@
-export interface Review {
-  readonly id: string;
-  readonly cardId: string;
-  readonly reviewedAt: string;
-  readonly outcome: 'recalled' | 'forgotten';
-}
+import type { CardReviewState, ReviewEvent } from './review';
 
 export interface ReviewRepository {
-  listByCard(cardId: string): Promise<Review[]>;
-  save(review: Review): Promise<void>;
+  getState(cardId: string): Promise<CardReviewState | null>;
+  saveState(state: CardReviewState): Promise<CardReviewState>;
+  addEvent(event: ReviewEvent): Promise<ReviewEvent>;
+  record(event: ReviewEvent, state: CardReviewState): Promise<void>;
+  listEvents(options?: { cardId?: string; deckId?: string }): Promise<ReviewEvent[]>;
 }

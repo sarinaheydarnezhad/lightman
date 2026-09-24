@@ -2,6 +2,8 @@ import type { Deck } from './deck';
 
 export interface DeckRepository {
   getById(id: string): Promise<Deck | null>;
-  list(): Promise<Deck[]>;
-  save(deck: Deck): Promise<void>;
+  list(options?: { search?: string; includeArchived?: boolean }): Promise<Deck[]>;
+  create(deck: Deck): Promise<Deck>;
+  update(deck: Deck): Promise<Deck>;
+  archive(id: string, archivedAt: Deck['archivedAt']): Promise<Deck>;
 }

@@ -1,13 +1,14 @@
-import { DEMO_DECKS } from '@/shared/demo/decks';
-
-const DEMO_HOME_VIEW_MODEL = {
-  greeting: 'A little practice, every day.',
-  cardsDue: 12,
-  reviewedToday: 8,
-  currentStreak: 4,
-  recentDecks: DEMO_DECKS.slice(0, 2),
-};
+import { useCallback } from 'react';
+import { application } from '@/core/composition/application';
+import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 
 export function useHomeViewModel() {
-  return DEMO_HOME_VIEW_MODEL;
+  const resource = useFocusedResource(useCallback(() => application.getHomeSummary(), []));
+  return {
+    ...resource,
+    greeting: 'A little practice, every day.',
+    cardCount: resource.data?.cardCount ?? 0,
+    reviewCount: resource.data?.reviewCount ?? 0,
+    recentDecks: resource.data?.decks.slice(0, 2) ?? [],
+  };
 }

@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 
+import { application } from '@/core/composition/application';
 import { useUiStore } from '@/store/ui-store';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
@@ -12,6 +14,7 @@ import { appearanceChoices } from './appearance-options';
 export function AppearanceScreen() {
   const preference = useUiStore((state) => state.themePreference);
   const setPreference = useUiStore((state) => state.setThemePreference);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <Screen scroll edges={stackScreenEdges}>
@@ -24,10 +27,23 @@ export function AppearanceScreen() {
               label={label}
               variant={value === preference ? 'primary' : 'secondary'}
               accessibilityState={{ selected: value === preference }}
-              onPress={() => setPreference(value)}
+              onPress={() => {
+                void application
+                  .updateSettings({ theme: value })
+                  .then(() => {
+                    setPreference(value);
+                    setError(null);
+                  })
+                  .catch(() => setError('Unable to save appearance. Please try again.'));
+              }}
             />
           ))}
         </View>
+        {error ? (
+          <Text tone="error" accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
         <Text variant="bodySmall" tone="secondary">
           Your choice lasts until you close the app. System follows your device’s light or dark
           mode; OLED uses a true black background.

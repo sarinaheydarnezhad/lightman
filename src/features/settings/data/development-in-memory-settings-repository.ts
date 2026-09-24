@@ -1,14 +1,16 @@
-import type { SettingsRepository, StudySettings } from '../domain/settings-repository';
+import { validateUserSettings, type UserSettings } from '../domain/user-settings';
+import type { SettingsRepository } from '../domain/settings-repository';
 
 /** Temporary session-only adapter. */
-export class DevelopmentInMemorySettingsRepository implements SettingsRepository {
-  private settings: StudySettings | null = null;
+export class InMemorySettingsRepository implements SettingsRepository {
+  private settings: UserSettings | null = null;
 
-  async get(): Promise<StudySettings | null> {
+  async get(): Promise<UserSettings | null> {
     return this.settings ? { ...this.settings } : null;
   }
 
-  async save(settings: StudySettings): Promise<void> {
-    this.settings = { ...settings };
+  async update(settings: UserSettings): Promise<UserSettings> {
+    this.settings = validateUserSettings(settings);
+    return { ...this.settings };
   }
 }

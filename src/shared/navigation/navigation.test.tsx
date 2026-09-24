@@ -19,6 +19,7 @@ import StudySession from '@/app/study/[sessionId]';
 import VocabularyHelper from '@/app/vocabulary/helper';
 import Appearance from '@/app/settings/appearance';
 import DesignSystem from '@/app/design-system';
+import { idGenerator } from '@/core/infrastructure/platform';
 import { useUiStore } from '@/store/ui-store';
 
 jest.mock('react-native-safe-area-context', () => {
@@ -103,8 +104,8 @@ test('appearance selection uses the existing session preference', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'Theme, Current: Follow system' }));
   expect(await screen.findByRole('header', { name: 'Appearance' })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'OLED' }));
+  expect(await screen.findByRole('button', { name: 'OLED', selected: true })).toBeTruthy();
   expect(useUiStore.getState().themePreference).toBe('oled');
-  expect(screen.getByRole('button', { name: 'OLED', selected: true })).toBeTruthy();
 });
 
 test('an unknown route shows a helpful not-found screen', async () => {
@@ -128,3 +129,47 @@ test('route errors hide implementation details and allow retry', () => {
     errorLog.mockRestore();
   }
 });
+
+test('UI creates, edits and archives a deck and its card through the in-memory application', async () => {
+  let nextId = 0;
+  const idMock = jest.spyOn(idGenerator, 'create').mockImplementation(() => `flow-${++nextId}`);
+  try {
+    const rendered = renderRouter(routes, { initialUrl: '/decks' });
+    await screen.findByRole('header', { name: 'Decks' });
+    fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
+    await screen.findByRole('header', { name: 'Create a deck' });
+    fireEvent.changeText(screen.getByLabelText('Deck name'), 'Flow deck');
+    fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
+    expect(await screen.findByRole('header', { name: 'Flow deck' })).toBeTruthy();
+    const deckId = rendered.getPathname().split('/').at(-1)!;
+
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    await screen.findByRole('header', { name: 'Create a card' });
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'Flow word');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Initial meaning');
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    expect(await screen.findByRole('header', { name: 'Flow word' })).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
+    await screen.findByRole('header', { name: 'Edit card' });
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Updated meaning');
+    fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
+    expect(await screen.findByText('Updated meaning')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
+    expect(await screen.findByRole('header', { name: 'Flow deck' })).toBeTruthy();
+    expect(screen.getByText('0 cards')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit deck' }));
+    await screen.findByRole('header', { name: 'Edit Flow deck' });
+    fireEvent.changeText(screen.getByLabelText('Deck name'), 'Updated flow deck');
+    fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
+    expect(await screen.findByRole('header', { name: 'Updated flow deck' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Archive deck' }));
+    expect(await screen.findByRole('header', { name: 'Decks' })).toBeTruthy();
+    expect(rendered.getPathname()).toBe('/decks');
+    expect(screen.queryByRole('button', { name: 'Open Updated flow deck deck' })).toBeNull();
+    expect(deckId).toBeTruthy();
+  } finally {
+    idMock.mockRestore();
+  }
+}, 120_000);

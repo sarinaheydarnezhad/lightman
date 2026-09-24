@@ -1,8 +1,6 @@
-export interface StudySettings {
-  readonly dailyGoal: number;
-}
+import type { UserSettings } from './user-settings';
 
 export interface SettingsRepository {
-  get(): Promise<StudySettings | null>;
-  save(settings: StudySettings): Promise<void>;
+  get(): Promise<UserSettings | null>;
+  update(settings: UserSettings): Promise<UserSettings>;
 }

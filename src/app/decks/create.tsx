@@ -1,15 +1,5 @@
-import { router } from 'expo-router';
-
-import { Button } from '@/shared/ui/button';
-import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
+import { DeckEditorScreen } from '@/features/decks/presentation/deck-editor-screen';
 
 export default function CreateDeckRoute() {
-  return (
-    <FeaturePlaceholder
-      title="Create a deck"
-      description="Deck creation will be available in a future update."
-    >
-      <Button label="Browse decks" variant="secondary" onPress={() => router.replace('/decks')} />
-    </FeaturePlaceholder>
-  );
+  return <DeckEditorScreen />;
 }
