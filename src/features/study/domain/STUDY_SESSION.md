@@ -1,0 +1,8 @@
+# Study queues and sessions
+
+- A queue contains active cards from active decks whose SRS due date is on or before the requested local calendar date. The SRS due sorter determines date, box, then card ID order. Cards without review state are an error, not silently skipped.
+- Study scope is all active decks or one active deck. At start the session copies compact queue items; new cards and changed due dates do not change that snapshot.
+- An initial failure is scheduled by ReviewCard as usual and appended once to this session's retry queue. Retries run after all initial presentations, in first-failure order. A failed retry cannot enqueue another retry. A card appears at most twice in one session, but remains due for later sessions if its final review failed.
+- Each presentation has a session-local token containing its index. The answer must match both the current card and token. Session submission guards an answer in flight and rejects stale tokens. Reviews are historical facts in ReviewRepository; session progress is active workflow state.
+- An empty session completes immediately. Cancellation discards the remaining workload while preserving submitted reviews. Completing or cancelling releases the single active-session slot. Session duration uses instants; due dates use local calendar dates.
+- ReviewRepository records each review state and event together. Session state is stored separately. A future database implementation should commit a review and its session advance together if cross-repository atomicity is required. A queued card archived mid-session currently yields a not-found review error; the user may cancel that session.

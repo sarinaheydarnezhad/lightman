@@ -6,6 +6,7 @@ import type { Deck } from '@/features/decks/domain/deck';
 import { InMemoryCardRepository } from '@/features/study/data/development-in-memory-card-repository';
 import type { Card } from '@/features/study/domain/card';
 import { InMemoryReviewRepository } from '@/features/study/data/development-in-memory-review-repository';
+import { InMemoryStudySessionRepository } from '@/features/study/data/development-in-memory-study-session-repository';
 import type { CardReviewState, ReviewEvent } from '@/features/study/domain/review';
 import { InMemorySettingsRepository } from '@/features/settings/data/development-in-memory-settings-repository';
 import type { UserSettings } from '@/features/settings/domain/user-settings';
@@ -88,6 +89,7 @@ export function makeRepositories(): Repositories {
     decks: new InMemoryDeckRepository(),
     cards: new InMemoryCardRepository(),
     reviews: new InMemoryReviewRepository(),
+    sessions: new InMemoryStudySessionRepository(),
     settings: new InMemorySettingsRepository(),
   };
 }

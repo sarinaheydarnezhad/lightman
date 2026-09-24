@@ -18,9 +18,10 @@ test('domain and application stay independent of platform and adapters; presenta
   const presentations = sourceFiles(features).filter((file) =>
     file.includes(`${sep}presentation${sep}`),
   );
-  const application = sourceFiles(join(source, 'core', 'application')).filter(
-    (file) => !file.endsWith('.test.ts'),
-  );
+  const application = [
+    ...sourceFiles(join(source, 'core', 'application')),
+    ...sourceFiles(features).filter((file) => file.includes(`${sep}application${sep}`)),
+  ].filter((file) => !file.endsWith('.test.ts'));
   for (const file of [...domains, ...application]) {
     const imports = readFileSync(file, 'utf8');
     expect(imports).not.toMatch(
@@ -29,6 +30,9 @@ test('domain and application stay independent of platform and adapters; presenta
   }
   for (const file of presentations) {
     expect(readFileSync(file, 'utf8')).not.toMatch(/from ['"][^'"]*\/data\//);
+    expect(readFileSync(file, 'utf8')).not.toMatch(
+      /from ['"][^'"]*(leitner-srs|review-repository|study-session-workflow)/,
+    );
   }
 });
 

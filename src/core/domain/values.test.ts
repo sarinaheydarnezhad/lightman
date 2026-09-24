@@ -4,6 +4,7 @@ import {
   addCalendarDays,
   calendarDate,
   calendarDateAtInstant,
+  durationInMilliseconds,
   instant,
   languageTag,
   localTime,
@@ -49,4 +50,11 @@ test('local review days follow the supplied IANA time zone at DST and travel bou
   expect(calendarDateAtInstant(travel, 'Asia/Tehran')).toBe('2026-09-25');
   expect(() => calendarDateAtInstant(travel, 'Not/A_Time_Zone')).toThrow(AppError);
   expect(() => addCalendarDays(calendarDate('2026-09-24'), 1.5)).toThrow(AppError);
+});
+
+test('session duration uses instants and rejects reverse time', () => {
+  const start = instant('2026-09-24T10:00:00.000Z');
+  const end = instant('2026-09-24T10:05:00.000Z');
+  expect(durationInMilliseconds(start, end)).toBe(300000);
+  expect(() => durationInMilliseconds(end, start)).toThrow(AppError);
 });

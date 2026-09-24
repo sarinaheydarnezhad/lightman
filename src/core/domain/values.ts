@@ -60,6 +60,14 @@ export function calendarDateAtInstant(value: Instant, timeZone: string): Calenda
   }
 }
 
+/** Workflow durations use instants, independently of review calendar dates. */
+export function durationInMilliseconds(start: Instant, end: Instant): number {
+  instant(start);
+  instant(end);
+  if (end < start) throw new AppError('validation', 'End time cannot precede start time.');
+  return Date.parse(end) - Date.parse(start);
+}
+
 export function localTime(value: string): LocalTime {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
     throw new AppError('validation', 'Local time must use HH:mm (24-hour time).');
