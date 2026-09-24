@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { BarChart3, BookOpen, House, Settings2, SquareStack } from 'lucide-react-native';
 
 import { useThemeColors } from '@/shared/theme/theme-provider';
+import { typography } from '@/shared/theme/tokens';
 
 export default function TabsLayout() {
   const colors = useThemeColors();
@@ -12,6 +13,9 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.secondaryText,
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarLabelStyle: { fontSize: Number(typography.caption[0]) },
+        tabBarHideOnKeyboard: true,
+        lazy: true,
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -19,35 +23,48 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
+          tabBarAccessibilityLabel: 'Home tab',
+          tabBarIcon: ({ color, size }) => <House color={color} size={size} accessible={false} />,
         }}
       />
       <Tabs.Screen
         name="decks"
         options={{
           title: 'Decks',
-          tabBarIcon: ({ color, size }) => <SquareStack color={color} size={size} />,
+          tabBarAccessibilityLabel: 'Decks tab',
+          tabBarIcon: ({ color, size }) => (
+            <SquareStack color={color} size={size} accessible={false} />
+          ),
         }}
       />
       <Tabs.Screen
         name="study"
         options={{
           title: 'Study',
-          tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} />,
+          tabBarAccessibilityLabel: 'Study tab',
+          tabBarIcon: ({ color, size }) => (
+            <BookOpen color={color} size={size} accessible={false} />
+          ),
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
           title: 'Analytics',
-          tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={size} />,
+          tabBarAccessibilityLabel: 'Analytics tab',
+          tabBarIcon: ({ color, size }) => (
+            <BarChart3 color={color} size={size} accessible={false} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Settings2 color={color} size={size} />,
+          tabBarAccessibilityLabel: 'Settings tab',
+          tabBarIcon: ({ color, size }) => (
+            <Settings2 color={color} size={size} accessible={false} />
+          ),
         }}
       />
     </Tabs>

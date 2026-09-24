@@ -28,7 +28,9 @@ test('button supports normal, disabled, loading and destructive states', () => {
 });
 
 test('input exposes label, helper or error, editable state and multiline configuration', () => {
-  const { rerender } = render(<Input label="Word" helperText="Optional" placeholder="Enter a word" />);
+  const { rerender } = render(
+    <Input label="Word" helperText="Optional" placeholder="Enter a word" />,
+  );
   expect(screen.getByLabelText('Word')).toBeTruthy();
   expect(screen.getByText('Optional')).toBeTruthy();
 
@@ -46,19 +48,38 @@ test('icon-only buttons expose an accessible label and disabled state', () => {
 });
 
 test('tabs expose selected and disabled semantics', () => {
-  render(<><Tab label="Meaning" active /><Tab label="Examples" /><Tab label="Unavailable" disabled /></>);
+  render(
+    <>
+      <Tab label="Meaning" active />
+      <Tab label="Examples" />
+      <Tab label="Unavailable" disabled />
+    </>,
+  );
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Examples', selected: false })).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Unavailable', disabled: true })).toBeTruthy();
 });
 
 test('screen renders content inside a safe area in both layouts', () => {
-  const initialMetrics = { frame: { x: 0, y: 0, width: 320, height: 640 }, insets: { top: 24, right: 0, bottom: 16, left: 0 } };
+  const initialMetrics = {
+    frame: { x: 0, y: 0, width: 320, height: 640 },
+    insets: { top: 24, right: 0, bottom: 16, left: 0 },
+  };
   const { rerender } = render(
-    <SafeAreaProvider initialMetrics={initialMetrics}><Screen testID="screen"><Text>Content</Text></Screen></SafeAreaProvider>,
+    <SafeAreaProvider initialMetrics={initialMetrics}>
+      <Screen testID="screen">
+        <Text>Content</Text>
+      </Screen>
+    </SafeAreaProvider>,
   );
   expect(screen.getByTestId('screen')).toBeTruthy();
   expect(screen.getByText('Content')).toBeTruthy();
-  rerender(<SafeAreaProvider initialMetrics={initialMetrics}><Screen scroll testID="screen"><Text>Scrollable</Text></Screen></SafeAreaProvider>);
+  rerender(
+    <SafeAreaProvider initialMetrics={initialMetrics}>
+      <Screen scroll testID="screen">
+        <Text>Scrollable</Text>
+      </Screen>
+    </SafeAreaProvider>,
+  );
   expect(screen.getByText('Scrollable')).toBeTruthy();
 });

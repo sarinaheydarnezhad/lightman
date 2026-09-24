@@ -12,8 +12,11 @@ const appearance = {
 };
 
 const foreground = {
-  neutral: 'primaryText', primary: 'primaryForeground', success: 'successForeground',
-  error: 'errorForeground', warning: 'warningForeground',
+  neutral: 'primaryText',
+  primary: 'primaryForeground',
+  success: 'successForeground',
+  error: 'errorForeground',
+  warning: 'warningForeground',
 } as const;
 
 export function Badge({
@@ -25,7 +28,9 @@ export function Badge({
 }) {
   return (
     <View className={`self-start rounded-full border px-md py-xs ${appearance[variant]}`}>
-      <Text variant="caption" tone={foreground[variant]}>{label}</Text>
+      <Text variant="caption" tone={foreground[variant]}>
+        {label}
+      </Text>
     </View>
   );
 }

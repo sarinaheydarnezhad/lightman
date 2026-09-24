@@ -40,15 +40,21 @@ test('foreground and background semantic pairs remain readable in every theme', 
 
   for (const colors of Object.values(palette)) {
     const pairs = [
-      [colors.primaryText, colors.background], [colors.secondaryText, colors.background],
-      [colors.tertiaryText, colors.background], [colors.primaryText, colors.surface],
-      [colors.primaryForeground, colors.primary], [colors.successForeground, colors.success],
-      [colors.errorForeground, colors.error], [colors.warningForeground, colors.warning],
+      [colors.primaryText, colors.background],
+      [colors.secondaryText, colors.background],
+      [colors.tertiaryText, colors.background],
+      [colors.primaryText, colors.surface],
+      [colors.primaryForeground, colors.primary],
+      [colors.successForeground, colors.success],
+      [colors.errorForeground, colors.error],
+      [colors.warningForeground, colors.warning],
     ];
     for (const [foreground, background] of pairs) {
       const first = luminance(foreground!);
       const second = luminance(background!);
-      expect((Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)).toBeGreaterThanOrEqual(4.5);
+      expect(
+        (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05),
+      ).toBeGreaterThanOrEqual(4.5);
     }
   }
 });

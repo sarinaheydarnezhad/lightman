@@ -1,5 +1,6 @@
 const tokens = require('./src/shared/theme/values.json');
-const pixels = (entries) => Object.fromEntries(Object.entries(entries).map(([name, size]) => [name, `${size}px`]));
+const pixels = (entries) =>
+  Object.fromEntries(Object.entries(entries).map(([name, size]) => [name, `${size}px`]));
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

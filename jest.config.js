@@ -2,5 +2,10 @@ module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.{ts,tsx}'],
   modulePathIgnorePatterns: ['<rootDir>/.tools/'],
-  moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
+  moduleNameMapper: {
+    '^.+[.]css$': '<rootDir>/test/style-mock.js',
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^lucide-react-native$':
+      '<rootDir>/node_modules/lucide-react-native/dist/cjs/lucide-react-native.js',
+  },
 };

@@ -8,7 +8,11 @@ test('renders accessible text', () => {
 });
 
 test.each(Object.keys(typography) as TypographyVariant[])('renders the %s variant', (variant) => {
-  render(<Text variant={variant} tone="secondary">{variant}</Text>);
+  render(
+    <Text variant={variant} tone="secondary">
+      {variant}
+    </Text>,
+  );
   expect(screen.getByText(variant)).toBeTruthy();
 });
 

@@ -12,7 +12,7 @@ Install Node.js 22.13+ and pnpm 10.15.1 (for example, using Corepack), then run 
 
 ## Performance rules
 
-- Keep deck/card/review collections behind repositories, never in Zustand.
+- Keep production deck/card/review collections behind repositories, never in Zustand. The small Task 3 UI samples are isolated in `src/shared/demo`.
 - Pass identifiers or narrow selectors instead of large objects down component trees.
 - Memoize when profiling or a clear render boundary justifies it.
 - Avoid expensive render work, gesture callbacks, and animation worklets.
@@ -30,3 +30,9 @@ SDK 57's `expo-build-properties` plugin enables iOS scene support for builds mad
 The appearance preference lives only in `useUiStore` for this session. `system` resolves system light to light and system dark to dark; OLED is explicit and uses `#000000` as its base. Storage can be added at the store boundary later. Settings exposes all four preferences. In development, Settings links to `/design-system`, which previews every primitive and appearance; the route is intentionally available by direct URL for internal inspection.
 
 Core primitives live in `src/shared/ui`: `Screen`, `Text`, `Button`, `IconButton`, `Card`, `Input`, `Divider`, `Badge`, `Chip`, `Tab`, `EmptyState`, and `LoadingState`. `Screen` uses safe area insets on all edges and a fluid centered content limit for phones and tablets. `Text` and `Input` support alignment, including RTL-aware start/end text alignment in `Text`; flex row components preserve native RTL mirroring. The UI uses font scaling, roles and state for actions/tabs, labels for icon controls, and readable theme-specific semantic contrast. Full localization, persisted preference, and full accessibility/device audits remain future work.
+
+## Application shell
+
+`src/app/_layout.tsx` keeps the existing provider order: gesture root, safe area, theme, bootstrap gate, then the native stack. `src/core/bootstrap/initialize-application.ts` is the one asynchronous startup entry point; it currently completes immediately. The gate tracks boot, initializing, ready and error states, provides loading and retry screens, and never runs setup in render. Feature screens stay in their `features/*/presentation` folders; route files only compose screens and read typed route parameters. The existing five tabs use JavaScript tabs with native safe-area handling and the root stack presents secondary screens. The tab navigator owns the bottom inset; stack headers own the top inset. `src/shared/navigation/safe-area.ts` supplies the corresponding `Screen` edges so they are not counted twice.
+
+Secondary routes are `/decks/create`, `/decks/[deckId]`, `/decks/[deckId]/edit`, `/decks/[deckId]/cards/create`, `/decks/[deckId]/cards/[cardId]`, `/decks/[deckId]/cards/[cardId]/edit`, `/study/[sessionId]`, `/vocabulary/helper`, and `/settings/appearance`. Expo Router's existing typed-routes setting generates navigation types when the dev server starts; links use route literals or pathname/params objects, and dynamic screens type `useLocalSearchParams` by pathname. `src/shared/demo/decks.ts` and each feature's `use*ViewModel` module isolate temporary, in-memory display values. They have no persistence or live service connections. Analytics and study show placeholders until their future data sources exist; Settings only wires its existing session-only appearance preference.

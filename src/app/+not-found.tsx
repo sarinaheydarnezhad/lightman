@@ -1,18 +1,21 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 
+import { Button } from '@/shared/ui/button';
+import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { EmptyState } from '@/shared/ui/empty-state';
 import { Screen } from '@/shared/ui/screen';
-import { Text } from '@/shared/ui/text';
+import { View } from 'react-native';
 
 export default function NotFound() {
   return (
-    <Screen>
-      <Text variant="headingLarge" className="mb-md">Page not found</Text>
-      <Text tone="secondary" className="mb-xl">
-        The page you requested isn’t here.
-      </Text>
-      <Link href="/" className="text-labelLarge text-primary">
-        Return home
-      </Link>
+    <Screen edges={stackScreenEdges}>
+      <View className="flex-1 justify-center gap-lg">
+        <EmptyState
+          title="Page not found"
+          description="The page you requested isn't here. You can return to your study space."
+        />
+        <Button label="Return home" onPress={() => router.replace('/')} />
+      </View>
     </Screen>
   );
 }

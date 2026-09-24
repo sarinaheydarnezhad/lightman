@@ -14,19 +14,20 @@ const contentStyle = {
 
 export function Screen({ children, scroll = false, testID, edges = defaultEdges }: ScreenProps) {
   return (
-    <SafeAreaView
-      className="flex-1 bg-background"
-      edges={edges}
-      testID={testID}
-    >
+    <SafeAreaView className="flex-1 bg-background" edges={edges} testID={testID}>
       {scroll ? (
-        <ScrollView contentContainerClassName="flex-grow items-center" keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerClassName="flex-grow items-center"
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="w-full flex-1 px-xl py-xl" style={contentStyle}>
             {children}
           </View>
         </ScrollView>
       ) : (
-        <View className="flex-1 px-xl py-xl" style={contentStyle}>{children}</View>
+        <View className="flex-1 px-xl py-xl" style={contentStyle}>
+          {children}
+        </View>
       )}
     </SafeAreaView>
   );

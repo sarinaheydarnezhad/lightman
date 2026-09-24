@@ -84,6 +84,9 @@ importers:
       '@babel/plugin-transform-react-jsx':
         specifier: ^7.28.6
         version: 7.29.7(@babel/core@7.29.7)
+      '@babel/runtime':
+        specifier: 7.29.7
+        version: 7.29.7
       '@react-native/jest-preset':
         specifier: 0.86.3
         version: 0.86.3(@babel/core@7.29.7)(react@19.2.3)

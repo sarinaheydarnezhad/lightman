@@ -10,19 +10,32 @@ type ChipProps = Omit<PressableProps, 'children'> & {
 };
 
 const selectedAppearance = {
-  neutral: 'border-primary bg-primary', primary: 'border-primary bg-primary',
-  success: 'border-success bg-success', error: 'border-error bg-error', warning: 'border-warning bg-warning',
+  neutral: 'border-primary bg-primary',
+  primary: 'border-primary bg-primary',
+  success: 'border-success bg-success',
+  error: 'border-error bg-error',
+  warning: 'border-warning bg-warning',
 };
 const selectedTone = {
-  neutral: 'primaryForeground', primary: 'primaryForeground', success: 'successForeground',
-  error: 'errorForeground', warning: 'warningForeground',
+  neutral: 'primaryForeground',
+  primary: 'primaryForeground',
+  success: 'successForeground',
+  error: 'errorForeground',
+  warning: 'warningForeground',
 } as const;
 const unselectedAppearance = {
-  neutral: 'border-border bg-surface', primary: 'border-primary bg-surface',
-  success: 'border-success bg-surface', error: 'border-error bg-surface', warning: 'border-warning bg-surface',
+  neutral: 'border-border bg-surface',
+  primary: 'border-primary bg-surface',
+  success: 'border-success bg-surface',
+  error: 'border-error bg-surface',
+  warning: 'border-warning bg-surface',
 };
 const unselectedTone = {
-  neutral: 'primaryText', primary: 'accent', success: 'success', error: 'error', warning: 'warning',
+  neutral: 'primaryText',
+  primary: 'accent',
+  success: 'success',
+  error: 'error',
+  warning: 'warning',
 } as const;
 
 export function Chip({

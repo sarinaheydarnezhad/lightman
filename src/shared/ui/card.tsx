@@ -48,7 +48,13 @@ export function Card({
         disabled={disabled}
         style={({ pressed }) => [
           typeof style === 'function' ? style({ pressed }) : style,
-          { opacity: disabled ? interaction.disabledOpacity : pressed ? interaction.pressedOpacity : 1 },
+          {
+            opacity: disabled
+              ? interaction.disabledOpacity
+              : pressed
+                ? interaction.pressedOpacity
+                : 1,
+          },
         ]}
       >
         {children}
