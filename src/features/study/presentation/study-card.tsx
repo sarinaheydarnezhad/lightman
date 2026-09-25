@@ -4,6 +4,7 @@ import type { Deck, TypographySize } from '@/features/decks/domain/deck';
 import { deckAlignment, deckTypography } from '@/features/decks/presentation/deck-presentation';
 import type { TypographyVariant } from '@/shared/theme/tokens';
 import { Badge } from '@/shared/ui/badge';
+import { PronunciationButton } from '@/shared/speech/pronunciation-button';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
 import type { Card as StudyCardData } from '../domain/card';
@@ -94,9 +95,15 @@ function FrontContent({
 }) {
   return (
     <View className="min-h-0 flex-1 gap-lg">
-      <Text variant="labelMedium" tone="secondary">
-        FRONT
-      </Text>
+      <View
+        className="flex-row items-center justify-between gap-sm"
+        style={{ flexDirection: deck.textAlignment === 'rtl' ? 'row-reverse' : 'row' }}
+      >
+        <Text variant="labelMedium" tone="secondary">
+          FRONT
+        </Text>
+        <PronunciationButton text={card.frontText} language={deck.language} />
+      </View>
       <ScrollView
         nestedScrollEnabled
         style={{ flex: 1 }}

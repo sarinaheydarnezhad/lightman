@@ -133,8 +133,11 @@ export function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Audio">
-          <SettingsRow label="Pronunciation" detail="Available in a future update" />
-          <SettingsRow label="Voice and accent" detail="Available in a future update" />
+          <SettingsRow
+            label="Pronunciation"
+            detail="Speech language and English accent"
+            onPress={() => router.push('/settings/speech')}
+          />
         </SettingsSection>
 
         <SettingsSection title="About">

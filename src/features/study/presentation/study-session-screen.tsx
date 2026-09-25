@@ -1,7 +1,9 @@
-import { router } from 'expo-router';
+import { useCallback } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
 import { Badge } from '@/shared/ui/badge';
+import { speech } from '@/core/composition/speech';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
@@ -13,6 +15,7 @@ import { StudyControls } from './study-controls';
 import { useStudySessionViewModel } from './use-study-session-view-model';
 
 export function StudySessionScreen({ sessionId }: { sessionId: string }) {
+  useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const study = useStudySessionViewModel(sessionId);
   const { session, progress, item, card, deck } = study;
   const empty = session?.status === 'completed' && session.initialQueue.length === 0;

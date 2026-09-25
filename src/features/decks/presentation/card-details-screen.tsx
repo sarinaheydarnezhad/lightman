@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppError } from '@/core/errors/app-error';
+import { speech } from '@/core/composition/speech';
+import { PronunciationButton } from '@/shared/speech/pronunciation-button';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -15,6 +17,7 @@ import { CardContent } from './card-content';
 import { useCardActions, useCardDetailsViewModel } from './use-cards-view-model';
 
 export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: string }) {
+  useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { data, loading, error, refresh } = useCardDetailsViewModel(cardId, deckId);
   const { archive: archiveCard } = useCardActions();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -70,6 +73,9 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
       <View className="gap-2xl pb-3xl">
         <ScreenHeader title={data.card.frontText} description={`From ${data.deck.name}`} />
         <CardContent deck={data.deck} content={data.card} />
+        <View style={{ alignItems: data.deck.textAlignment === 'rtl' ? 'flex-end' : 'flex-start' }}>
+          <PronunciationButton text={data.card.frontText} language={data.deck.language} />
+        </View>
         <Button
           label="Edit card"
           onPress={() =>

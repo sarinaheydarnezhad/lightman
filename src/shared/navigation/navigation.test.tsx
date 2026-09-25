@@ -20,10 +20,12 @@ import EditCard from '@/app/decks/[deckId]/cards/[cardId]/edit';
 import StudySession from '@/app/study/[sessionId]';
 import VocabularyHelper from '@/app/vocabulary/helper';
 import Appearance from '@/app/settings/appearance';
+import SpeechSettings from '@/app/settings/speech';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
+import { speech } from '@/core/composition/speech';
 import { AppError } from '@/core/errors/app-error';
 import { languageTag } from '@/core/domain/values';
 import { useUiStore } from '@/store/ui-store';
@@ -54,6 +56,7 @@ const routes = {
   'study/[sessionId]': StudySession,
   'vocabulary/helper': VocabularyHelper,
   'settings/appearance': Appearance,
+  'settings/speech': SpeechSettings,
   'design-system': DesignSystem,
 };
 
@@ -277,6 +280,46 @@ test('haptics can be disabled and re-enabled through in-memory settings', async 
   expect(feedback).toHaveBeenCalledTimes(1);
 });
 
+test('speech settings show accent options only for English', async () => {
+  jest.spyOn(speech, 'getAvailableVoices').mockResolvedValue([
+    { name: 'Device English', language: 'en-US', quality: 'default' },
+    { name: 'Device Persian', language: 'fa-IR', quality: 'default' },
+  ]);
+  renderRouter(routes, { initialUrl: '/settings' });
+  await screen.findByRole('header', { name: 'Settings' });
+  fireEvent.press(screen.getByRole('button', { name: /Pronunciation, Speech language/ }));
+  expect(await screen.findByRole('header', { name: 'Pronunciation' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'English', selected: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'UK English' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Persian' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'UK English' })).toBeNull());
+  expect((await application.getSettings())?.preferredSpeechLanguage).toBe('fa');
+  fireEvent.press(screen.getByRole('button', { name: 'English' }));
+  await screen.findByRole('button', { name: 'UK English' });
+  fireEvent.press(screen.getByRole('button', { name: 'UK English' }));
+  await waitFor(async () =>
+    expect((await application.getSettings())?.preferredSpeechAccent).toBe('uk'),
+  );
+  await application.updateSettings({
+    preferredSpeechLanguage: languageTag('en'),
+    preferredSpeechAccent: null,
+  });
+});
+
+test('card details pronounce only the term and stop speech when navigation leaves', async () => {
+  const speak = jest.spyOn(speech, 'speak').mockResolvedValue(true);
+  const stop = jest.spyOn(speech, 'stop').mockResolvedValue();
+  renderRouter(routes, { initialUrl: '/decks/word-roots/cards/root-port' });
+  await screen.findByRole('header', { name: 'port' });
+  fireEvent.press(screen.getByRole('button', { name: 'Pronounce port' }));
+  await waitFor(() =>
+    expect(speak).toHaveBeenCalledWith('port', expect.objectContaining({ language: 'en' })),
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
+  await screen.findByRole('header', { name: 'Edit card' });
+  expect(stop).toHaveBeenCalled();
+});
+
 test.each(['success', 'failure'] as const)(
   'reveal and accepted %s button answer give one semantic event each',
   async (result) => {
@@ -463,6 +506,27 @@ test('Study tab starts an all-deck session, reveals answers and lets users leave
   expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
   expect(await application.getActiveStudySession()).toBeNull();
 }, 20_000);
+
+test('advancing a study card and leaving study stop pronunciation without auto-play', async () => {
+  const { deck, cards } = await studyFixture(2);
+  const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
+  const speak = jest.spyOn(speech, 'speak').mockResolvedValue(true);
+  const stop = jest.spyOn(speech, 'stop').mockResolvedValue();
+  renderRouter(routes, { initialUrl: `/study/${session.id}` });
+  await screen.findByRole('header', { name: cards[0]!.frontText });
+  fireEvent.press(screen.getByRole('button', { name: `Pronounce ${cards[0]!.frontText}` }));
+  await waitFor(() => expect(speak).toHaveBeenCalledTimes(1));
+  fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Success' }));
+  await screen.findByRole('header', { name: cards[1]!.frontText });
+  await waitFor(() => expect(stop).toHaveBeenCalled());
+  expect(speak).toHaveBeenCalledTimes(1);
+  const beforeLeaving = stop.mock.calls.length;
+  fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
+  fireEvent.press(screen.getByRole('button', { name: 'End session' }));
+  await screen.findByRole('header', { name: 'Study' });
+  expect(stop.mock.calls.length).toBeGreaterThan(beforeLeaving);
+});
 
 test('deck-specific session reveals examples, retries one failure, completes, and can start again', async () => {
   const { deck } = await studyFixture(2);

@@ -14,6 +14,9 @@ test('settings reject invalid theme, language and local time', () => {
   expect(() => validateUserSettings(makeSettings({ hapticsEnabled: 'yes' as never }))).toThrow(
     AppError,
   );
+  expect(() =>
+    validateUserSettings(makeSettings({ preferredSpeechAccent: 'au' as never })),
+  ).toThrow(AppError);
   expect(() => validateUserSettings(makeSettings({ theme: 'blue' as never }))).toThrow(AppError);
   expect(() => validateUserSettings(makeSettings({ language: '??' as never }))).toThrow(AppError);
   expect(() => validateUserSettings(makeSettings({ dailyReminderTime: '25:00' as never }))).toThrow(

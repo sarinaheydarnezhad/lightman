@@ -2,6 +2,7 @@ import { languageTag, localTime, type LanguageTag, type LocalTime } from '@/core
 import { AppError } from '@/core/errors/app-error';
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'oled';
+export type EnglishAccent = 'us' | 'uk';
 
 export interface UserSettings {
   readonly theme: ThemeMode;
@@ -10,7 +11,7 @@ export interface UserSettings {
   readonly dailyReminderEnabled: boolean;
   readonly dailyReminderTime: LocalTime | null;
   readonly preferredSpeechLanguage: LanguageTag;
-  readonly preferredSpeechAccent: string | null;
+  readonly preferredSpeechAccent: EnglishAccent | null;
 }
 
 export function validateUserSettings(settings: UserSettings): UserSettings {
@@ -25,12 +26,15 @@ export function validateUserSettings(settings: UserSettings): UserSettings {
   if (settings.dailyReminderTime !== null) localTime(settings.dailyReminderTime);
   if (settings.dailyReminderEnabled && settings.dailyReminderTime === null)
     throw new AppError('validation', 'A reminder time is required.');
-  if (settings.preferredSpeechAccent !== null && settings.preferredSpeechAccent.trim().length > 100)
-    throw new AppError('validation', 'Speech accent is too long.');
+  if (
+    settings.preferredSpeechAccent !== null &&
+    settings.preferredSpeechAccent !== 'us' &&
+    settings.preferredSpeechAccent !== 'uk'
+  )
+    throw new AppError('validation', 'Invalid speech accent.');
   return {
     ...settings,
     language,
     preferredSpeechLanguage,
-    preferredSpeechAccent: settings.preferredSpeechAccent?.trim() || null,
   };
 }

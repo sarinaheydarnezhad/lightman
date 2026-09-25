@@ -75,6 +75,7 @@ function Navigation() {
           options={{ title: 'Vocabulary helper', presentation: 'modal' }}
         />
         <Stack.Screen name="settings/appearance" options={{ title: 'Appearance' }} />
+        <Stack.Screen name="settings/speech" options={{ title: 'Pronunciation' }} />
         <Stack.Screen name="+not-found" options={{ title: 'Not found' }} />
         <Stack.Screen name="design-system" options={{ title: 'Design system' }} />
       </Stack>
