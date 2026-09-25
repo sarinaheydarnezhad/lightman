@@ -30,6 +30,8 @@ import LanguageSettings from '@/app/settings/language';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
+import { repositories } from '@/core/composition/repositories';
+import { seedDevelopmentData } from '@/core/composition/development-seed';
 import { haptics } from '@/core/composition/haptics';
 import { speech } from '@/core/composition/speech';
 import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
@@ -96,6 +98,10 @@ const routes = {
   'settings/language': LanguageSettings,
   'design-system': DesignSystem,
 };
+
+beforeAll(async () => {
+  await seedDevelopmentData(repositories);
+});
 
 afterEach(async () => {
   await setTestTheme('system');
@@ -498,6 +504,14 @@ test('permission denial keeps reminder off and offers device settings', async ()
   expect((await application.getSettings())?.dailyReminderEnabled).toBe(false);
 });
 
+test('unavailable notifications leave the reminder switch disabled', async () => {
+  await application.settings.setReminderEnabled(false);
+  jest.spyOn(expoNotificationService, 'getPermissionStatus').mockResolvedValue('unavailable');
+  renderRouter(routes, { initialUrl: '/settings' });
+  await screen.findByLabelText('Notification permission: Unavailable');
+  expect(screen.getByRole('switch', { name: 'Daily reminder', disabled: true })).toBeTruthy();
+});
+
 test('tapping the local reminder enters the normal all-decks study flow', async () => {
   const start = jest
     .spyOn(application, 'startStudySession')
@@ -757,6 +771,22 @@ test('rapid save taps create one card', async () => {
     fireEvent.press(save);
     expect(await screen.findByRole('header', { name: 'One card only' })).toBeTruthy();
     expect(await application.countActiveCardsForDeck('fresh-collection')).toBe(before + 1);
+    expect(ids).toHaveBeenCalledTimes(1);
+  } finally {
+    ids.mockRestore();
+  }
+});
+
+test('rapid save taps create one deck', async () => {
+  const ids = jest.spyOn(idGenerator, 'create').mockReturnValue('rapid-deck-id');
+  try {
+    renderRouter(routes, { initialUrl: '/decks/create' });
+    await screen.findByRole('header', { name: 'Create a deck' });
+    fireEvent.changeText(screen.getByLabelText('Deck name'), 'One deck only');
+    const save = screen.getByRole('button', { name: 'Create deck' });
+    fireEvent.press(save);
+    fireEvent.press(save);
+    expect(await screen.findByRole('button', { name: /Open One deck only deck/ })).toBeTruthy();
     expect(ids).toHaveBeenCalledTimes(1);
   } finally {
     ids.mockRestore();

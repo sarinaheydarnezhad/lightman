@@ -30,11 +30,11 @@ export function Badge({
 }) {
   return (
     <View
-      className={`self-start rounded-full border px-md py-xs ${appearance[variant]}`}
+      className={`max-w-full self-start rounded-full border px-md py-xs ${appearance[variant]}`}
       accessible={!!accessibilityLabel}
       accessibilityLabel={accessibilityLabel}
     >
-      <Text variant="caption" tone={foreground[variant]}>
+      <Text variant="caption" tone={foreground[variant]} numberOfLines={2}>
         {label}
       </Text>
     </View>

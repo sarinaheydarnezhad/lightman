@@ -54,6 +54,7 @@ export const en = {
   'decks.empty': 'No decks yet',
   'decks.noMatch': 'No matching decks',
   'decks.noMatchHint': 'Try another name, or clear your search.',
+  'decks.clear': 'Clear search',
   'decks.emptyHint': 'Create a deck to start collecting what you want to learn.',
   'decks.open': 'Open {name} deck, {language}, {count}',
   'decks.openHint': 'Opens deck details',
@@ -353,6 +354,8 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'nav.designSystem': 'سیستم طراحی',
+  'nav.vocabulary': 'دستیار واژگان',
   'nav.home': 'خانه',
   'nav.decks': 'دسته‌ها',
   'nav.study': 'مطالعه',
@@ -403,6 +406,7 @@ export const fa: Dictionary = {
   'decks.empty': 'هنوز دسته‌ای ندارید',
   'decks.noMatch': 'دسته‌ای پیدا نشد',
   'decks.noMatchHint': 'نام دیگری وارد کنید یا جستجو را پاک کنید.',
+  'decks.clear': 'پاک کردن جستجو',
   'decks.emptyHint': 'برای جمع‌آوری مطالب مورد نظرتان یک دسته بسازید.',
   'decks.open': 'باز کردن دستهٔ {name}، {language}، {count}',
   'decks.openHint': 'جزئیات دسته را باز می‌کند',
@@ -697,6 +701,8 @@ export const fa: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  'nav.designSystem': 'نظام التصميم',
+  'nav.vocabulary': 'مساعد المفردات',
   'nav.home': 'الرئيسية',
   'nav.decks': 'المجموعات',
   'nav.study': 'الدراسة',
@@ -747,6 +753,7 @@ export const ar: Dictionary = {
   'decks.empty': 'لا توجد مجموعات بعد',
   'decks.noMatch': 'لا توجد مجموعات مطابقة',
   'decks.noMatchHint': 'جرّب اسمًا آخر أو امسح البحث.',
+  'decks.clear': 'مسح البحث',
   'decks.emptyHint': 'أنشئ مجموعة لتجمع ما تريد تعلمه.',
   'decks.open': 'افتح مجموعة {name}، {language}، {count}',
   'decks.openHint': 'يفتح تفاصيل المجموعة',

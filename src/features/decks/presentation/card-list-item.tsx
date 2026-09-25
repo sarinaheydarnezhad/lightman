@@ -39,7 +39,7 @@ export function CardListItem({
         </Text>
       ) : null}
       {card.category ? (
-        <Text tone="tertiary" variant="caption" style={style}>
+        <Text tone="tertiary" variant="caption" style={style} numberOfLines={2}>
           {card.category}
         </Text>
       ) : null}

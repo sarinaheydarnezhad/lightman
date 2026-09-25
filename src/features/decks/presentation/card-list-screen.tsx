@@ -1,11 +1,10 @@
 import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
-import { FlatList, View } from 'react-native';
+import { FlatList, ScrollView, View } from 'react-native';
 
 import type { Card } from '@/features/study/domain/card';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { spacing } from '@/shared/theme/tokens';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { Input } from '@/shared/ui/input';
@@ -88,25 +87,21 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             {categories.length > 0 && !error ? (
               <View className="gap-sm">
                 <Text variant="labelMedium">{t('cards.category')}</Text>
-                <FlatList
+                <ScrollView
                   horizontal
-                  data={[
-                    { label: t('cards.allCategories'), value: null },
-                    ...categories.map((value) => ({ label: value, value })),
-                  ]}
-                  keyExtractor={(item) => item.value ?? 'all-categories'}
-                  renderItem={({ item }) => (
-                    <View style={{ marginEnd: spacing.sm }}>
-                      <Button
-                        label={item.label}
-                        variant={category === item.value ? 'primary' : 'secondary'}
-                        accessibilityState={{ selected: category === item.value }}
-                        onPress={() => setCategory(item.value)}
-                      />
-                    </View>
-                  )}
+                  contentContainerClassName="gap-sm"
                   showsHorizontalScrollIndicator={false}
-                />
+                >
+                  {[null, ...categories].map((value) => (
+                    <Button
+                      key={value ?? 'all-categories'}
+                      label={value ?? t('cards.allCategories')}
+                      variant={category === value ? 'primary' : 'secondary'}
+                      accessibilityState={{ selected: category === value }}
+                      onPress={() => setCategory(value)}
+                    />
+                  ))}
+                </ScrollView>
               </View>
             ) : null}
             {!loading && !error ? (

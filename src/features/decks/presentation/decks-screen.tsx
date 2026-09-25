@@ -75,6 +75,13 @@ export function DecksScreen() {
                 title={t(search.trim() ? 'decks.noMatch' : 'decks.empty')}
                 description={t(search.trim() ? 'decks.noMatchHint' : 'decks.emptyHint')}
               />
+              {search.trim() && totalCount > 0 ? (
+                <Button
+                  label={t('decks.clear')}
+                  variant="secondary"
+                  onPress={() => setSearch('')}
+                />
+              ) : null}
               {totalCount === 0 ? (
                 <Button label={t('decks.create')} onPress={() => router.push('/decks/create')} />
               ) : null}

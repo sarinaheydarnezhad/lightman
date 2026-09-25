@@ -4,6 +4,7 @@ import { languageTag } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
+import { EmptyState } from '@/shared/ui/empty-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
@@ -21,7 +22,10 @@ export function LanguageScreen() {
         <ScreenHeader title={t('settings.appLanguage')} description={t('settings.languageHint')} />
         {vm.loading && !vm.settings ? <LoadingState label={t('settings.loading')} /> : null}
         {vm.loadError && !vm.settings ? (
-          <Button label={t('common.tryAgain')} onPress={vm.reload} />
+          <View className="gap-md">
+            <EmptyState title={t('settings.loadError')} description={t('common.genericError')} />
+            <Button label={t('common.tryAgain')} onPress={vm.reload} />
+          </View>
         ) : null}
         {vm.settings ? (
           <View className="gap-sm">

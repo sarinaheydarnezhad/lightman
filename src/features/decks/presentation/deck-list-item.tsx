@@ -28,7 +28,9 @@ export function DeckListItem({
       onPress={onPress}
       className="gap-sm"
     >
-      <Text variant="headingSmall">{deck.name}</Text>
+      <Text variant="headingSmall" numberOfLines={2}>
+        {deck.name}
+      </Text>
       {deck.description ? (
         <Text tone="secondary" numberOfLines={2}>
           {deck.description}

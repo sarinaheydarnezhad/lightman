@@ -45,10 +45,11 @@ export function DeckForm({
   const [nameError, setNameError] = useState<string | null>(null);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const submitting = useRef(false);
   const descriptionRef = useRef<TextInput>(null);
 
   async function save() {
-    if (saving) return;
+    if (submitting.current) return;
     setNameError(null);
     setLanguageError(null);
     setError(null);
@@ -78,6 +79,7 @@ export function DeckForm({
       setLanguageError(t('form.languageInvalid'));
       return;
     }
+    submitting.current = true;
     Keyboard.dismiss();
     setSaving(true);
     try {
@@ -93,6 +95,7 @@ export function DeckForm({
         language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
       );
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   }

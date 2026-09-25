@@ -24,13 +24,13 @@ export function StudyControls({
         label={t('study.failure')}
         variant="secondary"
         disabled={submitting}
-        style={{ flex: 1 }}
+        style={fontScale >= 1.4 || width < 360 ? undefined : { flex: 1 }}
         onPress={onFailure}
       />
       <Button
         label={t('study.success')}
         loading={submitting}
-        style={{ flex: 1 }}
+        style={fontScale >= 1.4 || width < 360 ? undefined : { flex: 1 }}
         onPress={onSuccess}
       />
     </View>

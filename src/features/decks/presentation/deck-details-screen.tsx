@@ -48,12 +48,9 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
 
   if (loading && !data)
     return (
-      <FeaturePlaceholder
-        title={t('details.deckLoading')}
-        description={t('details.deckLoadingHint')}
-      >
+      <Screen edges={stackScreenEdges}>
         <LoadingState label={t('details.deckLoading')} />
-      </FeaturePlaceholder>
+      </Screen>
     );
 
   if (!deck || error) {

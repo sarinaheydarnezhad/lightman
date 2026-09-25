@@ -39,25 +39,30 @@ export function HomeScreen() {
           </Text>
           {home.loading ? <LoadingState label={t('home.loading')} /> : null}
           {home.error ? (
-            <EmptyState
-              title={t('home.loadError')}
-              description={language === 'en' ? home.error : t('common.genericError')}
-            />
+            <View className="gap-md">
+              <EmptyState
+                title={t('home.loadError')}
+                description={language === 'en' ? home.error : t('common.genericError')}
+              />
+              <Button label={t('common.tryAgain')} onPress={home.refresh} />
+            </View>
           ) : null}
-          <View className="flex-row flex-wrap gap-sm">
-            {metrics.map((metric) => (
-              <Card
-                key={metric.label}
-                className="flex-1 gap-sm"
-                style={{ minWidth: layout.metricMinWidth }}
-              >
-                <Text tone="secondary" variant="bodySmall">
-                  {metric.label}
-                </Text>
-                <Text variant="headingMedium">{number(metric.value)}</Text>
-              </Card>
-            ))}
-          </View>
+          {!home.loading && !home.error ? (
+            <View className="flex-row flex-wrap gap-sm">
+              {metrics.map((metric) => (
+                <Card
+                  key={metric.label}
+                  className="flex-1 gap-sm"
+                  style={{ minWidth: layout.metricMinWidth }}
+                >
+                  <Text tone="secondary" variant="bodySmall">
+                    {metric.label}
+                  </Text>
+                  <Text variant="headingMedium">{number(metric.value)}</Text>
+                </Card>
+              ))}
+            </View>
+          ) : null}
           <Button
             label={t('study.start')}
             loading={study.starting}
@@ -81,23 +86,31 @@ export function HomeScreen() {
           <Text variant="headingMedium" accessibilityRole="header">
             {t('home.yourDecks')}
           </Text>
-          {home.featuredDecks.map((deck) => (
-            <Card
-              key={deck.id}
-              variant="interactive"
-              accessibilityLabel={t('home.openDeck', { name: deck.name })}
-              onPress={() =>
-                router.push({ pathname: '/decks/[deckId]', params: { deckId: deck.id } })
-              }
-              className="gap-sm"
-            >
-              <Text variant="headingSmall">{deck.name}</Text>
-              <Text tone="secondary">{deck.description}</Text>
-              <Text tone="tertiary" variant="caption">
-                {deckLanguageLabel(deck.language, language)}
-              </Text>
-            </Card>
-          ))}
+          {!home.loading && !home.error
+            ? home.featuredDecks.map((deck) => (
+                <Card
+                  key={deck.id}
+                  variant="interactive"
+                  accessibilityLabel={t('home.openDeck', { name: deck.name })}
+                  onPress={() =>
+                    router.push({ pathname: '/decks/[deckId]', params: { deckId: deck.id } })
+                  }
+                  className="gap-sm"
+                >
+                  <Text variant="headingSmall" numberOfLines={2}>
+                    {deck.name}
+                  </Text>
+                  {deck.description ? (
+                    <Text tone="secondary" numberOfLines={2}>
+                      {deck.description}
+                    </Text>
+                  ) : null}
+                  <Text tone="tertiary" variant="caption">
+                    {deckLanguageLabel(deck.language, language)}
+                  </Text>
+                </Card>
+              ))
+            : null}
           {!home.loading && !home.error && home.featuredDecks.length === 0 ? (
             <Text tone="secondary">{t('home.empty')}</Text>
           ) : null}

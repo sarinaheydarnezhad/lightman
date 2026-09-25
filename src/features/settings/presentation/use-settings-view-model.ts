@@ -76,6 +76,7 @@ export function useSettingsViewModel() {
         if (key === 'reminder' || key === 'time')
           setReminderPermission(await application.settings.getReminderPermission());
         if (key !== 'haptics' || updated.hapticsEnabled) void haptics.selection();
+        return true;
       } catch (error) {
         if (error instanceof NotificationPermissionDenied)
           setReminderPermission(await application.settings.getReminderPermission());
@@ -86,6 +87,7 @@ export function useSettingsViewModel() {
               ? 'Notifications are turned off for this app. Allow them in device settings, then try again.'
               : message,
         }));
+        return false;
       } finally {
         pending.current.delete(key);
         if (active.current) setBusy((old) => ({ ...old, [key]: false }));

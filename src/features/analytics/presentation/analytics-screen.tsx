@@ -38,8 +38,10 @@ function BoxSummary({ distribution, total }: { distribution: BoxDistribution; to
               unit: t(distribution[box] === 1 ? 'analytics.cardUnit' : 'analytics.cardsUnit'),
             })}
           >
-            <Text>{t('analytics.box', { box: number(box) })}</Text>
-            <Text variant="labelLarge">{number(distribution[box])}</Text>
+            <Text className="min-w-0 flex-1">{t('analytics.box', { box: number(box) })}</Text>
+            <Text variant="labelLarge" className="flex-shrink">
+              {number(distribution[box])}
+            </Text>
           </View>
         ))
       ) : (
@@ -107,7 +109,7 @@ export function AnalyticsScreen() {
               <Text variant="bodySmall" tone="secondary">
                 {t('analytics.currentStreak')}
               </Text>
-              <Text variant="headingLarge">
+              <Text variant="headingLarge" className="flex-shrink">
                 {t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
                   count: number(data.currentStreak),
                 })}
@@ -131,7 +133,9 @@ export function AnalyticsScreen() {
                 <Text variant="bodySmall" tone="secondary">
                   {t('analytics.cardsToday')}
                 </Text>
-                <Text variant="headingMedium">{number(data.cardsReviewedToday)}</Text>
+                <Text variant="headingMedium" className="flex-shrink">
+                  {number(data.cardsReviewedToday)}
+                </Text>
               </Card>
               <Card
                 className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}

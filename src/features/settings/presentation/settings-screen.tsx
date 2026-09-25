@@ -14,6 +14,7 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useThemeMode } from '@/shared/theme/theme-provider';
+import { interaction } from '@/shared/theme/tokens';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { appearanceChoices } from './appearance-options';
@@ -71,12 +72,14 @@ function SettingsSwitch({
   description,
   value,
   busy,
+  disabled = false,
   onChange,
 }: {
   label: string;
   description: string;
   value: boolean;
   busy: boolean;
+  disabled?: boolean;
   onChange: () => void;
 }) {
   const { t } = useLocalization();
@@ -86,10 +89,18 @@ function SettingsSwitch({
         accessibilityRole="switch"
         accessibilityLabel={label}
         accessibilityHint={description}
-        accessibilityState={{ checked: value, disabled: busy, busy }}
-        disabled={busy}
+        accessibilityState={{ checked: value, disabled: busy || disabled, busy }}
+        disabled={busy || disabled}
         onPress={onChange}
-        className="flex-row items-center gap-lg"
+        className="min-h-iconButton flex-row items-center gap-lg"
+        style={({ pressed }) => ({
+          opacity:
+            busy || disabled
+              ? interaction.disabledOpacity
+              : pressed
+                ? interaction.pressedOpacity
+                : 1,
+        })}
       >
         <View className="flex-1 gap-xs">
           <Text variant="labelLarge">{label}</Text>
@@ -192,6 +203,7 @@ export function SettingsScreen() {
                 description={t('settings.reminderHint')}
                 value={settings.dailyReminderEnabled}
                 busy={!!vm.busy.reminder || !!vm.busy.time}
+                disabled={vm.reminderPermission === 'unavailable' && !settings.dailyReminderEnabled}
                 onChange={() => void vm.setReminder(!settings.dailyReminderEnabled)}
               />
               {settings.dailyReminderEnabled && settings.dailyReminderTime ? (
@@ -224,8 +236,9 @@ export function SettingsScreen() {
                           label={t('settings.saveTime')}
                           loading={!!vm.busy.time}
                           onPress={() => {
-                            void vm.setReminderTime(formatTime(draftTime));
-                            setDraftTime(null);
+                            void vm.setReminderTime(formatTime(draftTime)).then((saved) => {
+                              if (saved) setDraftTime(null);
+                            });
                           }}
                         />
                       </View>
@@ -282,8 +295,6 @@ export function SettingsScreen() {
                 <SettingsRow label={t('settings.build')} detail={config.buildNumber} />
               ) : null}
               <SettingsRow label={t('settings.yourData')} detail={t('settings.yourDataHint')} />
-              <SettingsRow label={t('settings.privacy')} detail={t('settings.comingSoon')} />
-              <SettingsRow label={t('settings.terms')} detail={t('settings.comingSoon')} />
             </SettingsSection>
           </>
         ) : null}
