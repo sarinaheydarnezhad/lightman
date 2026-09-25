@@ -4,11 +4,19 @@ import { useReducedMotion, withTiming } from 'react-native-reanimated';
 
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { haptics } from '@/core/composition/haptics';
 import { StudyCard } from './study-card';
+
+jest.mock('@/core/composition/haptics', () => ({
+  haptics: jest
+    .requireActual<typeof import('@/../test/fake-haptics')>('@/../test/fake-haptics')
+    .createFakeHaptics().service,
+}));
 
 type SwipeEvent = { translationX: number; translationY: number; velocityX: number };
 type PanHandlers = {
   enabled?: boolean;
+  onBegin?: () => void;
   onUpdate?: (event: SwipeEvent) => void;
   onEnd?: (event: SwipeEvent) => void;
   onFinalize?: () => void;
@@ -28,6 +36,10 @@ jest.mock('react-native-gesture-handler', () => ({
         },
         activeOffsetX: () => pan,
         failOffsetY: () => pan,
+        onBegin: (callback: PanHandlers['onBegin']) => {
+          callbacks.onBegin = callback;
+          return pan;
+        },
         onUpdate: (callback: PanHandlers['onUpdate']) => {
           callbacks.onUpdate = callback;
           return pan;
@@ -78,6 +90,7 @@ function drag(x: number, velocityX = 0, translationY = 0) {
   const pan = mockPans.at(-1)!;
   const event = { translationX: x, translationY, velocityX };
   act(() => {
+    pan.onBegin?.();
     pan.onUpdate?.(event);
     pan.onEnd?.(event);
     pan.onFinalize?.();
@@ -87,6 +100,7 @@ function drag(x: number, velocityX = 0, translationY = 0) {
 
 beforeEach(() => {
   mockPans.length = 0;
+  jest.mocked(haptics.swipeCommit).mockClear();
   jest.mocked(useReducedMotion).mockReturnValue(false);
 });
 
@@ -116,7 +130,26 @@ test('short or vertical swipes return to center with the answer still revealed',
   drag(40);
   drag(-110, 0, 100);
   expect(onSwipeAnswer).not.toHaveBeenCalled();
+  expect(haptics.swipeCommit).not.toHaveBeenCalled();
   expect(screen.getByText('greeting')).toBeTruthy();
+});
+
+test('crossing, retreating and recrossing gives one threshold cue per gesture, not per frame', () => {
+  const { onSwipeAnswer } = show();
+  const pan = mockPans.at(-1)!;
+  act(() => {
+    pan.onBegin?.();
+    for (const translationX of [20, 90, 110, 40, 100, 120]) {
+      pan.onUpdate?.({ translationX, translationY: 0, velocityX: 0 });
+    }
+    pan.onEnd?.({ translationX: 40, translationY: 0, velocityX: 0 });
+    pan.onFinalize?.();
+  });
+  expect(haptics.swipeCommit).toHaveBeenCalledTimes(1);
+  expect(onSwipeAnswer).not.toHaveBeenCalled();
+  drag(110);
+  expect(haptics.swipeCommit).toHaveBeenCalledTimes(2);
+  expect(onSwipeAnswer).toHaveBeenCalledTimes(1);
 });
 
 test('pending answers disable gestures; remount after a failed submission unlocks retry', () => {

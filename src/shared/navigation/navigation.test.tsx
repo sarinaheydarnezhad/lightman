@@ -23,6 +23,7 @@ import Appearance from '@/app/settings/appearance';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
+import { haptics } from '@/core/composition/haptics';
 import { AppError } from '@/core/errors/app-error';
 import { languageTag } from '@/core/domain/values';
 import { useUiStore } from '@/store/ui-store';
@@ -56,7 +57,10 @@ const routes = {
   'design-system': DesignSystem,
 };
 
-afterEach(() => useUiStore.setState({ themePreference: 'system' }));
+afterEach(() => {
+  useUiStore.setState({ themePreference: 'system' });
+  jest.restoreAllMocks();
+});
 
 test('root layout renders the app and accessible tab navigation', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/' });
@@ -254,6 +258,59 @@ test('appearance selection uses the existing session preference', async () => {
   expect(await screen.findByRole('button', { name: 'OLED', selected: true })).toBeTruthy();
   expect(useUiStore.getState().themePreference).toBe('oled');
 });
+
+test('haptics can be disabled and re-enabled through in-memory settings', async () => {
+  renderRouter(routes, { initialUrl: '/settings' });
+  await screen.findByRole('header', { name: 'Settings' });
+  const update = jest.spyOn(application, 'updateSettings');
+  const feedback = jest.spyOn(haptics, 'selection').mockResolvedValue();
+  const off = await screen.findByRole('button', { name: 'Turn haptics off' });
+  fireEvent.press(off);
+  fireEvent.press(off);
+  expect(await screen.findByRole('button', { name: 'Turn haptics on' })).toBeTruthy();
+  expect(update).toHaveBeenCalledTimes(1);
+  expect((await application.getSettings())?.hapticsEnabled).toBe(false);
+  expect(feedback).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: 'Turn haptics on' }));
+  expect(await screen.findByRole('button', { name: 'Turn haptics off' })).toBeTruthy();
+  expect((await application.getSettings())?.hapticsEnabled).toBe(true);
+  expect(feedback).toHaveBeenCalledTimes(1);
+});
+
+test.each(['success', 'failure'] as const)(
+  'reveal and accepted %s button answer give one semantic event each',
+  async (result) => {
+    const reveal = jest.spyOn(haptics, 'cardReveal').mockResolvedValue();
+    const success = jest.spyOn(haptics, 'answerSuccess').mockResolvedValue();
+    const failure = jest.spyOn(haptics, 'answerFailure').mockResolvedValue();
+    try {
+      const { deck, cards } = await studyFixture(1);
+      const session = await application.startStudySession({
+        kind: 'specific-deck',
+        deckId: deck.id,
+      });
+      renderRouter(routes, { initialUrl: `/study/${session.id}` });
+      await screen.findByRole('header', { name: cards[0]!.frontText });
+      fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
+      expect(reveal).toHaveBeenCalledTimes(1);
+      fireEvent.press(screen.getByRole('tab', { name: 'Examples' }));
+      expect(reveal).toHaveBeenCalledTimes(1);
+      const answer = screen.getByRole('button', {
+        name: result === 'success' ? 'Success' : 'Failure',
+      });
+      fireEvent.press(answer);
+      fireEvent.press(answer);
+      await waitFor(() => expect(success.mock.calls.length + failure.mock.calls.length).toBe(1));
+      expect(result === 'success' ? success : failure).toHaveBeenCalledTimes(1);
+      expect(result === 'success' ? failure : success).not.toHaveBeenCalled();
+      expect((await application.listReviewEvents({ cardId: cards[0]!.id })).length).toBe(1);
+    } finally {
+      reveal.mockRestore();
+      success.mockRestore();
+      failure.mockRestore();
+    }
+  },
+);
 
 test('an unknown route shows a helpful not-found screen', async () => {
   renderRouter(routes, { initialUrl: '/missing-page' });
@@ -518,6 +575,7 @@ test('Home starts an all-deck study session and exits back to Study', async () =
 });
 
 test('answer failure keeps the current card available for a safe retry', async () => {
+  const feedback = jest.spyOn(haptics, 'answerSuccess').mockResolvedValue();
   const { deck, cards } = await studyFixture(1);
   const submission = jest
     .spyOn(application, 'submitStudyAnswer')
@@ -530,16 +588,21 @@ test('answer failure keeps the current card available for a safe retry', async (
     fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
     fireEvent.press(screen.getByRole('button', { name: 'Success' }));
     expect(await screen.findByText('Could not save your answer.')).toBeTruthy();
+    expect(feedback).not.toHaveBeenCalled();
     expect(screen.getByText(cards[0]!.meaning)).toBeTruthy();
     expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(0);
     fireEvent.press(screen.getByRole('button', { name: 'Success' }));
     expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+    expect(feedback).toHaveBeenCalledTimes(1);
   } finally {
     submission.mockRestore();
+    feedback.mockRestore();
   }
 });
 
 test('a committed physical-left swipe uses the same review path as a Success button on retry', async () => {
+  const failureFeedback = jest.spyOn(haptics, 'answerFailure').mockResolvedValue();
+  const successFeedback = jest.spyOn(haptics, 'answerSuccess').mockResolvedValue();
   // Jest cannot dispatch UI-thread worklets. The swipe surface itself is tested separately;
   // here its committed result exercises the real view model and application use case.
   jest
@@ -575,12 +638,16 @@ test('a committed physical-left swipe uses the same review path as a Success but
     expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(1);
   });
   expect((await application.listReviewEvents({ cardId: cards[0]!.id }))[0]?.result).toBe('failure');
+  expect(failureFeedback).toHaveBeenCalledTimes(1);
+  expect(successFeedback).not.toHaveBeenCalled();
   expect((await application.getCurrentStudyItem(session.id))?.kind).toBe('retry');
   await screen.findByText('One more try');
   fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
   fireEvent.press(screen.getByRole('button', { name: 'Success' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
   expect((await application.getReviewState(cards[0]!.id))?.totalReviews).toBe(2);
+  expect(failureFeedback).toHaveBeenCalledTimes(1);
+  expect(successFeedback).toHaveBeenCalledTimes(1);
   expect(
     (await application.listReviewEvents({ cardId: cards[0]!.id })).map((e) => e.result),
   ).toEqual(['failure', 'success']);

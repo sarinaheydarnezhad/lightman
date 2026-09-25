@@ -3,6 +3,7 @@ import { BackHandler } from 'react-native';
 import { router } from 'expo-router';
 
 import { application } from '@/core/composition/application';
+import { haptics } from '@/core/composition/haptics';
 import { AppError } from '@/core/errors/app-error';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card } from '../domain/card';
@@ -40,6 +41,7 @@ export function useStudySessionViewModel(sessionId: string) {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const revealedRef = useRef(false);
   const swipePendingRef = useRef(false);
   const request = useRef(0);
   const start = useStartStudy();
@@ -51,6 +53,7 @@ export function useStudySessionViewModel(sessionId: string) {
     setDeck(null);
     setItem(null);
     setRevealed(false);
+    revealedRef.current = false;
     setBackTab('meaning');
     setError(null);
     try {
@@ -125,6 +128,8 @@ export function useStudySessionViewModel(sessionId: string) {
           presentationId: item.presentationId,
           result,
         });
+        // This is the accepted-presentation boundary for both buttons and swipes.
+        void (result === 'success' ? haptics.answerSuccess() : haptics.answerFailure());
         await load();
       } catch (cause) {
         setActionError(safeError(cause, 'Unable to save your answer. Try again.'));
@@ -144,6 +149,13 @@ export function useStudySessionViewModel(sessionId: string) {
     (result: ReviewResult) => submitAnswer(result, 'button'),
     [submitAnswer],
   );
+
+  const reveal = useCallback(() => {
+    if (revealedRef.current || inFlight.current || !item || phase !== 'ready') return;
+    revealedRef.current = true;
+    setRevealed(true);
+    void haptics.cardReveal();
+  }, [item, phase]);
   const submitSwipe = useCallback(
     (result: ReviewResult) => submitAnswer(result, 'swipe'),
     [submitAnswer],
@@ -208,7 +220,7 @@ export function useStudySessionViewModel(sessionId: string) {
     leave,
     cancel,
     dismissExit: () => setConfirmExit(false),
-    reveal: () => setRevealed(true),
+    reveal,
     selectBackTab: setBackTab,
     submit,
     beginSwipe,

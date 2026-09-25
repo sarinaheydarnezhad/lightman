@@ -75,6 +75,7 @@ export function makeEvent(changes: Partial<ReviewEvent> = {}): ReviewEvent {
 export function makeSettings(changes: Partial<UserSettings> = {}): UserSettings {
   return {
     theme: 'system',
+    hapticsEnabled: true,
     language: languageTag('en'),
     dailyReminderEnabled: false,
     dailyReminderTime: localTime('09:30'),

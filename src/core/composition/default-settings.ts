@@ -5,6 +5,7 @@ import type { UserSettings } from '@/features/settings/domain/user-settings';
 export function defaultSettings(): UserSettings {
   return {
     theme: 'system',
+    hapticsEnabled: true,
     language: languageTag('en'),
     dailyReminderEnabled: false,
     dailyReminderTime: null,

@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { haptics } from '@/core/composition/haptics';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { radii, spacing } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
@@ -41,14 +42,37 @@ export function SwipeableStudyCard({
   const [cardWidth, setCardWidth] = useState(0);
   const translationX = useSharedValue(0);
   const locked = useSharedValue(false);
+  const thresholdNotified = useSharedValue(false);
+  const notifyThreshold = () => {
+    void haptics.swipeCommit();
+  };
 
   const gesture = Gesture.Pan()
     .withTestId('study-swipe-gesture')
     .enabled(revealed && active && !pending)
     .activeOffsetX([-swipeMotion.activation, swipeMotion.activation])
     .failOffsetY([-swipeMotion.verticalFailure, swipeMotion.verticalFailure])
+    .onBegin(() => {
+      // A drag can cross, retreat, and cross again: one cue per gesture.
+      thresholdNotified.value = false;
+    })
     .onUpdate((event) => {
-      if (!locked.value) translationX.value = event.translationX;
+      if (locked.value) return;
+      translationX.value = event.translationX;
+      if (
+        !thresholdNotified.value &&
+        getSwipeDecision({
+          translationX: event.translationX,
+          translationY: event.translationY,
+          velocityX: 0,
+          cardWidth,
+          revealed,
+          active,
+        })
+      ) {
+        thresholdNotified.value = true;
+        runOnJS(notifyThreshold)();
+      }
     })
     .onEnd((event) => {
       if (locked.value) return;

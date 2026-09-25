@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { application } from '@/core/composition/application';
+import { haptics } from '@/core/composition/haptics';
 import { useUiStore } from '@/store/ui-store';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
@@ -28,10 +29,12 @@ export function AppearanceScreen() {
               variant={value === preference ? 'primary' : 'secondary'}
               accessibilityState={{ selected: value === preference }}
               onPress={() => {
+                if (value === preference) return;
                 void application
                   .updateSettings({ theme: value })
                   .then(() => {
                     setPreference(value);
+                    void haptics.selection();
                     setError(null);
                   })
                   .catch(() => setError('Unable to save appearance. Please try again.'));

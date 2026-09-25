@@ -19,6 +19,10 @@ Install Node.js 22.13+ and pnpm 10.15.1 (for example, using Corepack), then run 
 - Deck and card collections use `FlatList` with stable domain IDs; apply the same approach to other growing collections.
 - Keep domain logic independent of UI rendering.
 
+## Haptic feedback
+
+Study haptics are presentation feedback only: `core/ports/haptic-feedback.ts` defines semantic events, composition reads `UserSettings.hapticsEnabled` from the in-memory repository, and the Expo adapter selects native effects. A failed/suppressed native effect never blocks an action. Revealing gives one subtle cue, and both buttons and swipes give the same result cue only after the presentation is accepted. A swipe can also give one light distance-threshold cue per gesture; crossing back and forth never repeats it, and a cancelled swipe has no answer-result cue. Velocity-only flicks give the result cue on acceptance. The preference defaults on and is controlled in Settings; reduced motion does not change it. Haptics never replace the visible answer, status, or accessible controls. No haptics run on animation frames or on every navigation event.
+
 Store identifiers in `app.json` are provisional and must be owned by the publisher before release. EAS credentials and project linkage are configured when builds begin.
 
 SDK 57's `expo-build-properties` plugin enables iOS scene support for builds made with Xcode 27. Regenerate native projects after changing app config. Store artwork, signing credentials, and on-device QA are release work outside this foundation.
