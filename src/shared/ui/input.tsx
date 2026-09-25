@@ -3,6 +3,7 @@ import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
 import { interaction } from '@/shared/theme/tokens';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from './text';
 
 type InputProps = TextInputProps & {
@@ -27,12 +28,14 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     accessibilityLabel,
     accessibilityHint,
     keyboardAppearance,
+    textAlign,
     ...props
   }: InputProps,
   ref,
 ) {
   const colors = useThemeColors();
   const mode = useThemeMode();
+  const { direction } = useLocalization();
   const [focused, setFocused] = useState(false);
   const unavailable = disabled || !editable;
   return (
@@ -52,6 +55,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         keyboardAppearance={keyboardAppearance ?? (mode === 'light' ? 'light' : 'dark')}
         editable={!unavailable}
         multiline={multiline}
+        textAlign={textAlign ?? (direction === 'rtl' ? 'right' : 'left')}
         textAlignVertical={multiline ? 'top' : 'center'}
         onFocus={(event) => {
           setFocused(true);

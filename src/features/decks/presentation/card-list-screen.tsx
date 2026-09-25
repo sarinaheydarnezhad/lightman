@@ -4,6 +4,8 @@ import { FlatList, View } from 'react-native';
 
 import type { Card } from '@/features/study/domain/card';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
+import { spacing } from '@/shared/theme/tokens';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { Input } from '@/shared/ui/input';
@@ -15,6 +17,7 @@ import { CardListItem } from './card-list-item';
 import { useCardListViewModel } from './use-cards-view-model';
 
 export function CardListScreen({ deckId }: { deckId: string }) {
+  const { t, number } = useLocalization();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const { data, cards, categories, totalCount, loading, error, refresh } = useCardListViewModel(
@@ -50,9 +53,12 @@ export function CardListScreen({ deckId }: { deckId: string }) {
         keyboardDismissMode="on-drag"
         ListHeaderComponent={
           <View className="gap-lg pb-md">
-            <ScreenHeader title={data?.deck.name ?? 'Cards'} description="Cards in this deck" />
+            <ScreenHeader
+              title={data?.deck.name ?? t('nav.cards')}
+              description={t('cards.description')}
+            />
             <Button
-              label="View deck"
+              label={t('cards.viewDeck')}
               variant="tertiary"
               onPress={() =>
                 router.dismissTo({
@@ -63,7 +69,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             />
             {totalCount > 0 && !error ? (
               <Button
-                label="Add card"
+                label={t('cards.add')}
                 onPress={() =>
                   router.push({
                     pathname: '/decks/[deckId]/cards/create',
@@ -73,24 +79,24 @@ export function CardListScreen({ deckId }: { deckId: string }) {
               />
             ) : null}
             <Input
-              label="Search cards"
-              placeholder="Search term, phonetic, category, meaning"
+              label={t('cards.search')}
+              placeholder={t('cards.searchHint')}
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
             />
             {categories.length > 0 && !error ? (
               <View className="gap-sm">
-                <Text variant="labelMedium">Category</Text>
+                <Text variant="labelMedium">{t('cards.category')}</Text>
                 <FlatList
                   horizontal
                   data={[
-                    { label: 'All categories', value: null },
+                    { label: t('cards.allCategories'), value: null },
                     ...categories.map((value) => ({ label: value, value })),
                   ]}
                   keyExtractor={(item) => item.value ?? 'all-categories'}
                   renderItem={({ item }) => (
-                    <View className="mr-sm">
+                    <View style={{ marginEnd: spacing.sm }}>
                       <Button
                         label={item.label}
                         variant={category === item.value ? 'primary' : 'secondary'}
@@ -105,20 +111,20 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             ) : null}
             {!loading && !error ? (
               <Text variant="labelMedium" tone="secondary">
-                {cards.length} of {totalCount} cards
+                {t('cards.count', { visible: number(cards.length), total: number(totalCount) })}
               </Text>
             ) : null}
           </View>
         }
         ListEmptyComponent={
           loading ? (
-            <LoadingState label="Loading cards" />
+            <LoadingState label={t('cards.loading')} />
           ) : error ? (
             <View className="gap-md">
-              <EmptyState title="Cards unavailable" description={error} />
-              <Button label="Try again" onPress={refresh} />
+              <EmptyState title={t('cards.error')} description={error} />
+              <Button label={t('common.tryAgain')} onPress={refresh} />
               <Button
-                label="Browse decks"
+                label={t('common.browseDecks')}
                 variant="tertiary"
                 onPress={() => router.replace('/decks')}
               />
@@ -126,16 +132,12 @@ export function CardListScreen({ deckId }: { deckId: string }) {
           ) : (
             <View className="gap-md">
               <EmptyState
-                title={totalCount === 0 ? 'No cards yet' : 'No matching cards'}
-                description={
-                  totalCount === 0
-                    ? 'Add a card to start building this deck.'
-                    : 'Try a different search or category.'
-                }
+                title={t(totalCount === 0 ? 'cards.empty' : 'cards.noMatch')}
+                description={t(totalCount === 0 ? 'cards.emptyHint' : 'cards.noMatchHint')}
               />
               {totalCount > 0 ? (
                 <Button
-                  label="Clear filters"
+                  label={t('cards.clear')}
                   variant="secondary"
                   onPress={() => {
                     setSearch('');
@@ -145,7 +147,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
               ) : null}
               {totalCount === 0 ? (
                 <Button
-                  label="Add card"
+                  label={t('cards.add')}
                   onPress={() =>
                     router.push({
                       pathname: '/decks/[deckId]/cards/create',

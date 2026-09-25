@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { languageTag } from '@/core/domain/values';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -8,19 +9,12 @@ import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useSettingsViewModel } from './use-settings-view-model';
 
-const languages = [
-  { label: 'English', tag: 'en' },
-  { label: 'Persian', tag: 'fa' },
-  { label: 'Arabic', tag: 'ar' },
-] as const;
-const accents = [
-  { label: 'Device default', value: null },
-  { label: 'US English', value: 'us' },
-  { label: 'UK English', value: 'uk' },
-] as const;
+const languages = ['en', 'fa', 'ar'] as const;
+const accents = [null, 'us', 'uk'] as const;
 
 export function SpeechSettingsScreen() {
   const vm = useSettingsViewModel();
+  const { t, language: uiLanguage } = useLocalization();
   const language = vm.settings?.preferredSpeechLanguage
     .toLowerCase()
     .replaceAll('_', '-')
@@ -28,26 +22,25 @@ export function SpeechSettingsScreen() {
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-xl">
-        <ScreenHeader
-          title="Pronunciation"
-          description="Choose your fallback voice language. Each deck's language takes priority."
-        />
-        {vm.loading && !vm.settings ? <LoadingState label="Loading speech settings" /> : null}
-        {vm.loadError && !vm.settings ? <Button label="Try again" onPress={vm.reload} /> : null}
+        <ScreenHeader title={t('settings.pronunciation')} description={t('settings.speechHint')} />
+        {vm.loading && !vm.settings ? <LoadingState label={t('settings.loading')} /> : null}
+        {vm.loadError && !vm.settings ? (
+          <Button label={t('common.tryAgain')} onPress={vm.reload} />
+        ) : null}
         {vm.settings ? (
           <>
             <View className="gap-sm">
               <Text variant="headingSmall" accessibilityRole="header">
-                Speech language
+                {t('settings.speechLanguage')}
               </Text>
-              {languages.map(({ tag, label }) => (
+              {languages.map((tag) => (
                 <Button
                   key={tag}
-                  label={label}
+                  label={t(`language.${tag}`)}
                   variant={language === tag ? 'primary' : 'secondary'}
-                  accessibilityHint={
-                    language === tag ? 'Selected language' : 'Select speech language'
-                  }
+                  accessibilityHint={t(
+                    language === tag ? 'settings.speechSelected' : 'settings.speechSelect',
+                  )}
                   accessibilityState={{ selected: language === tag, busy: !!vm.busy.speech }}
                   disabled={!!vm.busy.speech}
                   onPress={() => {
@@ -56,23 +49,29 @@ export function SpeechSettingsScreen() {
                 />
               ))}
               <Text variant="bodySmall" tone="secondary">
-                Available voices depend on your device.
+                {t('settings.voices')}
               </Text>
             </View>
             {language === 'en' ? (
               <View className="gap-sm">
                 <Text variant="headingSmall" accessibilityRole="header">
-                  English accent
+                  {t('settings.englishAccent')}
                 </Text>
-                {accents.map(({ label, value }) => (
+                {accents.map((value) => (
                   <Button
-                    key={label}
-                    label={label}
+                    key={value ?? 'default'}
+                    label={t(
+                      value === null
+                        ? 'settings.deviceDefault'
+                        : value === 'us'
+                          ? 'settings.usEnglish'
+                          : 'settings.ukEnglish',
+                    )}
                     variant={vm.settings?.preferredSpeechAccent === value ? 'primary' : 'secondary'}
                     accessibilityHint={
                       vm.settings?.preferredSpeechAccent === value
-                        ? 'Selected accent'
-                        : 'Select accent'
+                        ? t('settings.accentSelected')
+                        : t('settings.accentSelect')
                     }
                     accessibilityState={{
                       selected: vm.settings?.preferredSpeechAccent === value,
@@ -86,7 +85,7 @@ export function SpeechSettingsScreen() {
                   />
                 ))}
                 <Text variant="bodySmall" tone="secondary">
-                  The device may use another English accent if your preference is unavailable.
+                  {t('settings.accentHint')}
                 </Text>
               </View>
             ) : null}
@@ -94,7 +93,7 @@ export function SpeechSettingsScreen() {
         ) : null}
         {vm.errors.speech ? (
           <Text tone="error" accessibilityLiveRegion="polite">
-            {vm.errors.speech}
+            {uiLanguage === 'en' ? vm.errors.speech : t('common.genericError')}
           </Text>
         ) : null}
       </View>

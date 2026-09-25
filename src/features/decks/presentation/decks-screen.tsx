@@ -4,6 +4,7 @@ import { FlatList, View } from 'react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { Input } from '@/shared/ui/input';
@@ -17,6 +18,7 @@ import { useDecksViewModel } from './use-decks-view-model';
 type ListedDeck = Deck & { cardCount: number };
 
 export function DecksScreen() {
+  const { t, number } = useLocalization();
   const [search, setSearch] = useState('');
   const { decks, totalCount, error, loading, refresh } = useDecksViewModel(search);
   const renderItem = useCallback(
@@ -41,44 +43,40 @@ export function DecksScreen() {
         contentContainerClassName="gap-md pb-3xl"
         ListHeaderComponent={
           <View className="gap-lg pb-md">
-            <ScreenHeader title="Decks" description="Your collections, ready when you are." />
+            <ScreenHeader title={t('nav.decks')} description={t('decks.description')} />
             {totalCount > 0 ? (
-              <Button label="Create deck" onPress={() => router.push('/decks/create')} />
+              <Button label={t('decks.create')} onPress={() => router.push('/decks/create')} />
             ) : null}
             <Input
-              label="Search decks"
-              placeholder="Search by name"
+              label={t('decks.search')}
+              placeholder={t('decks.searchHint')}
               value={search}
               onChangeText={setSearch}
               returnKeyType="search"
             />
             {!loading && !error && totalCount > 0 ? (
               <Text tone="secondary" variant="labelMedium">
-                {decks.length} of {totalCount} decks
+                {t('decks.count', { visible: number(decks.length), total: number(totalCount) })}
               </Text>
             ) : null}
           </View>
         }
         ListEmptyComponent={
           loading ? (
-            <LoadingState label="Loading decks" />
+            <LoadingState label={t('decks.loading')} />
           ) : error ? (
             <View className="gap-md">
-              <EmptyState title="Unable to load decks" description={error} />
-              <Button label="Try again" onPress={refresh} />
+              <EmptyState title={t('decks.error')} description={error} />
+              <Button label={t('common.tryAgain')} onPress={refresh} />
             </View>
           ) : (
             <View className="gap-md">
               <EmptyState
-                title={search.trim() ? 'No matching decks' : 'No decks yet'}
-                description={
-                  search.trim()
-                    ? 'Try another name, or clear your search.'
-                    : 'Create a deck to start collecting what you want to learn.'
-                }
+                title={t(search.trim() ? 'decks.noMatch' : 'decks.empty')}
+                description={t(search.trim() ? 'decks.noMatchHint' : 'decks.emptyHint')}
               />
               {totalCount === 0 ? (
-                <Button label="Create deck" onPress={() => router.push('/decks/create')} />
+                <Button label={t('decks.create')} onPress={() => router.push('/decks/create')} />
               ) : null}
             </View>
           )

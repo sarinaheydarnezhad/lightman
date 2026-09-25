@@ -1,6 +1,7 @@
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card as CardEntity } from '@/features/study/domain/card';
 import { Card } from '@/shared/ui/card';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
 import { deckAlignment, deckTypography } from './deck-presentation';
 
@@ -13,6 +14,7 @@ export function CardListItem({
   deck: Deck;
   onPress: () => void;
 }) {
+  const { t } = useLocalization();
   const style = {
     textAlign: deckAlignment[deck.textAlignment],
     writingDirection: deck.textAlignment === 'rtl' ? ('rtl' as const) : ('ltr' as const),
@@ -21,8 +23,11 @@ export function CardListItem({
     <Card
       variant="interactive"
       className="gap-sm"
-      accessibilityLabel={`Open ${card.frontText} card${card.category ? `, ${card.category}` : ''}`}
-      accessibilityHint="Opens card details"
+      accessibilityLabel={t('details.openCard', {
+        name: card.frontText,
+        category: card.category ? `, ${card.category}` : '',
+      })}
+      accessibilityHint={t('details.openCardHint')}
       onPress={onPress}
     >
       <Text variant={deckTypography[deck.typographySize]} style={style} numberOfLines={2}>

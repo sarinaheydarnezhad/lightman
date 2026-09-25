@@ -14,15 +14,17 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useThemeMode } from '@/shared/theme/theme-provider';
+import { useLocalization } from '@/shared/localization/localization-provider';
+import type { MessageKey } from '@/shared/localization/messages';
 import { appearanceChoices } from './appearance-options';
 import { useSettingsViewModel } from './use-settings-view-model';
 
-const permissionLabels: Record<NotificationPermissionState, string> = {
-  notDetermined: 'Not requested',
-  authorized: 'Allowed',
-  provisional: 'Provisional',
-  denied: 'Disabled in device settings',
-  unavailable: 'Unavailable',
+const permissionLabels: Record<NotificationPermissionState, MessageKey> = {
+  notDetermined: 'settings.permission.notDetermined',
+  authorized: 'settings.permission.authorized',
+  provisional: 'settings.permission.provisional',
+  denied: 'settings.permission.denied',
+  unavailable: 'settings.permission.unavailable',
 };
 
 function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
@@ -47,11 +49,12 @@ function SettingsRow({
   onPress?: () => void;
   disabled?: boolean;
 }) {
+  const { t } = useLocalization();
   return (
     <Card
       variant={onPress ? 'interactive' : 'default'}
       disabled={disabled}
-      accessibilityLabel={onPress ? `${label}, ${detail}. Choose setting` : undefined}
+      accessibilityLabel={onPress ? t('settings.choose', { label, detail }) : undefined}
       onPress={onPress}
       className="gap-xs"
     >
@@ -76,6 +79,7 @@ function SettingsSwitch({
   busy: boolean;
   onChange: () => void;
 }) {
+  const { t } = useLocalization();
   return (
     <Card>
       <Pressable
@@ -94,7 +98,7 @@ function SettingsSwitch({
           </Text>
         </View>
         <Text variant="labelLarge" tone="accent">
-          {value ? 'On' : 'Off'}
+          {t(value ? 'common.on' : 'common.off')}
         </Text>
       </Pressable>
     </Card>
@@ -116,6 +120,7 @@ function formatTime(date: Date): LocalTime {
 
 export function SettingsScreen() {
   const vm = useSettingsViewModel();
+  const { t, language } = useLocalization();
   const refreshReminder = vm.refreshReminder;
   useFocusEffect(
     useCallback(() => {
@@ -126,10 +131,11 @@ export function SettingsScreen() {
   const [draftTime, setDraftTime] = useState<Date | null>(null);
   const settings = vm.settings;
   const permissionLabel = vm.reminderPermission
-    ? permissionLabels[vm.reminderPermission]
-    : 'Checking';
-  const appearance =
-    appearanceChoices.find((choice) => choice.value === settings?.theme)?.label ?? 'System';
+    ? t(permissionLabels[vm.reminderPermission])
+    : t('settings.permission.checking');
+  const appearance = t(
+    `settings.theme.${appearanceChoices.find((choice) => choice.value === settings?.theme)?.value ?? 'system'}`,
+  );
 
   function pickTime() {
     if (!settings?.dailyReminderTime || vm.busy.time || vm.busy.reminder) return;
@@ -149,39 +155,41 @@ export function SettingsScreen() {
   return (
     <Screen scroll edges={tabScreenEdges}>
       <View className="gap-2xl">
-        <ScreenHeader
-          title="Settings"
-          description="Make the app comfortable for your study routine."
-        />
-        {vm.loading && !settings ? <LoadingState label="Loading settings" /> : null}
+        <ScreenHeader title={t('nav.settings')} description={t('settings.description')} />
+        {vm.loading && !settings ? <LoadingState label={t('settings.loading')} /> : null}
         {vm.loadError && !settings ? (
           <View className="gap-sm">
-            <Text tone="error">Could not load settings.</Text>
-            <Button label="Try again" onPress={vm.reload} />
+            <Text tone="error">{t('settings.loadError')}</Text>
+            <Button label={t('common.tryAgain')} onPress={vm.reload} />
           </View>
         ) : null}
         {settings ? (
           <>
-            <SettingsSection title="Appearance">
+            <SettingsSection title={t('settings.appearance')}>
               <SettingsRow
-                label="Theme"
-                detail={`Current: ${appearance}`}
+                label={t('settings.theme')}
+                detail={t('settings.current', { value: appearance })}
                 onPress={() => router.push('/settings/appearance')}
+              />
+              <SettingsRow
+                label={t('settings.appLanguage')}
+                detail={t(`language.${language}`)}
+                onPress={() => router.push('/settings/language')}
               />
             </SettingsSection>
 
-            <SettingsSection title="Study">
+            <SettingsSection title={t('settings.study')}>
               <Text
                 variant="bodySmall"
                 tone="secondary"
                 accessibilityLiveRegion="polite"
-                accessibilityLabel={`Notification permission, ${permissionLabel}`}
+                accessibilityLabel={t('settings.permission', { value: permissionLabel })}
               >
-                Notification permission: {permissionLabel}
+                {t('settings.permission', { value: permissionLabel })}
               </Text>
               <SettingsSwitch
-                label="Daily reminder"
-                description="A local reminder to review your cards each day."
+                label={t('settings.dailyReminder')}
+                description={t('settings.reminderHint')}
                 value={settings.dailyReminderEnabled}
                 busy={!!vm.busy.reminder || !!vm.busy.time}
                 onChange={() => void vm.setReminder(!settings.dailyReminderEnabled)}
@@ -189,8 +197,8 @@ export function SettingsScreen() {
               {settings.dailyReminderEnabled && settings.dailyReminderTime ? (
                 <>
                   <SettingsRow
-                    label="Reminder time"
-                    detail={`${settings.dailyReminderTime} (local time)`}
+                    label={t('settings.reminderTime')}
+                    detail={t('settings.localTime', { time: settings.dailyReminderTime })}
                     disabled={!!vm.busy.time || !!vm.busy.reminder}
                     onPress={pickTime}
                   />
@@ -208,12 +216,12 @@ export function SettingsScreen() {
                       />
                       <View className="flex-row flex-wrap gap-sm">
                         <Button
-                          label="Cancel"
+                          label={t('common.cancel')}
                           variant="secondary"
                           onPress={() => setDraftTime(null)}
                         />
                         <Button
-                          label="Save time"
+                          label={t('settings.saveTime')}
                           loading={!!vm.busy.time}
                           onPress={() => {
                             void vm.setReminderTime(formatTime(draftTime));
@@ -227,53 +235,55 @@ export function SettingsScreen() {
               ) : null}
               {vm.errors.reminder || vm.errors.time ? (
                 <Text tone="error" accessibilityLiveRegion="polite">
-                  {vm.errors.reminder ?? vm.errors.time}
+                  {language === 'en'
+                    ? (vm.errors.reminder ?? vm.errors.time)
+                    : t('common.genericError')}
                 </Text>
               ) : null}
               {vm.reminderPermission === 'denied' ? (
                 <Button
-                  label="Open notification settings"
+                  label={t('settings.openNotifications')}
                   variant="secondary"
                   onPress={() => void vm.openNotificationSettings()}
                 />
               ) : null}
             </SettingsSection>
 
-            <SettingsSection title="Audio">
+            <SettingsSection title={t('settings.audio')}>
               <SettingsRow
-                label="Pronunciation"
-                detail="Speech language and English accent"
+                label={t('settings.pronunciation')}
+                detail={t('settings.pronunciationHint')}
                 onPress={() => router.push('/settings/speech')}
               />
             </SettingsSection>
 
-            <SettingsSection title="Interaction">
+            <SettingsSection title={t('settings.interaction')}>
               <SettingsSwitch
-                label="Haptic feedback"
-                description="Subtle feedback for study actions."
+                label={t('settings.haptics')}
+                description={t('settings.hapticsHint')}
                 value={settings.hapticsEnabled}
                 busy={!!vm.busy.haptics}
                 onChange={() => void vm.setHaptics(!settings.hapticsEnabled)}
               />
               {vm.errors.haptics ? (
                 <Text tone="error" accessibilityLiveRegion="polite">
-                  {vm.errors.haptics}
+                  {language === 'en' ? vm.errors.haptics : t('common.genericError')}
                 </Text>
               ) : null}
             </SettingsSection>
 
-            <SettingsSection title="About">
-              <SettingsRow label="App" detail={config.appName} />
-              <SettingsRow label="Version" detail={config.appVersion ?? 'Unavailable'} />
-              {config.buildNumber ? (
-                <SettingsRow label="Build" detail={config.buildNumber} />
-              ) : null}
+            <SettingsSection title={t('settings.about')}>
+              <SettingsRow label={t('settings.app')} detail={config.appName} />
               <SettingsRow
-                label="Your data"
-                detail="Study data is currently stored locally for this session."
+                label={t('settings.version')}
+                detail={config.appVersion ?? t('common.unavailable')}
               />
-              <SettingsRow label="Privacy Policy" detail="Coming soon" />
-              <SettingsRow label="Terms of Use" detail="Coming soon" />
+              {config.buildNumber ? (
+                <SettingsRow label={t('settings.build')} detail={config.buildNumber} />
+              ) : null}
+              <SettingsRow label={t('settings.yourData')} detail={t('settings.yourDataHint')} />
+              <SettingsRow label={t('settings.privacy')} detail={t('settings.comingSoon')} />
+              <SettingsRow label={t('settings.terms')} detail={t('settings.comingSoon')} />
             </SettingsSection>
           </>
         ) : null}
@@ -283,7 +293,7 @@ export function SettingsScreen() {
             className="min-h-iconButton self-start px-md py-md text-labelLarge text-primary"
             accessibilityRole="link"
           >
-            View design system
+            {t('settings.viewDesignSystem')}
           </Link>
         ) : null}
       </View>

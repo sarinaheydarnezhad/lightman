@@ -6,7 +6,7 @@ export interface NotificationService {
   getPermissionStatus(): Promise<NotificationPermissionState>;
   requestPermission(): Promise<NotificationPermissionState>;
   getScheduledReminder(): Promise<{ readonly time: LocalTime } | null>;
-  scheduleDailyReminder(time: LocalTime): Promise<void>;
+  scheduleDailyReminder(time: LocalTime, language?: string): Promise<void>;
   cancelDailyReminder(): Promise<void>;
   openSystemSettings(): Promise<void>;
   subscribeToReminderTaps(listener: () => void): () => void;

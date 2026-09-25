@@ -2,10 +2,12 @@ import { Tabs } from 'expo-router';
 import { BarChart3, BookOpen, House, Settings2, SquareStack } from 'lucide-react-native';
 
 import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { typography } from '@/shared/theme/tokens';
 
 export default function TabsLayout() {
   const colors = useThemeColors();
+  const { t } = useLocalization();
   return (
     <Tabs
       screenOptions={{
@@ -22,16 +24,16 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarAccessibilityLabel: 'Home tab',
+          title: t('nav.home'),
+          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.home') }),
           tabBarIcon: ({ color, size }) => <House color={color} size={size} accessible={false} />,
         }}
       />
       <Tabs.Screen
         name="decks"
         options={{
-          title: 'Decks',
-          tabBarAccessibilityLabel: 'Decks tab',
+          title: t('nav.decks'),
+          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.decks') }),
           tabBarIcon: ({ color, size }) => (
             <SquareStack color={color} size={size} accessible={false} />
           ),
@@ -40,8 +42,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="study"
         options={{
-          title: 'Study',
-          tabBarAccessibilityLabel: 'Study tab',
+          title: t('nav.study'),
+          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.study') }),
           tabBarIcon: ({ color, size }) => (
             <BookOpen color={color} size={size} accessible={false} />
           ),
@@ -50,8 +52,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: 'Analytics',
-          tabBarAccessibilityLabel: 'Analytics tab',
+          title: t('nav.analytics'),
+          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.analytics') }),
           tabBarIcon: ({ color, size }) => (
             <BarChart3 color={color} size={size} accessible={false} />
           ),
@@ -60,8 +62,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
-          tabBarAccessibilityLabel: 'Settings tab',
+          title: t('nav.settings'),
+          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.settings') }),
           tabBarIcon: ({ color, size }) => (
             <Settings2 color={color} size={size} accessible={false} />
           ),

@@ -26,6 +26,7 @@ import StudySession from '@/app/study/[sessionId]';
 import VocabularyHelper from '@/app/vocabulary/helper';
 import Appearance from '@/app/settings/appearance';
 import SpeechSettings from '@/app/settings/speech';
+import LanguageSettings from '@/app/settings/language';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
@@ -92,6 +93,7 @@ const routes = {
   'vocabulary/helper': VocabularyHelper,
   'settings/appearance': Appearance,
   'settings/speech': SpeechSettings,
+  'settings/language': LanguageSettings,
   'design-system': DesignSystem,
 };
 
@@ -120,6 +122,29 @@ test.each([
   const rendered = renderRouter(routes, { initialUrl: path });
   expect(await screen.findByRole('header', { name: heading })).toBeTruthy();
   expect(rendered.getPathname()).toBe(path);
+});
+
+test('app language switches visible navigation and RTL labels without changing deck language', async () => {
+  renderRouter(routes, { initialUrl: '/settings/language' });
+  const before = (await application.getDeck('travel-basics')).language;
+  try {
+    const persian = await screen.findByRole('button', { name: 'Persian' });
+    fireEvent.press(persian);
+    await waitFor(() => expect(application.settings.snapshot()?.language).toBe('fa'));
+    const heading = await screen.findByRole('header', { name: 'زبان برنامه' });
+    let layout = heading.parent;
+    while (layout && layout.props.style?.direction !== 'rtl') layout = layout.parent;
+    expect(layout?.props.style).toMatchObject({ direction: 'rtl' });
+    expect(screen.getByRole('button', { name: 'فارسی', selected: true })).toBeTruthy();
+    expect((await application.getDeck('travel-basics')).language).toBe(before);
+    fireEvent.press(screen.getByRole('button', { name: 'عربی' }));
+    await waitFor(() => expect(application.settings.snapshot()?.language).toBe('ar'));
+    expect(await screen.findByRole('header', { name: 'لغة التطبيق' })).toBeTruthy();
+  } finally {
+    await act(async () => {
+      await application.settings.setLanguage(languageTag('en'));
+    });
+  }
 });
 
 const analyticsToday = calendarDate('2026-09-25');
@@ -454,7 +479,7 @@ test('daily reminder uses the notification service and reveals the local time co
   await waitFor(() =>
     expect(screen.getByRole('switch', { name: 'Daily reminder', checked: true })).toBeTruthy(),
   );
-  expect(schedule).toHaveBeenCalledWith('09:00');
+  expect(schedule).toHaveBeenCalledWith('09:00', 'en');
   expect(screen.getByRole('button', { name: /Reminder time, 09:00/ })).toBeTruthy();
   fireEvent.press(screen.getByRole('switch', { name: 'Daily reminder', checked: true }));
   await waitFor(() =>
@@ -467,7 +492,7 @@ test('permission denial keeps reminder off and offers device settings', async ()
   await application.settings.setReminderEnabled(false);
   jest.spyOn(expoNotificationService, 'getPermissionStatus').mockResolvedValue('denied');
   renderRouter(routes, { initialUrl: '/settings' });
-  await screen.findByLabelText('Notification permission, Disabled in device settings');
+  await screen.findByLabelText('Notification permission: Disabled in device settings');
   fireEvent.press(await screen.findByRole('switch', { name: 'Daily reminder', checked: false }));
   expect(await screen.findByRole('button', { name: 'Open notification settings' })).toBeTruthy();
   expect((await application.getSettings())?.dailyReminderEnabled).toBe(false);
@@ -540,7 +565,7 @@ test('changing the reminder time through the Android picker reschedules once', a
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Reminder time, 18:45/ })).toBeTruthy(),
     );
-    expect(schedule).toHaveBeenLastCalledWith('18:45');
+    expect(schedule).toHaveBeenLastCalledWith('18:45', 'en');
     expect(schedule).toHaveBeenCalledTimes(1);
     await application.settings.setReminderEnabled(false);
   } finally {

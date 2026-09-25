@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { initializeApplication } from '@/core/bootstrap/initialize-application';
 import { logger } from '@/core/infrastructure/platform';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { LoadingState } from '@/shared/ui/loading-state';
@@ -18,6 +19,7 @@ export function BootstrapGate({
   children,
   initialize = initializeApplication,
 }: BootstrapGateProps) {
+  const { t } = useLocalization();
   const [status, setStatus] = useState<BootstrapStatus>('boot');
   const [attempt, setAttempt] = useState(0);
 
@@ -52,13 +54,16 @@ export function BootstrapGate({
         {status === 'error' ? (
           <>
             <EmptyState
-              title="Could not open your study space"
-              description="Something went wrong while starting the app. Please try again."
+              title={t('common.bootstrapError')}
+              description={t('common.bootstrapHint')}
             />
-            <Button label="Try again" onPress={() => setAttempt((previous) => previous + 1)} />
+            <Button
+              label={t('common.tryAgain')}
+              onPress={() => setAttempt((previous) => previous + 1)}
+            />
           </>
         ) : (
-          <LoadingState label="Preparing your study space" />
+          <LoadingState label={t('common.bootstrapLoading')} />
         )}
       </View>
     </Screen>

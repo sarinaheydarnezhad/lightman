@@ -55,9 +55,13 @@ export function createSettingsUseCases(
   async function save(changes: Partial<UserSettings>): Promise<UserSettings> {
     return write(validateUserSettings({ ...(await current()), ...changes }));
   }
-  async function syncReminder(enabled: boolean, time: UserSettings['dailyReminderTime']) {
+  async function syncReminder(
+    enabled: boolean,
+    time: UserSettings['dailyReminderTime'],
+    language: string,
+  ) {
     try {
-      if (enabled) await notifications.scheduleDailyReminder(time!);
+      if (enabled) await notifications.scheduleDailyReminder(time!, language);
       else await notifications.cancelDailyReminder();
     } catch (error) {
       if (error instanceof NotificationPermissionDenied || error instanceof AppError) throw error;
@@ -77,7 +81,7 @@ export function createSettingsUseCases(
         throw new AppError('unavailable', 'Notifications are unavailable on this device.');
     }
     try {
-      await syncReminder(next.dailyReminderEnabled, next.dailyReminderTime);
+      await syncReminder(next.dailyReminderEnabled, next.dailyReminderTime, next.language);
     } catch (error) {
       if (error instanceof ReminderRecoveryFailed) {
         // Both native replacement and restoration failed. Keep the visible preference truthful.
@@ -89,7 +93,11 @@ export function createSettingsUseCases(
       return await write(next);
     } catch (error) {
       try {
-        await syncReminder(previous.dailyReminderEnabled, previous.dailyReminderTime);
+        await syncReminder(
+          previous.dailyReminderEnabled,
+          previous.dailyReminderTime,
+          previous.language,
+        );
       } catch {
         /* Preserve the repository failure; next action can retry synchronization. */
       }
@@ -117,6 +125,12 @@ export function createSettingsUseCases(
     snapshot: () => repository.snapshot(),
     subscribe: (listener: () => void) => repository.subscribe(listener),
     setTheme: (theme: ThemeMode) => serialize('theme', () => save({ theme })),
+    setLanguage: (language: UserSettings['language']) =>
+      serialize('reminder', async () => {
+        const value = await current();
+        if (value.language === language) return value;
+        return value.dailyReminderEnabled ? reminder({ language }) : save({ language });
+      }),
     setHaptics: (hapticsEnabled: boolean) => serialize('haptics', () => save({ hapticsEnabled })),
     setSpeechLanguage: (preferredSpeechLanguage: LanguageTag) =>
       serialize('speech', async () => {
@@ -162,9 +176,9 @@ export function createSettingsUseCases(
           value.dailyReminderEnabled &&
           (permission === 'authorized' || permission === 'provisional')
         ) {
-          await syncReminder(true, value.dailyReminderTime);
+          await syncReminder(true, value.dailyReminderTime, value.language);
         } else {
-          await syncReminder(false, null);
+          await syncReminder(false, null, value.language);
           if (value.dailyReminderEnabled) await write({ ...value, dailyReminderEnabled: false });
         }
         return permission;

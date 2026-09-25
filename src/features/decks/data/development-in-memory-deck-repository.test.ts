@@ -3,6 +3,15 @@ import { instant } from '@/core/domain/values';
 import { makeDeck } from '@/../test/fixtures';
 import { InMemoryDeckRepository } from './development-in-memory-deck-repository';
 
+test('deck search retains mixed Persian, Arabic, and Latin words', async () => {
+  const decks = new InMemoryDeckRepository();
+  await decks.create(makeDeck({ id: 'fa', name: 'فارسی English' }));
+  await decks.create(makeDeck({ id: 'ar', name: 'العربية Travel' }));
+  expect((await decks.list({ search: 'فارسی' })).map((deck) => deck.id)).toEqual(['fa']);
+  expect((await decks.list({ search: 'العربية' })).map((deck) => deck.id)).toEqual(['ar']);
+  expect((await decks.list({ search: 'TRAVEL' })).map((deck) => deck.id)).toEqual(['ar']);
+});
+
 test('create, update, search, archive and copy boundaries satisfy the deck contract', async () => {
   const repository = new InMemoryDeckRepository();
   const deck = makeDeck();

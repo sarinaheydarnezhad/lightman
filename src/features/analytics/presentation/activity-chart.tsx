@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { Card } from '@/shared/ui/card';
@@ -25,8 +26,13 @@ export function ActivityChart({
   totalReviews: number;
   activeDays: number;
 }) {
+  const { t, number } = useLocalization();
   const colors = useThemeColors();
-  const summary = `${window}-day review activity: ${totalReviews} ${totalReviews === 1 ? 'review' : 'reviews'} across ${activeDays} active ${activeDays === 1 ? 'day' : 'days'}.`;
+  const summary = t('analytics.activitySummary', {
+    window: number(window),
+    reviews: number(totalReviews),
+    days: number(activeDays),
+  });
   const heights = chartBarHeights(activity);
   const width = 360;
   const baseline = 72;
@@ -34,7 +40,7 @@ export function ActivityChart({
   return (
     <Card className="gap-md">
       <Text variant="headingSmall" accessibilityRole="header">
-        Daily activity
+        {t('analytics.activity')}
       </Text>
       <View accessible accessibilityRole="image" accessibilityLabel={summary}>
         <Svg width="100%" height={80} viewBox="0 0 360 80" accessible={false}>

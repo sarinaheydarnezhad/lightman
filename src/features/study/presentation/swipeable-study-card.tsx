@@ -12,6 +12,7 @@ import Animated, {
 
 import { haptics } from '@/core/composition/haptics';
 import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { radii, spacing } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
 import type { ReviewResult } from '../domain/review';
@@ -36,6 +37,7 @@ export function SwipeableStudyCard({
   onAnswer,
 }: SwipeableStudyCardProps) {
   const colors = useThemeColors();
+  const { t } = useLocalization();
   const reducedMotion = useReducedMotion();
   const { width: screenWidth } = useWindowDimensions();
   // Width is measured on layout, never on a gesture frame.
@@ -160,7 +162,7 @@ export function SwipeableStudyCard({
           ]}
         >
           <Text variant="labelMedium" style={{ color: colors.error }}>
-            ← Failure
+            ← {t('study.failure')}
           </Text>
         </Animated.View>
         <Animated.View
@@ -174,7 +176,7 @@ export function SwipeableStudyCard({
           ]}
         >
           <Text variant="labelMedium" style={{ color: colors.success }}>
-            Success →
+            {t('study.success')} →
           </Text>
         </Animated.View>
       </Animated.View>

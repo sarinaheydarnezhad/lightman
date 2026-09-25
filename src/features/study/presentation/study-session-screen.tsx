@@ -14,8 +14,10 @@ import { Text } from '@/shared/ui/text';
 import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
 import { useStudySessionViewModel } from './use-study-session-view-model';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 export function StudySessionScreen({ sessionId }: { sessionId: string }) {
+  const { t, number, language } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { fontScale, width } = useWindowDimensions();
   const study = useStudySessionViewModel(sessionId);
@@ -24,18 +26,21 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     if (study.phase === 'completed' && session)
       AccessibilityInfo.announceForAccessibility(
-        empty ? 'No cards due today.' : 'Session complete. Every card is finished.',
+        empty ? t('study.noneDue') : t('study.completeHint'),
       );
-  }, [study.phase, session, empty]);
+  }, [study.phase, session, empty, t]);
   useEffect(() => {
-    if (study.actionError) AccessibilityInfo.announceForAccessibility(study.actionError);
-  }, [study.actionError]);
+    if (study.actionError)
+      AccessibilityInfo.announceForAccessibility(
+        language === 'en' ? study.actionError : t('common.genericError'),
+      );
+  }, [study.actionError, language, t]);
 
   if (study.phase === 'loading') {
     return (
       <Screen>
         <View className="flex-1 justify-center">
-          <LoadingState label="Loading study session" />
+          <LoadingState label={t('study.session')} />
         </View>
       </Screen>
     );
@@ -51,20 +56,28 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             importantForAccessibility={study.confirmExit ? 'no-hide-descendants' : 'auto'}
           >
             <EmptyState
-              title="Study unavailable"
-              description={study.error ?? 'Unable to show this session.'}
+              title={t('study.unavailable')}
+              description={
+                language === 'en'
+                  ? (study.error ?? t('study.unavailableHint'))
+                  : t('study.unavailableHint')
+              }
             />
-            <Button label="Try again" onPress={() => void study.load()} />
-            <Button label="Leave study" variant="secondary" onPress={study.leave} />
+            <Button label={t('common.tryAgain')} onPress={() => void study.load()} />
+            <Button label={t('study.leave')} variant="secondary" onPress={study.leave} />
           </View>
           {study.confirmExit ? (
             <ConfirmationPanel
-              title="End this session?"
-              description="Your completed reviews will be kept, but this study session will end."
-              cancelLabel="Keep studying"
-              confirmLabel="End session"
+              title={t('study.exitTitle')}
+              description={t('study.exitHint')}
+              cancelLabel={t('study.keep')}
+              confirmLabel={t('study.end')}
               busy={study.cancelling}
-              error={study.actionError}
+              error={
+                language === 'en'
+                  ? study.actionError
+                  : study.actionError && t('common.genericError')
+              }
               onCancel={study.dismissExit}
               onConfirm={() => void study.cancel()}
             />
@@ -78,15 +91,15 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
       <Screen>
         <View className="flex-1 justify-center gap-xl">
           <EmptyState
-            title={empty ? 'No cards due today' : 'Session ended'}
-            description={
-              empty
-                ? 'You are all caught up for now. Add a card or try another deck.'
-                : 'Your completed reviews were saved.'
-            }
+            title={t(empty ? 'study.noneDue' : 'study.ended')}
+            description={t(empty ? 'study.noneDueHint' : 'study.endedHint')}
           />
-          <Button label="Browse decks" onPress={() => router.replace('/decks')} />
-          <Button label="Return home" variant="secondary" onPress={() => router.replace('/')} />
+          <Button label={t('common.browseDecks')} onPress={() => router.replace('/decks')} />
+          <Button
+            label={t('common.returnHome')}
+            variant="secondary"
+            onPress={() => router.replace('/')}
+          />
         </View>
       </Screen>
     );
@@ -96,28 +109,29 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
     return (
       <Screen>
         <View className="flex-1 justify-center gap-xl">
-          <EmptyState
-            title="Session complete"
-            description="You finished every card in this session."
-          />
+          <EmptyState title={t('study.complete')} description={t('study.completeHint')} />
           <Card className="gap-md">
-            <Text>Cards studied: {progress.uniqueCardsStudied}</Text>
-            <Text>Retries: {progress.retryCount}</Text>
+            <Text>{t('study.cardsStudied', { count: number(progress.uniqueCardsStudied) })}</Text>
+            <Text>{t('study.retries', { count: number(progress.retryCount) })}</Text>
             <Text>
-              Study time:{' '}
-              {minutes < 1
-                ? 'Under a minute'
-                : `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`}
+              {t('study.time', {
+                value:
+                  minutes < 1
+                    ? t('study.underMinute')
+                    : t(minutes === 1 ? 'study.minute' : 'study.minutes', {
+                        count: number(minutes),
+                      }),
+              })}
             </Text>
           </Card>
           {study.start.error ? (
             <Text tone="error" accessibilityLiveRegion="polite">
-              {study.start.error}
+              {language === 'en' ? study.start.error : t('common.genericError')}
             </Text>
           ) : null}
           {study.start.activeSession ? (
             <Button
-              label="Resume session"
+              label={t('study.resume')}
               variant="secondary"
               onPress={() =>
                 study.start.activeSession &&
@@ -129,11 +143,15 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             />
           ) : null}
           <Button
-            label="Study again"
+            label={t('study.again')}
             loading={study.start.starting}
             onPress={() => void study.start.start(session.scope, true)}
           />
-          <Button label="Done" variant="secondary" onPress={() => router.replace('/study')} />
+          <Button
+            label={t('study.done')}
+            variant="secondary"
+            onPress={() => router.replace('/study')}
+          />
         </View>
       </Screen>
     );
@@ -157,11 +175,11 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
                 {deck.name}
               </Text>
               <Text variant="headingSmall" accessibilityRole="header">
-                Study session
+                {t('study.session')}
               </Text>
             </View>
             <Button
-              label="Exit study"
+              label={t('study.exit')}
               variant="tertiary"
               disabled={study.submitting || study.swipePending}
               onPress={study.leave}
@@ -170,16 +188,16 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           <View
             className="flex-row items-center justify-between gap-md"
             accessible
-            accessibilityLabel={`Card ${progress.currentPosition} of ${total}. ${progress.completed} completed.${item.kind === 'retry' ? ' One more try.' : ''}`}
+            accessibilityLabel={`${t('study.progress', { position: number(progress.currentPosition ?? 0), total: number(total), completed: number(progress.completed) })}${item.kind === 'retry' ? ` ${t('study.retry')}.` : ''}`}
           >
-            <Text variant="labelLarge">
-              {progress.currentPosition} / {total}
+            <Text variant="labelLarge" style={{ writingDirection: 'ltr' }}>
+              {number(progress.currentPosition ?? 0)} / {number(total)}
             </Text>
             {item.kind === 'retry' ? (
-              <Badge label="One more try" />
+              <Badge label={t('study.retry')} />
             ) : (
               <Text variant="bodySmall" tone="secondary">
-                {progress.remaining} remaining
+                {t('study.remaining', { count: number(progress.remaining) })}
               </Text>
             )}
           </View>
@@ -196,7 +214,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           />
           {study.actionError && !study.confirmExit ? (
             <Text tone="error" accessibilityLiveRegion="polite">
-              {study.actionError}
+              {language === 'en' ? study.actionError : t('common.genericError')}
             </Text>
           ) : null}
           <StudyControls
@@ -209,12 +227,14 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
         </View>
         {study.confirmExit ? (
           <ConfirmationPanel
-            title="End this session?"
-            description="Your completed reviews will be kept, but this study session will end."
-            cancelLabel="Keep studying"
-            confirmLabel="End session"
+            title={t('study.exitTitle')}
+            description={t('study.exitHint')}
+            cancelLabel={t('study.keep')}
+            confirmLabel={t('study.end')}
             busy={study.cancelling}
-            error={study.actionError}
+            error={
+              language === 'en' ? study.actionError : study.actionError && t('common.genericError')
+            }
             onCancel={study.dismissExit}
             onConfirm={() => void study.cancel()}
           />

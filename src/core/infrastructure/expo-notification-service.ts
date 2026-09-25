@@ -21,6 +21,7 @@ import { Linking, Platform } from 'react-native';
 
 import { localTime, type LocalTime } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { resolveUiLanguage, translate } from '@/shared/localization/localization';
 import {
   NotificationPermissionDenied,
   ReminderRecoveryFailed,
@@ -83,13 +84,13 @@ function scheduledTime(request: NotificationRequest): LocalTime | null {
   }
 }
 
-async function createReminder(time: LocalTime): Promise<void> {
+async function createReminder(time: LocalTime, language: string): Promise<void> {
   const [hour, minute] = time.split(':').map(Number);
   await scheduleNotificationAsync({
     content: {
-      title: 'Time to study',
-      body: 'You have cards waiting for review.',
-      data: { reminderKey },
+      title: translate(language, 'notification.title'),
+      body: translate(language, 'notification.body'),
+      data: { reminderKey, uiLanguage: resolveUiLanguage(language) },
       sound: false,
       ...(Platform.OS === 'ios' ? { interruptionLevel: 'passive' as const } : {}),
     },
@@ -155,7 +156,7 @@ export const expoNotificationService: NotificationService = {
     }
     return null;
   },
-  async scheduleDailyReminder(time) {
+  async scheduleDailyReminder(time, language = 'en') {
     localTime(time);
     if (Platform.OS === 'web') throw new AppError('unavailable', 'Local reminders unavailable.');
     if (Platform.OS === 'android') {
@@ -170,26 +171,37 @@ export const expoNotificationService: NotificationService = {
       throw new NotificationPermissionDenied();
 
     const previous = await reminderRequests();
-    if (previous.length === 1 && scheduledTime(previous[0]!) === time) return;
+    if (
+      previous.length === 1 &&
+      scheduledTime(previous[0]!) === time &&
+      previous[0]!.content.title === translate(language, 'notification.title') &&
+      previous[0]!.content.body === translate(language, 'notification.body')
+    )
+      return;
     const oldTime = previous.map(scheduledTime).find((value) => value !== null) ?? null;
+    const oldLanguage =
+      typeof previous[0]?.content.data?.uiLanguage === 'string'
+        ? previous[0].content.data.uiLanguage
+        : 'en';
     try {
       for (const request of previous) await cancelScheduledNotificationAsync(request.identifier);
     } catch (error) {
       // A native cancellation can fail after removing one of several stale reminders.
       // Restore the previous time only when no study reminder survived.
       try {
-        if (oldTime && !(await reminderRequests()).length) await createReminder(oldTime);
+        if (oldTime && !(await reminderRequests()).length)
+          await createReminder(oldTime, oldLanguage);
       } catch (restoreError) {
         throw new ReminderRecoveryFailed(restoreError);
       }
       throw error;
     }
     try {
-      await createReminder(time);
+      await createReminder(time, language);
     } catch (error) {
       if (oldTime) {
         try {
-          await createReminder(oldTime);
+          await createReminder(oldTime, oldLanguage);
         } catch (restoreError) {
           throw new ReminderRecoveryFailed(restoreError);
         }

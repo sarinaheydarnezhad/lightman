@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 
 import type { CreateCardInput } from '@/core/application/create-application';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { LoadingState } from '@/shared/ui/loading-state';
@@ -10,6 +11,7 @@ import { CardForm } from './card-form';
 import { useCardActions, useCardEditorViewModel } from './use-cards-view-model';
 
 export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: string }) {
+  const { t, language } = useLocalization();
   const { create, update } = useCardActions();
   const resource = useCardEditorViewModel(deckId, cardId);
 
@@ -32,18 +34,26 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
   if (resource.loading && !resource.data)
     return (
       <Screen edges={stackScreenEdges}>
-        <LoadingState label="Loading card editor" />
+        <LoadingState label={t('details.cardLoading')} />
       </Screen>
     );
   if (!resource.data || resource.error)
     return (
       <Screen edges={stackScreenEdges}>
         <EmptyState
-          title="Card unavailable"
-          description={resource.error ?? "This card isn't available."}
+          title={t('details.cardUnavailable')}
+          description={
+            language === 'en'
+              ? (resource.error ?? t('details.cardUnavailableHint'))
+              : t('details.cardUnavailableHint')
+          }
         />
-        <Button label="Try again" onPress={resource.refresh} />
-        <Button label="Browse decks" variant="tertiary" onPress={() => router.replace('/decks')} />
+        <Button label={t('common.tryAgain')} onPress={resource.refresh} />
+        <Button
+          label={t('common.browseDecks')}
+          variant="tertiary"
+          onPress={() => router.replace('/decks')}
+        />
       </Screen>
     );
   return (

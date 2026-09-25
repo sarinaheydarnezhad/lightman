@@ -2,6 +2,8 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { layout } from '@/shared/theme/tokens';
+import { useLocalization } from '@/shared/localization/localization-provider';
+import { deckLanguageLabel } from '@/shared/localization/localization';
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -12,32 +14,35 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useHomeViewModel } from './use-home-view-model';
-import { languageLabel } from '@/features/decks/presentation/deck-presentation';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 
 export function HomeScreen() {
+  const { t, number, language } = useLocalization();
   const home = useHomeViewModel();
   const study = useStartStudy();
   const metrics = [
-    { label: 'Cards', value: home.cardCount },
-    { label: 'Reviews recorded', value: home.reviewCount },
+    { label: t('home.cards'), value: home.cardCount },
+    { label: t('home.reviews'), value: home.reviewCount },
   ];
 
   return (
     <Screen scroll edges={tabScreenEdges}>
       <View className="gap-2xl">
         <View className="gap-lg">
-          <ScreenHeader title="Welcome back" description={home.greeting} />
-          <Badge label="Study overview" />
+          <ScreenHeader title={t('home.welcome')} description={t('home.greeting')} />
+          <Badge label={t('home.overview')} />
         </View>
 
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Your collection
+            {t('home.collection')}
           </Text>
-          {home.loading ? <LoadingState label="Loading study overview" /> : null}
+          {home.loading ? <LoadingState label={t('home.loading')} /> : null}
           {home.error ? (
-            <EmptyState title="Unable to load overview" description={home.error} />
+            <EmptyState
+              title={t('home.loadError')}
+              description={language === 'en' ? home.error : t('common.genericError')}
+            />
           ) : null}
           <View className="flex-row flex-wrap gap-sm">
             {metrics.map((metric) => (
@@ -49,21 +54,21 @@ export function HomeScreen() {
                 <Text tone="secondary" variant="bodySmall">
                   {metric.label}
                 </Text>
-                <Text variant="headingMedium">{metric.value}</Text>
+                <Text variant="headingMedium">{number(metric.value)}</Text>
               </Card>
             ))}
           </View>
           <Button
-            label="Start study"
+            label={t('study.start')}
             loading={study.starting}
             onPress={() => void study.start({ kind: 'all-decks' })}
           />
           {study.error ? (
             <Card className="gap-sm" accessibilityLiveRegion="polite">
-              <Text tone="error">{study.error}</Text>
+              <Text tone="error">{language === 'en' ? study.error : t('common.genericError')}</Text>
               {study.activeSession ? (
                 <Button
-                  label="Resume session"
+                  label={t('study.resume')}
                   variant="secondary"
                   onPress={() => study.activeSession && openStudySession(study.activeSession)}
                 />
@@ -74,13 +79,13 @@ export function HomeScreen() {
 
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Your decks
+            {t('home.yourDecks')}
           </Text>
           {home.featuredDecks.map((deck) => (
             <Card
               key={deck.id}
               variant="interactive"
-              accessibilityLabel={`Open ${deck.name} deck`}
+              accessibilityLabel={t('home.openDeck', { name: deck.name })}
               onPress={() =>
                 router.push({ pathname: '/decks/[deckId]', params: { deckId: deck.id } })
               }
@@ -89,15 +94,15 @@ export function HomeScreen() {
               <Text variant="headingSmall">{deck.name}</Text>
               <Text tone="secondary">{deck.description}</Text>
               <Text tone="tertiary" variant="caption">
-                {languageLabel(deck.language)}
+                {deckLanguageLabel(deck.language, language)}
               </Text>
             </Card>
           ))}
           {!home.loading && !home.error && home.featuredDecks.length === 0 ? (
-            <Text tone="secondary">Create a deck to keep your learning in one place.</Text>
+            <Text tone="secondary">{t('home.empty')}</Text>
           ) : null}
           <Button
-            label="Browse all decks"
+            label={t('home.browse')}
             variant="tertiary"
             onPress={() => router.push('/decks')}
           />

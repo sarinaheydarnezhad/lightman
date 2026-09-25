@@ -17,6 +17,7 @@ import {
 } from '@/features/vocabulary/application/merge-suggestion';
 import { VocabularyHelper } from '@/features/vocabulary/presentation/vocabulary-helper';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { Card as Surface } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -24,6 +25,7 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { CardContent } from './card-content';
+import { deckAlignment } from './deck-presentation';
 
 export function CardForm({
   deck,
@@ -34,6 +36,9 @@ export function CardForm({
   existing?: Card;
   onSubmit: (content: Omit<CreateCardInput, 'deckId'>) => Promise<void>;
 }) {
+  const { t, number, language } = useLocalization();
+  const contentDirection = deck.textAlignment === 'rtl' ? 'rtl' : 'ltr';
+  const contentAlignment = deckAlignment[deck.textAlignment];
   const [frontText, setFrontText] = useState(existing?.frontText ?? '');
   const [phonetic, setPhonetic] = useState(existing?.phonetic ?? '');
   const [category, setCategory] = useState(existing?.category ?? '');
@@ -87,7 +92,7 @@ export function CardForm({
     setMeaningError(null);
     setExampleError(null);
     setImportMessage(
-      `${changed ? 'Suggestion added. Review and save when ready.' : 'No new content was added.'}${result.limitedExamples ? ' The card has room for only 20 examples.' : ''}`,
+      `${t(changed ? 'form.suggestionAdded' : 'form.suggestionUnchanged')}${result.limitedExamples ? ` ${t('form.examplesLimit')}` : ''}`,
     );
     setPendingSuggestion(null);
     if (changed) void haptics.actionConfirmed();
@@ -100,11 +105,11 @@ export function CardForm({
     setExampleError(null);
     setError(null);
     if (!frontText.trim()) {
-      setFrontError('Enter a term.');
+      setFrontError(t('form.termRequired'));
       return;
     }
     if (!meaning.trim()) {
-      setMeaningError('Enter a meaning.');
+      setMeaningError(t('form.meaningRequired'));
       return;
     }
     const emptyExample = examples.findIndex((item) => !item.sentence.trim());
@@ -116,7 +121,9 @@ export function CardForm({
     try {
       content = validateCardContent({ frontText, phonetic, category, meaning, examples });
     } catch (cause) {
-      setError(cause instanceof AppError ? cause.message : 'Check the card content and try again.');
+      setError(
+        language === 'en' && cause instanceof AppError ? cause.message : t('form.cardInvalid'),
+      );
       return;
     }
     submitting.current = true;
@@ -125,7 +132,9 @@ export function CardForm({
     try {
       await onSubmit(content);
     } catch (cause) {
-      setError(cause instanceof AppError ? cause.message : 'Unable to save this card. Try again.');
+      setError(
+        language === 'en' && cause instanceof AppError ? cause.message : t('form.cardSaveError'),
+      );
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -136,15 +145,17 @@ export function CardForm({
     <Screen scroll keyboardAware edges={stackScreenEdges}>
       <View className="gap-xl pb-3xl">
         <ScreenHeader
-          title={existing ? 'Edit card' : 'Create a card'}
-          description={`Add a term and its meaning to ${deck.name}.`}
+          title={t(existing ? 'form.editCard' : 'form.createCard')}
+          description={t('form.cardHint', { name: deck.name })}
         />
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Front
+            {t('form.front')}
           </Text>
           <Input
-            label="Front text"
+            label={t('form.frontText')}
+            textAlign={contentAlignment}
+            style={{ writingDirection: contentDirection }}
             value={frontText}
             onChangeText={(value) => {
               setFrontText(value);
@@ -153,7 +164,7 @@ export function CardForm({
               setImportMessage(null);
             }}
             error={frontError ?? undefined}
-            placeholder="Term or vocabulary"
+            placeholder={t('form.frontPlaceholder')}
             maxLength={MAX_CARD_TEXT_LENGTH}
             returnKeyType="next"
             onSubmitEditing={() => phoneticRef.current?.focus()}
@@ -173,19 +184,23 @@ export function CardForm({
           {pendingSuggestion ? (
             <Surface className="gap-md" accessibilityLiveRegion="polite">
               <Text variant="headingSmall" accessibilityRole="header">
-                Review suggestion
+                {t('form.reviewSuggestion')}
               </Text>
               <Text tone="secondary">{pendingSuggestion.definition}</Text>
               {hasMeaningConflict(meaning, pendingSuggestion) ? (
                 <View className="gap-sm">
-                  <Text>Existing meaning: {meaning}</Text>
-                  <Text tone="secondary">
-                    Choose how to handle the meaning you already entered.
-                  </Text>
+                  <Text>{t('form.existingMeaning', { value: meaning })}</Text>
+                  <Text tone="secondary">{t('form.meaningConflict')}</Text>
                   {(['keep', 'replace', 'append'] as const).map((choice) => (
                     <Button
                       key={choice}
-                      label={`${choice[0]!.toUpperCase()}${choice.slice(1)} meaning`}
+                      label={t(
+                        choice === 'keep'
+                          ? 'form.keepMeaning'
+                          : choice === 'replace'
+                            ? 'form.replaceMeaning'
+                            : 'form.appendMeaning',
+                      )}
                       variant={meaningChoice === choice ? 'primary' : 'secondary'}
                       accessibilityState={{ selected: meaningChoice === choice }}
                       disabled={
@@ -199,12 +214,12 @@ export function CardForm({
               ) : null}
               {hasPhoneticConflict(phonetic, pendingSuggestion) ? (
                 <View className="gap-sm">
-                  <Text>Existing phonetic: {phonetic}</Text>
-                  <Text tone="secondary">Choose which phonetic transcription to keep.</Text>
+                  <Text>{t('form.existingPhonetic', { value: phonetic })}</Text>
+                  <Text tone="secondary">{t('form.phoneticConflict')}</Text>
                   {(['keep', 'replace'] as const).map((choice) => (
                     <Button
                       key={choice}
-                      label={`${choice[0]!.toUpperCase()}${choice.slice(1)} phonetic`}
+                      label={t(choice === 'keep' ? 'form.keepPhonetic' : 'form.replacePhonetic')}
                       variant={phoneticChoice === choice ? 'primary' : 'secondary'}
                       accessibilityState={{ selected: phoneticChoice === choice }}
                       onPress={() => setPhoneticChoice(choice)}
@@ -213,11 +228,10 @@ export function CardForm({
                 </View>
               ) : null}
               <Text variant="bodySmall" tone="secondary">
-                New example sentences will be added without replacing existing ones; duplicates are
-                skipped. Part of speech is shown for context and is not a card field.
+                {t('form.suggestionHint')}
               </Text>
               <Button
-                label="Apply suggestion"
+                label={t('form.applySuggestion')}
                 disabled={
                   (hasMeaningConflict(meaning, pendingSuggestion) && !meaningChoice) ||
                   (hasPhoneticConflict(phonetic, pendingSuggestion) && !phoneticChoice) ||
@@ -227,7 +241,7 @@ export function CardForm({
                 onPress={applySuggestion}
               />
               <Button
-                label="Cancel suggestion"
+                label={t('form.cancelSuggestion')}
                 variant="tertiary"
                 onPress={() => setPendingSuggestion(null)}
               />
@@ -240,7 +254,9 @@ export function CardForm({
           ) : null}
           <Input
             ref={phoneticRef}
-            label="Phonetic (optional)"
+            label={t('form.phonetic')}
+            textAlign={contentAlignment}
+            style={{ writingDirection: contentDirection }}
             value={phonetic}
             onChangeText={setPhonetic}
             maxLength={500}
@@ -249,7 +265,9 @@ export function CardForm({
           />
           <Input
             ref={categoryRef}
-            label="Category (optional)"
+            label={t('form.category')}
+            textAlign={contentAlignment}
+            style={{ writingDirection: contentDirection }}
             value={category}
             onChangeText={setCategory}
             maxLength={120}
@@ -259,11 +277,13 @@ export function CardForm({
         </View>
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
-            Back
+            {t('form.back')}
           </Text>
           <Input
             ref={meaningRef}
-            label="Meaning"
+            label={t('form.meaning')}
+            textAlign={contentAlignment}
+            style={{ writingDirection: contentDirection }}
             value={meaning}
             onChangeText={(value) => {
               setMeaning(value);
@@ -273,39 +293,43 @@ export function CardForm({
             multiline
             numberOfLines={4}
             maxLength={MAX_CARD_TEXT_LENGTH}
-            placeholder="Meaning or definition"
+            placeholder={t('form.meaningPlaceholder')}
           />
-          <Text variant="labelLarge">Usage examples (optional)</Text>
+          <Text variant="labelLarge">{t('form.examples')}</Text>
           {examples.map((example, index) => (
             <Surface key={index} className="gap-md">
-              <Text variant="labelLarge">Example {index + 1}</Text>
+              <Text variant="labelLarge">{t('form.example', { number: number(index + 1) })}</Text>
               <Input
-                label={`Sentence ${index + 1}`}
+                label={t('form.sentence', { number: number(index + 1) })}
+                textAlign={contentAlignment}
+                style={{ writingDirection: contentDirection }}
                 value={example.sentence}
                 onChangeText={(value) => changeExample(index, { sentence: value })}
-                error={
-                  exampleError === index ? 'Enter a sentence or remove this example.' : undefined
-                }
+                error={exampleError === index ? t('form.sentenceRequired') : undefined}
                 maxLength={MAX_CARD_TEXT_LENGTH}
                 multiline
                 numberOfLines={3}
               />
               <Input
-                label={`Translation ${index + 1} (optional)`}
+                label={t('form.translation', { number: number(index + 1) })}
+                textAlign={contentAlignment}
+                style={{ writingDirection: contentDirection }}
                 value={example.translation ?? ''}
                 onChangeText={(value) => changeExample(index, { translation: value })}
                 multiline
                 numberOfLines={2}
               />
               <Input
-                label={`Notes ${index + 1} (optional)`}
+                label={t('form.notes', { number: number(index + 1) })}
+                textAlign={contentAlignment}
+                style={{ writingDirection: contentDirection }}
                 value={example.notes ?? ''}
                 onChangeText={(value) => changeExample(index, { notes: value })}
                 multiline
                 numberOfLines={2}
               />
               <Button
-                label={`Remove example ${index + 1}`}
+                label={t('form.removeExample', { number: number(index + 1) })}
                 variant="tertiary"
                 onPress={() => {
                   setExamples((current) => current.filter((_, position) => position !== index));
@@ -315,14 +339,14 @@ export function CardForm({
             </Surface>
           ))}
           <Button
-            label="Add example"
+            label={t('form.addExample')}
             variant="secondary"
             disabled={examples.length >= 20}
             onPress={() => setExamples((current) => [...current, { sentence: '' }])}
           />
         </View>
         <Button
-          label={preview ? 'Hide preview' : 'Preview card'}
+          label={t(preview ? 'form.hidePreview' : 'form.preview')}
           variant="secondary"
           onPress={() => setPreview((value) => !value)}
         />
@@ -351,7 +375,7 @@ export function CardForm({
           </Text>
         ) : null}
         <Button
-          label={existing ? 'Save card' : 'Create card'}
+          label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
           loading={saving}
           onPress={() => void save()}
         />

@@ -11,6 +11,7 @@ import {
   type TypographySize,
 } from '@/features/decks/domain/deck';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
@@ -27,6 +28,7 @@ export function DeckForm({
   existing?: Deck;
   onSubmit: (values: CreateDeckInput) => Promise<void>;
 }) {
+  const { t, language } = useLocalization();
   const [name, setName] = useState(existing?.name ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const initialTag = existing?.language ?? 'en';
@@ -51,7 +53,7 @@ export function DeckForm({
     setLanguageError(null);
     setError(null);
     if (!name.trim()) {
-      setNameError('Enter a deck name.');
+      setNameError(t('form.deckNameRequired'));
       return;
     }
     let validName: string;
@@ -59,7 +61,9 @@ export function DeckForm({
     try {
       validName = validateDeckTitle(name);
     } catch (cause) {
-      setNameError(cause instanceof AppError ? cause.message : 'Enter a deck name.');
+      setNameError(
+        language === 'en' && cause instanceof AppError ? cause.message : t('form.deckNameRequired'),
+      );
       return;
     }
     try {
@@ -71,7 +75,7 @@ export function DeckForm({
             : languageChoice,
       );
     } catch {
-      setLanguageError('Enter a valid language tag, such as es or fr-CA.');
+      setLanguageError(t('form.languageInvalid'));
       return;
     }
     Keyboard.dismiss();
@@ -85,7 +89,9 @@ export function DeckForm({
         typographySize: size,
       });
     } catch (cause) {
-      setError(cause instanceof AppError ? cause.message : 'Unable to save this deck. Try again.');
+      setError(
+        language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
+      );
     } finally {
       setSaving(false);
     }
@@ -95,12 +101,12 @@ export function DeckForm({
     <Screen scroll keyboardAware edges={stackScreenEdges}>
       <View className="gap-xl pb-3xl">
         <ScreenHeader
-          title={existing ? `Edit ${existing.name}` : 'Create a deck'}
-          description="Give your deck a name and choose how its content reads."
+          title={existing ? t('form.editDeck', { name: existing.name }) : t('form.createDeck')}
+          description={t('form.deckHint')}
         />
         <View className="gap-md">
           <Input
-            label="Deck name"
+            label={t('form.deckName')}
             value={name}
             onChangeText={(value) => {
               setName(value);
@@ -114,25 +120,25 @@ export function DeckForm({
           />
           <Input
             ref={descriptionRef}
-            label="Description (optional)"
+            label={t('form.description')}
             value={description}
             onChangeText={setDescription}
             multiline
             numberOfLines={3}
             maxLength={1000}
-            placeholder="What will you collect here?"
+            placeholder={t('form.descriptionPlaceholder')}
           />
         </View>
         <View className="gap-sm">
-          <Text variant="labelLarge">Language</Text>
+          <Text variant="labelLarge">{t('form.language')}</Text>
           <Text tone="secondary" variant="bodySmall">
-            Choose the main language for this deck.
+            {t('form.languageHint')}
           </Text>
           <View className="flex-row flex-wrap gap-sm">
             {([...languageChoices, { label: 'Other', tag: 'other' }] as const).map((choice) => (
               <Button
                 key={choice.tag}
-                label={choice.label}
+                label={choice.tag === 'other' ? t('form.other') : t(`language.${choice.tag}`)}
                 variant={languageChoice === choice.tag ? 'primary' : 'secondary'}
                 accessibilityState={{ selected: languageChoice === choice.tag }}
                 onPress={() => {
@@ -144,8 +150,8 @@ export function DeckForm({
           </View>
           {languageChoice === 'other' ? (
             <Input
-              label="Language tag"
-              helperText="For example, es or fr-CA"
+              label={t('form.languageTag')}
+              helperText={t('form.languageTagHint')}
               error={languageError ?? undefined}
               value={customLanguage}
               onChangeText={(value) => {
@@ -158,12 +164,12 @@ export function DeckForm({
           ) : null}
         </View>
         <View className="gap-sm">
-          <Text variant="labelLarge">Text alignment</Text>
+          <Text variant="labelLarge">{t('form.alignment')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {(['ltr', 'rtl', 'center'] as const).map((choice) => (
               <Button
                 key={choice}
-                label={choice.toUpperCase()}
+                label={t(`form.alignment.${choice}`)}
                 variant={alignment === choice ? 'primary' : 'secondary'}
                 accessibilityState={{ selected: alignment === choice }}
                 onPress={() => setAlignment(choice)}
@@ -172,12 +178,12 @@ export function DeckForm({
           </View>
         </View>
         <View className="gap-sm">
-          <Text variant="labelLarge">Typography size</Text>
+          <Text variant="labelLarge">{t('form.size')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {(['small', 'medium', 'large'] as const).map((choice) => (
               <Button
                 key={choice}
-                label={choice.charAt(0).toUpperCase() + choice.slice(1)}
+                label={t(`form.size.${choice}`)}
                 variant={size === choice ? 'primary' : 'secondary'}
                 accessibilityState={{ selected: size === choice }}
                 onPress={() => setSize(choice)}
@@ -191,7 +197,7 @@ export function DeckForm({
           </Text>
         ) : null}
         <Button
-          label={existing ? 'Save deck' : 'Create deck'}
+          label={t(existing ? 'form.saveDeck' : 'form.createDeckAction')}
           loading={saving}
           onPress={() => void save()}
         />

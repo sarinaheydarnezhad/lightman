@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -11,40 +12,42 @@ import { Text } from '@/shared/ui/text';
 import { useStartStudy, openStudySession } from './use-start-study';
 
 export function StudyScreen() {
+  const { t, language } = useLocalization();
   const study = useStartStudy();
 
   return (
     <Screen scroll edges={tabScreenEdges}>
       <View className="gap-2xl">
-        <ScreenHeader title="Study" description="A focused session with the cards due today." />
+        <ScreenHeader title={t('nav.study')} description={t('study.description')} />
         <Card className="gap-lg">
-          <Badge label="All your decks" />
+          <Badge label={t('study.allDecks')} />
           <Text variant="headingMedium" accessibilityRole="header">
-            Ready to study?
+            {t('study.ready')}
           </Text>
-          <Text tone="secondary">
-            Reveal each answer, then choose Success or Failure. Missed cards get one more try at the
-            end.
-          </Text>
+          <Text tone="secondary">{t('study.instructions')}</Text>
           <Button
-            label="Start study"
+            label={t('study.start')}
             loading={study.starting}
             onPress={() => void study.start({ kind: 'all-decks' })}
           />
         </Card>
         {study.error ? (
           <Card className="gap-md" accessibilityLiveRegion="polite">
-            <Text tone="error">{study.error}</Text>
+            <Text tone="error">{language === 'en' ? study.error : t('common.genericError')}</Text>
             {study.activeSession ? (
               <Button
-                label="Resume session"
+                label={t('study.resume')}
                 variant="secondary"
                 onPress={() => openStudySession(study.activeSession!)}
               />
             ) : null}
           </Card>
         ) : null}
-        <Button label="Browse decks" variant="tertiary" onPress={() => router.push('/decks')} />
+        <Button
+          label={t('common.browseDecks')}
+          variant="tertiary"
+          onPress={() => router.push('/decks')}
+        />
       </View>
     </Screen>
   );

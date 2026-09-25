@@ -2,6 +2,22 @@ import { instant } from '@/core/domain/values';
 import { makeCard } from '@/../test/fixtures';
 import { InMemoryCardRepository } from './development-in-memory-card-repository';
 
+test('searches Persian, Arabic, and mixed Latin content without English-only casing assumptions', async () => {
+  const cards = new InMemoryCardRepository();
+  await cards.create(makeCard({ id: 'fa', frontText: 'کتاب English', meaning: 'کتاب کوچک' }));
+  await cards.create(makeCard({ id: 'ar', frontText: 'كِتاب Arabic', meaning: 'كتاب جديد' }));
+  for (const [query, expected] of [
+    ['کتاب', 'fa'],
+    ['كتاب', 'ar'],
+    ['ENGLISH', 'fa'],
+    ['arabic', 'ar'],
+  ] as const) {
+    expect((await cards.listByDeck('deck-1', { search: query })).map((card) => card.id)).toContain(
+      expected,
+    );
+  }
+});
+
 test('card repository creates, filters, updates and archives without exposing its copies', async () => {
   const cards = new InMemoryCardRepository();
   expect(await cards.getById('missing')).toBeNull();

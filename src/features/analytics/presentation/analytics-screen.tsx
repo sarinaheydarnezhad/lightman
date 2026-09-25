@@ -1,4 +1,5 @@
 import { useWindowDimensions, View } from 'react-native';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
@@ -16,13 +17,14 @@ import { useAnalyticsViewModel } from './use-analytics-view-model';
 const windows: AnalyticsWindow[] = [7, 30, 90];
 
 function BoxSummary({ distribution, total }: { distribution: BoxDistribution; total: number }) {
+  const { t, number } = useLocalization();
   return (
     <Card className="gap-md">
       <Text variant="headingSmall" accessibilityRole="header">
-        Current Leitner boxes
+        {t('analytics.boxes')}
       </Text>
       <Text variant="bodySmall" tone="secondary">
-        Active cards now, including cards you have not reviewed.
+        {t('analytics.boxesHint')}
       </Text>
       {total ? (
         ([1, 2, 3, 4, 5] as const).map((box) => (
@@ -30,20 +32,25 @@ function BoxSummary({ distribution, total }: { distribution: BoxDistribution; to
             key={box}
             className="flex-row justify-between gap-md"
             accessible
-            accessibilityLabel={`Box ${box}: ${distribution[box]} active ${distribution[box] === 1 ? 'card' : 'cards'}`}
+            accessibilityLabel={t('analytics.boxA11y', {
+              box: number(box),
+              count: number(distribution[box]),
+              unit: t(distribution[box] === 1 ? 'analytics.cardUnit' : 'analytics.cardsUnit'),
+            })}
           >
-            <Text>Box {box}</Text>
-            <Text variant="labelLarge">{distribution[box]}</Text>
+            <Text>{t('analytics.box', { box: number(box) })}</Text>
+            <Text variant="labelLarge">{number(distribution[box])}</Text>
           </View>
         ))
       ) : (
-        <Text tone="secondary">No active cards to distribute.</Text>
+        <Text tone="secondary">{t('analytics.boxEmpty')}</Text>
       )}
     </Card>
   );
 }
 
 export function AnalyticsScreen() {
+  const { t, number, language } = useLocalization();
   const { fontScale, width } = useWindowDimensions();
   const stackMetrics = fontScale >= 1.4 || width < 360;
   const analytics = useAnalyticsViewModel();
@@ -51,15 +58,15 @@ export function AnalyticsScreen() {
   return (
     <Screen scroll edges={tabScreenEdges}>
       <View className="gap-xl pb-3xl">
-        <ScreenHeader title="Analytics" description="Review history and current card progress." />
+        <ScreenHeader title={t('nav.analytics')} description={t('analytics.description')} />
         <View className="gap-sm">
-          <Text variant="labelLarge">Time window</Text>
+          <Text variant="labelLarge">{t('analytics.window')}</Text>
           <View className="flex-row border-b border-border" accessibilityRole="tablist">
             {windows.map((days) => (
               <Tab
                 key={days}
-                label={`${days}D`}
-                accessibilityHint={`Show the last ${days} calendar days of study activity`}
+                label={`${number(days)}D`}
+                accessibilityHint={t('analytics.windowHint', { days: number(days) })}
                 active={analytics.window === days}
                 onPress={() => analytics.setWindow(days)}
               />
@@ -67,60 +74,80 @@ export function AnalyticsScreen() {
           </View>
         </View>
         {analytics.loading ? (
-          <LoadingState label="Loading analytics" />
+          <LoadingState label={t('analytics.loading')} />
         ) : analytics.error ? (
           <Card className="gap-md" accessibilityLiveRegion="polite">
-            <Text tone="error">{analytics.error}</Text>
-            <Button label="Try again" onPress={analytics.refresh} />
+            <Text tone="error">
+              {language === 'en' ? analytics.error : t('common.genericError')}
+            </Text>
+            <Button label={t('common.tryAgain')} onPress={analytics.refresh} />
           </Card>
         ) : data ? (
           <>
             {!data.hasHistory ? (
               <EmptyState
-                title="No study data yet"
-                description="Complete your first review to start tracking progress."
+                title={t('analytics.noHistory')}
+                description={t('analytics.noHistoryHint')}
               />
             ) : data.totalReviews === 0 ? (
-              <Text tone="secondary">
-                No reviews in this window. Earlier study days still count toward your best streak.
-              </Text>
+              <Text tone="secondary">{t('analytics.noReviews')}</Text>
             ) : null}
             <Card
               className="gap-xs"
               accessible
-              accessibilityLabel={`Current streak: ${data.currentStreak} ${data.currentStreak === 1 ? 'day' : 'days'}. Best streak: ${data.bestStreak} ${data.bestStreak === 1 ? 'day' : 'days'}.`}
+              accessibilityLabel={t('analytics.streakA11y', {
+                current: t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
+                  count: number(data.currentStreak),
+                }),
+                best: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
+                  count: number(data.bestStreak),
+                }),
+              })}
             >
               <Text variant="bodySmall" tone="secondary">
-                Current streak
+                {t('analytics.currentStreak')}
               </Text>
               <Text variant="headingLarge">
-                {data.currentStreak} {data.currentStreak === 1 ? 'day' : 'days'}
+                {t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
+                  count: number(data.currentStreak),
+                })}
               </Text>
               <Text variant="bodySmall" tone="secondary">
-                Best: {data.bestStreak} {data.bestStreak === 1 ? 'day' : 'days'}
+                {t('analytics.best', {
+                  count: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
+                    count: number(data.bestStreak),
+                  }),
+                })}
               </Text>
             </Card>
             <View className={stackMetrics ? 'gap-md' : 'flex-row gap-md'}>
               <Card
                 className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
                 accessible
-                accessibilityLabel={`Cards reviewed today: ${data.cardsReviewedToday}`}
+                accessibilityLabel={t('analytics.cardsTodayA11y', {
+                  count: number(data.cardsReviewedToday),
+                })}
               >
                 <Text variant="bodySmall" tone="secondary">
-                  Cards today
+                  {t('analytics.cardsToday')}
                 </Text>
-                <Text variant="headingMedium">{data.cardsReviewedToday}</Text>
+                <Text variant="headingMedium">{number(data.cardsReviewedToday)}</Text>
               </Card>
               <Card
                 className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
                 accessible
-                accessibilityLabel={`Retention in the selected window: ${data.retentionRate === null ? 'No review data yet' : `${Math.round(data.retentionRate)} percent`}`}
+                accessibilityLabel={t('analytics.retentionA11y', {
+                  value:
+                    data.retentionRate === null
+                      ? t('analytics.noReviewData')
+                      : t('analytics.percent', { value: number(Math.round(data.retentionRate)) }),
+                })}
               >
                 <Text variant="bodySmall" tone="secondary">
-                  Retention
+                  {t('analytics.retention')}
                 </Text>
                 <Text variant="headingMedium">
-                  {data.retentionRate === null ? '—' : `${Math.round(data.retentionRate)}%`}
+                  {data.retentionRate === null ? '—' : `${number(Math.round(data.retentionRate))}%`}
                 </Text>
               </Card>
             </View>
@@ -132,8 +159,10 @@ export function AnalyticsScreen() {
             />
             <BoxSummary distribution={data.boxDistribution} total={data.activeCardCount} />
             <Text tone="secondary" variant="bodySmall">
-              {data.totalReviews} reviews across {data.activeStudyDays} active{' '}
-              {data.activeStudyDays === 1 ? 'day' : 'days'} in this window.
+              {t('analytics.summary', {
+                reviews: number(data.totalReviews),
+                days: number(data.activeStudyDays),
+              })}
             </Text>
           </>
         ) : null}

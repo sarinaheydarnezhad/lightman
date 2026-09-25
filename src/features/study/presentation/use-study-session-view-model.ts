@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 
 import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { AppError } from '@/core/errors/app-error';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card } from '../domain/card';
@@ -25,6 +26,7 @@ function safeError(cause: unknown, fallback: string): string {
 }
 
 export function useStudySessionViewModel(sessionId: string) {
+  const { t } = useLocalization();
   const [phase, setPhase] = useState<Phase>('loading');
   const [session, setSession] = useState<StudySession | null>(null);
   const [progress, setProgress] = useState<StudyProgress | null>(null);
@@ -129,7 +131,9 @@ export function useStudySessionViewModel(sessionId: string) {
           result,
         });
         AccessibilityInfo.announceForAccessibility(
-          `${result === 'success' ? 'Success' : 'Failure'} answer saved.`,
+          t('study.answerSaved', {
+            result: t(result === 'success' ? 'study.success' : 'study.failure'),
+          }),
         );
         // This is the accepted-presentation boundary for both buttons and swipes.
         void (result === 'success' ? haptics.answerSuccess() : haptics.answerFailure());
@@ -145,7 +149,7 @@ export function useStudySessionViewModel(sessionId: string) {
         setSwipePending(false);
       }
     },
-    [item, load, phase, revealed, sessionId],
+    [item, load, phase, revealed, sessionId, t],
   );
 
   const submit = useCallback(

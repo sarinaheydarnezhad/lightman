@@ -1,4 +1,5 @@
-import { I18nManager, Text as NativeText, type TextProps } from 'react-native';
+import { Text as NativeText, type TextProps } from 'react-native';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import type { SemanticColor, TypographyVariant } from '@/shared/theme/tokens';
 
 type AppTextProps = TextProps & {
@@ -71,13 +72,14 @@ export function Text({
   className,
   ...props
 }: AppTextProps) {
+  const { direction } = useLocalization();
   const alignment =
-    align === 'start'
-      ? I18nManager.isRTL
+    align === 'auto' || align === 'start'
+      ? direction === 'rtl'
         ? 'text-right'
         : 'text-left'
       : align === 'end'
-        ? I18nManager.isRTL
+        ? direction === 'rtl'
           ? 'text-left'
           : 'text-right'
         : alignClass[align];

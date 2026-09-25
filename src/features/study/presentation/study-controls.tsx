@@ -1,6 +1,7 @@
 import { useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/shared/ui/button';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 export function StudyControls({
   revealed,
@@ -15,19 +16,25 @@ export function StudyControls({
   readonly onFailure: () => void;
   readonly onSuccess: () => void;
 }) {
+  const { t } = useLocalization();
   const { fontScale, width } = useWindowDimensions();
   return revealed ? (
     <View className={fontScale >= 1.4 || width < 360 ? 'gap-md' : 'flex-row gap-md'}>
       <Button
-        label="Failure"
+        label={t('study.failure')}
         variant="secondary"
         disabled={submitting}
         style={{ flex: 1 }}
         onPress={onFailure}
       />
-      <Button label="Success" loading={submitting} style={{ flex: 1 }} onPress={onSuccess} />
+      <Button
+        label={t('study.success')}
+        loading={submitting}
+        style={{ flex: 1 }}
+        onPress={onSuccess}
+      />
     </View>
   ) : (
-    <Button label="Reveal answer" onPress={onReveal} />
+    <Button label={t('study.reveal')} onPress={onReveal} />
   );
 }

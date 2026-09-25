@@ -1,54 +1,59 @@
 import { View } from 'react-native';
-import { stackScreenEdges } from '@/shared/navigation/safe-area';
+
+import { languageTag } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
+import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { appearanceChoices } from './appearance-options';
 import { useSettingsViewModel } from './use-settings-view-model';
 
-export function AppearanceScreen() {
+const languages = ['en', 'fa', 'ar'] as const;
+
+export function LanguageScreen() {
   const vm = useSettingsViewModel();
   const { t, language } = useLocalization();
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-xl">
-        <ScreenHeader title={t('settings.appearance')} description={t('settings.themeHint')} />
+        <ScreenHeader title={t('settings.appLanguage')} description={t('settings.languageHint')} />
         {vm.loading && !vm.settings ? <LoadingState label={t('settings.loading')} /> : null}
         {vm.loadError && !vm.settings ? (
           <Button label={t('common.tryAgain')} onPress={vm.reload} />
         ) : null}
         {vm.settings ? (
           <View className="gap-sm">
-            {appearanceChoices.map(({ value }) => (
+            {languages.map((tag) => (
               <Button
-                key={value}
-                label={t(`settings.theme.${value}`)}
-                variant={value === vm.settings?.theme ? 'primary' : 'secondary'}
+                key={tag}
+                label={t(`language.${tag}`)}
+                variant={vm.settings?.language === tag ? 'primary' : 'secondary'}
                 accessibilityHint={t(
-                  value === vm.settings?.theme ? 'settings.themeSelected' : 'settings.themeSelect',
+                  vm.settings?.language === tag
+                    ? 'settings.languageSelected'
+                    : 'settings.languageSelect',
                 )}
                 accessibilityState={{
-                  selected: value === vm.settings?.theme,
-                  busy: !!vm.busy.theme,
+                  selected: vm.settings?.language === tag,
+                  busy: !!vm.busy.language,
                 }}
-                disabled={!!vm.busy.theme}
+                disabled={!!vm.busy.language}
                 onPress={() => {
-                  if (value !== vm.settings?.theme) void vm.setTheme(value);
+                  if (vm.settings?.language !== tag) void vm.setLanguage(languageTag(tag));
                 }}
               />
             ))}
           </View>
         ) : null}
-        {vm.errors.theme ? (
+        {vm.errors.language ? (
           <Text tone="error" accessibilityLiveRegion="polite">
-            {language === 'en' ? vm.errors.theme : t('common.genericError')}
+            {language === 'en' ? vm.errors.language : t('common.genericError')}
           </Text>
         ) : null}
         <Text variant="bodySmall" tone="secondary">
-          {t('settings.themeLifetime')}
+          {t('settings.appLanguageHint')}
         </Text>
       </View>
     </Screen>

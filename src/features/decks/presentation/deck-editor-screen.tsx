@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
@@ -12,6 +13,7 @@ import { DeckForm } from './deck-form';
 import { useDeckActions } from './use-decks-view-model';
 
 export function DeckEditorScreen({ deckId }: { deckId?: string }) {
+  const { t, language } = useLocalization();
   const { get, create, update } = useDeckActions();
   const resource = useFocusedResource(
     useCallback(() => (deckId ? get(deckId) : Promise.resolve(null)), [deckId, get]),
@@ -30,18 +32,26 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
   if (deckId && resource.loading && !resource.data)
     return (
       <Screen edges={stackScreenEdges}>
-        <LoadingState label="Loading deck" />
+        <LoadingState label={t('details.deckLoading')} />
       </Screen>
     );
   if (deckId && !resource.data)
     return (
       <Screen edges={stackScreenEdges}>
         <EmptyState
-          title="Deck unavailable"
-          description={resource.error ?? "This deck isn't available."}
+          title={t('details.deckUnavailable')}
+          description={
+            language === 'en'
+              ? (resource.error ?? t('details.deckUnavailableHint'))
+              : t('details.deckUnavailableHint')
+          }
         />
-        <Button label="Try again" onPress={resource.refresh} />
-        <Button label="Browse decks" variant="tertiary" onPress={() => router.replace('/decks')} />
+        <Button label={t('common.tryAgain')} onPress={resource.refresh} />
+        <Button
+          label={t('common.browseDecks')}
+          variant="tertiary"
+          onPress={() => router.replace('/decks')}
+        />
       </Screen>
     );
   return (

@@ -50,7 +50,11 @@ function reminder(id: string, time = '09:00', owned = true) {
   const [hour, minute] = time.split(':').map(Number);
   return {
     identifier: id,
-    content: { data: { reminderKey: owned ? 'lightman.daily-study-reminder' : 'other' } },
+    content: {
+      title: 'Time to study',
+      body: 'You have cards waiting for review.',
+      data: { reminderKey: owned ? 'lightman.daily-study-reminder' : 'other', uiLanguage: 'en' },
+    },
     trigger: { type: 'daily', hour, minute },
   } as never;
 }
@@ -114,6 +118,29 @@ test('schedules one silent local daily reminder and reads its local time', async
     reminder('unrelated', '12:00', false),
   ]);
   expect(await expoNotificationService.getScheduledReminder()).toEqual({ time: '07:25' });
+});
+
+test('localizes reminder content from app language and replaces old-language native schedule', async () => {
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'fa');
+  expect(schedule).toHaveBeenCalledWith(
+    expect.objectContaining({
+      content: expect.objectContaining({
+        title: 'وقت مطالعه است',
+        data: expect.objectContaining({ uiLanguage: 'fa' }),
+      }),
+    }),
+  );
+  existing.mockResolvedValueOnce([reminder('old-english', '09:00')]);
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'ar');
+  expect(cancel).toHaveBeenCalledWith('old-english');
+  expect(schedule).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      content: expect.objectContaining({
+        title: 'حان وقت الدراسة',
+        data: expect.objectContaining({ uiLanguage: 'ar' }),
+      }),
+    }),
+  );
 });
 
 test('replaces old reminder before scheduling, preserves unrelated alerts, and avoids duplicates', async () => {

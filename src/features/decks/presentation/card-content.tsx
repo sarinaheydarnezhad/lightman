@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card } from '@/features/study/domain/card';
 import { Card as Surface } from '@/shared/ui/card';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
 import { deckAlignment, deckTypography } from './deck-presentation';
 
@@ -18,6 +19,7 @@ export function CardContent({
   content: Content;
   preview?: boolean;
 }) {
+  const { t } = useLocalization();
   const style = {
     textAlign: deckAlignment[deck.textAlignment],
     writingDirection: deck.textAlignment === 'rtl' ? ('rtl' as const) : ('ltr' as const),
@@ -27,9 +29,9 @@ export function CardContent({
   return (
     <View className="gap-md">
       <Surface className="gap-md">
-        <Text variant="labelLarge">Front</Text>
+        <Text variant="labelLarge">{t('form.front')}</Text>
         <Text variant={variant} style={style}>
-          {content.frontText || (preview ? 'Your term will appear here' : '')}
+          {content.frontText || (preview ? t('form.termPreview') : '')}
         </Text>
         {content.phonetic ? (
           <Text tone="secondary" style={style}>
@@ -43,9 +45,9 @@ export function CardContent({
         ) : null}
       </Surface>
       <Surface className="gap-md">
-        <Text variant="labelLarge">Back</Text>
+        <Text variant="labelLarge">{t('form.back')}</Text>
         <Text variant={variant} style={style}>
-          {content.meaning || (preview ? 'Your meaning will appear here' : '')}
+          {content.meaning || (preview ? t('form.meaningPreview') : '')}
         </Text>
         {content.examples.map((example, index) => (
           <View key={index} className="gap-sm border-t border-border pt-md">

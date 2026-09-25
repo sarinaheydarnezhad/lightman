@@ -6,17 +6,19 @@ import type { DeckTextAlignment } from '@/features/decks/domain/deck';
 import type { DictionaryLookupResult, DictionaryMeaning } from '../domain/dictionary';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
+import { useLocalization } from '@/shared/localization/localization-provider';
+import type { MessageKey } from '@/shared/localization/messages';
 import { Text } from '@/shared/ui/text';
 import type { SelectedDefinition } from '../application/merge-suggestion';
 
-const messages: Record<Exclude<DictionaryLookupResult['status'], 'found'>, string> = {
-  unsupported: "Dictionary help isn't available for this language yet.",
-  invalid: 'Enter a term of 120 characters or fewer to find suggestions.',
-  'not-found': 'No definition found.',
-  offline: 'You appear to be offline. Manual entry is still available.',
-  timeout: 'Dictionary service timed out. Manual entry is still available.',
-  'rate-limited': 'Dictionary service is busy. Please try again later.',
-  unavailable: 'Dictionary service is unavailable. Manual entry is still available.',
+const messages: Record<Exclude<DictionaryLookupResult['status'], 'found'>, MessageKey> = {
+  unsupported: 'vocab.unsupported',
+  invalid: 'vocab.invalid',
+  'not-found': 'vocab.notFound',
+  offline: 'vocab.offline',
+  timeout: 'vocab.timeout',
+  'rate-limited': 'vocab.rateLimited',
+  unavailable: 'vocab.unavailable',
 };
 
 export function VocabularyHelper({
@@ -30,6 +32,7 @@ export function VocabularyHelper({
   textAlignment: DeckTextAlignment;
   onSelect: (selection: SelectedDefinition) => void;
 }) {
+  const { t } = useLocalization();
   const [result, setResult] = useState<DictionaryLookupResult | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,18 +71,17 @@ export function VocabularyHelper({
   return (
     <Card className="gap-md">
       <Text variant="headingSmall" accessibilityRole="header">
-        Vocabulary helper
+        {t('vocab.title')}
       </Text>
       {!supported ? (
-        <Text tone="secondary">{messages.unsupported}</Text>
+        <Text tone="secondary">{t(messages.unsupported)}</Text>
       ) : (
         <>
           <Text variant="bodySmall" tone="secondary">
-            Optional. Finding suggestions sends this term to Free Dictionary API. You can still
-            enter or save the card without it.
+            {t('vocab.hint')}
           </Text>
           <Button
-            label="Find suggestions"
+            label={t('vocab.find')}
             variant="secondary"
             disabled={loading || !word.trim()}
             onPress={() => void lookup()}
@@ -87,7 +89,7 @@ export function VocabularyHelper({
           {open ? (
             <>
               <Button
-                label="Hide suggestions"
+                label={t('vocab.hide')}
                 variant="tertiary"
                 onPress={() => {
                   ++request.current;
@@ -98,7 +100,7 @@ export function VocabularyHelper({
               />
               {loading ? (
                 <Text accessibilityLiveRegion="polite" accessibilityRole="text">
-                  Finding dictionary suggestions…
+                  {t('vocab.loading')}
                 </Text>
               ) : result?.status === 'found' ? (
                 <View className="gap-md" accessibilityLiveRegion="polite">
@@ -124,11 +126,11 @@ export function VocabularyHelper({
                 </View>
               ) : result ? (
                 <View className="gap-sm" accessibilityLiveRegion="polite">
-                  <Text tone="secondary">{messages[result.status]}</Text>
+                  <Text tone="secondary">{t(messages[result.status])}</Text>
                   {!retried &&
                   ['offline', 'timeout', 'rate-limited', 'unavailable'].includes(result.status) ? (
                     <Button
-                      label="Retry suggestions"
+                      label={t('vocab.retry')}
                       variant="secondary"
                       onPress={() => void lookup(true)}
                     />
@@ -154,6 +156,7 @@ function DefinitionChoice({
   alignment: DeckTextAlignment;
   onPress: () => void;
 }) {
+  const { t, number } = useLocalization();
   const direction = { writingDirection: alignment === 'rtl' ? ('rtl' as const) : ('ltr' as const) };
   return (
     <Card variant="outlined" className="gap-sm">
@@ -169,8 +172,8 @@ function DefinitionChoice({
         </Text>
       ))}
       <Button
-        label={`Use this definition ${index + 1}`}
-        accessibilityHint={`Definition: ${meaning.definition.slice(0, 160)}`}
+        label={t('vocab.useDefinition', { index: number(index + 1) })}
+        accessibilityHint={t('vocab.definitionHint', { value: meaning.definition.slice(0, 160) })}
         variant="secondary"
         onPress={onPress}
       />

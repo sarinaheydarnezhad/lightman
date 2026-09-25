@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, ScrollView, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 import type { Deck, TypographySize } from '@/features/decks/domain/deck';
 import { deckAlignment, deckTypography } from '@/features/decks/presentation/deck-presentation';
@@ -47,6 +48,7 @@ export function StudyCard({
   onSwipeStart,
   onSwipeAnswer,
 }: StudyCardProps) {
+  const { t } = useLocalization();
   const alignment: ContentAlignment = {
     textAlign: deckAlignment[deck.textAlignment],
     writingDirection: deck.textAlignment === 'rtl' ? 'rtl' : 'ltr',
@@ -57,7 +59,7 @@ export function StudyCard({
     <FlipCard
       key={card.id}
       revealed={revealed}
-      accessibilityLabel={`Flashcard: ${card.frontText}`}
+      accessibilityLabel={t('study.flashcard', { term: card.frontText })}
       front={<FrontContent card={card} deck={deck} alignment={alignment} size={size} />}
       back={
         <BackContent
@@ -96,14 +98,12 @@ function FrontContent({
   alignment: ContentAlignment;
   size: TypographyVariant;
 }) {
+  const { t } = useLocalization();
   return (
     <View className="min-h-0 flex-1 gap-lg">
-      <View
-        className="flex-row items-center justify-between gap-sm"
-        style={{ flexDirection: deck.textAlignment === 'rtl' ? 'row-reverse' : 'row' }}
-      >
+      <View className="flex-row items-center justify-between gap-sm">
         <Text variant="labelMedium" tone="secondary">
-          FRONT
+          {t('study.front')}
         </Text>
         <PronunciationButton text={card.frontText} language={deck.language} />
       </View>
@@ -111,7 +111,7 @@ function FrontContent({
         nestedScrollEnabled
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
-        accessibilityLabel="Flashcard front"
+        accessibilityLabel={t('study.front')}
       >
         <View className="gap-md py-md">
           <Text
@@ -127,7 +127,7 @@ function FrontContent({
               variant={size}
               tone="secondary"
               style={alignment}
-              accessibilityLabel={`Phonetic: ${card.phonetic}`}
+              accessibilityLabel={t('study.phonetic', { value: card.phonetic })}
             >
               {card.phonetic}
             </Text>
@@ -143,7 +143,10 @@ function FrontContent({
                       : 'flex-start',
               }}
             >
-              <Badge label={card.category} accessibilityLabel={`Category: ${card.category}`} />
+              <Badge
+                label={card.category}
+                accessibilityLabel={t('study.category', { value: card.category })}
+              />
             </View>
           ) : null}
         </View>
@@ -167,6 +170,7 @@ function BackContent({
   backTab: 'meaning' | 'examples';
   onSelectBackTab: (tab: 'meaning' | 'examples') => void;
 }) {
+  const { t } = useLocalization();
   const title = useRef<View>(null);
   const reducedMotion = useReducedMotion();
   useEffect(() => {
@@ -187,32 +191,34 @@ function BackContent({
         collapsable={false}
         accessible
         accessibilityRole="header"
-        accessibilityLabel="Answer revealed"
+        accessibilityLabel={t('study.answerRevealed')}
       >
         <Text variant="labelMedium" tone="secondary">
-          ANSWER
+          {t('study.answer')}
         </Text>
       </View>
       <View className="flex-row border-b border-border" accessibilityRole="tablist">
         <Tab
-          label="Meaning"
+          label={t('study.meaning')}
           active={backTab === 'meaning'}
           onPress={() => onSelectBackTab('meaning')}
         />
         <Tab
-          label="Examples"
+          label={t('study.examples')}
           active={backTab === 'examples'}
           onPress={() => onSelectBackTab('examples')}
         />
       </View>
-      <ScrollView nestedScrollEnabled style={{ flex: 1 }} accessibilityLabel="Flashcard answer">
+      <ScrollView nestedScrollEnabled style={{ flex: 1 }} accessibilityLabel={t('study.answer')}>
         {backTab === 'meaning' ? (
           <Text
             variant={size}
             style={alignment}
-            accessibilityLabel={`Meaning: ${card.meaning || 'No definition added'}`}
+            accessibilityLabel={t('study.definition', {
+              value: card.meaning || t('study.noDefinition'),
+            })}
           >
-            {card.meaning || 'No definition added'}
+            {card.meaning || t('study.noDefinition')}
           </Text>
         ) : card.examples.length ? (
           <View className="gap-md">
@@ -224,7 +230,10 @@ function BackContent({
                 <Text
                   variant={size}
                   style={alignment}
-                  accessibilityLabel={`Example ${index + 1}: ${example.sentence}`}
+                  accessibilityLabel={t('study.example', {
+                    index: index + 1,
+                    value: example.sentence,
+                  })}
                 >
                   {example.sentence}
                 </Text>
@@ -233,7 +242,7 @@ function BackContent({
                     tone="secondary"
                     variant={size}
                     style={alignment}
-                    accessibilityLabel={`Translation: ${example.translation}`}
+                    accessibilityLabel={t('study.translation', { value: example.translation })}
                   >
                     {example.translation}
                   </Text>
@@ -243,7 +252,7 @@ function BackContent({
                     tone="tertiary"
                     variant="bodySmall"
                     style={alignment}
-                    accessibilityLabel={`Notes: ${example.notes}`}
+                    accessibilityLabel={t('study.notes', { value: example.notes })}
                   >
                     {example.notes}
                   </Text>
@@ -253,7 +262,7 @@ function BackContent({
           </View>
         ) : (
           <Text tone="secondary" style={alignment}>
-            No examples added yet.
+            {t('study.noExamples')}
           </Text>
         )}
       </ScrollView>

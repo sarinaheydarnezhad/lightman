@@ -8,7 +8,7 @@ import {
 } from '@/core/ports/notification';
 import type { UserSettings } from '../domain/user-settings';
 
-type SettingKey = 'theme' | 'haptics' | 'reminder' | 'time' | 'speech';
+type SettingKey = 'theme' | 'language' | 'haptics' | 'reminder' | 'time' | 'speech';
 
 /** Only loading, errors and pending operations are UI state; preferences live in the repository. */
 export function useSettingsViewModel() {
@@ -108,6 +108,12 @@ export function useSettingsViewModel() {
         'theme',
         () => application.settings.setTheme(theme),
         'Could not save appearance. Please try again.',
+      ),
+    setLanguage: (language: UserSettings['language']) =>
+      execute(
+        'language',
+        () => application.settings.setLanguage(language),
+        'Could not save app language. Please try again.',
       ),
     setHaptics: (enabled: boolean) =>
       execute(

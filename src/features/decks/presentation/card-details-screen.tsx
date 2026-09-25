@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppError } from '@/core/errors/app-error';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { speech } from '@/core/composition/speech';
 import { PronunciationButton } from '@/shared/speech/pronunciation-button';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
@@ -16,6 +17,7 @@ import { CardContent } from './card-content';
 import { useCardActions, useCardDetailsViewModel } from './use-cards-view-model';
 
 export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: string }) {
+  const { t, language } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { data, loading, error, refresh } = useCardDetailsViewModel(cardId, deckId);
   const { archive: archiveCard } = useCardActions();
@@ -34,7 +36,9 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
       router.dismissTo({ pathname: '/decks/[deckId]/cards', params: { deckId } });
     } catch (cause) {
       setActionError(
-        cause instanceof AppError ? cause.message : 'Unable to archive this card. Try again.',
+        language === 'en' && cause instanceof AppError
+          ? cause.message
+          : t('details.cardArchiveError'),
       );
       submitting.current = false;
       setArchiving(false);
@@ -43,19 +47,26 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
 
   if (loading && !data)
     return (
-      <FeaturePlaceholder title="Loading card" description="Loading card details…">
-        <LoadingState label="Loading card" />
+      <FeaturePlaceholder
+        title={t('details.cardLoading')}
+        description={t('details.cardLoadingHint')}
+      >
+        <LoadingState label={t('details.cardLoading')} />
       </FeaturePlaceholder>
     );
   if (!data || error)
     return (
       <FeaturePlaceholder
-        title="Card unavailable"
-        description={error ?? "This card isn't available."}
+        title={t('details.cardUnavailable')}
+        description={
+          language === 'en'
+            ? (error ?? t('details.cardUnavailableHint'))
+            : t('details.cardUnavailableHint')
+        }
       >
-        <Button label="Try again" onPress={refresh} />
+        <Button label={t('common.tryAgain')} onPress={refresh} />
         <Button
-          label="View cards"
+          label={t('details.viewCards')}
           variant="secondary"
           onPress={() =>
             router.replace({
@@ -76,15 +87,16 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
           accessibilityElementsHidden={confirmArchive}
           importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
         >
-          <ScreenHeader title={data.card.frontText} description={`From ${data.deck.name}`} />
+          <ScreenHeader
+            title={data.card.frontText}
+            description={t('details.fromDeck', { name: data.deck.name })}
+          />
           <CardContent deck={data.deck} content={data.card} />
-          <View
-            style={{ alignItems: data.deck.textAlignment === 'rtl' ? 'flex-end' : 'flex-start' }}
-          >
+          <View className="items-start">
             <PronunciationButton text={data.card.frontText} language={data.deck.language} />
           </View>
           <Button
-            label="Edit card"
+            label={t('details.editCard')}
             onPress={() =>
               router.push({
                 pathname: '/decks/[deckId]/cards/[cardId]/edit',
@@ -92,14 +104,18 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
               })
             }
           />
-          <Button label="Archive card" variant="tertiary" onPress={() => setConfirmArchive(true)} />
+          <Button
+            label={t('details.archiveCard')}
+            variant="tertiary"
+            onPress={() => setConfirmArchive(true)}
+          />
         </View>
         {confirmArchive ? (
           <ConfirmationPanel
-            title="Archive this card?"
-            description="It will be removed from the active cards in this deck."
-            cancelLabel="Keep card"
-            confirmLabel="Confirm archive"
+            title={t('details.archiveCardTitle')}
+            description={t('details.archiveCardHint')}
+            cancelLabel={t('details.keepCard')}
+            confirmLabel={t('details.confirmArchive')}
             busy={archiving}
             error={actionError}
             onCancel={() => {

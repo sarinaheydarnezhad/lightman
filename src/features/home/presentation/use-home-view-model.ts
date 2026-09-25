@@ -6,7 +6,6 @@ export function useHomeViewModel() {
   const resource = useFocusedResource(useCallback(() => application.getHomeSummary(), []));
   return {
     ...resource,
-    greeting: 'A little practice, every day.',
     cardCount: resource.data?.cardCount ?? 0,
     reviewCount: resource.data?.reviewCount ?? 0,
     featuredDecks: resource.data?.decks.slice(0, 2) ?? [],
