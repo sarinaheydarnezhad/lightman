@@ -4,7 +4,7 @@ export default function VocabularyHelperRoute() {
   return (
     <FeaturePlaceholder
       title="Vocabulary helper"
-      description="Vocabulary tools will be available in a future update."
+      description="Open Create card or Edit card to find optional dictionary suggestions for that deck's language."
     />
   );
 }

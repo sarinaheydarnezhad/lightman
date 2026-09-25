@@ -4,8 +4,18 @@ import { Keyboard, TextInput, View } from 'react-native';
 import type { CreateCardInput } from '@/core/application/create-application';
 import { MAX_CARD_TEXT_LENGTH } from '@/core/constants';
 import { AppError } from '@/core/errors/app-error';
+import { haptics } from '@/core/composition/haptics';
 import type { Deck } from '@/features/decks/domain/deck';
 import { validateCardContent, type Card, type CardExample } from '@/features/study/domain/card';
+import {
+  canAppendMeaning,
+  hasMeaningConflict,
+  hasPhoneticConflict,
+  mergeSuggestion,
+  type ImportChoices,
+  type SelectedDefinition,
+} from '@/features/vocabulary/application/merge-suggestion';
+import { VocabularyHelper } from '@/features/vocabulary/presentation/vocabulary-helper';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
 import { Card as Surface } from '@/shared/ui/card';
@@ -37,6 +47,10 @@ export function CardForm({
   const [meaningError, setMeaningError] = useState<string | null>(null);
   const [exampleError, setExampleError] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingSuggestion, setPendingSuggestion] = useState<SelectedDefinition | null>(null);
+  const [meaningChoice, setMeaningChoice] = useState<ImportChoices['meaning'] | null>(null);
+  const [phoneticChoice, setPhoneticChoice] = useState<ImportChoices['phonetic'] | null>(null);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   const submitting = useRef(false);
   const phoneticRef = useRef<TextInput>(null);
   const categoryRef = useRef<TextInput>(null);
@@ -47,6 +61,36 @@ export function CardForm({
       current.map((item, position) => (position === index ? { ...item, ...changes } : item)),
     );
     setExampleError(null);
+  }
+
+  function applySuggestion() {
+    if (!pendingSuggestion) return;
+    const conflictMeaning = hasMeaningConflict(meaning, pendingSuggestion);
+    const conflictPhonetic = hasPhoneticConflict(phonetic, pendingSuggestion);
+    if (
+      (conflictMeaning && !meaningChoice) ||
+      (conflictPhonetic && !phoneticChoice) ||
+      (meaningChoice === 'append' && !canAppendMeaning(meaning, pendingSuggestion.definition))
+    )
+      return;
+    const result = mergeSuggestion({ meaning, phonetic, examples }, pendingSuggestion, {
+      meaning: meaningChoice ?? 'keep',
+      phonetic: phoneticChoice ?? 'keep',
+    });
+    const changed =
+      result.fields.meaning !== meaning ||
+      result.fields.phonetic !== phonetic ||
+      result.addedExamples > 0;
+    setMeaning(result.fields.meaning);
+    setPhonetic(result.fields.phonetic);
+    setExamples([...result.fields.examples]);
+    setMeaningError(null);
+    setExampleError(null);
+    setImportMessage(
+      `${changed ? 'Suggestion added. Review and save when ready.' : 'No new content was added.'}${result.limitedExamples ? ' The card has room for only 20 examples.' : ''}`,
+    );
+    setPendingSuggestion(null);
+    if (changed) void haptics.actionConfirmed();
   }
 
   async function save() {
@@ -105,6 +149,8 @@ export function CardForm({
             onChangeText={(value) => {
               setFrontText(value);
               setFrontError(null);
+              setPendingSuggestion(null);
+              setImportMessage(null);
             }}
             error={frontError ?? undefined}
             placeholder="Term or vocabulary"
@@ -112,6 +158,86 @@ export function CardForm({
             returnKeyType="next"
             onSubmitEditing={() => phoneticRef.current?.focus()}
           />
+          <VocabularyHelper
+            key={`${deck.language}:${frontText}`}
+            word={frontText}
+            language={deck.language}
+            textAlignment={deck.textAlignment}
+            onSelect={(selection) => {
+              setPendingSuggestion(selection);
+              setMeaningChoice(null);
+              setPhoneticChoice(null);
+              setImportMessage(null);
+            }}
+          />
+          {pendingSuggestion ? (
+            <Surface className="gap-md" accessibilityLiveRegion="polite">
+              <Text variant="headingSmall" accessibilityRole="header">
+                Review suggestion
+              </Text>
+              <Text tone="secondary">{pendingSuggestion.definition}</Text>
+              {hasMeaningConflict(meaning, pendingSuggestion) ? (
+                <View className="gap-sm">
+                  <Text>Existing meaning: {meaning}</Text>
+                  <Text tone="secondary">
+                    Choose how to handle the meaning you already entered.
+                  </Text>
+                  {(['keep', 'replace', 'append'] as const).map((choice) => (
+                    <Button
+                      key={choice}
+                      label={`${choice[0]!.toUpperCase()}${choice.slice(1)} meaning`}
+                      variant={meaningChoice === choice ? 'primary' : 'secondary'}
+                      accessibilityState={{ selected: meaningChoice === choice }}
+                      disabled={
+                        choice === 'append' &&
+                        !canAppendMeaning(meaning, pendingSuggestion.definition)
+                      }
+                      onPress={() => setMeaningChoice(choice)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+              {hasPhoneticConflict(phonetic, pendingSuggestion) ? (
+                <View className="gap-sm">
+                  <Text>Existing phonetic: {phonetic}</Text>
+                  <Text tone="secondary">Choose which phonetic transcription to keep.</Text>
+                  {(['keep', 'replace'] as const).map((choice) => (
+                    <Button
+                      key={choice}
+                      label={`${choice[0]!.toUpperCase()}${choice.slice(1)} phonetic`}
+                      variant={phoneticChoice === choice ? 'primary' : 'secondary'}
+                      accessibilityState={{ selected: phoneticChoice === choice }}
+                      onPress={() => setPhoneticChoice(choice)}
+                    />
+                  ))}
+                </View>
+              ) : null}
+              <Text variant="bodySmall" tone="secondary">
+                New example sentences will be added without replacing existing ones; duplicates are
+                skipped. Part of speech is shown for context and is not a card field.
+              </Text>
+              <Button
+                label="Apply suggestion"
+                disabled={
+                  (hasMeaningConflict(meaning, pendingSuggestion) && !meaningChoice) ||
+                  (hasPhoneticConflict(phonetic, pendingSuggestion) && !phoneticChoice) ||
+                  (meaningChoice === 'append' &&
+                    !canAppendMeaning(meaning, pendingSuggestion.definition))
+                }
+                onPress={applySuggestion}
+              />
+              <Button
+                label="Cancel suggestion"
+                variant="tertiary"
+                onPress={() => setPendingSuggestion(null)}
+              />
+            </Surface>
+          ) : null}
+          {importMessage ? (
+            <Text tone="secondary" accessibilityLiveRegion="polite">
+              {importMessage}
+            </Text>
+          ) : null}
           <Input
             ref={phoneticRef}
             label="Phonetic (optional)"

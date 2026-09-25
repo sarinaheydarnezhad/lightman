@@ -8,6 +8,7 @@ export const clock: AppClock = {
 export const idGenerator: IdGenerator = { create: randomUUID };
 export const config: AppConfig = {
   environment: __DEV__ ? 'development' : 'production',
+  dictionaryApiBaseUrl: 'https://api.dictionaryapi.dev/api/v2',
 };
 export const logger: AppLogger = {
   info: (message, context) => {

@@ -85,11 +85,6 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
             })
           }
         />
-        <Button
-          label="Vocabulary helper"
-          variant="secondary"
-          onPress={() => router.push('/vocabulary/helper')}
-        />
         {confirmArchive ? (
           <Card className="gap-md" accessibilityLiveRegion="polite">
             <Text variant="headingSmall">Archive this card?</Text>
