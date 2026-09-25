@@ -23,6 +23,12 @@ export const deckAlignment: Record<DeckTextAlignment, 'left' | 'right' | 'center
   center: 'center',
 };
 
+export const deckBadgeAlignment: Record<DeckTextAlignment, 'flex-start' | 'flex-end' | 'center'> = {
+  ltr: 'flex-start',
+  rtl: 'flex-end',
+  center: 'center',
+};
+
 export const deckTypography: Record<TypographySize, TypographyVariant> = {
   small: 'bodySmall',
   medium: 'bodyMedium',

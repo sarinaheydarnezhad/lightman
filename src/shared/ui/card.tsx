@@ -21,6 +21,8 @@ export function Card({
   style,
   disabled,
   accessibilityLabel,
+  accessibilityRole,
+  accessibilityState,
   ...props
 }: CardProps) {
   const colors = useThemeColors();
@@ -41,9 +43,9 @@ export function Card({
     return (
       <Pressable
         {...props}
-        accessibilityRole="button"
+        accessibilityRole={accessibilityRole ?? 'button'}
         accessibilityLabel={accessibilityLabel}
-        accessibilityState={{ disabled: !!disabled }}
+        accessibilityState={{ ...accessibilityState, disabled: !!disabled }}
         className={classes}
         disabled={disabled}
         style={(state) => [
@@ -65,6 +67,8 @@ export function Card({
   return (
     <View
       {...props}
+      accessibilityRole={accessibilityRole}
+      accessibilityState={accessibilityState}
       accessibilityLabel={accessibilityLabel}
       className={classes}
       style={[typeof style === 'function' ? undefined : style, elevation]}

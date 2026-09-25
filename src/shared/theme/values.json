@@ -91,7 +91,8 @@
     "button": 50,
     "iconButton": 48,
     "tab": 48,
-    "listItem": 56
+    "listItem": 56,
+    "studyCard": 260
   },
   "icons": {
     "medium": 20,

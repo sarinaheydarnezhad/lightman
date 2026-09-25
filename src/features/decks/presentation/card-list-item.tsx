@@ -1,9 +1,10 @@
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card as CardEntity } from '@/features/study/domain/card';
+import { Badge } from '@/shared/ui/badge';
 import { Card } from '@/shared/ui/card';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
-import { deckAlignment, deckTypography } from './deck-presentation';
+import { deckAlignment, deckBadgeAlignment, deckTypography } from './deck-presentation';
 
 export function CardListItem({
   card,
@@ -39,9 +40,10 @@ export function CardListItem({
         </Text>
       ) : null}
       {card.category ? (
-        <Text tone="tertiary" variant="caption" style={style} numberOfLines={2}>
-          {card.category}
-        </Text>
+        <Badge
+          label={card.category}
+          style={{ alignSelf: deckBadgeAlignment[deck.textAlignment] }}
+        />
       ) : null}
       <Text tone="secondary" numberOfLines={2} style={style}>
         {card.meaning}

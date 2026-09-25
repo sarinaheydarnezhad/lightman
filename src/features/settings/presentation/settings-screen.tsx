@@ -1,7 +1,7 @@
 import { Link, router, useFocusEffect } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { config } from '@/core/infrastructure/platform';
 import { localTime, type LocalTime } from '@/core/domain/values';
@@ -9,12 +9,12 @@ import type { NotificationPermissionState } from '@/core/ports/notification';
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Card } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
+import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useThemeMode } from '@/shared/theme/theme-provider';
-import { interaction } from '@/shared/theme/tokens';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { appearanceChoices } from './appearance-options';
@@ -84,34 +84,25 @@ function SettingsSwitch({
 }) {
   const { t } = useLocalization();
   return (
-    <Card>
-      <Pressable
-        accessibilityRole="switch"
-        accessibilityLabel={label}
-        accessibilityHint={description}
-        accessibilityState={{ checked: value, disabled: busy || disabled, busy }}
-        disabled={busy || disabled}
-        onPress={onChange}
-        className="min-h-iconButton flex-row items-center gap-lg"
-        style={({ pressed }) => ({
-          opacity:
-            busy || disabled
-              ? interaction.disabledOpacity
-              : pressed
-                ? interaction.pressedOpacity
-                : 1,
-        })}
-      >
-        <View className="flex-1 gap-xs">
-          <Text variant="labelLarge">{label}</Text>
-          <Text variant="bodySmall" tone="secondary">
-            {description}
-          </Text>
-        </View>
-        <Text variant="labelLarge" tone="accent">
-          {t(value ? 'common.on' : 'common.off')}
+    <Card
+      variant="interactive"
+      accessibilityRole="switch"
+      accessibilityLabel={label}
+      accessibilityHint={description}
+      accessibilityState={{ checked: value, busy }}
+      disabled={busy || disabled}
+      onPress={onChange}
+      className="flex-row items-center gap-lg"
+    >
+      <View className="min-w-0 flex-1 gap-xs">
+        <Text variant="labelLarge">{label}</Text>
+        <Text variant="bodySmall" tone="secondary">
+          {description}
         </Text>
-      </Pressable>
+      </View>
+      <Text variant="labelLarge" tone="accent">
+        {t(value ? 'common.on' : 'common.off')}
+      </Text>
     </Card>
   );
 }
@@ -169,10 +160,11 @@ export function SettingsScreen() {
         <ScreenHeader title={t('nav.settings')} description={t('settings.description')} />
         {vm.loading && !settings ? <LoadingState label={t('settings.loading')} /> : null}
         {vm.loadError && !settings ? (
-          <View className="gap-sm">
-            <Text tone="error">{t('settings.loadError')}</Text>
-            <Button label={t('common.tryAgain')} onPress={vm.reload} />
-          </View>
+          <ErrorState
+            title={t('settings.loadError')}
+            description={t('common.genericError')}
+            onRetry={vm.reload}
+          />
         ) : null}
         {settings ? (
           <>

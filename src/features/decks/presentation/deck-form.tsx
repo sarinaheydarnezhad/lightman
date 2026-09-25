@@ -4,6 +4,7 @@ import { Keyboard, TextInput, View } from 'react-native';
 import type { CreateDeckInput } from '@/core/application/create-application';
 import { languageTag } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { haptics } from '@/core/composition/haptics';
 import {
   validateDeckTitle,
   type Deck,
@@ -55,6 +56,7 @@ export function DeckForm({
     setError(null);
     if (!name.trim()) {
       setNameError(t('form.deckNameRequired'));
+      void haptics.actionRejected();
       return;
     }
     let validName: string;
@@ -65,6 +67,7 @@ export function DeckForm({
       setNameError(
         language === 'en' && cause instanceof AppError ? cause.message : t('form.deckNameRequired'),
       );
+      void haptics.actionRejected();
       return;
     }
     try {
@@ -77,6 +80,7 @@ export function DeckForm({
       );
     } catch {
       setLanguageError(t('form.languageInvalid'));
+      void haptics.actionRejected();
       return;
     }
     submitting.current = true;
@@ -94,6 +98,7 @@ export function DeckForm({
       setError(
         language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
       );
+      void haptics.actionRejected();
     } finally {
       submitting.current = false;
       setSaving(false);

@@ -7,6 +7,7 @@ import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -18,7 +19,7 @@ import { useDecksViewModel } from './use-decks-view-model';
 type ListedDeck = Deck & { cardCount: number };
 
 export function DecksScreen() {
-  const { t, number } = useLocalization();
+  const { t, number, language } = useLocalization();
   const [search, setSearch] = useState('');
   const { decks, totalCount, error, loading, refresh } = useDecksViewModel(search);
   const renderItem = useCallback(
@@ -65,10 +66,11 @@ export function DecksScreen() {
           loading ? (
             <LoadingState label={t('decks.loading')} />
           ) : error ? (
-            <View className="gap-md">
-              <EmptyState title={t('decks.error')} description={error} />
-              <Button label={t('common.tryAgain')} onPress={refresh} />
-            </View>
+            <ErrorState
+              title={t('decks.error')}
+              description={language === 'en' ? error : t('common.genericError')}
+              onRetry={refresh}
+            />
           ) : (
             <View className="gap-md">
               <EmptyState

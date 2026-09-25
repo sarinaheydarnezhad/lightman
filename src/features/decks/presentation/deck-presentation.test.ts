@@ -3,6 +3,7 @@ import { makeDeck } from '@/../test/fixtures';
 import {
   cardCountLabel,
   deckAlignment,
+  deckBadgeAlignment,
   deckTypography,
   languageLabel,
   sortDecks,
@@ -16,6 +17,7 @@ test('deck presentation reads language tags, truthful counts and semantic displa
   expect(cardCountLabel(1)).toBe('1 card');
   expect(cardCountLabel(2)).toBe('2 cards');
   expect(deckAlignment.rtl).toBe('right');
+  expect(deckBadgeAlignment.rtl).toBe('flex-end');
   expect(deckTypography.large).toBe('bodyLarge');
 });
 

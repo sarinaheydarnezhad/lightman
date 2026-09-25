@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { Text } from '@/shared/ui/text';
@@ -55,15 +56,15 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             accessibilityElementsHidden={study.confirmExit}
             importantForAccessibility={study.confirmExit ? 'no-hide-descendants' : 'auto'}
           >
-            <EmptyState
+            <ErrorState
               title={t('study.unavailable')}
               description={
                 language === 'en'
                   ? (study.error ?? t('study.unavailableHint'))
                   : t('study.unavailableHint')
               }
+              onRetry={() => void study.load()}
             />
-            <Button label={t('common.tryAgain')} onPress={() => void study.load()} />
             <Button label={t('study.leave')} variant="secondary" onPress={study.leave} />
           </View>
           {study.confirmExit ? (

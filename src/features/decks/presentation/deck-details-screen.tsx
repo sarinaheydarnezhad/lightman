@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppError } from '@/core/errors/app-error';
+import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { deckLanguageLabel } from '@/shared/localization/localization';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
@@ -35,6 +36,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
     setActionError(null);
     try {
       await actions.archive(deckId);
+      void haptics.actionConfirmed();
       router.replace('/decks');
     } catch (cause) {
       setActionError(
@@ -42,6 +44,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           ? cause.message
           : t('details.deckArchiveError'),
       );
+      void haptics.actionRejected();
       setArchiving(false);
     }
   }
@@ -62,9 +65,13 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
             ? (error ?? t('details.deckUnavailableHint'))
             : t('details.deckUnavailableHint')
         }
+        onRetry={refresh}
       >
-        <Button label={t('common.tryAgain')} onPress={refresh} />
-        <Button label={t('common.browseDecks')} onPress={() => router.replace('/decks')} />
+        <Button
+          label={t('common.browseDecks')}
+          variant="secondary"
+          onPress={() => router.replace('/decks')}
+        />
       </FeaturePlaceholder>
     );
   }

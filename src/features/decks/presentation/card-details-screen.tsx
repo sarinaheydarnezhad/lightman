@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppError } from '@/core/errors/app-error';
+import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { speech } from '@/core/composition/speech';
 import { PronunciationButton } from '@/shared/speech/pronunciation-button';
@@ -33,6 +34,7 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
     setActionError(null);
     try {
       await archiveCard(cardId);
+      void haptics.actionConfirmed();
       router.dismissTo({ pathname: '/decks/[deckId]/cards', params: { deckId } });
     } catch (cause) {
       setActionError(
@@ -40,6 +42,7 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
           ? cause.message
           : t('details.cardArchiveError'),
       );
+      void haptics.actionRejected();
       submitting.current = false;
       setArchiving(false);
     }
@@ -60,8 +63,8 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
             ? (error ?? t('details.cardUnavailableHint'))
             : t('details.cardUnavailableHint')
         }
+        onRetry={refresh}
       >
-        <Button label={t('common.tryAgain')} onPress={refresh} />
         <Button
           label={t('details.viewCards')}
           variant="secondary"

@@ -4,8 +4,7 @@ import { View } from 'react-native';
 import { initializeApplication } from '@/core/bootstrap/initialize-application';
 import { logger } from '@/core/infrastructure/platform';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { Button } from '@/shared/ui/button';
-import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 
@@ -52,16 +51,11 @@ export function BootstrapGate({
     <Screen testID="bootstrap-screen">
       <View className="flex-1 justify-center gap-lg">
         {status === 'error' ? (
-          <>
-            <EmptyState
-              title={t('common.bootstrapError')}
-              description={t('common.bootstrapHint')}
-            />
-            <Button
-              label={t('common.tryAgain')}
-              onPress={() => setAttempt((previous) => previous + 1)}
-            />
-          </>
+          <ErrorState
+            title={t('common.bootstrapError')}
+            description={t('common.bootstrapHint')}
+            onRetry={() => setAttempt((previous) => previous + 1)}
+          />
         ) : (
           <LoadingState label={t('common.bootstrapLoading')} />
         )}

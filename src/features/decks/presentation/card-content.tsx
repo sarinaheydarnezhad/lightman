@@ -2,10 +2,11 @@ import { View } from 'react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card } from '@/features/study/domain/card';
+import { Badge } from '@/shared/ui/badge';
 import { Card as Surface } from '@/shared/ui/card';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
-import { deckAlignment, deckTypography } from './deck-presentation';
+import { deckAlignment, deckBadgeAlignment, deckTypography } from './deck-presentation';
 
 type Content = Pick<Card, 'frontText' | 'phonetic' | 'category' | 'meaning' | 'examples'>;
 
@@ -39,9 +40,11 @@ export function CardContent({
           </Text>
         ) : null}
         {content.category ? (
-          <Text tone="tertiary" style={style}>
-            {content.category}
-          </Text>
+          <Badge
+            label={content.category}
+            style={{ alignSelf: deckBadgeAlignment[deck.textAlignment] }}
+            accessibilityLabel={t('study.category', { value: content.category })}
+          />
         ) : null}
       </Surface>
       <Surface className="gap-md">

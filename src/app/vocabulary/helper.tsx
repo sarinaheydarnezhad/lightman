@@ -1,10 +1,7 @@
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
+import { useLocalization } from '@/shared/localization/localization-provider';
 
 export default function VocabularyHelperRoute() {
-  return (
-    <FeaturePlaceholder
-      title="Vocabulary helper"
-      description="Open Create card or Edit card to find optional dictionary suggestions for that deck's language."
-    />
-  );
+  const { t } = useLocalization();
+  return <FeaturePlaceholder title={t('vocab.title')} description={t('vocab.routeHint')} />;
 }

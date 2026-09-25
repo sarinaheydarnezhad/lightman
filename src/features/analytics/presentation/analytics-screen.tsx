@@ -2,9 +2,9 @@ import { useWindowDimensions, View } from 'react-native';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
-import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
@@ -78,12 +78,11 @@ export function AnalyticsScreen() {
         {analytics.loading ? (
           <LoadingState label={t('analytics.loading')} />
         ) : analytics.error ? (
-          <Card className="gap-md" accessibilityLiveRegion="polite">
-            <Text tone="error">
-              {language === 'en' ? analytics.error : t('common.genericError')}
-            </Text>
-            <Button label={t('common.tryAgain')} onPress={analytics.refresh} />
-          </Card>
+          <ErrorState
+            title={t('common.errorTitle')}
+            description={language === 'en' ? analytics.error : t('common.genericError')}
+            onRetry={analytics.refresh}
+          />
         ) : data ? (
           <>
             {!data.hasHistory ? (

@@ -14,8 +14,7 @@ import { createReminderTapHandler } from '@/features/study/application/create-re
 import { BootstrapGate } from '@/shared/bootstrap/bootstrap-gate';
 import { LocalizationProvider, useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
-import { EmptyState } from '@/shared/ui/empty-state';
-import { Button } from '@/shared/ui/button';
+import { ErrorState } from '@/shared/ui/error-state';
 import { Screen } from '@/shared/ui/screen';
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -39,8 +38,11 @@ function LocalizedError({ retry }: { retry: ErrorBoundaryProps['retry'] }) {
   return (
     <Screen>
       <View className="flex-1 justify-center gap-lg">
-        <EmptyState title={t('common.errorTitle')} description={t('common.errorHint')} />
-        <Button label={t('common.tryAgain')} onPress={() => void retry()} />
+        <ErrorState
+          title={t('common.errorTitle')}
+          description={t('common.errorHint')}
+          onRetry={() => void retry()}
+        />
       </View>
     </Screen>
   );

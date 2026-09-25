@@ -7,6 +7,7 @@ import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -16,7 +17,7 @@ import { CardListItem } from './card-list-item';
 import { useCardListViewModel } from './use-cards-view-model';
 
 export function CardListScreen({ deckId }: { deckId: string }) {
-  const { t, number } = useLocalization();
+  const { t, number, language } = useLocalization();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const { data, cards, categories, totalCount, loading, error, refresh } = useCardListViewModel(
@@ -116,11 +117,14 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             <LoadingState label={t('cards.loading')} />
           ) : error ? (
             <View className="gap-md">
-              <EmptyState title={t('cards.error')} description={error} />
-              <Button label={t('common.tryAgain')} onPress={refresh} />
+              <ErrorState
+                title={t('cards.error')}
+                description={language === 'en' ? error : t('common.genericError')}
+                onRetry={refresh}
+              />
               <Button
                 label={t('common.browseDecks')}
-                variant="tertiary"
+                variant="secondary"
                 onPress={() => router.replace('/decks')}
               />
             </View>

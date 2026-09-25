@@ -2,11 +2,12 @@ import { useCallback } from 'react';
 import { router } from 'expo-router';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
+import { haptics } from '@/core/composition/haptics';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
-import { EmptyState } from '@/shared/ui/empty-state';
+import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { DeckForm } from './deck-form';
@@ -22,9 +23,11 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
   async function save(values: CreateDeckInput) {
     if (deckId) {
       await update(deckId, values);
+      void haptics.actionConfirmed();
       router.replace({ pathname: '/decks/[deckId]', params: { deckId } });
     } else {
       await create(values);
+      void haptics.actionConfirmed();
       router.replace('/decks');
     }
   }
@@ -37,22 +40,21 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
     );
   if (deckId && !resource.data)
     return (
-      <Screen edges={stackScreenEdges}>
-        <EmptyState
-          title={t('details.deckUnavailable')}
-          description={
-            language === 'en'
-              ? (resource.error ?? t('details.deckUnavailableHint'))
-              : t('details.deckUnavailableHint')
-          }
-        />
-        <Button label={t('common.tryAgain')} onPress={resource.refresh} />
+      <FeaturePlaceholder
+        title={t('details.deckUnavailable')}
+        description={
+          language === 'en'
+            ? (resource.error ?? t('details.deckUnavailableHint'))
+            : t('details.deckUnavailableHint')
+        }
+        onRetry={resource.refresh}
+      >
         <Button
           label={t('common.browseDecks')}
-          variant="tertiary"
+          variant="secondary"
           onPress={() => router.replace('/decks')}
         />
-      </Screen>
+      </FeaturePlaceholder>
     );
   return (
     <DeckForm key={deckId ?? 'create'} existing={resource.data ?? undefined} onSubmit={save} />

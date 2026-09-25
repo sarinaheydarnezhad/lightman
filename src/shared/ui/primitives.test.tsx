@@ -3,6 +3,7 @@ import { Settings2 } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Button } from './button';
+import { Card } from './card';
 import { IconButton } from './icon-button';
 import { Input } from './input';
 import { Screen } from './screen';
@@ -50,6 +51,34 @@ test('input exposes label, helper or error, editable state and multiline configu
 test('icon-only buttons expose an accessible label and disabled state', () => {
   render(<IconButton icon={Settings2} label="Settings" disabled />);
   expect(screen.getByRole('button', { name: 'Settings', disabled: true })).toBeTruthy();
+});
+
+test('interactive cards keep their pressed surface and expose caller roles and state', () => {
+  const onPress = jest.fn();
+  const { rerender } = render(
+    <Card variant="interactive" accessibilityLabel="Open deck" onPress={onPress}>
+      <Text>Deck</Text>
+    </Card>,
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Open deck' }));
+  expect(onPress).toHaveBeenCalledTimes(1);
+
+  rerender(
+    <Card
+      variant="interactive"
+      accessibilityRole="switch"
+      accessibilityLabel="Reminder"
+      accessibilityState={{ checked: true, busy: true }}
+      disabled
+      onPress={onPress}
+    >
+      <Text>On</Text>
+    </Card>,
+  );
+  const reminder = screen.getByRole('switch', { name: 'Reminder', disabled: true, busy: true });
+  expect(reminder.props.accessibilityState).toMatchObject({ checked: true, busy: true });
+  fireEvent.press(reminder);
+  expect(onPress).toHaveBeenCalledTimes(1);
 });
 
 test('tabs expose selected and disabled semantics', () => {

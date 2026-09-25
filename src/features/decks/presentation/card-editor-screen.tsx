@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 
 import type { CreateCardInput } from '@/core/application/create-application';
+import { haptics } from '@/core/composition/haptics';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
-import { EmptyState } from '@/shared/ui/empty-state';
+import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { CardForm } from './card-form';
@@ -18,12 +19,14 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
   async function save(content: Omit<CreateCardInput, 'deckId'>) {
     if (cardId) {
       await update(cardId, content);
+      void haptics.actionConfirmed();
       router.dismissTo({
         pathname: '/decks/[deckId]/cards/[cardId]',
         params: { deckId, cardId },
       });
     } else {
       const card = await create({ ...content, deckId });
+      void haptics.actionConfirmed();
       router.replace({
         pathname: '/decks/[deckId]/cards/[cardId]',
         params: { deckId, cardId: card.id },
@@ -39,22 +42,21 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
     );
   if (!resource.data || resource.error)
     return (
-      <Screen edges={stackScreenEdges}>
-        <EmptyState
-          title={t('details.cardUnavailable')}
-          description={
-            language === 'en'
-              ? (resource.error ?? t('details.cardUnavailableHint'))
-              : t('details.cardUnavailableHint')
-          }
-        />
-        <Button label={t('common.tryAgain')} onPress={resource.refresh} />
+      <FeaturePlaceholder
+        title={t('details.cardUnavailable')}
+        description={
+          language === 'en'
+            ? (resource.error ?? t('details.cardUnavailableHint'))
+            : t('details.cardUnavailableHint')
+        }
+        onRetry={resource.refresh}
+      >
         <Button
           label={t('common.browseDecks')}
-          variant="tertiary"
+          variant="secondary"
           onPress={() => router.replace('/decks')}
         />
-      </Screen>
+      </FeaturePlaceholder>
     );
   return (
     <CardForm

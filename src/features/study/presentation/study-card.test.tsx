@@ -49,6 +49,13 @@ test('question shows the term and optional front content without revealing the a
   expect(screen.queryByRole('tab', { name: 'Examples' })).toBeNull();
 });
 
+test('category badge follows the deck content alignment in RTL', () => {
+  show({ deck: makeDeck({ textAlignment: 'rtl' }) });
+  expect(screen.getByLabelText('Category: Greetings').props.style).toMatchObject({
+    alignSelf: 'flex-end',
+  });
+});
+
 test('revealed answer shows Meaning and switches to multiple Examples without submitting', () => {
   const select = show({ revealed: true });
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();

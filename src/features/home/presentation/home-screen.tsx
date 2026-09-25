@@ -8,7 +8,7 @@ import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
-import { EmptyState } from '@/shared/ui/empty-state';
+import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
@@ -39,13 +39,11 @@ export function HomeScreen() {
           </Text>
           {home.loading ? <LoadingState label={t('home.loading')} /> : null}
           {home.error ? (
-            <View className="gap-md">
-              <EmptyState
-                title={t('home.loadError')}
-                description={language === 'en' ? home.error : t('common.genericError')}
-              />
-              <Button label={t('common.tryAgain')} onPress={home.refresh} />
-            </View>
+            <ErrorState
+              title={t('home.loadError')}
+              description={language === 'en' ? home.error : t('common.genericError')}
+              onRetry={home.refresh}
+            />
           ) : null}
           {!home.loading && !home.error ? (
             <View className="flex-row flex-wrap gap-sm">

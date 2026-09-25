@@ -4,7 +4,11 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
 import type { Deck, TypographySize } from '@/features/decks/domain/deck';
-import { deckAlignment, deckTypography } from '@/features/decks/presentation/deck-presentation';
+import {
+  deckAlignment,
+  deckBadgeAlignment,
+  deckTypography,
+} from '@/features/decks/presentation/deck-presentation';
 import type { TypographyVariant } from '@/shared/theme/tokens';
 import { Badge } from '@/shared/ui/badge';
 import { PronunciationButton } from '@/shared/speech/pronunciation-button';
@@ -133,21 +137,11 @@ function FrontContent({
             </Text>
           ) : null}
           {card.category ? (
-            <View
-              style={{
-                alignItems:
-                  deck.textAlignment === 'rtl'
-                    ? 'flex-end'
-                    : deck.textAlignment === 'center'
-                      ? 'center'
-                      : 'flex-start',
-              }}
-            >
-              <Badge
-                label={card.category}
-                accessibilityLabel={t('study.category', { value: card.category })}
-              />
-            </View>
+            <Badge
+              label={card.category}
+              style={{ alignSelf: deckBadgeAlignment[deck.textAlignment] }}
+              accessibilityLabel={t('study.category', { value: card.category })}
+            />
           ) : null}
         </View>
       </ScrollView>

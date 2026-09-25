@@ -106,15 +106,18 @@ export function CardForm({
     setError(null);
     if (!frontText.trim()) {
       setFrontError(t('form.termRequired'));
+      void haptics.actionRejected();
       return;
     }
     if (!meaning.trim()) {
       setMeaningError(t('form.meaningRequired'));
+      void haptics.actionRejected();
       return;
     }
     const emptyExample = examples.findIndex((item) => !item.sentence.trim());
     if (emptyExample !== -1) {
       setExampleError(emptyExample);
+      void haptics.actionRejected();
       return;
     }
     let content: ReturnType<typeof validateCardContent>;
@@ -124,6 +127,7 @@ export function CardForm({
       setError(
         language === 'en' && cause instanceof AppError ? cause.message : t('form.cardInvalid'),
       );
+      void haptics.actionRejected();
       return;
     }
     submitting.current = true;
@@ -135,6 +139,7 @@ export function CardForm({
       setError(
         language === 'en' && cause instanceof AppError ? cause.message : t('form.cardSaveError'),
       );
+      void haptics.actionRejected();
     } finally {
       submitting.current = false;
       setSaving(false);
