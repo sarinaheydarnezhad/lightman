@@ -20,12 +20,12 @@ export function Tab({
       accessibilityState={{ ...accessibilityState, selected: active, disabled: !!disabled }}
       disabled={disabled}
       className={`min-h-tab min-w-0 flex-1 items-center justify-center border-b-2 px-md ${active ? 'border-primary' : 'border-transparent'}`}
-      style={({ pressed }) => [
-        typeof style === 'function' ? style({ pressed }) : style,
+      style={(state) => [
+        typeof style === 'function' ? style(state) : style,
         {
           opacity: disabled
             ? interaction.disabledOpacity
-            : pressed
+            : state.pressed
               ? interaction.pressedOpacity
               : 1,
         },

@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
-import { useUiStore } from '@/store/ui-store';
+import { setTestTheme } from '@/../test/set-test-theme';
 import { ThemeProvider, useThemeColors, useThemeMode } from './theme-provider';
 import { Text } from '@/shared/ui/text';
 
@@ -13,10 +13,10 @@ function ThemeReading() {
   );
 }
 
-afterEach(() => useUiStore.setState({ themePreference: 'system' }));
+afterEach(async () => setTestTheme('system'));
 
-test('switches appearance from the session preference and updates semantic values', () => {
-  useUiStore.setState({ themePreference: 'light' });
+test('switches appearance from UserSettings and updates semantic values', async () => {
+  await setTestTheme('light');
   render(
     <ThemeProvider>
       <ThemeReading />
@@ -24,9 +24,9 @@ test('switches appearance from the session preference and updates semantic value
   );
   expect(screen.getByText('light: #F7F8FA')).toBeTruthy();
 
-  act(() => useUiStore.getState().setThemePreference('dark'));
+  await act(async () => setTestTheme('dark'));
   expect(screen.getByText('dark: #111723')).toBeTruthy();
 
-  act(() => useUiStore.getState().setThemePreference('oled'));
+  await act(async () => setTestTheme('oled'));
   expect(screen.getByText('oled: #000000')).toBeTruthy();
 });

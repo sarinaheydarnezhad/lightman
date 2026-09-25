@@ -32,6 +32,11 @@ export function validateUserSettings(settings: UserSettings): UserSettings {
     settings.preferredSpeechAccent !== 'uk'
   )
     throw new AppError('validation', 'Invalid speech accent.');
+  if (
+    settings.preferredSpeechAccent !== null &&
+    preferredSpeechLanguage.toLowerCase().split('-')[0] !== 'en'
+  )
+    throw new AppError('validation', 'English accent requires English speech language.');
   return {
     ...settings,
     language,

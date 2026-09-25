@@ -16,4 +16,7 @@ export interface IdGenerator {
 export interface AppConfig {
   readonly environment: 'development' | 'production' | 'test';
   readonly dictionaryApiBaseUrl: string;
+  readonly appName: string;
+  readonly appVersion: string | null;
+  readonly buildNumber: string | null;
 }

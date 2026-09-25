@@ -22,6 +22,16 @@ test('clock controls instants, while dates and local times are distinct', () => 
   expect(() => instant('2026-02-30T00:00:00.000Z')).toThrow(AppError);
 });
 
+test.each(['00:00', '08:00', '12:30', '18:45', '23:59'])(
+  'accepts local reminder time %s without a UTC offset',
+  (time) => expect(localTime(time)).toBe(time),
+);
+
+test.each(['24:00', '25:00', '12:60', '-1:00', '12:99', 'invalid'])(
+  'rejects invalid local reminder time %s',
+  (time) => expect(() => localTime(time)).toThrow(AppError),
+);
+
 test.each([
   ['2026-01-31', 1, '2026-02-01'],
   ['2026-02-28', 1, '2026-03-01'],

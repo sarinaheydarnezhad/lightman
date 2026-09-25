@@ -1,4 +1,5 @@
 import { AppError } from '@/core/errors/app-error';
+import { languageTag } from '@/core/domain/values';
 import { makeSettings } from '@/../test/fixtures';
 import { validateUserSettings } from './user-settings';
 
@@ -24,5 +25,10 @@ test('settings reject invalid theme, language and local time', () => {
   );
   expect(() =>
     validateUserSettings(makeSettings({ dailyReminderEnabled: true, dailyReminderTime: null })),
+  ).toThrow(AppError);
+  expect(() =>
+    validateUserSettings(
+      makeSettings({ preferredSpeechLanguage: languageTag('fa'), preferredSpeechAccent: 'uk' }),
+    ),
   ).toThrow(AppError);
 });

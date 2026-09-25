@@ -5,7 +5,7 @@ import { useReducedMotion, withTiming } from 'react-native-reanimated';
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
 import { palette } from '@/shared/theme/tokens';
-import { useUiStore } from '@/store/ui-store';
+import { setTestTheme } from '@/../test/set-test-theme';
 import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
 
@@ -19,7 +19,7 @@ const card = makeCard({
 });
 
 beforeEach(() => jest.mocked(useReducedMotion).mockReturnValue(false));
-afterEach(() => useUiStore.setState({ themePreference: 'system' }));
+afterEach(async () => setTestTheme('system'));
 
 function show(overrides: Partial<Parameters<typeof StudyCard>[0]> = {}) {
   const select = jest.fn();
@@ -234,8 +234,8 @@ test('RTL alignment is preserved on the answer face', () => {
 
 test.each(['light', 'dark', 'oled'] as const)(
   '%s surface is opaque on both animated faces',
-  (mode) => {
-    useUiStore.setState({ themePreference: mode });
+  async (mode) => {
+    await setTestTheme(mode);
     show();
     const front = screen.getByTestId('flip-card-front');
     const back = screen.getByTestId('flip-card-back', { includeHiddenElements: true });

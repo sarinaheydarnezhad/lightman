@@ -2,10 +2,11 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { speech } from '@/core/composition/speech';
+import { application } from '@/core/composition/application';
 import { languageTag } from '@/core/domain/values';
 import { StudyCard } from '@/features/study/presentation/study-card';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
-import { useUiStore } from '@/store/ui-store';
+import { setTestTheme } from '@/../test/set-test-theme';
 
 jest.mock('@/core/composition/speech', () => ({
   speech: jest
@@ -94,8 +95,8 @@ test('unavailable voice reports an accessible message and card change stops spee
 
 test.each(['light', 'dark', 'oled'] as const)(
   '%s theme keeps the audio button accessible without loading voices',
-  (mode) => {
-    useUiStore.setState({ themePreference: mode });
+  async (mode) => {
+    await setTestTheme(mode);
     try {
       render(
         <ThemeProvider>
@@ -111,9 +112,41 @@ test.each(['light', 'dark', 'oled'] as const)(
       expect(screen.getByRole('button', { name: 'Pronounce hello' })).toBeTruthy();
       expect(speech.getAvailableVoices).not.toHaveBeenCalled();
     } finally {
-      act(() => {
-        useUiStore.setState({ themePreference: 'system' });
-      });
+      await act(async () => setTestTheme('system'));
     }
   },
 );
+
+test('next pronunciation reads the latest saved English accent through the speech service', async () => {
+  await setTestTheme('system');
+  await application.settings.setSpeechLanguage(languageTag('en'));
+  await application.settings.setSpeechAccent('uk');
+  render(
+    <ThemeProvider>
+      <StudyCard
+        card={makeCard()}
+        deck={makeDeck()}
+        revealed={false}
+        backTab="meaning"
+        onSelectBackTab={jest.fn()}
+      />
+    </ThemeProvider>,
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Pronounce hello' }));
+  await waitFor(() =>
+    expect(speech.speak).toHaveBeenLastCalledWith(
+      'hello',
+      expect.objectContaining({ accent: 'uk' }),
+    ),
+  );
+  await act(async () => speech.stop());
+  await application.settings.setSpeechAccent('us');
+  fireEvent.press(screen.getByRole('button', { name: 'Pronounce hello' }));
+  await waitFor(() =>
+    expect(speech.speak).toHaveBeenLastCalledWith(
+      'hello',
+      expect.objectContaining({ accent: 'us' }),
+    ),
+  );
+  await application.settings.setSpeechAccent(null);
+});

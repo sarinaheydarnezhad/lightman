@@ -1,13 +1,16 @@
 import '@/shared/theme/global.css';
 
 import { useEffect } from 'react';
-import { Stack, type ErrorBoundaryProps } from 'expo-router';
+import { Stack, router, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { logger } from '@/core/infrastructure/platform';
+import { application } from '@/core/composition/application';
+import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
+import { createReminderTapHandler } from '@/features/study/application/create-reminder-tap-handler';
 import { BootstrapGate } from '@/shared/bootstrap/bootstrap-gate';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
 import { EmptyState } from '@/shared/ui/empty-state';
@@ -39,6 +42,26 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 function Navigation() {
   const mode = useThemeMode();
   const colors = useThemeColors();
+  useEffect(() => {
+    const handleTap = createReminderTapHandler(
+      application,
+      (session) =>
+        router.push({
+          pathname: '/study/[sessionId]',
+          params: { sessionId: session.id },
+        }),
+      () => router.push('/study'),
+    );
+    const unsubscribe = expoNotificationService.subscribeToReminderTaps(() => {
+      void handleTap();
+    });
+    try {
+      if (expoNotificationService.consumeLastReminderTap()) void handleTap();
+    } catch (error) {
+      logger.error('Unable to read reminder tap', error);
+    }
+    return unsubscribe;
+  }, []);
   return (
     <>
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />

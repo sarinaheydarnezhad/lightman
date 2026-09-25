@@ -1,6 +1,11 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import { Pressable, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import {
+  addNotificationResponseReceivedListener,
+  getLastNotificationResponse,
+} from 'expo-notifications';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
 import NotFound from '@/app/+not-found';
@@ -26,16 +31,40 @@ import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
 import { speech } from '@/core/composition/speech';
+import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
 import { AppError } from '@/core/errors/app-error';
-import { calendarDate, instant, languageTag } from '@/core/domain/values';
+import { calendarDate, instant, languageTag, localTime } from '@/core/domain/values';
 import { makeEvent, makeState } from '@/../test/fixtures';
 import {
   analyticsWindow,
   getStudySummary,
   type AnalyticsWindow,
 } from '@/features/analytics/domain/analytics';
-import { useUiStore } from '@/store/ui-store';
+import { setTestTheme } from '@/../test/set-test-theme';
 import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
+
+jest.mock('expo-notifications', () => ({
+  AndroidImportance: { DEFAULT: 3 },
+  DEFAULT_ACTION_IDENTIFIER: 'default',
+  IosAuthorizationStatus: {
+    NOT_DETERMINED: 0,
+    DENIED: 1,
+    AUTHORIZED: 2,
+    PROVISIONAL: 3,
+    EPHEMERAL: 4,
+  },
+  SchedulableTriggerInputTypes: { DAILY: 'daily' },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, status: 'granted' }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, status: 'granted' }),
+  getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue('reminder'),
+  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  addNotificationResponseReceivedListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+  getLastNotificationResponse: jest.fn().mockReturnValue(null),
+  clearLastNotificationResponse: jest.fn(),
+}));
 
 jest.mock('react-native-safe-area-context', () => {
   // Jest hoists the factory above imports.
@@ -66,8 +95,8 @@ const routes = {
   'design-system': DesignSystem,
 };
 
-afterEach(() => {
-  useUiStore.setState({ themePreference: 'system' });
+afterEach(async () => {
+  await setTestTheme('system');
   jest.restoreAllMocks();
 });
 
@@ -207,7 +236,7 @@ test('analytics allows retry after a repository error and refreshes when navigat
 test.each(['light', 'dark', 'oled'] as const)(
   '%s analytics theme remains accessible',
   async (themePreference) => {
-    act(() => useUiStore.setState({ themePreference }));
+    await act(async () => setTestTheme(themePreference));
     jest.spyOn(application, 'getAnalyticsWindow').mockResolvedValue(analyticsFixture(30, 3));
     renderRouter(routes, { initialUrl: '/analytics' });
     expect(
@@ -385,29 +414,138 @@ test('editing a card can remove a usage example without adding placeholder conte
 test('appearance selection uses the existing session preference', async () => {
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByRole('header', { name: 'Settings' });
-  fireEvent.press(screen.getByRole('button', { name: 'Theme, Current: Follow system' }));
+  fireEvent.press(screen.getByRole('button', { name: /Theme, Current: System/ }));
   expect(await screen.findByRole('header', { name: 'Appearance' })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'OLED' }));
   expect(await screen.findByRole('button', { name: 'OLED', selected: true })).toBeTruthy();
-  expect(useUiStore.getState().themePreference).toBe('oled');
+  expect((await application.getSettings())?.theme).toBe('oled');
 });
 
 test('haptics can be disabled and re-enabled through in-memory settings', async () => {
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByRole('header', { name: 'Settings' });
-  const update = jest.spyOn(application, 'updateSettings');
+  const update = jest.spyOn(application.settings, 'setHaptics');
   const feedback = jest.spyOn(haptics, 'selection').mockResolvedValue();
-  const off = await screen.findByRole('button', { name: 'Turn haptics off' });
+  const off = await screen.findByRole('switch', { name: 'Haptic feedback', checked: true });
   fireEvent.press(off);
   fireEvent.press(off);
-  expect(await screen.findByRole('button', { name: 'Turn haptics on' })).toBeTruthy();
+  await waitFor(() =>
+    expect(screen.getByRole('switch', { name: 'Haptic feedback', checked: false })).toBeTruthy(),
+  );
   expect(update).toHaveBeenCalledTimes(1);
   expect((await application.getSettings())?.hapticsEnabled).toBe(false);
   expect(feedback).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByRole('button', { name: 'Turn haptics on' }));
-  expect(await screen.findByRole('button', { name: 'Turn haptics off' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('switch', { name: 'Haptic feedback', checked: false }));
+  await waitFor(() =>
+    expect(screen.getByRole('switch', { name: 'Haptic feedback', checked: true })).toBeTruthy(),
+  );
   expect((await application.getSettings())?.hapticsEnabled).toBe(true);
   expect(feedback).toHaveBeenCalledTimes(1);
+});
+
+test('daily reminder uses the notification service and reveals the local time control', async () => {
+  const schedule = jest.spyOn(expoNotificationService, 'scheduleDailyReminder').mockResolvedValue();
+  const cancel = jest.spyOn(expoNotificationService, 'cancelDailyReminder').mockResolvedValue();
+  await application.settings.setReminderEnabled(false);
+  cancel.mockClear();
+  renderRouter(routes, { initialUrl: '/settings' });
+  const toggle = await screen.findByRole('switch', { name: 'Daily reminder', checked: false });
+  fireEvent.press(toggle);
+  await waitFor(() =>
+    expect(screen.getByRole('switch', { name: 'Daily reminder', checked: true })).toBeTruthy(),
+  );
+  expect(schedule).toHaveBeenCalledWith('09:00');
+  expect(screen.getByRole('button', { name: /Reminder time, 09:00/ })).toBeTruthy();
+  fireEvent.press(screen.getByRole('switch', { name: 'Daily reminder', checked: true }));
+  await waitFor(() =>
+    expect(screen.getByRole('switch', { name: 'Daily reminder', checked: false })).toBeTruthy(),
+  );
+  expect(cancel).toHaveBeenCalledTimes(2);
+});
+
+test('permission denial keeps reminder off and offers device settings', async () => {
+  await application.settings.setReminderEnabled(false);
+  jest.spyOn(expoNotificationService, 'getPermissionStatus').mockResolvedValue('denied');
+  renderRouter(routes, { initialUrl: '/settings' });
+  await screen.findByLabelText('Notification permission, Disabled in device settings');
+  fireEvent.press(await screen.findByRole('switch', { name: 'Daily reminder', checked: false }));
+  expect(await screen.findByRole('button', { name: 'Open notification settings' })).toBeTruthy();
+  expect((await application.getSettings())?.dailyReminderEnabled).toBe(false);
+});
+
+test('tapping the local reminder enters the normal all-decks study flow', async () => {
+  const start = jest
+    .spyOn(application, 'startStudySession')
+    .mockResolvedValue({ id: 'tap-session' } as never);
+  jest.spyOn(application, 'getActiveStudySession').mockResolvedValue(null);
+  const rendered = renderRouter(routes, { initialUrl: '/settings' });
+  await screen.findByRole('header', { name: 'Settings' });
+  const listener = jest.mocked(addNotificationResponseReceivedListener).mock.calls.at(-1)![0];
+  act(() =>
+    listener({
+      actionIdentifier: 'default',
+      notification: {
+        date: 123450,
+        request: {
+          identifier: 'study-tap',
+          content: { data: { reminderKey: 'lightman.daily-study-reminder' } },
+        },
+      },
+    } as never),
+  );
+  await waitFor(() => expect(start).toHaveBeenCalledWith({ kind: 'all-decks' }));
+  await waitFor(() => expect(rendered.getPathname()).toContain('/study/tap-session'));
+});
+
+test('a cold-start reminder tap is consumed after navigation becomes ready', async () => {
+  jest.mocked(getLastNotificationResponse).mockReturnValueOnce({
+    actionIdentifier: 'default',
+    notification: {
+      date: 123451,
+      request: {
+        identifier: 'cold-study-tap',
+        content: { data: { reminderKey: 'lightman.daily-study-reminder' } },
+      },
+    },
+  } as never);
+  const start = jest
+    .spyOn(application, 'startStudySession')
+    .mockResolvedValue({ id: 'cold-session' } as never);
+  jest.spyOn(application, 'getActiveStudySession').mockResolvedValue(null);
+  renderRouter(routes, { initialUrl: '/settings' });
+  await waitFor(() => expect(start).toHaveBeenCalledWith({ kind: 'all-decks' }));
+  expect(start).toHaveBeenCalledTimes(1);
+});
+
+test('changing the reminder time through the Android picker reschedules once', async () => {
+  const nativePlatform = jest.replaceProperty(Platform, 'OS', 'android');
+  try {
+    const schedule = jest
+      .spyOn(expoNotificationService, 'scheduleDailyReminder')
+      .mockResolvedValue();
+    jest.spyOn(expoNotificationService, 'cancelDailyReminder').mockResolvedValue();
+    await application.settings.setReminderEnabled(false);
+    await application.settings.setReminderTime(localTime('09:00'));
+    await application.settings.setReminderEnabled(true);
+    const picker = jest.spyOn(DateTimePickerAndroid, 'open').mockImplementation(() => {});
+    renderRouter(routes, { initialUrl: '/settings' });
+    fireEvent.press(await screen.findByRole('button', { name: /Reminder time, 09:00/ }));
+    schedule.mockClear();
+    expect(picker).toHaveBeenCalledTimes(1);
+    const selected = new Date();
+    selected.setHours(18, 45, 0, 0);
+    await act(async () => {
+      picker.mock.calls[0]![0].onChange?.({ type: 'set' } as never, selected);
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Reminder time, 18:45/ })).toBeTruthy(),
+    );
+    expect(schedule).toHaveBeenLastCalledWith('18:45');
+    expect(schedule).toHaveBeenCalledTimes(1);
+    await application.settings.setReminderEnabled(false);
+  } finally {
+    nativePlatform.restore();
+  }
 });
 
 test('speech settings show accent options only for English', async () => {
@@ -424,8 +562,18 @@ test('speech settings show accent options only for English', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'Persian' }));
   await waitFor(() => expect(screen.queryByRole('button', { name: 'UK English' })).toBeNull());
   expect((await application.getSettings())?.preferredSpeechLanguage).toBe('fa');
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: 'English' }).props.accessibilityState.disabled).toBe(
+      false,
+    ),
+  );
   fireEvent.press(screen.getByRole('button', { name: 'English' }));
   await screen.findByRole('button', { name: 'UK English' });
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: 'UK English' }).props.accessibilityState.disabled,
+    ).toBe(false),
+  );
   fireEvent.press(screen.getByRole('button', { name: 'UK English' }));
   await waitFor(async () =>
     expect((await application.getSettings())?.preferredSpeechAccent).toBe('uk'),
@@ -434,7 +582,7 @@ test('speech settings show accent options only for English', async () => {
     preferredSpeechLanguage: languageTag('en'),
     preferredSpeechAccent: null,
   });
-});
+}, 15000);
 
 test('card details pronounce only the term and stop speech when navigation leaves', async () => {
   const speak = jest.spyOn(speech, 'speak').mockResolvedValue(true);

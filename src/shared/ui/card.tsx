@@ -46,12 +46,12 @@ export function Card({
         accessibilityState={{ disabled: !!disabled }}
         className={classes}
         disabled={disabled}
-        style={({ pressed }) => [
-          typeof style === 'function' ? style({ pressed }) : style,
+        style={(state) => [
+          typeof style === 'function' ? style(state) : style,
           {
             opacity: disabled
               ? interaction.disabledOpacity
-              : pressed
+              : state.pressed
                 ? interaction.pressedOpacity
                 : 1,
           },

@@ -65,12 +65,12 @@ export function Chip({
       disabled={disabled}
       onPress={onPress}
       className={classes}
-      style={({ pressed }) => [
-        typeof style === 'function' ? style({ pressed }) : style,
+      style={(state) => [
+        typeof style === 'function' ? style(state) : style,
         {
           opacity: disabled
             ? interaction.disabledOpacity
-            : pressed
+            : state.pressed
               ? interaction.pressedOpacity
               : 1,
         },

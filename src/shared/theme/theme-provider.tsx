@@ -1,8 +1,8 @@
-import { createContext, useContext, type PropsWithChildren } from 'react';
+import { createContext, useContext, useSyncExternalStore, type PropsWithChildren } from 'react';
 import { useColorScheme, View } from 'react-native';
 import { vars } from 'nativewind';
 
-import { useUiStore } from '@/store/ui-store';
+import { application } from '@/core/composition/application';
 import { palette, resolveTheme, type ThemeMode } from './tokens';
 
 const ThemeContext = createContext<ThemeMode>('light');
@@ -28,7 +28,9 @@ const variables = Object.fromEntries(
 ) as Record<ThemeMode, ReturnType<typeof vars>>;
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const preference = useUiStore((state) => state.themePreference);
+  const preference =
+    useSyncExternalStore(application.settings.subscribe, application.settings.snapshot)?.theme ??
+    'system';
   const deviceScheme = useColorScheme();
   const mode = resolveTheme(
     preference,

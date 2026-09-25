@@ -40,12 +40,12 @@ export function Button({
       accessibilityLabel={label}
       accessibilityState={{ ...accessibilityState, disabled: unavailable, busy: loading }}
       className={`min-h-button flex-row items-center justify-center gap-sm rounded-md border px-lg ${appearance[variant]}`}
-      style={({ pressed }) => [
-        typeof style === 'function' ? style({ pressed }) : style,
+      style={(state) => [
+        typeof style === 'function' ? style(state) : style,
         {
           opacity: unavailable
             ? interaction.disabledOpacity
-            : pressed
+            : state.pressed
               ? interaction.pressedOpacity
               : 1,
         },

@@ -27,12 +27,12 @@ export function IconButton({
       accessibilityLabel={label}
       accessibilityState={{ ...accessibilityState, disabled: !!disabled }}
       className={`min-h-iconButton min-w-iconButton items-center justify-center rounded-md border ${variant === 'ghost' ? 'border-transparent bg-transparent' : 'border-border bg-surface'}`}
-      style={({ pressed }) => [
-        typeof style === 'function' ? style({ pressed }) : style,
+      style={(state) => [
+        typeof style === 'function' ? style(state) : style,
         {
           opacity: disabled
             ? interaction.disabledOpacity
-            : pressed
+            : state.pressed
               ? interaction.pressedOpacity
               : 1,
         },

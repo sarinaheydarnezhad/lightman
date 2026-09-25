@@ -6,7 +6,7 @@ import { vocabularyHelper } from '@/core/composition/vocabulary';
 import { languageTag } from '@/core/domain/values';
 import type { DictionaryLookupResult } from '@/features/vocabulary/domain/dictionary';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
-import { useUiStore } from '@/store/ui-store';
+import { setTestTheme } from '@/../test/set-test-theme';
 import { CardForm } from './card-form';
 
 jest.mock('@/core/composition/vocabulary', () => ({
@@ -134,9 +134,9 @@ test('offline lookup allows retry once, hiding results, and manual card saving',
   );
 });
 
-test('unsupported RTL decks never query an English provider; all themes keep manual entry available', () => {
+test('unsupported RTL decks never query an English provider; all themes keep manual entry available', async () => {
   for (const themePreference of ['light', 'dark', 'oled'] as const) {
-    act(() => useUiStore.setState({ themePreference }));
+    await act(async () => setTestTheme(themePreference));
     const { unmount } = render(
       <ThemeProvider>
         <CardForm
@@ -150,6 +150,6 @@ test('unsupported RTL decks never query an English provider; all themes keep man
     expect(screen.queryByRole('button', { name: 'Find suggestions' })).toBeNull();
     unmount();
   }
-  act(() => useUiStore.setState({ themePreference: 'system' }));
+  await act(async () => setTestTheme('system'));
   expect(vocabularyHelper.lookup).not.toHaveBeenCalled();
 });

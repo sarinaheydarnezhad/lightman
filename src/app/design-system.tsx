@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import { Settings2 } from 'lucide-react-native';
 
-import { useUiStore } from '@/store/ui-store';
+import { application } from '@/core/composition/application';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
 import {
@@ -40,8 +40,12 @@ const variants: TypographyVariant[] = [
 const colorNames = Object.keys(palette.light) as SemanticColor[];
 
 export default function DesignSystemDemo() {
-  const preference = useUiStore((state) => state.themePreference);
-  const setPreference = useUiStore((state) => state.setThemePreference);
+  const preference =
+    useSyncExternalStore(application.settings.subscribe, application.settings.snapshot)?.theme ??
+    'system';
+  const setPreference = (value: typeof preference) => {
+    void application.settings.setTheme(value);
+  };
   const mode = useThemeMode();
   const colors = useThemeColors();
   const [selectedTab, setSelectedTab] = useState<'meaning' | 'examples'>('meaning');

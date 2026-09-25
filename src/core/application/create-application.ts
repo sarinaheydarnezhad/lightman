@@ -2,6 +2,8 @@ import { calendarDateAtInstant, now, requiredId } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
+import type { NotificationService } from '@/core/ports/notification';
+import { createSettingsUseCases } from '@/features/settings/application/create-settings-use-cases';
 import { validateDeck, type Deck } from '@/features/decks/domain/deck';
 import { validateCard, type Card } from '@/features/study/domain/card';
 import {
@@ -14,7 +16,7 @@ import {
   createInitialReviewState,
   createReviewEvent,
 } from '@/features/study/domain/leitner-srs';
-import { validateUserSettings, type UserSettings } from '@/features/settings/domain/user-settings';
+import type { UserSettings } from '@/features/settings/domain/user-settings';
 import { createStudyUseCases } from '@/features/study/application/create-study-use-cases';
 import { createAnalyticsUseCases } from '@/features/analytics/application/create-analytics-use-cases';
 import type {
@@ -39,8 +41,25 @@ export type CreateCardInput = Pick<
 export type UpdateCardInput = Partial<Omit<CreateCardInput, 'deckId'>>;
 
 /** Use cases depend on domain contracts. The caller supplies the current adapters. */
-export function createApplication(repositories: Repositories, clock: AppClock, ids: IdGenerator) {
+export function createApplication(
+  repositories: Repositories,
+  clock: AppClock,
+  ids: IdGenerator,
+  notificationService: NotificationService = {
+    getPermissionStatus: async () => 'unavailable',
+    requestPermission: async () => 'unavailable',
+    getScheduledReminder: async () => null,
+    scheduleDailyReminder: async () => {
+      throw new AppError('unavailable', 'Reminders unavailable.');
+    },
+    cancelDailyReminder: async () => {},
+    openSystemSettings: async () => {},
+    subscribeToReminderTaps: () => () => {},
+    consumeLastReminderTap: () => false,
+  },
+) {
   const { decks, cards, reviews, settings } = repositories;
+  const settingsUseCases = createSettingsUseCases(settings, notificationService);
 
   async function persistence<T>(operation: () => Promise<T>): Promise<T> {
     try {
@@ -181,13 +200,12 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
       return persistence(() => reviews.listEvents(options));
     },
     reviewCard,
+    settings: settingsUseCases,
     getSettings(): Promise<UserSettings | null> {
-      return persistence(() => settings.get());
+      return persistence(() => settingsUseCases.get());
     },
     async updateSettings(changes: Partial<UserSettings>): Promise<UserSettings> {
-      const previous = await persistence(() => settings.get());
-      if (!previous) throw new AppError('not-found', 'Settings not found.');
-      return persistence(() => settings.update(validateUserSettings({ ...previous, ...changes })));
+      return persistence(() => settingsUseCases.update(changes));
     },
     async getHomeSummary() {
       const deckList = await persistence(() => decks.list());
