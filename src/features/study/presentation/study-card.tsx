@@ -1,4 +1,6 @@
-import { ScrollView, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, findNodeHandle, ScrollView, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import type { Deck, TypographySize } from '@/features/decks/domain/deck';
 import { deckAlignment, deckTypography } from '@/features/decks/presentation/deck-presentation';
@@ -60,6 +62,7 @@ export function StudyCard({
       back={
         <BackContent
           card={card}
+          revealed={revealed}
           alignment={alignment}
           size={size}
           backTab={backTab}
@@ -120,7 +123,12 @@ function FrontContent({
             {card.frontText}
           </Text>
           {card.phonetic ? (
-            <Text variant={size} tone="secondary" style={alignment}>
+            <Text
+              variant={size}
+              tone="secondary"
+              style={alignment}
+              accessibilityLabel={`Phonetic: ${card.phonetic}`}
+            >
               {card.phonetic}
             </Text>
           ) : null}
@@ -135,7 +143,7 @@ function FrontContent({
                       : 'flex-start',
               }}
             >
-              <Badge label={card.category} />
+              <Badge label={card.category} accessibilityLabel={`Category: ${card.category}`} />
             </View>
           ) : null}
         </View>
@@ -146,22 +154,45 @@ function FrontContent({
 
 function BackContent({
   card,
+  revealed,
   alignment,
   size,
   backTab,
   onSelectBackTab,
 }: {
   card: StudyCardData;
+  revealed: boolean;
   alignment: ContentAlignment;
   size: TypographyVariant;
   backTab: 'meaning' | 'examples';
   onSelectBackTab: (tab: 'meaning' | 'examples') => void;
 }) {
+  const title = useRef<View>(null);
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (!revealed) return;
+    const focus = setTimeout(
+      () => {
+        const target = findNodeHandle(title.current);
+        if (target) AccessibilityInfo.setAccessibilityFocus(target);
+      },
+      reducedMotion ? 0 : 320,
+    );
+    return () => clearTimeout(focus);
+  }, [revealed, reducedMotion]);
   return (
-    <View className="min-h-0 flex-1 gap-lg" accessibilityLiveRegion="polite">
-      <Text variant="labelMedium" tone="secondary">
-        BACK
-      </Text>
+    <View className="min-h-0 flex-1 gap-lg">
+      <View
+        ref={title}
+        collapsable={false}
+        accessible
+        accessibilityRole="header"
+        accessibilityLabel="Answer revealed"
+      >
+        <Text variant="labelMedium" tone="secondary">
+          ANSWER
+        </Text>
+      </View>
       <View className="flex-row border-b border-border" accessibilityRole="tablist">
         <Tab
           label="Meaning"
@@ -176,7 +207,11 @@ function BackContent({
       </View>
       <ScrollView nestedScrollEnabled style={{ flex: 1 }} accessibilityLabel="Flashcard answer">
         {backTab === 'meaning' ? (
-          <Text variant={size} style={alignment}>
+          <Text
+            variant={size}
+            style={alignment}
+            accessibilityLabel={`Meaning: ${card.meaning || 'No definition added'}`}
+          >
             {card.meaning || 'No definition added'}
           </Text>
         ) : card.examples.length ? (
@@ -186,16 +221,30 @@ function BackContent({
                 key={`${card.id}-example-${index}`}
                 className="gap-sm rounded-md border border-border p-md"
               >
-                <Text variant={size} style={alignment}>
+                <Text
+                  variant={size}
+                  style={alignment}
+                  accessibilityLabel={`Example ${index + 1}: ${example.sentence}`}
+                >
                   {example.sentence}
                 </Text>
                 {example.translation ? (
-                  <Text tone="secondary" variant={size} style={alignment}>
+                  <Text
+                    tone="secondary"
+                    variant={size}
+                    style={alignment}
+                    accessibilityLabel={`Translation: ${example.translation}`}
+                  >
                     {example.translation}
                   </Text>
                 ) : null}
                 {example.notes ? (
-                  <Text tone="tertiary" variant="bodySmall" style={alignment}>
+                  <Text
+                    tone="tertiary"
+                    variant="bodySmall"
+                    style={alignment}
+                    accessibilityLabel={`Notes: ${example.notes}`}
+                  >
                     {example.notes}
                   </Text>
                 ) : null}

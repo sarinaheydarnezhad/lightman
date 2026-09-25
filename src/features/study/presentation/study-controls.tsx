@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/shared/ui/button';
 
@@ -15,8 +15,9 @@ export function StudyControls({
   readonly onFailure: () => void;
   readonly onSuccess: () => void;
 }) {
+  const { fontScale, width } = useWindowDimensions();
   return revealed ? (
-    <View className="flex-row gap-md">
+    <View className={fontScale >= 1.4 || width < 360 ? 'gap-md' : 'flex-row gap-md'}>
       <Button
         label="Failure"
         variant="secondary"

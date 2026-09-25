@@ -25,6 +25,10 @@ test('button supports normal, disabled, loading and destructive states', () => {
 
   rerender(<Button label="Remove" variant="destructive" onPress={onPress} />);
   expect(screen.getByRole('button', { name: 'Remove' })).toBeTruthy();
+
+  rerender(<Button label="English" accessibilityState={{ selected: true }} />);
+  expect(screen.getByRole('button', { name: 'English', selected: true })).toBeTruthy();
+  expect(screen.getByText('✓')).toBeTruthy();
 });
 
 test('input exposes label, helper or error, editable state and multiline configuration', () => {
@@ -40,6 +44,7 @@ test('input exposes label, helper or error, editable state and multiline configu
   expect(screen.getByLabelText('Word').props.editable).toBe(false);
   expect(screen.getByLabelText('Word').props.multiline).toBe(true);
   expect(screen.getByLabelText('Word').props.textAlign).toBe('center');
+  expect(screen.getByLabelText('Word').props.accessibilityHint).toBe('Error: Required');
 });
 
 test('icon-only buttons expose an accessible label and disabled state', () => {
@@ -58,6 +63,7 @@ test('tabs expose selected and disabled semantics', () => {
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Examples', selected: false })).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Unavailable', disabled: true })).toBeTruthy();
+  expect(screen.getByText('Meaning').props.numberOfLines).toBeUndefined();
 });
 
 test('screen renders content inside a safe area in both layouts', () => {

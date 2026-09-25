@@ -7,12 +7,11 @@ import { speech } from '@/core/composition/speech';
 import { PronunciationButton } from '@/shared/speech/pronunciation-button';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
-import { Card } from '@/shared/ui/card';
+import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
-import { Text } from '@/shared/ui/text';
 import { CardContent } from './card-content';
 import { useCardActions, useCardDetailsViewModel } from './use-cards-view-model';
 
@@ -71,48 +70,45 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-2xl pb-3xl">
-        <ScreenHeader title={data.card.frontText} description={`From ${data.deck.name}`} />
-        <CardContent deck={data.deck} content={data.card} />
-        <View style={{ alignItems: data.deck.textAlignment === 'rtl' ? 'flex-end' : 'flex-start' }}>
-          <PronunciationButton text={data.card.frontText} language={data.deck.language} />
-        </View>
-        <Button
-          label="Edit card"
-          onPress={() =>
-            router.push({
-              pathname: '/decks/[deckId]/cards/[cardId]/edit',
-              params: { deckId, cardId },
-            })
-          }
-        />
-        {confirmArchive ? (
-          <Card className="gap-md" accessibilityLiveRegion="polite">
-            <Text variant="headingSmall">Archive this card?</Text>
-            <Text tone="secondary">It will be removed from the active cards in this deck.</Text>
-            {actionError ? (
-              <Text tone="error" accessibilityLiveRegion="polite">
-                {actionError}
-              </Text>
-            ) : null}
-            <Button
-              label="Keep card"
-              variant="secondary"
-              disabled={archiving}
-              onPress={() => {
-                setConfirmArchive(false);
-                setActionError(null);
-              }}
-            />
-            <Button
-              label="Confirm archive"
-              variant="destructive"
-              loading={archiving}
-              onPress={() => void archive()}
-            />
-          </Card>
-        ) : (
+        <View
+          className="gap-2xl"
+          pointerEvents={confirmArchive ? 'none' : 'auto'}
+          accessibilityElementsHidden={confirmArchive}
+          importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
+        >
+          <ScreenHeader title={data.card.frontText} description={`From ${data.deck.name}`} />
+          <CardContent deck={data.deck} content={data.card} />
+          <View
+            style={{ alignItems: data.deck.textAlignment === 'rtl' ? 'flex-end' : 'flex-start' }}
+          >
+            <PronunciationButton text={data.card.frontText} language={data.deck.language} />
+          </View>
+          <Button
+            label="Edit card"
+            onPress={() =>
+              router.push({
+                pathname: '/decks/[deckId]/cards/[cardId]/edit',
+                params: { deckId, cardId },
+              })
+            }
+          />
           <Button label="Archive card" variant="tertiary" onPress={() => setConfirmArchive(true)} />
-        )}
+        </View>
+        {confirmArchive ? (
+          <ConfirmationPanel
+            title="Archive this card?"
+            description="It will be removed from the active cards in this deck."
+            cancelLabel="Keep card"
+            confirmLabel="Confirm archive"
+            busy={archiving}
+            error={actionError}
+            onCancel={() => {
+              setConfirmArchive(false);
+              setActionError(null);
+            }}
+            onConfirm={() => void archive()}
+          />
+        ) : null}
       </View>
     </Screen>
   );

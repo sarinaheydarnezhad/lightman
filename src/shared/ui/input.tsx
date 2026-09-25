@@ -42,7 +42,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         ref={ref}
         {...props}
         accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityHint={accessibilityHint ?? error ?? helperText}
+        accessibilityHint={
+          error
+            ? `Error: ${error}${accessibilityHint ? ` ${accessibilityHint}` : ''}`
+            : (accessibilityHint ?? helperText)
+        }
         accessibilityState={{ disabled: unavailable }}
         allowFontScaling
         keyboardAppearance={keyboardAppearance ?? (mode === 'light' ? 'light' : 'dark')}

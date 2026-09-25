@@ -42,7 +42,9 @@ test('question shows the term and optional front content without revealing the a
   show();
   expect(screen.getByRole('header', { name: 'hello' })).toBeTruthy();
   expect(screen.getByText('/hello/')).toBeTruthy();
+  expect(screen.getByLabelText('Phonetic: /hello/')).toBeTruthy();
   expect(screen.getByText('Greetings')).toBeTruthy();
+  expect(screen.getByLabelText('Category: Greetings')).toBeTruthy();
   expect(screen.queryByText('greeting')).toBeNull();
   expect(screen.queryByRole('tab', { name: 'Examples' })).toBeNull();
 });
@@ -50,7 +52,9 @@ test('question shows the term and optional front content without revealing the a
 test('revealed answer shows Meaning and switches to multiple Examples without submitting', () => {
   const select = show({ revealed: true });
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
+  expect(screen.getByRole('header', { name: 'Answer revealed' })).toBeTruthy();
   expect(screen.getByText('greeting')).toBeTruthy();
+  expect(screen.getByLabelText('Meaning: greeting')).toBeTruthy();
   fireEvent.press(screen.getByRole('tab', { name: 'Examples' }));
   expect(select).toHaveBeenCalledWith('examples');
   // The caller controls the active tab; this component never advances a study session.
@@ -60,7 +64,10 @@ test('multiple examples show optional translation and notes', () => {
   const rendered = show({ revealed: true, backTab: 'examples' });
   expect(screen.getByText('Hello, friend.')).toBeTruthy();
   expect(screen.getByText('A friendly greeting.')).toBeTruthy();
+  expect(screen.getByLabelText('Example 1: Hello, friend.')).toBeTruthy();
+  expect(screen.getByLabelText('Translation: A friendly greeting.')).toBeTruthy();
   expect(screen.getByText('Conversation.')).toBeTruthy();
+  expect(screen.getByLabelText('Notes: Conversation.')).toBeTruthy();
   expect(rendered).not.toHaveBeenCalled();
 });
 
@@ -221,6 +228,7 @@ test('reduced motion switches the accessible face without a spatial flip', () =>
   );
   expect(screen.getByText('greeting')).toBeTruthy();
   expect(screen.queryByRole('header', { name: 'hello' })).toBeNull();
+  expect(screen.getByRole('header', { name: 'Answer revealed' })).toBeTruthy();
   expect(screen.queryByTestId('flip-card-back')).toBeNull();
 });
 

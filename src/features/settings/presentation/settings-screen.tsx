@@ -280,7 +280,7 @@ export function SettingsScreen() {
         {__DEV__ ? (
           <Link
             href="/design-system"
-            className="text-labelLarge text-primary"
+            className="min-h-iconButton self-start px-md py-md text-labelLarge text-primary"
             accessibilityRole="link"
           >
             View design system

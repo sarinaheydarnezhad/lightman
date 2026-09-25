@@ -1,6 +1,6 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
-import { Platform, Pressable, View } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import {
   addNotificationResponseReceivedListener,
@@ -684,6 +684,8 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
+    expect(screen.getByRole('header', { name: 'Archive this card?' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit card' })).toBeNull();
     expect(screen.getByText('It will be removed from the active cards in this deck.')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Keep card' }));
     expect(screen.getByRole('header', { name: 'Flow word' })).toBeTruthy();
@@ -701,6 +703,8 @@ test('UI creates, edits and archives a deck and its card through the in-memory a
     fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
     expect(await screen.findByRole('header', { name: 'Updated flow deck' })).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Archive deck' }));
+    expect(screen.getByRole('header', { name: 'Archive this deck?' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit deck' })).toBeNull();
     expect(screen.getByText('It will be removed from your active deck list.')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Keep deck' }));
     expect(screen.getByRole('header', { name: 'Updated flow deck' })).toBeTruthy();
@@ -807,6 +811,7 @@ test('advancing a study card and leaving study stop pronunciation without auto-p
 });
 
 test('deck-specific session reveals examples, retries one failure, completes, and can start again', async () => {
+  const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
   const { deck } = await studyFixture(2);
   const rendered = renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
   expect(await screen.findByRole('header', { name: deck.name })).toBeTruthy();
@@ -828,6 +833,7 @@ test('deck-specific session reveals examples, retries one failure, completes, an
   await waitFor(async () =>
     expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(1),
   );
+  expect(announce).toHaveBeenCalledWith('Failure answer saved.');
   const next = (await application.getCurrentStudyItem(session.id))!;
   expect(next.cardId).not.toBe(first.cardId);
   expect(
@@ -841,6 +847,7 @@ test('deck-specific session reveals examples, retries one failure, completes, an
   fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
   fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+  expect(announce).toHaveBeenCalledWith('Session complete. Every card is finished.');
   expect(screen.getByText('Cards studied: 2')).toBeTruthy();
   expect(screen.getByText('Retries: 1')).toBeTruthy();
   expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(2);
@@ -876,6 +883,8 @@ test('exit after an answer confirms cancellation and keeps completed reviews', a
   fireEvent.press(screen.getByRole('button', { name: 'Success' }));
   await screen.findByRole('button', { name: 'Reveal answer' });
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
+  expect(screen.getByRole('header', { name: 'End this session?' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Reveal answer' })).toBeNull();
   expect(
     screen.getByText('Your completed reviews will be kept, but this study session will end.'),
   ).toBeTruthy();

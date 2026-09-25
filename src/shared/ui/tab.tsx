@@ -31,7 +31,7 @@ export function Tab({
         },
       ]}
     >
-      <Text variant="labelLarge" tone={active ? 'accent' : 'secondary'} align="center" truncate>
+      <Text variant="labelLarge" tone={active ? 'accent' : 'secondary'} align="center">
         {label}
       </Text>
     </Pressable>

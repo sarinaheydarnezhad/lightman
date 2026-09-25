@@ -22,12 +22,18 @@ const foreground = {
 export function Badge({
   label,
   variant = 'neutral',
+  accessibilityLabel,
 }: {
   label: string;
   variant?: SemanticVariant;
+  accessibilityLabel?: string;
 }) {
   return (
-    <View className={`self-start rounded-full border px-md py-xs ${appearance[variant]}`}>
+    <View
+      className={`self-start rounded-full border px-md py-xs ${appearance[variant]}`}
+      accessible={!!accessibilityLabel}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Text variant="caption" tone={foreground[variant]}>
         {label}
       </Text>

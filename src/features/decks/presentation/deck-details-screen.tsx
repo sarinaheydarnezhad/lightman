@@ -7,6 +7,7 @@ import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
+import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -67,101 +68,96 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-2xl pb-3xl">
-        <ScreenHeader title={deck.name} description={deck.description} />
-        <Card className="gap-md">
-          <Badge label={`${data.cardCount} ${data.cardCount === 1 ? 'card' : 'cards'}`} />
-          <Text variant="labelLarge">Deck settings</Text>
-          <Text tone="secondary">
-            {languageLabel(deck.language)} · {deck.textAlignment.toUpperCase()} ·{' '}
-            {deck.typographySize}
-          </Text>
-          <Text tone="tertiary" variant="caption">
-            Created {deck.createdAt.slice(0, 10)} · Updated {deck.updatedAt.slice(0, 10)}
-          </Text>
-        </Card>
-        <Card className="gap-sm">
-          <Text variant="labelLarge">Reading preview</Text>
-          <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>
-            {deck.name}
-          </Text>
-        </Card>
-        <View className="gap-md">
-          <Text variant="headingMedium" accessibilityRole="header">
-            Cards
-          </Text>
-          {data.cardCount === 0 ? (
-            <Card className="gap-sm">
-              <Text variant="headingSmall">No cards yet</Text>
-              <Text tone="secondary">Add a card to start building this deck.</Text>
-            </Card>
-          ) : (
-            <Text tone="secondary">Browse the cards in this deck or add another.</Text>
-          )}
-          <Button
-            label="View cards"
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/decks/[deckId]/cards', params: { deckId } })}
-          />
-        </View>
-        <View className="gap-sm">
-          <Button
-            label="Start study"
-            loading={study.starting}
-            onPress={() => void study.start({ kind: 'specific-deck', deckId })}
-          />
-          {study.error ? (
-            <Card className="gap-sm" accessibilityLiveRegion="polite">
-              <Text tone="error">{study.error}</Text>
-              {study.activeSession ? (
-                <Button
-                  label="Resume session"
-                  variant="secondary"
-                  onPress={() => study.activeSession && openStudySession(study.activeSession)}
-                />
-              ) : null}
-            </Card>
-          ) : null}
-          <Button
-            label="Add card"
-            variant="secondary"
-            onPress={() =>
-              router.push({ pathname: '/decks/[deckId]/cards/create', params: { deckId } })
-            }
-          />
-          <Button
-            label="Edit deck"
-            variant="secondary"
-            onPress={() => router.push({ pathname: '/decks/[deckId]/edit', params: { deckId } })}
-          />
-        </View>
-        {confirmArchive ? (
-          <Card className="gap-md" accessibilityLiveRegion="polite">
-            <Text variant="headingSmall">Archive this deck?</Text>
-            <Text tone="secondary">It will be removed from your active deck list.</Text>
-            {actionError ? (
-              <Text tone="error" accessibilityLiveRegion="polite">
-                {actionError}
-              </Text>
+        <View
+          className="gap-2xl"
+          pointerEvents={confirmArchive ? 'none' : 'auto'}
+          accessibilityElementsHidden={confirmArchive}
+          importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
+        >
+          <ScreenHeader title={deck.name} description={deck.description} />
+          <Card className="gap-md">
+            <Badge label={`${data.cardCount} ${data.cardCount === 1 ? 'card' : 'cards'}`} />
+            <Text variant="labelLarge">Deck settings</Text>
+            <Text tone="secondary">
+              {languageLabel(deck.language)} · {deck.textAlignment.toUpperCase()} ·{' '}
+              {deck.typographySize}
+            </Text>
+            <Text tone="tertiary" variant="caption">
+              Created {deck.createdAt.slice(0, 10)} · Updated {deck.updatedAt.slice(0, 10)}
+            </Text>
+          </Card>
+          <Card className="gap-sm">
+            <Text variant="labelLarge">Reading preview</Text>
+            <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>
+              {deck.name}
+            </Text>
+          </Card>
+          <View className="gap-md">
+            <Text variant="headingMedium" accessibilityRole="header">
+              Cards
+            </Text>
+            {data.cardCount === 0 ? (
+              <Card className="gap-sm">
+                <Text variant="headingSmall">No cards yet</Text>
+                <Text tone="secondary">Add a card to start building this deck.</Text>
+              </Card>
+            ) : (
+              <Text tone="secondary">Browse the cards in this deck or add another.</Text>
+            )}
+            <Button
+              label="View cards"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/decks/[deckId]/cards', params: { deckId } })}
+            />
+          </View>
+          <View className="gap-sm">
+            <Button
+              label="Start study"
+              loading={study.starting}
+              onPress={() => void study.start({ kind: 'specific-deck', deckId })}
+            />
+            {study.error ? (
+              <Card className="gap-sm" accessibilityLiveRegion="polite">
+                <Text tone="error">{study.error}</Text>
+                {study.activeSession ? (
+                  <Button
+                    label="Resume session"
+                    variant="secondary"
+                    onPress={() => study.activeSession && openStudySession(study.activeSession)}
+                  />
+                ) : null}
+              </Card>
             ) : null}
             <Button
-              label="Keep deck"
+              label="Add card"
               variant="secondary"
-              disabled={archiving}
-              onPress={() => {
-                setConfirmArchive(false);
-                setActionError(null);
-              }}
+              onPress={() =>
+                router.push({ pathname: '/decks/[deckId]/cards/create', params: { deckId } })
+              }
             />
             <Button
-              label="Confirm archive"
-              variant="destructive"
-              loading={archiving}
-              onPress={() => void archive()}
+              label="Edit deck"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/decks/[deckId]/edit', params: { deckId } })}
             />
-          </Card>
-        ) : (
+          </View>
           <Button label="Archive deck" variant="tertiary" onPress={() => setConfirmArchive(true)} />
-        )}
+        </View>
+        {confirmArchive ? (
+          <ConfirmationPanel
+            title="Archive this deck?"
+            description="It will be removed from your active deck list."
+            cancelLabel="Keep deck"
+            confirmLabel="Confirm archive"
+            busy={archiving}
+            error={actionError}
+            onCancel={() => {
+              setConfirmArchive(false);
+              setActionError(null);
+            }}
+            onConfirm={() => void archive()}
+          />
+        ) : null}
       </View>
     </Screen>
   );

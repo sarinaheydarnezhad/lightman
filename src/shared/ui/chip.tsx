@@ -48,11 +48,18 @@ export function Chip({
   accessibilityState,
   ...props
 }: ChipProps) {
-  const classes = `min-h-iconButton self-start flex-row items-center rounded-full border px-lg ${selected ? selectedAppearance[variant] : unselectedAppearance[variant]}`;
+  const classes = `min-h-iconButton self-start flex-row items-center gap-xs rounded-full border px-lg ${selected ? selectedAppearance[variant] : unselectedAppearance[variant]}`;
   const content = (
-    <Text variant="labelMedium" tone={selected ? selectedTone[variant] : unselectedTone[variant]}>
-      {label}
-    </Text>
+    <>
+      {selected ? (
+        <Text variant="labelMedium" tone={selectedTone[variant]} accessible={false}>
+          ✓
+        </Text>
+      ) : null}
+      <Text variant="labelMedium" tone={selected ? selectedTone[variant] : unselectedTone[variant]}>
+        {label}
+      </Text>
+    </>
   );
 
   if (!onPress) return <View className={classes}>{content}</View>;

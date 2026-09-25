@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
@@ -44,6 +44,8 @@ function BoxSummary({ distribution, total }: { distribution: BoxDistribution; to
 }
 
 export function AnalyticsScreen() {
+  const { fontScale, width } = useWindowDimensions();
+  const stackMetrics = fontScale >= 1.4 || width < 360;
   const analytics = useAnalyticsViewModel();
   const data = analytics.data;
   return (
@@ -98,9 +100,9 @@ export function AnalyticsScreen() {
                 Best: {data.bestStreak} {data.bestStreak === 1 ? 'day' : 'days'}
               </Text>
             </Card>
-            <View className="flex-row gap-md">
+            <View className={stackMetrics ? 'gap-md' : 'flex-row gap-md'}>
               <Card
-                className="min-w-0 flex-1 gap-sm"
+                className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
                 accessible
                 accessibilityLabel={`Cards reviewed today: ${data.cardsReviewedToday}`}
               >
@@ -110,7 +112,7 @@ export function AnalyticsScreen() {
                 <Text variant="headingMedium">{data.cardsReviewedToday}</Text>
               </Card>
               <Card
-                className="min-w-0 flex-1 gap-sm"
+                className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
                 accessible
                 accessibilityLabel={`Retention in the selected window: ${data.retentionRate === null ? 'No review data yet' : `${Math.round(data.retentionRate)} percent`}`}
               >

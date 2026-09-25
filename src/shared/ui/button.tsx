@@ -53,8 +53,14 @@ export function Button({
       disabled={unavailable}
     >
       {loading ? <ActivityIndicator size="small" color={foreground} /> : null}
+      {accessibilityState?.selected ? (
+        <Text variant="labelLarge" style={{ color: foreground }} accessible={false}>
+          ✓
+        </Text>
+      ) : null}
       <Text
         variant="labelLarge"
+        className="flex-shrink text-center"
         tone={
           variant === 'primary'
             ? 'primaryForeground'

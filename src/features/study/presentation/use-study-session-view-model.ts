@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler } from 'react-native';
+import { AccessibilityInfo, BackHandler } from 'react-native';
 import { router } from 'expo-router';
 
 import { application } from '@/core/composition/application';
@@ -128,6 +128,9 @@ export function useStudySessionViewModel(sessionId: string) {
           presentationId: item.presentationId,
           result,
         });
+        AccessibilityInfo.announceForAccessibility(
+          `${result === 'success' ? 'Success' : 'Failure'} answer saved.`,
+        );
         // This is the accepted-presentation boundary for both buttons and swipes.
         void (result === 'success' ? haptics.answerSuccess() : haptics.answerFailure());
         await load();
@@ -190,6 +193,10 @@ export function useStudySessionViewModel(sessionId: string) {
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (phase === 'loading') return true;
+      if (confirmExit) {
+        if (!cancelling) setConfirmExit(false);
+        return true;
+      }
       if (phase === 'ready' || (phase === 'error' && session?.status === 'in-progress')) {
         leave();
         return true;
@@ -197,7 +204,7 @@ export function useStudySessionViewModel(sessionId: string) {
       return false;
     });
     return () => subscription.remove();
-  }, [phase, session, leave]);
+  }, [phase, session, leave, confirmExit, cancelling]);
 
   return {
     phase,

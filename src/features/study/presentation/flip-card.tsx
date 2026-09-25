@@ -28,7 +28,11 @@ export function FlipCard(props: FlipCardProps) {
 
   if (reduceMotion) {
     return (
-      <Card className="min-h-0 flex-1" accessibilityLabel={props.accessibilityLabel}>
+      <Card
+        className="min-h-0 flex-1"
+        style={{ minHeight: 260 }}
+        accessibilityLabel={props.accessibilityLabel}
+      >
         {props.revealed ? props.back : props.front}
       </Card>
     );
@@ -55,7 +59,11 @@ function AnimatedFaces({ revealed, front, back, accessibilityLabel }: FlipCardPr
   const faceSurface = { backgroundColor: colors.surface, borderRadius: radii.lg };
 
   return (
-    <Card className="min-h-0 flex-1" style={{ padding: 0 }} accessibilityLabel={accessibilityLabel}>
+    <Card
+      className="min-h-0 flex-1"
+      style={{ padding: 0, minHeight: 260 }}
+      accessibilityLabel={accessibilityLabel}
+    >
       <Animated.View
         testID="flip-card-front"
         style={[styles.face, faceSurface, frontStyle]}
