@@ -6,6 +6,7 @@ test('review repository stores independent states and append-only event history'
   expect(await reviews.getState('card-1')).toBeNull();
   expect(await reviews.listEvents()).toEqual([]);
   await reviews.saveState(makeState());
+  expect(await reviews.listStates(['card-1', 'missing'])).toEqual([makeState()]);
   await reviews.addEvent(makeEvent());
   await reviews.addEvent(
     makeEvent({ id: 'event-2', cardId: 'card-2', deckId: 'deck-2', result: 'failure' }),

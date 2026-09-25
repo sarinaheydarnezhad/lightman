@@ -7,6 +7,7 @@ export function LoadingState({ label = 'Loading' }: { label?: string }) {
   return (
     <View
       className="items-center justify-center gap-md py-3xl"
+      accessible
       accessibilityRole="progressbar"
       accessibilityLabel={label}
     >

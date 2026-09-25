@@ -16,6 +16,7 @@ import {
 } from '@/features/study/domain/leitner-srs';
 import { validateUserSettings, type UserSettings } from '@/features/settings/domain/user-settings';
 import { createStudyUseCases } from '@/features/study/application/create-study-use-cases';
+import { createAnalyticsUseCases } from '@/features/analytics/application/create-analytics-use-cases';
 import type {
   ReviewCardInput,
   ReviewCardOutput,
@@ -94,9 +95,11 @@ export function createApplication(repositories: Repositories, clock: AppClock, i
   }
 
   const study = createStudyUseCases({ repositories, clock, ids, getDeck, reviewCard, persistence });
+  const analytics = createAnalyticsUseCases(repositories, clock, persistence);
 
   return {
     ...study,
+    ...analytics,
     async createDeck(input: CreateDeckInput): Promise<Deck> {
       const time = now(clock);
       const deck = validateDeck({

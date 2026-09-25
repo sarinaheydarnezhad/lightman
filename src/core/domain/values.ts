@@ -45,16 +45,24 @@ export function addCalendarDays(date: CalendarDate, days: number): CalendarDate 
 
 /** Interpret a UTC review instant in the user's current IANA time zone. */
 export function calendarDateAtInstant(value: Instant, timeZone: string): CalendarDate {
-  instant(value);
+  return localCalendarDateConverter(timeZone)(value);
+}
+
+/** Reuse one formatter for bulk local-day calculations such as analytics. */
+export function localCalendarDateConverter(timeZone: string): (value: Instant) => CalendarDate {
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
+    const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).formatToParts(new Date(value));
-    const part = (type: string) => parts.find((item) => item.type === type)?.value;
-    return calendarDate(`${part('year')}-${part('month')}-${part('day')}`);
+    });
+    return (value) => {
+      instant(value);
+      const parts = formatter.formatToParts(new Date(value));
+      const part = (type: string) => parts.find((item) => item.type === type)?.value;
+      return calendarDate(`${part('year')}-${part('month')}-${part('day')}`);
+    };
   } catch {
     throw new AppError('validation', 'Invalid review time zone.');
   }

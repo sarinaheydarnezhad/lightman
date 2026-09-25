@@ -19,6 +19,14 @@ export class InMemoryReviewRepository implements ReviewRepository {
     return state ? { ...state } : null;
   }
 
+  async listStates(cardIds: readonly string[]): Promise<CardReviewState[]> {
+    return cardIds.flatMap((id) => {
+      requiredId(id, 'Card ID');
+      const state = this.states.get(id);
+      return state ? [{ ...state }] : [];
+    });
+  }
+
   async saveState(state: CardReviewState): Promise<CardReviewState> {
     const valid = validateReviewState(state);
     const existing = this.states.get(valid.cardId);

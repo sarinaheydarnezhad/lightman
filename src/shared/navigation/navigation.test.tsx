@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { Pressable, View } from 'react-native';
 
@@ -27,7 +27,13 @@ import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
 import { speech } from '@/core/composition/speech';
 import { AppError } from '@/core/errors/app-error';
-import { languageTag } from '@/core/domain/values';
+import { calendarDate, instant, languageTag } from '@/core/domain/values';
+import { makeEvent, makeState } from '@/../test/fixtures';
+import {
+  analyticsWindow,
+  getStudySummary,
+  type AnalyticsWindow,
+} from '@/features/analytics/domain/analytics';
 import { useUiStore } from '@/store/ui-store';
 import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
 
@@ -86,6 +92,130 @@ test.each([
   expect(await screen.findByRole('header', { name: heading })).toBeTruthy();
   expect(rendered.getPathname()).toBe(path);
 });
+
+const analyticsToday = calendarDate('2026-09-25');
+const analyticsNow = instant('2026-09-25T12:00:00.000Z');
+function analyticsFixture(days: AnalyticsWindow = 30, count = 0) {
+  return getStudySummary(
+    Array.from({ length: count }, (_, index) =>
+      makeEvent({
+        id: `analytics-${index}`,
+        cardId: index === 0 ? 'a' : 'b',
+        reviewedAt: instant(index < 2 ? '2026-09-25T10:00:00.000Z' : '2026-09-24T10:00:00.000Z'),
+        result: index === 1 ? 'failure' : 'success',
+      }),
+    ),
+    count ? [makeState({ cardId: 'a', box: 1 }), makeState({ cardId: 'b', box: 5 })] : [],
+    analyticsWindow(analyticsToday, days),
+    analyticsToday,
+    analyticsNow,
+    'UTC',
+  );
+}
+
+test('analytics shows loading, an honest empty state, zero distributions and no fake retention', async () => {
+  let resolve: (value: ReturnType<typeof analyticsFixture>) => void = () => {};
+  jest.spyOn(application, 'getAnalyticsWindow').mockImplementation(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  renderRouter(routes, { initialUrl: '/analytics' });
+  expect(await screen.findByRole('progressbar', { name: 'Loading analytics' })).toBeTruthy();
+  await act(async () => resolve(analyticsFixture()));
+  expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
+  expect(screen.getByLabelText('Cards reviewed today: 0')).toBeTruthy();
+  expect(
+    screen.getByLabelText('Retention in the selected window: No review data yet'),
+  ).toBeTruthy();
+  expect(screen.getByText('No active cards to distribute.')).toBeTruthy();
+  expect(
+    screen.getByLabelText('30-day review activity: 0 reviews across 0 active days.'),
+  ).toBeTruthy();
+});
+
+test('analytics distinguishes an empty review history from real unreviewed active cards', async () => {
+  jest
+    .spyOn(application, 'getAnalyticsWindow')
+    .mockResolvedValue(
+      getStudySummary(
+        [],
+        [makeState({ cardId: 'unreviewed' })],
+        analyticsWindow(analyticsToday, 30),
+        analyticsToday,
+        analyticsNow,
+        'UTC',
+      ),
+    );
+  renderRouter(routes, { initialUrl: '/analytics' });
+  expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
+  expect(screen.getByLabelText('Box 1: 1 active card')).toBeTruthy();
+  expect(
+    screen.getByLabelText('Retention in the selected window: No review data yet'),
+  ).toBeTruthy();
+});
+
+test('analytics presents real metrics, boxes and 7/30/90-day accessible chart summaries', async () => {
+  const load = jest
+    .spyOn(application, 'getAnalyticsWindow')
+    .mockImplementation(async (days = 30) => analyticsFixture(days, 3));
+  renderRouter(routes, { initialUrl: '/analytics' });
+  expect(
+    await screen.findByLabelText('30-day review activity: 3 reviews across 2 active days.'),
+  ).toBeTruthy();
+  expect(screen.getByLabelText('Current streak: 2 days. Best streak: 2 days.')).toBeTruthy();
+  expect(screen.getByLabelText('Cards reviewed today: 2')).toBeTruthy();
+  expect(screen.getByLabelText('Retention in the selected window: 67 percent')).toBeTruthy();
+  expect(screen.getByLabelText('Box 1: 1 active card')).toBeTruthy();
+  expect(screen.getByLabelText('Box 5: 1 active card')).toBeTruthy();
+  expect(screen.getByText('2026-08-27')).toBeTruthy();
+  fireEvent.press(screen.getByRole('tab', { name: '7D' }));
+  expect(
+    await screen.findByLabelText('7-day review activity: 3 reviews across 2 active days.'),
+  ).toBeTruthy();
+  expect(screen.getByRole('tab', { name: '7D', selected: true }).props.accessibilityHint).toContain(
+    '7 calendar days',
+  );
+  fireEvent.press(screen.getByRole('tab', { name: '90D' }));
+  expect(
+    await screen.findByLabelText('90-day review activity: 3 reviews across 2 active days.'),
+  ).toBeTruthy();
+  expect(load).toHaveBeenCalledWith(90);
+});
+
+test('analytics allows retry after a repository error and refreshes when navigation refocuses', async () => {
+  const load = jest
+    .spyOn(application, 'getAnalyticsWindow')
+    .mockRejectedValueOnce(new Error('private details'))
+    .mockResolvedValueOnce(analyticsFixture())
+    .mockResolvedValue(analyticsFixture(30, 3));
+  renderRouter(routes, { initialUrl: '/analytics' });
+  expect(await screen.findByText('Unable to load this screen.')).toBeTruthy();
+  expect(screen.queryByText('private details')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+  expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Home tab' }));
+  await screen.findByRole('header', { name: 'Welcome back' });
+  fireEvent.press(screen.getByRole('button', { name: 'Analytics tab' }));
+  expect(
+    await screen.findByLabelText('30-day review activity: 3 reviews across 2 active days.'),
+  ).toBeTruthy();
+  expect(load).toHaveBeenCalledTimes(3);
+});
+
+test.each(['light', 'dark', 'oled'] as const)(
+  '%s analytics theme remains accessible',
+  async (themePreference) => {
+    act(() => useUiStore.setState({ themePreference }));
+    jest.spyOn(application, 'getAnalyticsWindow').mockResolvedValue(analyticsFixture(30, 3));
+    renderRouter(routes, { initialUrl: '/analytics' });
+    expect(
+      await screen.findByLabelText('30-day review activity: 3 reviews across 2 active days.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('tab', { name: '30D', selected: true })).toBeTruthy();
+  },
+);
 
 test('selecting a tab updates its accessible selected state', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/' });
