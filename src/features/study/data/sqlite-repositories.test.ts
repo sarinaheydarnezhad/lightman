@@ -19,6 +19,36 @@ class ScriptedDatabase implements Database {
   }
 }
 
+class RecordingTransactionDatabase implements Database {
+  readonly statements: string[] = [];
+  private transactionFailed = false;
+
+  constructor(private readonly failReviewState = false) {}
+
+  async execute(sql: string): Promise<SqlResult> {
+    this.statements.push(sql);
+    return { rows: [], rowsAffected: 1 };
+  }
+
+  async transaction(operation: (transaction: DatabaseTransaction) => Promise<void>): Promise<void> {
+    try {
+      await operation({
+        execute: async (sql) => {
+          this.statements.push(sql);
+          if (this.failReviewState && sql.includes('INSERT INTO card_review_state')) {
+            this.transactionFailed = true;
+            throw new Error('constraint failure');
+          }
+          return { rows: [], rowsAffected: 1 };
+        },
+      });
+    } catch (error) {
+      if (!this.transactionFailed) throw error;
+      throw error;
+    }
+  }
+}
+
 function cardRow(card = makeCard()) {
   return {
     id: card.id,
@@ -87,6 +117,40 @@ test('SQLite review repository records state and event together and maps history
 
   await expect(repository.record(event, state)).resolves.toBeUndefined();
   await expect(repository.listEvents()).resolves.toEqual([event]);
+});
+
+test('SQLite card creation writes card and initial state in one transaction', async () => {
+  const database = new RecordingTransactionDatabase();
+  const repository = new SQLiteCardRepository(database);
+
+  await expect(repository.createWithInitialReviewState(makeCard(), makeState())).resolves.toEqual(
+    makeCard(),
+  );
+  expect(database.statements).toEqual(
+    expect.arrayContaining([
+      expect.stringContaining('INSERT INTO cards'),
+      expect.stringContaining('INSERT INTO card_review_state'),
+    ]),
+  );
+});
+
+test('SQLite card creation maps initial-state failures and does not return a partial success', async () => {
+  const database = new RecordingTransactionDatabase(true);
+  const repository = new SQLiteCardRepository(database);
+
+  await expect(
+    repository.createWithInitialReviewState(makeCard(), makeState()),
+  ).rejects.toMatchObject({
+    code: 'persistence',
+  });
+  expect(database.statements).toHaveLength(2);
+});
+
+test('SQLite review repository counts history in SQL', async () => {
+  const database = new ScriptedDatabase([{ rows: [{ count: 7 }], rowsAffected: 1 }]);
+  const repository = new SQLiteReviewRepository(database);
+
+  await expect(repository.countEvents({ deckId: 'deck-1' })).resolves.toBe(7);
 });
 
 test('SQLite settings repository keeps a successful snapshot and notifies subscribers', async () => {

@@ -63,6 +63,10 @@ export class InMemoryReviewRepository implements ReviewRepository {
     this.events.set(validEvent.id, validEvent);
   }
 
+  async countEvents(options: { cardId?: string; deckId?: string } = {}): Promise<number> {
+    return (await this.listEvents(options)).length;
+  }
+
   async listEvents(options: { cardId?: string; deckId?: string } = {}): Promise<ReviewEvent[]> {
     return Array.from(this.events.values())
       .filter(

@@ -7,11 +7,13 @@ import { SQLiteDeckRepository } from '@/features/decks/data/sqlite-deck-reposito
 import type { Repositories } from '@/core/ports/repositories';
 
 export function createSqliteRepositories(database: Database): Repositories {
+  const cards = new SQLiteCardRepository(database);
   return {
     decks: new SQLiteDeckRepository(database),
-    cards: new SQLiteCardRepository(database),
+    cards,
     reviews: new SQLiteReviewRepository(database),
     sessions: new SQLiteStudySessionRepository(database),
     settings: new SQLiteSettingsRepository(database),
+    cardCreation: cards,
   };
 }

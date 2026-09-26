@@ -1,6 +1,6 @@
 import { instant, requiredId } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
-import type { Database } from '@/core/database/database';
+import type { Database, DatabaseTransaction } from '@/core/database/database';
 import {
   databaseOperation,
   integer,
@@ -9,9 +9,12 @@ import {
   row,
   text,
   json,
+  transactionOperation,
 } from '@/core/database/sqlite-repository-utils';
 import { validateCard, type Card } from '../domain/card';
+import { validateReviewState, type CardReviewState } from '../domain/review';
 import type { CardRepository } from '../domain/card-repository';
+import type { AtomicCardCreationRepository } from '@/core/ports/repositories';
 
 function mapCard(source: ReturnType<typeof row>): Card | null {
   if (!source) return null;
@@ -31,7 +34,7 @@ function mapCard(source: ReturnType<typeof row>): Card | null {
   });
 }
 
-export class SQLiteCardRepository implements CardRepository {
+export class SQLiteCardRepository implements CardRepository, AtomicCardCreationRepository {
   constructor(private readonly database: Database) {}
 
   getById(id: string): Promise<Card | null> {
@@ -106,7 +109,7 @@ export class SQLiteCardRepository implements CardRepository {
       const valid = validateCard(card);
       if (valid.archivedAt !== null)
         throw new AppError('validation', 'Cannot create an archived card.');
-      await this.insert(valid);
+      await this.insert(this.database, valid);
       return valid;
     }, 'Unable to save the card.');
   }
@@ -164,8 +167,39 @@ export class SQLiteCardRepository implements CardRepository {
     }, 'Unable to archive the card.');
   }
 
-  private insert(card: Card): Promise<unknown> {
-    return this.database.execute(
+  createWithInitialReviewState(card: Card, state: CardReviewState): Promise<Card> {
+    return transactionOperation(
+      this.database,
+      async (transaction) => {
+        const validCard = validateCard(card);
+        const validState = validateReviewState(state);
+        if (validCard.archivedAt !== null)
+          throw new AppError('validation', 'Cannot create an archived card.');
+        if (validState.cardId !== validCard.id)
+          throw new AppError('validation', 'Card and review state IDs must match.');
+        await this.insert(transaction, validCard);
+        await transaction.execute(
+          `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            validState.cardId,
+            validState.box,
+            validState.dueDate,
+            validState.lastReviewedAt,
+            validState.consecutiveSuccesses,
+            validState.totalReviews,
+            validState.totalSuccesses,
+            validState.updatedAt,
+          ],
+        );
+        return validCard;
+      },
+      'Unable to save the card.',
+    );
+  }
+
+  private insert(database: Database | DatabaseTransaction, card: Card): Promise<unknown> {
+    return database.execute(
       `INSERT INTO cards (id, deck_id, front_text, phonetic, category, meaning, examples_json, created_at, updated_at, archived_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [

@@ -7,5 +7,6 @@ export interface ReviewRepository {
   saveState(state: CardReviewState): Promise<CardReviewState>;
   addEvent(event: ReviewEvent): Promise<ReviewEvent>;
   record(event: ReviewEvent, state: CardReviewState): Promise<void>;
+  countEvents(options?: { cardId?: string; deckId?: string }): Promise<number>;
   listEvents(options?: { cardId?: string; deckId?: string }): Promise<ReviewEvent[]>;
 }

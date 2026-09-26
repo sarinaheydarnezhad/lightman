@@ -158,6 +158,10 @@ export function createApplication(
         calendarDateAtInstant(time, clock.timeZone()),
         time,
       );
+      if (repositories.cardCreation)
+        return persistence(() =>
+          repositories.cardCreation!.createWithInitialReviewState(card, initialState),
+        );
       const created = await persistence(() => cards.create(card));
       await persistence(() => reviews.saveState(initialState));
       return created;
@@ -224,11 +228,11 @@ export function createApplication(
       const countsByDeck = await Promise.all(
         deckList.map((deck) => persistence(() => cards.countByDeck(deck.id))),
       );
-      const reviewEvents = await persistence(() => reviews.listEvents());
+      const reviewCount = await persistence(() => reviews.countEvents());
       return {
         decks: deckList,
         cardCount: countsByDeck.reduce((count, deckCount) => count + deckCount, 0),
-        reviewCount: reviewEvents.length,
+        reviewCount,
       };
     },
   };

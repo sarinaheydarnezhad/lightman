@@ -11,7 +11,7 @@ import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import type { Deck } from '@/features/decks/domain/deck';
 import { getDueReviewStates } from '../domain/leitner-srs';
-import { reviewResult, type CardReviewState, type ReviewResult } from '../domain/review';
+import { reviewResult, type ReviewResult } from '../domain/review';
 import {
   validateStudyScope,
   type StudyQueueItem,
@@ -79,14 +79,13 @@ export function createStudyUseCases({
           deckIdByCardId.set(card.id, deck.id);
       }
     }
-    const states = await Promise.all(
-      [...deckIdByCardId.keys()].map((cardId) => persistence(() => reviews.getState(cardId))),
-    );
-    const reviewStates: CardReviewState[] = states.map((state) => {
-      if (!state || !deckIdByCardId.has(state.cardId))
+    const reviewStates = await persistence(() => reviews.listStates([...deckIdByCardId.keys()]));
+    for (const state of reviewStates) {
+      if (!deckIdByCardId.has(state.cardId))
         throw new AppError('not-found', 'Review state not found for an active card.');
-      return state;
-    });
+    }
+    if (reviewStates.length !== deckIdByCardId.size)
+      throw new AppError('not-found', 'Review state not found for an active card.');
     return getDueReviewStates(reviewStates, targetDate).map((state) => ({
       cardId: state.cardId,
       deckId: deckIdByCardId.get(state.cardId)!,

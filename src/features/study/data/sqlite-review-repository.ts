@@ -153,6 +153,26 @@ export class SQLiteReviewRepository implements ReviewRepository {
     );
   }
 
+  countEvents(options: { cardId?: string; deckId?: string } = {}): Promise<number> {
+    return databaseOperation(async () => {
+      const conditions: string[] = [];
+      const params: string[] = [];
+      if (options.cardId) {
+        conditions.push('card_id = ?');
+        params.push(options.cardId);
+      }
+      if (options.deckId) {
+        conditions.push('deck_id = ?');
+        params.push(options.deckId);
+      }
+      const result = await this.database.execute(
+        `SELECT COUNT(*) AS count FROM review_events${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`,
+        params,
+      );
+      return integer(row(result) ?? {}, 'count');
+    }, 'Unable to count review history.');
+  }
+
   listEvents(options: { cardId?: string; deckId?: string } = {}): Promise<ReviewEvent[]> {
     return databaseOperation(async () => {
       const conditions: string[] = [];
