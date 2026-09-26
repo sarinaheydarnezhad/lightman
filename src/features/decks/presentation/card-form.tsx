@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, TextInput, View } from 'react-native';
 
 import type { CreateCardInput } from '@/core/application/create-application';
@@ -57,9 +57,17 @@ export function CardForm({
   const [phoneticChoice, setPhoneticChoice] = useState<ImportChoices['phonetic'] | null>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const submitting = useRef(false);
+  const mounted = useRef(true);
   const phoneticRef = useRef<TextInput>(null);
   const categoryRef = useRef<TextInput>(null);
   const meaningRef = useRef<TextInput>(null);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   function changeExample(index: number, changes: Partial<CardExample>) {
     setExamples((current) =>
@@ -136,13 +144,15 @@ export function CardForm({
     try {
       await onSubmit(content);
     } catch (cause) {
-      setError(
-        language === 'en' && cause instanceof AppError ? cause.message : t('form.cardSaveError'),
-      );
+      if (mounted.current) {
+        setError(
+          language === 'en' && cause instanceof AppError ? cause.message : t('form.cardSaveError'),
+        );
+      }
       void haptics.actionRejected();
     } finally {
       submitting.current = false;
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 

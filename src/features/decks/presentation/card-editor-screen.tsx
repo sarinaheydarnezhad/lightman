@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 
 import type { CreateCardInput } from '@/core/application/create-application';
@@ -15,10 +16,19 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
   const { t, language } = useLocalization();
   const { create, update } = useCardActions();
   const resource = useCardEditorViewModel(deckId, cardId);
+  const mounted = useRef(true);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   async function save(content: Omit<CreateCardInput, 'deckId'>) {
     if (cardId) {
       await update(cardId, content);
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.dismissTo({
         pathname: '/decks/[deckId]/cards/[cardId]',
@@ -26,6 +36,7 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
       });
     } else {
       const card = await create({ ...content, deckId });
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.replace({
         pathname: '/decks/[deckId]/cards/[cardId]',

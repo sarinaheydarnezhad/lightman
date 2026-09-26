@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, TextInput, View } from 'react-native';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
@@ -47,7 +47,15 @@ export function DeckForm({
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const submitting = useRef(false);
+  const mounted = useRef(true);
   const descriptionRef = useRef<TextInput>(null);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   async function save() {
     if (submitting.current) return;
@@ -95,13 +103,15 @@ export function DeckForm({
         typographySize: size,
       });
     } catch (cause) {
-      setError(
-        language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
-      );
+      if (mounted.current) {
+        setError(
+          language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
+        );
+      }
       void haptics.actionRejected();
     } finally {
       submitting.current = false;
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 

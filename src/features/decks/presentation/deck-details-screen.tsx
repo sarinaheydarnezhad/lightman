@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
@@ -28,24 +28,38 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const submitting = useRef(false);
+  const mounted = useRef(true);
   const deck = data?.deck;
 
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
+
   async function archive() {
-    if (archiving) return;
+    if (submitting.current) return;
+    submitting.current = true;
     setArchiving(true);
     setActionError(null);
     try {
       await actions.archive(deckId);
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.replace('/decks');
     } catch (cause) {
-      setActionError(
-        language === 'en' && cause instanceof AppError
-          ? cause.message
-          : t('details.deckArchiveError'),
-      );
+      if (mounted.current) {
+        setActionError(
+          language === 'en' && cause instanceof AppError
+            ? cause.message
+            : t('details.deckArchiveError'),
+        );
+      }
       void haptics.actionRejected();
-      setArchiving(false);
+      submitting.current = false;
+      if (mounted.current) setArchiving(false);
     }
   }
 

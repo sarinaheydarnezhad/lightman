@@ -793,6 +793,32 @@ test('rapid save taps create one deck', async () => {
   }
 });
 
+test('rapid deck archive taps submit one archive', async () => {
+  const deck = (await application.getDeck('fresh-collection'))!;
+  let resolveArchive:
+    ((value: Awaited<ReturnType<typeof application.archiveDeck>>) => void) | null = null;
+  const archive = jest.spyOn(application, 'archiveDeck').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveArchive = resolve;
+      }),
+  );
+  try {
+    renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
+    await screen.findByRole('header', { name: deck.name });
+    fireEvent.press(screen.getByRole('button', { name: 'Archive deck' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
+    expect(archive).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveArchive?.(deck);
+    });
+    expect(await screen.findByRole('header', { name: 'Decks' })).toBeTruthy();
+  } finally {
+    archive.mockRestore();
+  }
+});
+
 let studyId = 0;
 
 async function studyFixture(cardCount: number) {

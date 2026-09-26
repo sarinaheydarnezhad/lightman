@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 
 import { application } from '@/core/composition/application';
@@ -17,9 +17,17 @@ export function openStudySession(session: StudySession, replace = false) {
 /** Shared entry point for Home, the Study tab and deck details. */
 export function useStartStudy() {
   const pending = useRef(false);
+  const mounted = useRef(true);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<StudySession | null>(null);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   const start = useCallback(async (scope: StudyScope, replace = false) => {
     if (pending.current) return;
@@ -33,7 +41,7 @@ export function useStartStudy() {
       if (cause instanceof AppError && cause.code === 'conflict') {
         try {
           const active = await application.getActiveStudySession();
-          if (active) {
+          if (mounted.current && active) {
             setActiveSession(active);
             setError('Finish or leave your current session before starting another.');
             return;
@@ -42,10 +50,14 @@ export function useStartStudy() {
           // Show the original safe error when the active session cannot be loaded.
         }
       }
-      setError(cause instanceof AppError ? cause.message : 'Unable to start studying. Try again.');
+      if (mounted.current) {
+        setError(
+          cause instanceof AppError ? cause.message : 'Unable to start studying. Try again.',
+        );
+      }
     } finally {
       pending.current = false;
-      setStarting(false);
+      if (mounted.current) setStarting(false);
     }
   }, []);
 

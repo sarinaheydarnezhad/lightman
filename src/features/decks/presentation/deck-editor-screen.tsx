@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
@@ -19,14 +19,24 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
   const resource = useFocusedResource(
     useCallback(() => (deckId ? get(deckId) : Promise.resolve(null)), [deckId, get]),
   );
+  const mounted = useRef(true);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   async function save(values: CreateDeckInput) {
     if (deckId) {
       await update(deckId, values);
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.replace({ pathname: '/decks/[deckId]', params: { deckId } });
     } else {
       await create(values);
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.replace('/decks');
     }

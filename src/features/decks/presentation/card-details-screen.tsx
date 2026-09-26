@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
@@ -26,6 +26,14 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
   const [confirmArchive, setConfirmArchive] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const submitting = useRef(false);
+  const mounted = useRef(true);
+
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   async function archive() {
     if (submitting.current) return;
@@ -34,17 +42,20 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
     setActionError(null);
     try {
       await archiveCard(cardId);
+      if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.dismissTo({ pathname: '/decks/[deckId]/cards', params: { deckId } });
     } catch (cause) {
-      setActionError(
-        language === 'en' && cause instanceof AppError
-          ? cause.message
-          : t('details.cardArchiveError'),
-      );
+      if (mounted.current) {
+        setActionError(
+          language === 'en' && cause instanceof AppError
+            ? cause.message
+            : t('details.cardArchiveError'),
+        );
+      }
       void haptics.actionRejected();
       submitting.current = false;
-      setArchiving(false);
+      if (mounted.current) setArchiving(false);
     }
   }
 
