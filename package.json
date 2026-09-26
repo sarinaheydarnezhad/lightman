@@ -19,6 +19,7 @@
     "config:check": "expo config --type prebuild"
   },
   "dependencies": {
+    "@op-engineering/op-sqlite": "18.2.5",
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.9",
     "expo-build-properties": "~57.0.21",

@@ -1,18 +1,24 @@
 import { defaultSettings } from '@/core/composition/default-settings';
 import { application } from '@/core/composition/application';
+import { initializeRepositories } from '@/core/composition/repositories';
 import { logger } from '@/core/infrastructure/platform';
 
-let initializationStarted = false;
+let initialization: Promise<void> | null = null;
 
-export async function initializeApplication(): Promise<void> {
-  if (initializationStarted) return;
-  initializationStarted = true;
-  // Settings and notification reconciliation are optional startup work. Run them after the
-  // bootstrap gate opens so browsing and study are not blocked by native notification APIs.
-  void Promise.resolve()
-    .then(() => application.settings.initialize(defaultSettings()))
-    .then(() => application.settings.reconcileReminder())
-    .catch((error: unknown) => {
-      logger.error('Unable to initialize application services', error);
+export function initializeApplication(): Promise<void> {
+  if (!initialization) {
+    initialization = (async () => {
+      await initializeRepositories();
+      void Promise.resolve()
+        .then(() => application.settings.initialize(defaultSettings()))
+        .then(() => application.settings.reconcileReminder())
+        .catch((error: unknown) => {
+          logger.error('Unable to initialize application services', error);
+        });
+    })().catch((error: unknown) => {
+      initialization = null;
+      throw error;
     });
+  }
+  return initialization;
 }
