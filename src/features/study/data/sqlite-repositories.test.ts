@@ -119,6 +119,42 @@ test('SQLite review repository records state and event together and maps history
   await expect(repository.listEvents()).resolves.toEqual([event]);
 });
 
+test('SQLite review repository rolls back a failed state/event transaction', async () => {
+  const state = makeState({ box: 2, totalReviews: 1, totalSuccesses: 1, consecutiveSuccesses: 1 });
+  const event = makeEvent({ previousBox: 1, newBox: 2 });
+  const statements: string[] = [];
+  const database: Database = {
+    execute: async () => ({ rows: [stateRow(makeState())], rowsAffected: 1 }),
+    transaction: async (operation) => {
+      await operation({
+        execute: async (sql) => {
+          statements.push(sql);
+          if (sql.includes('INSERT INTO review_events')) throw new Error('write failure');
+          return { rows: [], rowsAffected: 1 };
+        },
+      });
+    },
+  };
+  const repository = new SQLiteReviewRepository(database);
+
+  await expect(repository.record(event, state)).rejects.toMatchObject({ code: 'persistence' });
+  const writes = statements.filter((sql) => sql.includes('INSERT INTO'));
+  expect(writes).toHaveLength(2);
+  expect(writes[0]).toContain('INSERT INTO card_review_state');
+  expect(writes[1]).toContain('INSERT INTO review_events');
+});
+
+test('SQLite review repository loads states with one bulk query', async () => {
+  const first = makeState({ cardId: 'card-1' });
+  const second = makeState({ cardId: 'card-2' });
+  const database = new ScriptedDatabase([
+    { rows: [stateRow(second), stateRow(first)], rowsAffected: 2 },
+  ]);
+  const repository = new SQLiteReviewRepository(database);
+
+  await expect(repository.listStates(['card-1', 'card-2'])).resolves.toEqual([first, second]);
+});
+
 test('SQLite card creation writes card and initial state in one transaction', async () => {
   const database = new RecordingTransactionDatabase();
   const repository = new SQLiteCardRepository(database);

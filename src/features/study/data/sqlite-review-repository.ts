@@ -75,13 +75,24 @@ export class SQLiteReviewRepository implements ReviewRepository {
 
   listStates(cardIds: readonly string[]): Promise<CardReviewState[]> {
     return databaseOperation(async () => {
-      const states: CardReviewState[] = [];
       for (const cardId of cardIds) {
         requiredId(cardId, 'Card ID');
-        const state = await readState(this.database, cardId);
-        if (state) states.push(state);
       }
-      return states;
+      if (cardIds.length === 0) return [];
+      const placeholders = cardIds.map(() => '?').join(', ');
+      const result = await this.database.execute(
+        `SELECT * FROM card_review_state WHERE card_id IN (${placeholders})`,
+        cardIds,
+      );
+      const states = new Map<string, CardReviewState>();
+      for (const source of result.rows) {
+        const state = mapState(source);
+        if (state) states.set(state.cardId, state);
+      }
+      return cardIds.flatMap((cardId) => {
+        const state = states.get(cardId);
+        return state ? [state] : [];
+      });
     }, 'Unable to load review progress.');
   }
 

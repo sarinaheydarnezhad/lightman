@@ -25,6 +25,14 @@ class RecordingDatabase implements Database {
   }
 }
 
+class FailingMigrationDatabase extends RecordingDatabase {
+  async transaction(
+    _operation: (transaction: DatabaseTransaction) => Promise<void>,
+  ): Promise<void> {
+    throw new Error('migration failure');
+  }
+}
+
 test('fresh migration applies every schema version transactionally', async () => {
   const database = new RecordingDatabase([{ rows: [{ user_version: 0 }], rowsAffected: 0 }]);
 
@@ -70,6 +78,13 @@ test('migration runner skips an already current database', async () => {
 
   await expect(runMigrations(database)).resolves.toBe(2);
   expect(database.transactionCount).toBe(0);
+});
+
+test('migration runner surfaces a failed migration without advancing the version', async () => {
+  const database = new FailingMigrationDatabase([{ rows: [{ user_version: 1 }], rowsAffected: 0 }]);
+
+  await expect(runMigrations(database)).rejects.toThrow('migration failure');
+  expect(database.calls.some(({ sql }) => sql === 'PRAGMA user_version = 2')).toBe(false);
 });
 
 test('production schema protects review history and review-state invariants', () => {
