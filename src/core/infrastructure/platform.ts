@@ -1,4 +1,5 @@
 import type { AppClock, AppConfig, AppLogger, IdGenerator } from '@/core/ports/platform';
+import { AppError } from '@/core/errors/app-error';
 import { randomUUID } from 'expo-crypto';
 import Constants from 'expo-constants';
 
@@ -19,9 +20,29 @@ export const config: AppConfig = {
       ? String(Constants.expoConfig.android.versionCode)
       : null),
 };
+
+export function summarizeErrorForLogging(error: unknown): Record<string, string> | undefined {
+  if (error === undefined) {
+    return undefined;
+  }
+  if (error instanceof AppError) {
+    return { name: error.name, code: error.code };
+  }
+  if (error instanceof Error) {
+    return { name: error.name };
+  }
+  return { type: typeof error };
+}
+
 export const logger: AppLogger = {
   info: (message, context) => {
     if (__DEV__) console.info(message, context);
   },
-  error: (message, error) => console.error(message, error),
+  error: (message, error) => {
+    if (__DEV__) {
+      console.error(message, error);
+      return;
+    }
+    console.error(message, summarizeErrorForLogging(error));
+  },
 };

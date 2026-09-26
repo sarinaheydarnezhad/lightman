@@ -37,6 +37,7 @@ describe('native release configuration', () => {
     expect(appConfig.expo.android).toMatchObject({
       package: 'com.example.lightman',
       versionCode: 1,
+      allowBackup: false,
       blockedPermissions: [
         'android.permission.READ_EXTERNAL_STORAGE',
         'android.permission.WRITE_EXTERNAL_STORAGE',
