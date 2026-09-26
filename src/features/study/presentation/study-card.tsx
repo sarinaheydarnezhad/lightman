@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, ScrollView, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -42,7 +42,7 @@ const frontTypography: Record<TypographySize, TypographyVariant> = {
 };
 
 /** Supplies card content and presentation settings without owning the animation or session. */
-export function StudyCard({
+export const StudyCard = memo(function StudyCard({
   card,
   deck,
   revealed,
@@ -89,7 +89,7 @@ export function StudyCard({
       {content}
     </SwipeableStudyCard>
   );
-}
+});
 
 function FrontContent({
   card,

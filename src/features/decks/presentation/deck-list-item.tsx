@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Deck } from '@/features/decks/domain/deck';
 import { Badge } from '@/shared/ui/badge';
 import { Card } from '@/shared/ui/card';
@@ -5,14 +6,14 @@ import { Text } from '@/shared/ui/text';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { deckLanguageLabel } from '@/shared/localization/localization';
 
-export function DeckListItem({
+export const DeckListItem = memo(function DeckListItem({
   deck,
   cardCount,
   onPress,
 }: {
   deck: Deck;
   cardCount: number;
-  onPress: () => void;
+  onPress: (deckId: string) => void;
 }) {
   const { t, number, language } = useLocalization();
   const count =
@@ -25,7 +26,7 @@ export function DeckListItem({
       variant="interactive"
       accessibilityLabel={t('decks.open', { name: deck.name, language: deckLanguage, count })}
       accessibilityHint={t('decks.openHint')}
-      onPress={onPress}
+      onPress={() => onPress(deck.id)}
       className="gap-sm"
     >
       <Text variant="headingSmall" numberOfLines={2}>
@@ -44,4 +45,4 @@ export function DeckListItem({
       />
     </Card>
   );
-}
+});

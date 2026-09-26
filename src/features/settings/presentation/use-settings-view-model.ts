@@ -46,11 +46,11 @@ export function useSettingsViewModel() {
   }, []);
   useEffect(() => {
     active.current = true;
-    reload();
+    if (!settings) reload();
     return () => {
       active.current = false;
     };
-  }, [reload]);
+  }, [reload, settings]);
 
   const refreshReminder = useCallback(async () => {
     try {

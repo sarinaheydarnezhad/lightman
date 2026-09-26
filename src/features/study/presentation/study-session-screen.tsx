@@ -211,7 +211,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             onSelectBackTab={study.selectBackTab}
             swipePending={study.swipePending || study.submitting || study.confirmExit}
             onSwipeStart={study.beginSwipe}
-            onSwipeAnswer={(result) => void study.submitSwipe(result)}
+            onSwipeAnswer={study.submitSwipe}
           />
           {study.actionError && !study.confirmExit ? (
             <Text tone="error" accessibilityLiveRegion="polite">
@@ -222,8 +222,8 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             revealed={study.revealed}
             submitting={study.submitting || study.swipePending || study.confirmExit}
             onReveal={study.reveal}
-            onFailure={() => void study.submit('failure')}
-            onSuccess={() => void study.submit('success')}
+            onFailure={study.submitFailure}
+            onSuccess={study.submitSuccess}
           />
         </View>
         {study.confirmExit ? (

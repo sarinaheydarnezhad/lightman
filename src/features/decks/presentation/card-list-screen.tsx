@@ -25,21 +25,18 @@ export function CardListScreen({ deckId }: { deckId: string }) {
     search,
     category,
   );
+  const openCard = useCallback(
+    (cardId: string) =>
+      router.push({
+        pathname: '/decks/[deckId]/cards/[cardId]',
+        params: { deckId, cardId },
+      }),
+    [deckId],
+  );
   const renderItem = useCallback(
     ({ item }: { item: Card }) =>
-      data ? (
-        <CardListItem
-          card={item}
-          deck={data.deck}
-          onPress={() =>
-            router.push({
-              pathname: '/decks/[deckId]/cards/[cardId]',
-              params: { deckId, cardId: item.id },
-            })
-          }
-        />
-      ) : null,
-    [data, deckId],
+      data ? <CardListItem card={item} deck={data.deck} onPress={openCard} /> : null,
+    [data, openCard],
   );
 
   return (

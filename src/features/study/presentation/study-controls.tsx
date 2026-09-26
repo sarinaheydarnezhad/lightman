@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/shared/ui/button';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
-export function StudyControls({
+export const StudyControls = memo(function StudyControls({
   revealed,
   submitting,
   onReveal,
@@ -37,4 +38,4 @@ export function StudyControls({
   ) : (
     <Button label={t('study.reveal')} onPress={onReveal} />
   );
-}
+});

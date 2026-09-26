@@ -22,15 +22,15 @@ export function DecksScreen() {
   const { t, number, language } = useLocalization();
   const [search, setSearch] = useState('');
   const { decks, totalCount, error, loading, refresh } = useDecksViewModel(search);
+  const openDeck = useCallback(
+    (deckId: string) => router.push({ pathname: '/decks/[deckId]', params: { deckId } }),
+    [],
+  );
   const renderItem = useCallback(
     ({ item }: { item: ListedDeck }) => (
-      <DeckListItem
-        deck={item}
-        cardCount={item.cardCount}
-        onPress={() => router.push({ pathname: '/decks/[deckId]', params: { deckId: item.id } })}
-      />
+      <DeckListItem deck={item} cardCount={item.cardCount} onPress={openDeck} />
     ),
-    [],
+    [openDeck],
   );
 
   return (

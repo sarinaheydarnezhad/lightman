@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card as CardEntity } from '@/features/study/domain/card';
 import { Badge } from '@/shared/ui/badge';
@@ -6,14 +7,14 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
 import { deckAlignment, deckBadgeAlignment, deckTypography } from './deck-presentation';
 
-export function CardListItem({
+export const CardListItem = memo(function CardListItem({
   card,
   deck,
   onPress,
 }: {
   card: CardEntity;
   deck: Deck;
-  onPress: () => void;
+  onPress: (cardId: string) => void;
 }) {
   const { t } = useLocalization();
   const style = {
@@ -29,7 +30,7 @@ export function CardListItem({
         category: card.category ? `, ${card.category}` : '',
       })}
       accessibilityHint={t('details.openCardHint')}
-      onPress={onPress}
+      onPress={() => onPress(card.id)}
     >
       <Text variant={deckTypography[deck.typographySize]} style={style} numberOfLines={2}>
         {card.frontText}
@@ -50,4 +51,4 @@ export function CardListItem({
       </Text>
     </Card>
   );
-}
+});

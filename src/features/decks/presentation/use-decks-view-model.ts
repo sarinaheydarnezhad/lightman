@@ -16,10 +16,9 @@ export function useDeckActions() {
 export function useDecksViewModel(search = '', sort: DeckSort = 'recently-updated') {
   const resource = useFocusedResource(
     useCallback(async () => {
-      const [decks, all] = await Promise.all([
-        application.listDecks({ search }),
-        application.listDecks(),
-      ]);
+      const normalizedSearch = search.trim();
+      const decks = await application.listDecks({ search: normalizedSearch || undefined });
+      const totalCount = normalizedSearch ? (await application.listDecks()).length : decks.length;
       return {
         decks: sortDecks(
           await Promise.all(
@@ -30,7 +29,7 @@ export function useDecksViewModel(search = '', sort: DeckSort = 'recently-update
           ),
           sort,
         ),
-        totalCount: all.length,
+        totalCount,
       };
     }, [search, sort]),
   );

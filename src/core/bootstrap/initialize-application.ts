@@ -1,14 +1,18 @@
 import { defaultSettings } from '@/core/composition/default-settings';
 import { application } from '@/core/composition/application';
+import { logger } from '@/core/infrastructure/platform';
 
-let reminderSynchronized = false;
+let initializationStarted = false;
 
 export async function initializeApplication(): Promise<void> {
-  // A native schedule can outlive this in-memory repository.
-  await application.settings.initialize(defaultSettings());
-  // Native schedules outlive this session-only repository. Reconcile once on startup.
-  if (!reminderSynchronized) {
-    await application.settings.reconcileReminder();
-    reminderSynchronized = true;
-  }
+  if (initializationStarted) return;
+  initializationStarted = true;
+  // Settings and notification reconciliation are optional startup work. Run them after the
+  // bootstrap gate opens so browsing and study are not blocked by native notification APIs.
+  void Promise.resolve()
+    .then(() => application.settings.initialize(defaultSettings()))
+    .then(() => application.settings.reconcileReminder())
+    .catch((error: unknown) => {
+      logger.error('Unable to initialize application services', error);
+    });
 }

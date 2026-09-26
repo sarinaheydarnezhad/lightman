@@ -23,19 +23,15 @@ export function useCardListViewModel(
 ) {
   const resource = useFocusedResource(
     useCallback(async () => {
-      const deck = await application.getDeck(deckId);
-      const [cards, categories, totalCount] = await Promise.all([
-        search.trim() || category
-          ? application.searchCards(deckId, search, category ?? undefined)
-          : application.listCardsForDeck(deckId),
-        application.listCardCategoriesForDeck(deckId),
-        application.countActiveCardsForDeck(deckId),
-      ]);
+      const snapshot = await application.getCardListSnapshot(deckId, {
+        search: search.trim() || undefined,
+        category: category ?? undefined,
+      });
       return {
-        deck,
-        cards: sortCards(cards, sort),
-        categories,
-        totalCount,
+        deck: snapshot.deck,
+        cards: sortCards(snapshot.cards, sort),
+        categories: snapshot.categories,
+        totalCount: snapshot.totalCount,
       };
     }, [deckId, search, category, sort]),
   );

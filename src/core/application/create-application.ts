@@ -182,6 +182,18 @@ export function createApplication(
       await getDeck(deckId);
       return persistence(() => cards.listCategoriesByDeck(deckId));
     },
+    async getCardListSnapshot(
+      deckId: string,
+      options: { search?: string; category?: string } = {},
+    ) {
+      const deck = await getDeck(deckId);
+      const [cardList, categories, totalCount] = await Promise.all([
+        persistence(() => cards.listByDeck(deckId, options)),
+        persistence(() => cards.listCategoriesByDeck(deckId)),
+        persistence(() => cards.countByDeck(deckId)),
+      ]);
+      return { deck, cards: cardList, categories, totalCount };
+    },
     async updateCard(id: string, changes: UpdateCardInput): Promise<Card> {
       const card = await getCard(id);
       return persistence(() =>

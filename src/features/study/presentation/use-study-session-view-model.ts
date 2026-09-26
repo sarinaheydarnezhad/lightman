@@ -156,6 +156,8 @@ export function useStudySessionViewModel(sessionId: string) {
     (result: ReviewResult) => submitAnswer(result, 'button'),
     [submitAnswer],
   );
+  const submitFailure = useCallback(() => void submit('failure'), [submit]);
+  const submitSuccess = useCallback(() => void submit('success'), [submit]);
 
   const reveal = useCallback(() => {
     if (revealedRef.current || inFlight.current || !item || phase !== 'ready') return;
@@ -234,6 +236,8 @@ export function useStudySessionViewModel(sessionId: string) {
     reveal,
     selectBackTab: setBackTab,
     submit,
+    submitFailure,
+    submitSuccess,
     beginSwipe,
     submitSwipe,
   };

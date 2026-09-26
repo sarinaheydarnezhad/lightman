@@ -39,5 +39,7 @@ export function useFocusedResource<T>(load: () => Promise<T>) {
     }, [load, version]),
   );
 
-  return { data, error, loading, refresh: () => setVersion((current) => current + 1) };
+  const refresh = useCallback(() => setVersion((current) => current + 1), []);
+
+  return { data, error, loading, refresh };
 }
