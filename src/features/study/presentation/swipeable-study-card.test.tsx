@@ -203,6 +203,20 @@ test('reduced motion submits without an off-screen timing animation', () => {
   expect(onSwipeAnswer).toHaveBeenCalledWith('success');
 });
 
+test('a committed swipe does not submit after the card unmounts', () => {
+  let finish: (() => void) | undefined;
+  const { onSwipeAnswer, unmount } = show();
+  jest.mocked(withTiming).mockImplementationOnce((value, _config, completed) => {
+    finish = () => completed?.(true);
+    return value;
+  });
+  drag(110);
+  expect(onSwipeAnswer).not.toHaveBeenCalled();
+  unmount();
+  act(() => finish?.());
+  expect(onSwipeAnswer).not.toHaveBeenCalled();
+});
+
 test('feedback is visual only; accessible answer and button controls remain separate', () => {
   show();
   expect(screen.queryByText('← Failure')).toBeNull();

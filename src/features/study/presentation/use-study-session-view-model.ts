@@ -43,6 +43,7 @@ export function useStudySessionViewModel(sessionId: string) {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const mounted = useRef(false);
   const revealedRef = useRef(false);
   const swipePendingRef = useRef(false);
   const request = useRef(0);
@@ -92,18 +93,27 @@ export function useStudySessionViewModel(sessionId: string) {
   }, [sessionId]);
 
   useEffect(() => {
+    mounted.current = true;
     let active = true;
     void Promise.resolve().then(() => {
       if (active) return load();
     });
     return () => {
       active = false;
+      mounted.current = false;
       request.current += 1;
     };
   }, [load]);
 
   const beginSwipe = useCallback(() => {
-    if (inFlight.current || swipePendingRef.current || !revealed || !item || phase !== 'ready')
+    if (
+      !mounted.current ||
+      inFlight.current ||
+      swipePendingRef.current ||
+      !revealed ||
+      !item ||
+      phase !== 'ready'
+    )
       return;
     swipePendingRef.current = true;
     setSwipePending(true);
@@ -112,6 +122,7 @@ export function useStudySessionViewModel(sessionId: string) {
   const submitAnswer = useCallback(
     async (result: ReviewResult, source: 'button' | 'swipe') => {
       if (
+        !mounted.current ||
         inFlight.current ||
         !revealed ||
         !item ||
@@ -130,6 +141,7 @@ export function useStudySessionViewModel(sessionId: string) {
           presentationId: item.presentationId,
           result,
         });
+        if (!mounted.current) return;
         AccessibilityInfo.announceForAccessibility(
           t('study.answerSaved', {
             result: t(result === 'success' ? 'study.success' : 'study.failure'),
@@ -139,14 +151,18 @@ export function useStudySessionViewModel(sessionId: string) {
         void (result === 'success' ? haptics.answerSuccess() : haptics.answerFailure());
         await load();
       } catch (cause) {
-        setActionError(safeError(cause, 'Unable to save your answer. Try again.'));
-        // Remount only the card surface; the revealed answer stays available for retry.
-        setSwipeResetKey((key) => key + 1);
+        if (mounted.current) {
+          setActionError(safeError(cause, 'Unable to save your answer. Try again.'));
+          // Remount only the card surface; the revealed answer stays available for retry.
+          setSwipeResetKey((key) => key + 1);
+        }
       } finally {
         inFlight.current = false;
-        setSubmitting(false);
         swipePendingRef.current = false;
-        setSwipePending(false);
+        if (mounted.current) {
+          setSubmitting(false);
+          setSwipePending(false);
+        }
       }
     },
     [item, load, phase, revealed, sessionId, t],
@@ -160,7 +176,8 @@ export function useStudySessionViewModel(sessionId: string) {
   const submitSuccess = useCallback(() => void submit('success'), [submit]);
 
   const reveal = useCallback(() => {
-    if (revealedRef.current || inFlight.current || !item || phase !== 'ready') return;
+    if (!mounted.current || revealedRef.current || inFlight.current || !item || phase !== 'ready')
+      return;
     revealedRef.current = true;
     setRevealed(true);
     void haptics.cardReveal();
@@ -177,12 +194,15 @@ export function useStudySessionViewModel(sessionId: string) {
     setActionError(null);
     try {
       await application.cancelStudySession(sessionId);
+      if (!mounted.current) return;
       setConfirmExit(false);
       router.replace('/study');
     } catch (cause) {
-      setActionError(safeError(cause, 'Unable to end this session. Try again.'));
-      setConfirmExit(false);
-      setCancelling(false);
+      if (mounted.current) {
+        setActionError(safeError(cause, 'Unable to end this session. Try again.'));
+        setConfirmExit(false);
+        setCancelling(false);
+      }
     } finally {
       inFlight.current = false;
     }

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -45,6 +45,13 @@ export function SwipeableStudyCard({
   const translationX = useSharedValue(0);
   const locked = useSharedValue(false);
   const thresholdNotified = useSharedValue(false);
+  const mounted = useSharedValue(true);
+  useEffect(() => {
+    return () => {
+      mounted.value = false;
+    };
+  }, [mounted]);
+
   const notifyThreshold = () => {
     void haptics.swipeCommit();
   };
@@ -94,7 +101,7 @@ export function SwipeableStudyCard({
       runOnJS(onCommitStart)();
       if (reducedMotion) {
         translationX.value = 0;
-        runOnJS(onAnswer)(result);
+        if (mounted.value) runOnJS(onAnswer)(result);
         return;
       }
       const exit =
@@ -103,7 +110,7 @@ export function SwipeableStudyCard({
         swipeMotion.exitWidthMultiplier;
       translationX.value = withTiming(exit, { duration: swipeMotion.exitDuration }, () => {
         // A committed answer is submitted even if the exit animation is interrupted.
-        runOnJS(onAnswer)(result);
+        if (mounted.value) runOnJS(onAnswer)(result);
       });
     })
     .onFinalize(() => {
