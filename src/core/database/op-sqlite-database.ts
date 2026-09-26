@@ -73,6 +73,7 @@ export class OpSqliteDatabase implements Database {
   private async openAndMigrate(): Promise<void> {
     const { openAsync } = await import('@op-engineering/op-sqlite');
     this.database = await openAsync({ name: this.name });
+    await this.database.execute('PRAGMA foreign_keys = ON');
     await runMigrations(this);
   }
 

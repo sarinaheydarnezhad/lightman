@@ -38,7 +38,7 @@ export class SQLiteSettingsRepository implements SettingsRepository {
 
   get(): Promise<UserSettings | null> {
     return databaseOperation(async () => {
-      const result = await this.database.execute('SELECT * FROM settings WHERE id = 1');
+      const result = await this.database.execute('SELECT * FROM user_settings WHERE id = 1');
       this.cached = mapSettings(row(result));
       return this.cached;
     }, 'Unable to load settings.');
@@ -48,7 +48,7 @@ export class SQLiteSettingsRepository implements SettingsRepository {
     return databaseOperation(async () => {
       const valid = validateUserSettings(settings);
       await this.database.execute(
-        `INSERT INTO settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
+        `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
            VALUES (1, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET theme = excluded.theme, haptics_enabled = excluded.haptics_enabled,
              language = excluded.language, daily_reminder_enabled = excluded.daily_reminder_enabled,

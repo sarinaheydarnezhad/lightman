@@ -57,7 +57,9 @@ async function readState(
   database: Database | DatabaseTransaction,
   cardId: string,
 ): Promise<CardReviewState | null> {
-  const result = await database.execute('SELECT * FROM review_states WHERE card_id = ?', [cardId]);
+  const result = await database.execute('SELECT * FROM card_review_state WHERE card_id = ?', [
+    cardId,
+  ]);
   return mapState(row(result));
 }
 
@@ -90,7 +92,7 @@ export class SQLiteReviewRepository implements ReviewRepository {
       if (existing && valid.updatedAt < existing.updatedAt)
         throw new AppError('conflict', 'Review state is older than the saved state.');
       await this.database.execute(
-        `INSERT INTO review_states (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
+        `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date, last_reviewed_at = excluded.last_reviewed_at,
              consecutive_successes = excluded.consecutive_successes, total_reviews = excluded.total_reviews,
@@ -178,7 +180,7 @@ export class SQLiteReviewRepository implements ReviewRepository {
     state: CardReviewState,
   ): Promise<unknown> {
     return database.execute(
-      `INSERT INTO review_states (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
+      `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date, last_reviewed_at = excluded.last_reviewed_at,
          consecutive_successes = excluded.consecutive_successes, total_reviews = excluded.total_reviews,
