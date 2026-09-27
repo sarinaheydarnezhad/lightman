@@ -13,9 +13,11 @@ import {
   scheduleNotificationAsync,
   setNotificationChannelAsync,
   setNotificationHandler,
-  type NotificationPermissionsStatus,
-  type NotificationRequest,
-  type NotificationResponse,
+} from './expo-local-notifications';
+import type {
+  NotificationPermissionsStatus,
+  NotificationRequest,
+  NotificationResponse,
 } from 'expo-notifications';
 import { Linking, Platform } from 'react-native';
 

@@ -5,7 +5,7 @@ import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import {
   addNotificationResponseReceivedListener,
   getLastNotificationResponse,
-} from 'expo-notifications';
+} from '@/core/infrastructure/expo-local-notifications';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
 import NotFound from '@/app/+not-found';
@@ -46,7 +46,7 @@ import {
 import { setTestTheme } from '@/../test/set-test-theme';
 import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
 
-jest.mock('expo-notifications', () => ({
+jest.mock('@/core/infrastructure/expo-local-notifications', () => ({
   AndroidImportance: { DEFAULT: 3 },
   DEFAULT_ACTION_IDENTIFIER: 'default',
   IosAuthorizationStatus: {

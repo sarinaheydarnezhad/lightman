@@ -9,12 +9,12 @@ import {
   requestPermissionsAsync,
   scheduleNotificationAsync,
   setNotificationHandler,
-} from 'expo-notifications';
+} from './expo-local-notifications';
 import { localTime } from '@/core/domain/values';
 import { NotificationPermissionDenied, ReminderRecoveryFailed } from '@/core/ports/notification';
 import { expoNotificationService } from './expo-notification-service';
 
-jest.mock('expo-notifications', () => ({
+jest.mock('./expo-local-notifications', () => ({
   AndroidImportance: { DEFAULT: 3 },
   DEFAULT_ACTION_IDENTIFIER: 'default',
   IosAuthorizationStatus: {
