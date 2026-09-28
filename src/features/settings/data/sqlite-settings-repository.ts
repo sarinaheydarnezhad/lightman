@@ -39,7 +39,9 @@ export class SQLiteSettingsRepository implements SettingsRepository {
   get(): Promise<UserSettings | null> {
     return databaseOperation(async () => {
       const result = await this.database.execute('SELECT * FROM user_settings WHERE id = 1');
+      const firstLoad = this.cached === null;
       this.cached = mapSettings(row(result));
+      if (firstLoad && this.cached) this.listeners.forEach((listener) => listener());
       return this.cached;
     }, 'Unable to load settings.');
   }
@@ -71,7 +73,7 @@ export class SQLiteSettingsRepository implements SettingsRepository {
   }
 
   snapshot(): UserSettings | null {
-    return this.cached ? { ...this.cached } : null;
+    return this.cached;
   }
 
   subscribe(listener: () => void): () => void {

@@ -1,0 +1,33 @@
+diff --git a/lib/module/functions.web.js b/lib/module/functions.web.js
+index bb64eb3ad06a3040c8a103f56c9d9d5e11f9b843..58a8ae0f0768287f5d586ede2c3b6a59f14dd6a6 100644
+--- a/lib/module/functions.web.js
++++ b/lib/module/functions.web.js
+@@ -51,9 +51,7 @@ let nextRequestId = 0;
+ const pendingRequests = new Map();
+ function getWorker() {
+   if (!worker) {
+-    worker = new Worker(new URL("./opsqlite-web.worker", import.meta.url), {
+-      type: "module"
+-    });
++    worker = new Worker(new URL("./opsqlite-web.worker", import.meta.url));
+     worker.onmessage = event => {
+       const {
+         id,
+diff --git a/src/functions.web.ts b/src/functions.web.ts
+index f0f4867d38c2c694d55a04400b26fc8ad9636490..daad9e8710b9c22b4ea857d7654e9bfdf84e87a5 100644
+--- a/src/functions.web.ts
++++ b/src/functions.web.ts
+@@ -79,7 +79,7 @@ const pendingRequests = new Map<number, { resolve: (value: any) => void; reject:
+ 
+ function getWorker(): any {
+   if (!worker) {
+-    worker = new Worker(new URL("./opsqlite-web.worker", import.meta.url), { type: "module" });
++    worker = new Worker(new URL("./opsqlite-web.worker", import.meta.url));
+ 
+     worker.onmessage = (event: { data: { id: number; result?: any; error?: { message: string } } }) => {
+       const { id, result, error } = event.data;
+@@ -520,3 +520,4 @@ export const isIOSEmbeeded = isIOSEmbedded;
+ 
+ // Web does not expose the native JSI proxy object.
+ export const OPSQLite = {} as OPSQLiteProxy;
++

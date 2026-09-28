@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@op-engineering/op-sqlite@18.2.5': patches/@op-engineering__op-sqlite@18.2.5.patch

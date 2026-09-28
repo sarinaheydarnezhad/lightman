@@ -41,6 +41,9 @@ export const logger: AppLogger = {
   error: (message, error) => {
     if (__DEV__) {
       console.error(message, error);
+      if (error instanceof AppError && error.cause) {
+        console.error('Underlying application error', error.cause);
+      }
       return;
     }
     console.error(message, summarizeErrorForLogging(error));

@@ -201,6 +201,34 @@ test('SQLite settings repository keeps a successful snapshot and notifies subscr
 
   await expect(repository.update(settings)).resolves.toEqual(settings);
   expect(repository.snapshot()).toEqual(settings);
+  expect(repository.snapshot()).toBe(repository.snapshot());
+  expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test('SQLite settings repository publishes a stable snapshot when saved settings load', async () => {
+  const database = new ScriptedDatabase([
+    {
+      rows: [
+        {
+          theme: 'dark',
+          haptics_enabled: 1,
+          language: 'en',
+          daily_reminder_enabled: 0,
+          daily_reminder_time: '09:00',
+          preferred_speech_language: 'en',
+          preferred_speech_accent: null,
+        },
+      ],
+      rowsAffected: 0,
+    },
+  ]);
+  const repository = new SQLiteSettingsRepository(database);
+  const listener = jest.fn();
+  repository.subscribe(listener);
+
+  await repository.get();
+  expect(repository.snapshot()?.theme).toBe('dark');
+  expect(repository.snapshot()).toBe(repository.snapshot());
   expect(listener).toHaveBeenCalledTimes(1);
 });
 
