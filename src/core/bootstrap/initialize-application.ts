@@ -1,6 +1,6 @@
 import { defaultSettings } from '@/core/composition/default-settings';
 import { application } from '@/core/composition/application';
-import { initializeRepositories } from '@/core/composition/repositories';
+import { database, initializeRepositories } from '@/core/composition/repositories';
 import { logger } from '@/core/infrastructure/platform';
 
 let initialization: Promise<void> | null = null;
@@ -9,6 +9,9 @@ export function initializeApplication(): Promise<void> {
   if (!initialization) {
     initialization = (async () => {
       await initializeRepositories();
+      if (database) {
+        void import('@/core/composition/sync').then(({ syncEngine }) => syncEngine?.start()).catch(() => {});
+      }
       void Promise.resolve()
         .then(() => application.settings.initialize(defaultSettings()))
         .then(() => application.settings.reconcileReminder())

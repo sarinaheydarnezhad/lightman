@@ -27,6 +27,7 @@ import VocabularyHelper from '@/app/vocabulary/helper';
 import Appearance from '@/app/settings/appearance';
 import SpeechSettings from '@/app/settings/speech';
 import LanguageSettings from '@/app/settings/language';
+import CloudSync from '@/app/settings/cloud';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
@@ -96,6 +97,7 @@ const routes = {
   'settings/appearance': Appearance,
   'settings/speech': SpeechSettings,
   'settings/language': LanguageSettings,
+  'settings/cloud': CloudSync,
   'design-system': DesignSystem,
 };
 

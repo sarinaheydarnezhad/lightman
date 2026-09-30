@@ -36,8 +36,8 @@ class FailingMigrationDatabase extends RecordingDatabase {
 test('fresh migration applies every schema version transactionally', async () => {
   const database = new RecordingDatabase([{ rows: [{ user_version: 0 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(2);
-  expect(database.transactionCount).toBe(2);
+  await expect(runMigrations(database)).resolves.toBe(3);
+  expect(database.transactionCount).toBe(3);
   expect(database.calls.some(({ sql }) => sql.includes('CREATE TABLE IF NOT EXISTS decks'))).toBe(
     true,
   );
@@ -51,8 +51,8 @@ test('fresh migration applies every schema version transactionally', async () =>
 test('version one upgrade preserves rows through the production schema rebuild', async () => {
   const database = new RecordingDatabase([{ rows: [{ user_version: 1 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(2);
-  expect(database.transactionCount).toBe(1);
+  await expect(runMigrations(database)).resolves.toBe(3);
+  expect(database.transactionCount).toBe(2);
   expect(
     database.calls.some(
       ({ sql }) => sql === 'ALTER TABLE review_states RENAME TO review_states_v1',
@@ -74,9 +74,9 @@ test('version one upgrade preserves rows through the production schema rebuild',
 });
 
 test('migration runner skips an already current database', async () => {
-  const database = new RecordingDatabase([{ rows: [{ user_version: 2 }], rowsAffected: 0 }]);
+  const database = new RecordingDatabase([{ rows: [{ user_version: 3 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(2);
+  await expect(runMigrations(database)).resolves.toBe(3);
   expect(database.transactionCount).toBe(0);
 });
 
@@ -100,6 +100,15 @@ test('production schema protects review history and review-state invariants', ()
   expect(statements).toContain('CREATE INDEX review_events_reviewed_at_idx');
   expect(statements).toContain('CREATE TRIGGER review_events_no_update');
   expect(statements).toContain('CREATE TRIGGER review_events_no_delete');
+});
+
+test('sync migration queues writes inside local transactions and protects review history', () => {
+  const statements = migrations[2]!.statements.join('\n');
+  expect(statements).toContain('CREATE TABLE sync_operations');
+  expect(statements).toContain('CREATE TRIGGER sync_deck_insert');
+  expect(statements).toContain('CREATE TRIGGER sync_review_insert');
+  expect(statements).toContain('CREATE TABLE sync_review_versions');
+  expect(statements).not.toContain('DROP TABLE review_events');
 });
 
 test('OP-SQLite initialization maps native failures to safe application errors', async () => {

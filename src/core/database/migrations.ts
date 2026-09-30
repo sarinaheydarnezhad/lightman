@@ -171,9 +171,77 @@ const productionSchemaStatements = [
    END`,
 ] as const;
 
+const syncUuid = `lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(2))) || '-' || lower(hex(randomblob(6)))`;
+const syncSchemaStatements = [
+  `CREATE TABLE sync_account (id INTEGER PRIMARY KEY CHECK (id = 1), user_id TEXT NOT NULL DEFAULT '', device_id TEXT NOT NULL, cursor INTEGER NOT NULL DEFAULT 0 CHECK (cursor >= 0), applying_remote INTEGER NOT NULL DEFAULT 0)`,
+  `INSERT INTO sync_account (id, device_id) VALUES (1, ${syncUuid})`,
+  `CREATE TABLE sync_operations (sequence INTEGER PRIMARY KEY AUTOINCREMENT, operation_id TEXT NOT NULL UNIQUE, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, operation TEXT NOT NULL, payload_json TEXT NOT NULL, expected_version INTEGER NOT NULL DEFAULT 0, ack_version INTEGER, created_at TEXT NOT NULL, retry_count INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'synced', 'conflict', 'failed', 'discarded')))`,
+  'CREATE INDEX sync_operations_pending_idx ON sync_operations(status, sequence)',
+  `CREATE TABLE sync_entity_versions (entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, server_version INTEGER NOT NULL CHECK (server_version >= 0), PRIMARY KEY (entity_type, entity_id))`,
+  `CREATE TABLE sync_conflicts (operation_id TEXT PRIMARY KEY NOT NULL REFERENCES sync_operations(operation_id), server_value_json TEXT, client_value_json TEXT, actual_version INTEGER NOT NULL, created_at TEXT NOT NULL)`,
+  `CREATE TABLE sync_review_versions (event_id TEXT PRIMARY KEY NOT NULL REFERENCES review_events(id) ON DELETE RESTRICT, server_version INTEGER NOT NULL)`,
+  `CREATE TRIGGER sync_deck_insert AFTER INSERT ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'deck', NEW.id, 'upsert', json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_deck_update AFTER UPDATE ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
+    VALUES (${syncUuid}, 'deck', NEW.id, CASE WHEN NEW.archived_at IS NOT NULL THEN 'archive' ELSE 'upsert' END,
+      CASE WHEN NEW.archived_at IS NOT NULL THEN 'null' ELSE json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size) END,
+      COALESCE((SELECT server_version FROM sync_entity_versions WHERE entity_type = 'deck' AND entity_id = NEW.id), 0), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_card_insert AFTER INSERT ON cards WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'card', NEW.id, 'upsert', json_object('deckId', NEW.deck_id, 'frontText', NEW.front_text, 'meaning', NEW.meaning, 'phonetic', NEW.phonetic, 'category', NEW.category, 'examples', json(NEW.examples_json)), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_card_update AFTER UPDATE ON cards WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
+    VALUES (${syncUuid}, 'card', NEW.id, CASE WHEN NEW.archived_at IS NOT NULL THEN 'archive' ELSE 'upsert' END,
+      CASE WHEN NEW.archived_at IS NOT NULL THEN 'null' ELSE json_object('deckId', NEW.deck_id, 'frontText', NEW.front_text, 'meaning', NEW.meaning, 'phonetic', NEW.phonetic, 'category', NEW.category, 'examples', json(NEW.examples_json)) END,
+      COALESCE((SELECT server_version FROM sync_entity_versions WHERE entity_type = 'card' AND entity_id = NEW.id), 0), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_review_insert AFTER INSERT ON review_events WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'reviewEvent', NEW.id, 'create', json_object('cardId', NEW.card_id, 'deckId', NEW.deck_id, 'previousBox', NEW.previous_box, 'newBox', NEW.new_box, 'result', NEW.result, 'reviewedAtUtc', NEW.reviewed_at, 'studySessionId', NEW.study_session_id), NEW.reviewed_at);
+  END`,
+  `CREATE TRIGGER sync_state_insert AFTER INSERT ON card_review_state WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'reviewState', NEW.card_id, 'upsert', json_object('box', NEW.box, 'dueDate', NEW.due_date, 'lastReviewedAtUtc', NEW.last_reviewed_at, 'consecutiveSuccesses', NEW.consecutive_successes, 'totalReviews', NEW.total_reviews, 'totalSuccesses', NEW.total_successes), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_settings_insert AFTER INSERT ON user_settings WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0
+    AND NOT (NEW.theme = 'system' AND NEW.haptics_enabled = 1 AND NEW.language = 'en'
+      AND NEW.daily_reminder_enabled = 0 AND NEW.daily_reminder_time = '09:00'
+      AND NEW.preferred_speech_language = 'en' AND NEW.preferred_speech_accent IS NULL) BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'settings', '', 'upsert', json_object('theme', NEW.theme, 'hapticsEnabled', json(CASE WHEN NEW.haptics_enabled = 1 THEN 'true' ELSE 'false' END), 'language', NEW.language, 'dailyReminderEnabled', json(CASE WHEN NEW.daily_reminder_enabled = 1 THEN 'true' ELSE 'false' END), 'dailyReminderTime', CASE WHEN NEW.daily_reminder_time IS NULL THEN NULL ELSE NEW.daily_reminder_time || ':00' END, 'preferredSpeechLanguage', NEW.preferred_speech_language, 'preferredSpeechAccent', NEW.preferred_speech_accent), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+  END`,
+  `CREATE TRIGGER sync_settings_update AFTER UPDATE ON user_settings WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
+    VALUES (${syncUuid}, 'settings', '', 'upsert', json_object('theme', NEW.theme, 'hapticsEnabled', json(CASE WHEN NEW.haptics_enabled = 1 THEN 'true' ELSE 'false' END), 'language', NEW.language, 'dailyReminderEnabled', json(CASE WHEN NEW.daily_reminder_enabled = 1 THEN 'true' ELSE 'false' END), 'dailyReminderTime', CASE WHEN NEW.daily_reminder_time IS NULL THEN NULL ELSE NEW.daily_reminder_time || ':00' END, 'preferredSpeechLanguage', NEW.preferred_speech_language, 'preferredSpeechAccent', NEW.preferred_speech_accent), COALESCE((SELECT server_version FROM sync_entity_versions WHERE entity_type = 'settings' AND entity_id = (SELECT user_id FROM sync_account WHERE id = 1)), 0), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+  END`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'deck', id, 'upsert', json_object('name', name, 'description', description, 'language', language, 'textAlignment', text_alignment, 'typographySize', typography_size), updated_at FROM decks`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'card', id, 'upsert', json_object('deckId', deck_id, 'frontText', front_text, 'meaning', meaning, 'phonetic', phonetic, 'category', category, 'examples', json(examples_json)), updated_at FROM cards`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'reviewState', card_id, 'upsert', json_object('box', 1, 'dueDate', substr((SELECT created_at FROM cards WHERE id = card_id), 1, 10), 'lastReviewedAtUtc', NULL, 'consecutiveSuccesses', 0, 'totalReviews', 0, 'totalSuccesses', 0), updated_at FROM card_review_state`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'reviewEvent', id, 'create', json_object('cardId', card_id, 'deckId', deck_id, 'previousBox', previous_box, 'newBox', new_box, 'result', result, 'reviewedAtUtc', reviewed_at, 'studySessionId', study_session_id), reviewed_at FROM review_events`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'settings', '', 'upsert', json_object('theme', theme, 'hapticsEnabled', json(CASE WHEN haptics_enabled = 1 THEN 'true' ELSE 'false' END), 'language', language, 'dailyReminderEnabled', json(CASE WHEN daily_reminder_enabled = 1 THEN 'true' ELSE 'false' END), 'dailyReminderTime', CASE WHEN daily_reminder_time IS NULL THEN NULL ELSE daily_reminder_time || ':00' END, 'preferredSpeechLanguage', preferred_speech_language, 'preferredSpeechAccent', preferred_speech_accent), strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM user_settings
+   WHERE NOT (theme = 'system' AND haptics_enabled = 1 AND language = 'en'
+     AND daily_reminder_enabled = 0 AND daily_reminder_time = '09:00'
+     AND preferred_speech_language = 'en' AND preferred_speech_accent IS NULL)`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'card', id, 'archive', 'null', archived_at FROM cards WHERE archived_at IS NOT NULL`,
+  `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+   SELECT ${syncUuid}, 'deck', id, 'archive', 'null', archived_at FROM decks WHERE archived_at IS NOT NULL`,
+] as const;
+
 export const migrations: readonly Migration[] = [
   { version: 1, statements: initialSchemaStatements },
   { version: 2, statements: productionSchemaStatements },
+  { version: 3, statements: syncSchemaStatements },
 ];
 
 export async function runMigrations(database: Database): Promise<number> {

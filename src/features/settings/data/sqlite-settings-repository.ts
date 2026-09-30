@@ -39,9 +39,10 @@ export class SQLiteSettingsRepository implements SettingsRepository {
   get(): Promise<UserSettings | null> {
     return databaseOperation(async () => {
       const result = await this.database.execute('SELECT * FROM user_settings WHERE id = 1');
-      const firstLoad = this.cached === null;
-      this.cached = mapSettings(row(result));
-      if (firstLoad && this.cached) this.listeners.forEach((listener) => listener());
+      const next = mapSettings(row(result));
+      const changed = JSON.stringify(this.cached) !== JSON.stringify(next);
+      this.cached = next;
+      if (changed) this.listeners.forEach((listener) => listener());
       return this.cached;
     }, 'Unable to load settings.');
   }

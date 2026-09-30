@@ -1,4 +1,4 @@
-import { Link, router, useFocusEffect } from 'expo-router';
+import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Platform, View } from 'react-native';
@@ -278,6 +278,11 @@ export function SettingsScreen() {
             </SettingsSection>
 
             <SettingsSection title={t('settings.about')}>
+              <SettingsRow
+                label={t('sync.title')}
+                detail={t('sync.description')}
+                onPress={() => router.push('/settings/cloud' as Href)}
+              />
               <SettingsRow label={t('settings.app')} detail={config.appName} />
               <SettingsRow
                 label={t('settings.version')}
