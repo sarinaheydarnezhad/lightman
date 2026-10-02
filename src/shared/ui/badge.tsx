@@ -1,22 +1,24 @@
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from './text';
 
-export type SemanticVariant = 'neutral' | 'primary' | 'success' | 'error' | 'warning';
+export type SemanticVariant = 'neutral' | 'primary' | 'success' | 'error' | 'warning' | 'info';
 
 const appearance = {
   neutral: 'border-border bg-surfaceElevated',
-  primary: 'border-primary bg-primary',
-  success: 'border-success bg-success',
-  error: 'border-error bg-error',
-  warning: 'border-warning bg-warning',
+  primary: 'border-primary/25 bg-primarySoft',
+  success: 'border-success/25 bg-success/10',
+  error: 'border-error/25 bg-error/10',
+  warning: 'border-warning/25 bg-warning/10',
+  info: 'border-info/25 bg-info/10',
 };
 
 const foreground = {
   neutral: 'primaryText',
-  primary: 'primaryForeground',
-  success: 'successForeground',
-  error: 'errorForeground',
-  warning: 'warningForeground',
+  primary: 'primary',
+  success: 'success',
+  error: 'error',
+  warning: 'warning',
+  info: 'info',
 } as const;
 
 export function Badge({

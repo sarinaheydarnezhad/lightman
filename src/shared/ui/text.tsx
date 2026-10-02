@@ -12,6 +12,7 @@ type AppTextProps = TextProps & {
     | 'error'
     | 'success'
     | 'warning'
+    | 'info'
     | SemanticColor;
   weight?: 'regular' | 'medium' | 'semibold' | 'bold';
   align?: 'auto' | 'start' | 'center' | 'end' | 'justify';
@@ -26,6 +27,7 @@ const toneClass = {
   error: 'text-error',
   success: 'text-success',
   warning: 'text-warning',
+  info: 'text-info',
   background: 'text-background',
   surface: 'text-surface',
   surfaceElevated: 'text-surfaceElevated',
@@ -33,10 +35,14 @@ const toneClass = {
   secondaryText: 'text-secondaryText',
   tertiaryText: 'text-tertiaryText',
   border: 'text-border',
+  primaryPressed: 'text-primaryPressed',
+  primarySoft: 'text-primarySoft',
   primaryForeground: 'text-primaryForeground',
   successForeground: 'text-successForeground',
   errorForeground: 'text-errorForeground',
+  errorPressed: 'text-errorPressed',
   warningForeground: 'text-warningForeground',
+  infoForeground: 'text-infoForeground',
   disabled: 'text-disabled',
   overlay: 'text-overlay',
 } as const;

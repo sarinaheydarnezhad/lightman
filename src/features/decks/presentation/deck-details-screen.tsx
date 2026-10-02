@@ -105,7 +105,12 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
         >
           <ScreenHeader title={deck.name} description={deck.description} />
-          <Card className="gap-md">
+          <Button
+            label={t('study.start')}
+            loading={study.starting}
+            onPress={() => void study.start({ kind: 'specific-deck', deckId })}
+          />
+          <View className="gap-sm border-b border-border pb-xl">
             <Badge
               label={t(data.cardCount === 1 ? 'common.singleCard' : 'common.cardCount', {
                 count: number(data.cardCount),
@@ -122,7 +127,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
                 updated: deck.updatedAt.slice(0, 10),
               })}
             </Text>
-          </Card>
+          </View>
           <Card className="gap-sm">
             <Text variant="labelLarge">{t('details.readingPreview')}</Text>
             <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>
@@ -134,10 +139,10 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               {t('nav.cards')}
             </Text>
             {data.cardCount === 0 ? (
-              <Card className="gap-sm">
+              <View className="gap-sm">
                 <Text variant="headingSmall">{t('cards.empty')}</Text>
                 <Text tone="secondary">{t('cards.emptyHint')}</Text>
-              </Card>
+              </View>
             ) : (
               <Text tone="secondary">{t('details.browseHint')}</Text>
             )}
@@ -148,13 +153,8 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
             />
           </View>
           <View className="gap-sm">
-            <Button
-              label={t('study.start')}
-              loading={study.starting}
-              onPress={() => void study.start({ kind: 'specific-deck', deckId })}
-            />
             {study.error ? (
-              <Card className="gap-sm" accessibilityLiveRegion="polite">
+              <View className="gap-sm" accessibilityLiveRegion="polite">
                 <Text tone="error">
                   {language === 'en' ? study.error : t('common.genericError')}
                 </Text>
@@ -165,7 +165,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
                     onPress={() => study.activeSession && openStudySession(study.activeSession)}
                   />
                 ) : null}
-              </Card>
+              </View>
             ) : null}
             <Button
               label={t('cards.add')}

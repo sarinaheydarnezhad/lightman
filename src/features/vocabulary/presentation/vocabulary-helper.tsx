@@ -69,7 +69,7 @@ export function VocabularyHelper({
   }
 
   return (
-    <Card className="gap-md">
+    <View className="gap-md border-y border-border py-lg">
       <Text variant="headingSmall" accessibilityRole="header">
         {t('vocab.title')}
       </Text>
@@ -141,7 +141,7 @@ export function VocabularyHelper({
           ) : null}
         </>
       )}
-    </Card>
+    </View>
   );
 }
 

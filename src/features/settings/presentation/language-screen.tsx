@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { languageTag } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
-import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -29,12 +29,12 @@ export function LanguageScreen() {
           />
         ) : null}
         {vm.settings ? (
-          <View className="gap-sm">
+          <View className="flex-row flex-wrap gap-sm">
             {languages.map((tag) => (
-              <Button
+              <Chip
                 key={tag}
                 label={t(`language.${tag}`)}
-                variant={vm.settings?.language === tag ? 'primary' : 'secondary'}
+                selected={vm.settings?.language === tag}
                 accessibilityHint={t(
                   vm.settings?.language === tag
                     ? 'settings.languageSelected'

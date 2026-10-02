@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
@@ -43,7 +43,12 @@ export function ActivityChart({
         {t('analytics.activity')}
       </Text>
       <View accessible accessibilityRole="image" accessibilityLabel={summary}>
-        <Svg width="100%" height={80} viewBox="0 0 360 80" accessible={false}>
+        <Svg
+          width="100%"
+          height={80}
+          viewBox="0 0 360 80"
+          accessible={Platform.OS === 'web' ? undefined : false}
+        >
           <Line
             x1={0}
             y1={baseline}

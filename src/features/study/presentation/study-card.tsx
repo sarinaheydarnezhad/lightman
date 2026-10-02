@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
-import { AccessibilityInfo, findNodeHandle, ScrollView, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Platform, ScrollView, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
@@ -120,7 +120,6 @@ function FrontContent({
         <View className="gap-md py-md">
           <Text
             variant={frontTypography[deck.typographySize]}
-            weight="bold"
             style={alignment}
             accessibilityRole="header"
           >
@@ -168,7 +167,7 @@ function BackContent({
   const title = useRef<View>(null);
   const reducedMotion = useReducedMotion();
   useEffect(() => {
-    if (!revealed) return;
+    if (!revealed || Platform.OS === 'web') return;
     const focus = setTimeout(
       () => {
         const target = findNodeHandle(title.current);
@@ -219,7 +218,7 @@ function BackContent({
             {card.examples.map((example, index) => (
               <View
                 key={`${card.id}-example-${index}`}
-                className="gap-sm rounded-md border border-border p-md"
+                className="gap-sm border-b border-border pb-md"
               >
                 <Text
                   variant={size}

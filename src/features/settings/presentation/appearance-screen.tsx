@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -26,12 +26,12 @@ export function AppearanceScreen() {
           />
         ) : null}
         {vm.settings ? (
-          <View className="gap-sm">
+          <View className="flex-row flex-wrap gap-sm">
             {appearanceChoices.map(({ value }) => (
-              <Button
+              <Chip
                 key={value}
                 label={t(`settings.theme.${value}`)}
-                variant={value === vm.settings?.theme ? 'primary' : 'secondary'}
+                selected={value === vm.settings?.theme}
                 accessibilityHint={t(
                   value === vm.settings?.theme ? 'settings.themeSelected' : 'settings.themeSelect',
                 )}

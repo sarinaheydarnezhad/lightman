@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { router, useFocusEffect } from 'expo-router';
-import { AccessibilityInfo, useWindowDimensions, View } from 'react-native';
+import { AccessibilityInfo, View } from 'react-native';
+import { CircleCheck, X } from 'lucide-react-native';
 
 import { Badge } from '@/shared/ui/badge';
 import { speech } from '@/core/composition/speech';
@@ -10,6 +11,8 @@ import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
+import { IconButton } from '@/shared/ui/icon-button';
+import { Progress } from '@/shared/ui/progress';
 import { Screen } from '@/shared/ui/screen';
 import { Text } from '@/shared/ui/text';
 import { StudyCard } from './study-card';
@@ -20,7 +23,6 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 export function StudySessionScreen({ sessionId }: { sessionId: string }) {
   const { t, number, language } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
-  const { fontScale, width } = useWindowDimensions();
   const study = useStudySessionViewModel(sessionId);
   const { session, progress, item, card, deck } = study;
   const empty = session?.status === 'completed' && session.initialQueue.length === 0;
@@ -108,22 +110,35 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
   if (study.phase === 'completed' && session && progress) {
     const minutes = Math.ceil((progress.durationMs ?? 0) / 60000);
     return (
-      <Screen>
-        <View className="flex-1 justify-center gap-xl">
-          <EmptyState title={t('study.complete')} description={t('study.completeHint')} />
-          <Card className="gap-md">
-            <Text>{t('study.cardsStudied', { count: number(progress.uniqueCardsStudied) })}</Text>
-            <Text>{t('study.retries', { count: number(progress.retryCount) })}</Text>
-            <Text>
-              {t('study.time', {
-                value:
-                  minutes < 1
-                    ? t('study.underMinute')
-                    : t(minutes === 1 ? 'study.minute' : 'study.minutes', {
-                        count: number(minutes),
-                      }),
-              })}
-            </Text>
+      <Screen scroll>
+        <View className="min-h-0 flex-1 justify-center gap-xl pb-xl">
+          <EmptyState
+            title={t('study.complete')}
+            description={t('study.completeHint')}
+            icon={CircleCheck}
+          />
+          <Card className="gap-lg">
+            <View className="gap-xs">
+              <Text variant="headingLarge">{number(progress.uniqueCardsStudied)}</Text>
+              <Text variant="bodySmall" tone="secondary">
+                {t('study.cardsStudiedLabel')}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap gap-lg border-t border-border pt-lg">
+              <Text variant="bodySmall" tone="secondary">
+                {t('study.retries', { count: number(progress.retryCount) })}
+              </Text>
+              <Text variant="bodySmall" tone="secondary">
+                {t('study.time', {
+                  value:
+                    minutes < 1
+                      ? t('study.underMinute')
+                      : t(minutes === 1 ? 'study.minute' : 'study.minutes', {
+                          count: number(minutes),
+                        }),
+                })}
+              </Text>
+            </View>
           </Card>
           {study.start.error ? (
             <Text tone="error" accessibilityLiveRegion="polite">
@@ -143,15 +158,12 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               }
             />
           ) : null}
+          <Button label={t('study.done')} onPress={() => router.replace('/study')} />
           <Button
             label={t('study.again')}
+            variant="secondary"
             loading={study.start.starting}
             onPress={() => void study.start.start(session.scope, true)}
-          />
-          <Button
-            label={t('study.done')}
-            variant="secondary"
-            onPress={() => router.replace('/study')}
           />
         </View>
       </Screen>
@@ -168,39 +180,48 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           accessibilityElementsHidden={study.confirmExit}
           importantForAccessibility={study.confirmExit ? 'no-hide-descendants' : 'auto'}
         >
-          <View
-            className={`${fontScale >= 1.4 || width < 360 ? 'gap-sm' : 'flex-row items-center justify-between gap-sm'}`}
-          >
-            <View className="min-w-0 flex-1">
-              <Text tone="secondary" variant="labelMedium">
+          <View className="flex-row items-center gap-md">
+            <View className="min-w-0 flex-1 gap-xs">
+              <Text tone="secondary" variant="labelMedium" numberOfLines={1}>
                 {deck.name}
               </Text>
               <Text variant="headingSmall" accessibilityRole="header">
                 {t('study.session')}
               </Text>
             </View>
-            <Button
+            <IconButton
+              icon={X}
               label={t('study.exit')}
-              variant="tertiary"
+              variant="ghost"
               disabled={study.submitting || study.swipePending}
               onPress={study.leave}
             />
           </View>
-          <View
-            className="flex-row items-center justify-between gap-md"
-            accessible
-            accessibilityLabel={`${t('study.progress', { position: number(progress.currentPosition ?? 0), total: number(total), completed: number(progress.completed) })}${item.kind === 'retry' ? ` ${t('study.retry')}.` : ''}`}
-          >
-            <Text variant="labelLarge" style={{ writingDirection: 'ltr' }}>
-              {number(progress.currentPosition ?? 0)} / {number(total)}
-            </Text>
-            {item.kind === 'retry' ? (
-              <Badge label={t('study.retry')} />
-            ) : (
-              <Text variant="bodySmall" tone="secondary">
-                {t('study.remaining', { count: number(progress.remaining) })}
+          <View className="gap-sm">
+            <View
+              className="flex-row items-center justify-between gap-md"
+              accessible
+              accessibilityLabel={`${t('study.progress', { position: number(progress.currentPosition ?? 0), total: number(total), completed: number(progress.completed) })}${item.kind === 'retry' ? ` ${t('study.retry')}.` : ''}`}
+            >
+              <Text variant="labelLarge" style={{ writingDirection: 'ltr' }}>
+                {number(progress.currentPosition ?? 0)} / {number(total)}
               </Text>
-            )}
+              {item.kind === 'retry' ? (
+                <Badge label={t('study.retry')} />
+              ) : (
+                <Text variant="bodySmall" tone="secondary">
+                  {t('study.remaining', { count: number(progress.remaining) })}
+                </Text>
+              )}
+            </View>
+            <Progress
+              value={total ? progress.completed / total : 0}
+              label={t('study.progress', {
+                position: number(progress.currentPosition ?? 0),
+                total: number(total),
+                completed: number(progress.completed),
+              })}
+            />
           </View>
           <StudyCard
             key={`${item.presentationId}-${study.swipeResetKey}`}

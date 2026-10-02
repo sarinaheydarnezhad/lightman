@@ -10,18 +10,20 @@ type ChipProps = Omit<PressableProps, 'children'> & {
 };
 
 const selectedAppearance = {
-  neutral: 'border-primary bg-primary',
-  primary: 'border-primary bg-primary',
-  success: 'border-success bg-success',
-  error: 'border-error bg-error',
-  warning: 'border-warning bg-warning',
+  neutral: 'border-primary bg-primarySoft',
+  primary: 'border-primary bg-primarySoft',
+  success: 'border-success bg-success/10',
+  error: 'border-error bg-error/10',
+  warning: 'border-warning bg-warning/10',
+  info: 'border-info bg-info/10',
 };
 const selectedTone = {
-  neutral: 'primaryForeground',
-  primary: 'primaryForeground',
-  success: 'successForeground',
-  error: 'errorForeground',
-  warning: 'warningForeground',
+  neutral: 'accent',
+  primary: 'accent',
+  success: 'success',
+  error: 'error',
+  warning: 'warning',
+  info: 'info',
 } as const;
 const unselectedAppearance = {
   neutral: 'border-border bg-surface',
@@ -29,6 +31,7 @@ const unselectedAppearance = {
   success: 'border-success bg-surface',
   error: 'border-error bg-surface',
   warning: 'border-warning bg-surface',
+  info: 'border-info bg-surface',
 };
 const unselectedTone = {
   neutral: 'primaryText',
@@ -36,6 +39,7 @@ const unselectedTone = {
   success: 'success',
   error: 'error',
   warning: 'warning',
+  info: 'info',
 } as const;
 
 export function Chip({
@@ -53,7 +57,7 @@ export function Chip({
     <>
       {selected ? (
         <Text variant="labelMedium" tone={selectedTone[variant]} accessible={false}>
-          ✓
+          {'\u2713'}
         </Text>
       ) : null}
       <Text variant="labelMedium" tone={selected ? selectedTone[variant] : unselectedTone[variant]}>

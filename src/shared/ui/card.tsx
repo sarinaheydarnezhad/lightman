@@ -1,6 +1,6 @@
 import { type PropsWithChildren } from 'react';
-import { Pressable, View, type PressableProps } from 'react-native';
-import { useThemeColors } from '@/shared/theme/theme-provider';
+import { Platform, Pressable, View, type PressableProps } from 'react-native';
+import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
 import { interaction, shadows } from '@/shared/theme/tokens';
 
 type CardProps = PropsWithChildren<
@@ -26,9 +26,10 @@ export function Card({
   ...props
 }: CardProps) {
   const colors = useThemeColors();
+  const mode = useThemeMode();
   const shadow = shadows.small;
   const elevation =
-    variant === 'elevated'
+    variant === 'elevated' && mode === 'light' && Platform.OS !== 'web'
       ? {
           shadowColor: colors.overlay,
           shadowOpacity: shadow.opacity,

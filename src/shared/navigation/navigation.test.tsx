@@ -187,14 +187,14 @@ test('analytics shows loading, an honest empty state, zero distributions and no 
   expect(await screen.findByRole('progressbar', { name: 'Loading analytics' })).toBeTruthy();
   await act(async () => resolve(analyticsFixture()));
   expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
-  expect(screen.getByLabelText('Cards reviewed today: 0')).toBeTruthy();
+  expect(screen.queryByLabelText('Cards reviewed today: 0')).toBeNull();
   expect(
-    screen.getByLabelText('Retention in the selected window: No review data yet'),
-  ).toBeTruthy();
+    screen.queryByLabelText('Retention in the selected window: No review data yet'),
+  ).toBeNull();
   expect(screen.getByText('No active cards to distribute.')).toBeTruthy();
   expect(
-    screen.getByLabelText('30-day review activity: 0 reviews across 0 active days.'),
-  ).toBeTruthy();
+    screen.queryByLabelText('30-day review activity: 0 reviews across 0 active days.'),
+  ).toBeNull();
 });
 
 test('analytics distinguishes an empty review history from real unreviewed active cards', async () => {
@@ -214,8 +214,8 @@ test('analytics distinguishes an empty review history from real unreviewed activ
   expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
   expect(screen.getByLabelText('Box 1: 1 active card')).toBeTruthy();
   expect(
-    screen.getByLabelText('Retention in the selected window: No review data yet'),
-  ).toBeTruthy();
+    screen.queryByLabelText('Retention in the selected window: No review data yet'),
+  ).toBeNull();
 });
 
 test('analytics presents real metrics, boxes and 7/30/90-day accessible chart summaries', async () => {
@@ -259,11 +259,13 @@ test('analytics allows retry after a repository error and refreshes when navigat
   expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Home tab' }));
   await screen.findByRole('header', { name: 'Welcome back' });
+  await waitFor(() => expect(load).toHaveBeenCalledWith(7));
+  const callsBeforeRefocus = load.mock.calls.length;
   fireEvent.press(screen.getByRole('button', { name: 'Analytics tab' }));
   expect(
     await screen.findByLabelText('30-day review activity: 3 reviews across 2 active days.'),
   ).toBeTruthy();
-  expect(load).toHaveBeenCalledTimes(3);
+  expect(load).toHaveBeenCalledTimes(callsBeforeRefocus + 1);
 });
 
 test.each(['light', 'dark', 'oled'] as const)(
@@ -862,7 +864,7 @@ test('Study tab starts an all-deck session, reveals answers and lets users leave
   const active = await application.getActiveStudySession();
   expect(active?.scope).toEqual({ kind: 'all-decks' });
   expect(rendered.getPathname()).toBe(`/study/${active!.id}`);
-  expect(screen.getByLabelText(/Card 1 of/)).toBeTruthy();
+  expect(screen.getByRole('progressbar', { name: /Card 1 of/ })).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Success' })).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
@@ -931,7 +933,8 @@ test('deck-specific session reveals examples, retries one failure, completes, an
   fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
   expect(announce).toHaveBeenCalledWith('Session complete. Every card is finished.');
-  expect(screen.getByText('Cards studied: 2')).toBeTruthy();
+  expect(screen.getByText('Cards studied')).toBeTruthy();
+  expect(screen.getByText('2')).toBeTruthy();
   expect(screen.getByText('Retries: 1')).toBeTruthy();
   expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(2);
   expect((await application.listReviewEvents({ cardId: first.cardId })).length).toBe(2);

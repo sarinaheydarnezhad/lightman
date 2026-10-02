@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import { FlatList, ScrollView, View } from 'react-native';
+import { BookOpen, Search } from 'lucide-react-native';
 
 import type { Card } from '@/features/study/domain/card';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { ErrorState } from '@/shared/ui/error-state';
 import { Input } from '@/shared/ui/input';
@@ -45,9 +47,10 @@ export function CardListScreen({ deckId }: { deckId: string }) {
         data={loading || error ? [] : cards}
         keyExtractor={(card) => card.id}
         renderItem={renderItem}
-        contentContainerClassName="gap-md pb-3xl"
+        contentContainerClassName="pb-3xl"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         ListHeaderComponent={
           <View className="gap-lg pb-md">
             <ScreenHeader
@@ -67,6 +70,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             {totalCount > 0 && !error ? (
               <Button
                 label={t('cards.add')}
+                variant="secondary"
                 onPress={() =>
                   router.push({
                     pathname: '/decks/[deckId]/cards/create',
@@ -91,10 +95,10 @@ export function CardListScreen({ deckId }: { deckId: string }) {
                   showsHorizontalScrollIndicator={false}
                 >
                   {[null, ...categories].map((value) => (
-                    <Button
+                    <Chip
                       key={value ?? 'all-categories'}
                       label={value ?? t('cards.allCategories')}
-                      variant={category === value ? 'primary' : 'secondary'}
+                      selected={category === value}
                       accessibilityState={{ selected: category === value }}
                       onPress={() => setCategory(value)}
                     />
@@ -130,6 +134,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
               <EmptyState
                 title={t(totalCount === 0 ? 'cards.empty' : 'cards.noMatch')}
                 description={t(totalCount === 0 ? 'cards.emptyHint' : 'cards.noMatchHint')}
+                icon={totalCount === 0 ? BookOpen : Search}
               />
               {totalCount > 0 ? (
                 <Button

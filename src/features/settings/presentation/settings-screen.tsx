@@ -1,7 +1,8 @@
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, Pressable, View } from 'react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { config } from '@/core/infrastructure/platform';
 import { localTime, type LocalTime } from '@/core/domain/values';
@@ -14,7 +15,8 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { useThemeMode } from '@/shared/theme/theme-provider';
+import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
+import { icons, interaction } from '@/shared/theme/tokens';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { appearanceChoices } from './appearance-options';
@@ -30,11 +32,11 @@ const permissionLabels: Record<NotificationPermissionState, MessageKey> = {
 
 function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <View className="gap-md">
+    <View className="gap-sm">
       <Text variant="headingSmall" accessibilityRole="header">
         {title}
       </Text>
-      {children}
+      <View>{children}</View>
     </View>
   );
 }
@@ -50,20 +52,40 @@ function SettingsRow({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const { t } = useLocalization();
-  return (
-    <Card
-      variant={onPress ? 'interactive' : 'default'}
-      disabled={disabled}
-      accessibilityLabel={onPress ? t('settings.choose', { label, detail }) : undefined}
-      onPress={onPress}
-      className="gap-xs"
-    >
+  const { t, direction } = useLocalization();
+  const colors = useThemeColors();
+  const Next = direction === 'rtl' ? ChevronLeft : ChevronRight;
+  const content = (
+    <View className="min-w-0 flex-1 gap-xs">
       <Text variant="labelLarge">{label}</Text>
       <Text variant="bodySmall" tone="secondary">
         {detail}
       </Text>
-    </Card>
+    </View>
+  );
+  if (!onPress) {
+    return (
+      <View className="min-h-listItem justify-center border-b border-border py-lg">{content}</View>
+    );
+  }
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t('settings.choose', { label, detail })}
+      disabled={disabled}
+      onPress={onPress}
+      className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
+      style={(state) =>
+        disabled
+          ? { opacity: interaction.disabledOpacity }
+          : state.pressed
+            ? { backgroundColor: colors.surfaceElevated }
+            : undefined
+      }
+    >
+      {content}
+      <Next color={colors.tertiaryText} size={icons.medium} />
+    </Pressable>
   );
 }
 
@@ -83,16 +105,23 @@ function SettingsSwitch({
   onChange: () => void;
 }) {
   const { t } = useLocalization();
+  const colors = useThemeColors();
   return (
-    <Card
-      variant="interactive"
+    <Pressable
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={description}
       accessibilityState={{ checked: value, busy }}
       disabled={busy || disabled}
       onPress={onChange}
-      className="flex-row items-center gap-lg"
+      className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
+      style={(state) =>
+        busy || disabled
+          ? { opacity: interaction.disabledOpacity }
+          : state.pressed
+            ? { backgroundColor: colors.surfaceElevated }
+            : undefined
+      }
     >
       <View className="min-w-0 flex-1 gap-xs">
         <Text variant="labelLarge">{label}</Text>
@@ -100,13 +129,20 @@ function SettingsSwitch({
           {description}
         </Text>
       </View>
-      <Text variant="labelLarge" tone="accent">
-        {t(value ? 'common.on' : 'common.off')}
-      </Text>
-    </Card>
+      <View
+        className={
+          value
+            ? 'rounded-full bg-primarySoft px-md py-xs'
+            : 'rounded-full bg-surfaceElevated px-md py-xs'
+        }
+      >
+        <Text variant="labelMedium" tone={value ? 'accent' : 'secondary'}>
+          {t(value ? 'common.on' : 'common.off')}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
-
 function timeAsDate(time: LocalTime): Date {
   const [hour, minute] = time.split(':').map(Number);
   const date = new Date();

@@ -2,7 +2,6 @@ import { useWindowDimensions, View } from 'react-native';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
-import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { ErrorState } from '@/shared/ui/error-state';
 import { LoadingState } from '@/shared/ui/loading-state';
@@ -19,7 +18,7 @@ const windows: AnalyticsWindow[] = [7, 30, 90];
 function BoxSummary({ distribution, total }: { distribution: BoxDistribution; total: number }) {
   const { t, number } = useLocalization();
   return (
-    <Card className="gap-md">
+    <View className="gap-md border-t border-border pt-xl">
       <Text variant="headingSmall" accessibilityRole="header">
         {t('analytics.boxes')}
       </Text>
@@ -47,7 +46,7 @@ function BoxSummary({ distribution, total }: { distribution: BoxDistribution; to
       ) : (
         <Text tone="secondary">{t('analytics.boxEmpty')}</Text>
       )}
-    </Card>
+    </View>
   );
 }
 
@@ -93,73 +92,79 @@ export function AnalyticsScreen() {
             ) : data.totalReviews === 0 ? (
               <Text tone="secondary">{t('analytics.noReviews')}</Text>
             ) : null}
-            <Card
-              className="gap-xs"
-              accessible
-              accessibilityLabel={t('analytics.streakA11y', {
-                current: t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
-                  count: number(data.currentStreak),
-                }),
-                best: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
-                  count: number(data.bestStreak),
-                }),
-              })}
-            >
-              <Text variant="bodySmall" tone="secondary">
-                {t('analytics.currentStreak')}
-              </Text>
-              <Text variant="headingLarge" className="flex-shrink">
-                {t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
-                  count: number(data.currentStreak),
-                })}
-              </Text>
-              <Text variant="bodySmall" tone="secondary">
-                {t('analytics.best', {
-                  count: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
-                    count: number(data.bestStreak),
-                  }),
-                })}
-              </Text>
-            </Card>
-            <View className={stackMetrics ? 'gap-md' : 'flex-row gap-md'}>
-              <Card
-                className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
-                accessible
-                accessibilityLabel={t('analytics.cardsTodayA11y', {
-                  count: number(data.cardsReviewedToday),
-                })}
-              >
-                <Text variant="bodySmall" tone="secondary">
-                  {t('analytics.cardsToday')}
-                </Text>
-                <Text variant="headingMedium" className="flex-shrink">
-                  {number(data.cardsReviewedToday)}
-                </Text>
-              </Card>
-              <Card
-                className={stackMetrics ? 'w-full gap-sm' : 'min-w-0 flex-1 gap-sm'}
-                accessible
-                accessibilityLabel={t('analytics.retentionA11y', {
-                  value:
-                    data.retentionRate === null
-                      ? t('analytics.noReviewData')
-                      : t('analytics.percent', { value: number(Math.round(data.retentionRate)) }),
-                })}
-              >
-                <Text variant="bodySmall" tone="secondary">
-                  {t('analytics.retention')}
-                </Text>
-                <Text variant="headingMedium">
-                  {data.retentionRate === null ? '—' : `${number(Math.round(data.retentionRate))}%`}
-                </Text>
-              </Card>
-            </View>
-            <ActivityChart
-              activity={data.dailyActivity}
-              window={analytics.window}
-              totalReviews={data.totalReviews}
-              activeDays={data.activeStudyDays}
-            />
+            {data.hasHistory ? (
+              <>
+                <View
+                  className="gap-xs border-b border-border pb-xl"
+                  accessible
+                  accessibilityLabel={t('analytics.streakA11y', {
+                    current: t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
+                      count: number(data.currentStreak),
+                    }),
+                    best: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
+                      count: number(data.bestStreak),
+                    }),
+                  })}
+                >
+                  <Text variant="bodySmall" tone="secondary">
+                    {t('analytics.currentStreak')}
+                  </Text>
+                  <Text variant="headingLarge">
+                    {t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
+                      count: number(data.currentStreak),
+                    })}
+                  </Text>
+                  <Text variant="bodySmall" tone="secondary">
+                    {t('analytics.best', {
+                      count: t(data.bestStreak === 1 ? 'common.day' : 'common.days', {
+                        count: number(data.bestStreak),
+                      }),
+                    })}
+                  </Text>
+                </View>
+                <View className={stackMetrics ? 'gap-xl' : 'flex-row gap-xl'}>
+                  <View
+                    className="min-w-0 flex-1 gap-xs"
+                    accessible
+                    accessibilityLabel={t('analytics.cardsTodayA11y', {
+                      count: number(data.cardsReviewedToday),
+                    })}
+                  >
+                    <Text variant="bodySmall" tone="secondary">
+                      {t('analytics.cardsToday')}
+                    </Text>
+                    <Text variant="headingMedium">{number(data.cardsReviewedToday)}</Text>
+                  </View>
+                  <View
+                    className="min-w-0 flex-1 gap-xs"
+                    accessible
+                    accessibilityLabel={t('analytics.retentionA11y', {
+                      value:
+                        data.retentionRate === null
+                          ? t('analytics.noReviewData')
+                          : t('analytics.percent', {
+                              value: number(Math.round(data.retentionRate)),
+                            }),
+                    })}
+                  >
+                    <Text variant="bodySmall" tone="secondary">
+                      {t('analytics.retention')}
+                    </Text>
+                    <Text variant="headingMedium">
+                      {data.retentionRate === null
+                        ? '—'
+                        : `${number(Math.round(data.retentionRate))}%`}
+                    </Text>
+                  </View>
+                </View>
+                <ActivityChart
+                  activity={data.dailyActivity}
+                  window={analytics.window}
+                  totalReviews={data.totalReviews}
+                  activeDays={data.activeStudyDays}
+                />
+              </>
+            ) : null}
             <BoxSummary distribution={data.boxDistribution} total={data.activeCardCount} />
             <Text tone="secondary" variant="bodySmall">
               {t('analytics.summary', {

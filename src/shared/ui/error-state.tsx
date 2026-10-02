@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { CircleAlert } from 'lucide-react-native';
 
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from './button';
@@ -17,8 +18,8 @@ export function ErrorState({
   const { t } = useLocalization();
   return (
     <View className="gap-md" accessibilityLiveRegion="polite">
-      <EmptyState title={title} description={description} />
-      <Button label={t('common.tryAgain')} onPress={onRetry} />
+      <EmptyState title={title} description={description} icon={CircleAlert} />
+      <Button label={t('common.tryAgain')} variant="secondary" onPress={onRetry} />
     </View>
   );
 }

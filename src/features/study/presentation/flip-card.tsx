@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -26,7 +26,7 @@ const flipTiming = { duration: 300, easing: Easing.inOut(Easing.cubic) };
 export function FlipCard(props: FlipCardProps) {
   const reduceMotion = useReducedMotion();
 
-  if (reduceMotion) {
+  if (reduceMotion || Platform.OS === 'web') {
     return (
       <Card className="min-h-studyCard flex-1" accessibilityLabel={props.accessibilityLabel}>
         {props.revealed ? props.back : props.front}

@@ -22,10 +22,10 @@ test('switches appearance from UserSettings and updates semantic values', async 
       <ThemeReading />
     </ThemeProvider>,
   );
-  expect(screen.getByText('light: #F7F8FA')).toBeTruthy();
+  expect(screen.getByText('light: #F8F7FA')).toBeTruthy();
 
   await act(async () => setTestTheme('dark'));
-  expect(screen.getByText('dark: #111723')).toBeTruthy();
+  expect(screen.getByText('dark: #191820')).toBeTruthy();
 
   await act(async () => setTestTheme('oled'));
   expect(screen.getByText('oled: #000000')).toBeTruthy();

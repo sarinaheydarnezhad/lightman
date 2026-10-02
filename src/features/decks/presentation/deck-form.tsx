@@ -14,6 +14,7 @@ import {
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
@@ -154,11 +155,10 @@ export function DeckForm({
           </Text>
           <View className="flex-row flex-wrap gap-sm">
             {([...languageChoices, { label: 'Other', tag: 'other' }] as const).map((choice) => (
-              <Button
+              <Chip
                 key={choice.tag}
                 label={choice.tag === 'other' ? t('form.other') : t(`language.${choice.tag}`)}
-                variant={languageChoice === choice.tag ? 'primary' : 'secondary'}
-                accessibilityState={{ selected: languageChoice === choice.tag }}
+                selected={languageChoice === choice.tag}
                 onPress={() => {
                   setLanguageChoice(choice.tag);
                   setLanguageError(null);
@@ -185,11 +185,10 @@ export function DeckForm({
           <Text variant="labelLarge">{t('form.alignment')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {(['ltr', 'rtl', 'center'] as const).map((choice) => (
-              <Button
+              <Chip
                 key={choice}
                 label={t(`form.alignment.${choice}`)}
-                variant={alignment === choice ? 'primary' : 'secondary'}
-                accessibilityState={{ selected: alignment === choice }}
+                selected={alignment === choice}
                 onPress={() => setAlignment(choice)}
               />
             ))}
@@ -199,11 +198,10 @@ export function DeckForm({
           <Text variant="labelLarge">{t('form.size')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {(['small', 'medium', 'large'] as const).map((choice) => (
-              <Button
+              <Chip
                 key={choice}
                 label={t(`form.size.${choice}`)}
-                variant={size === choice ? 'primary' : 'secondary'}
-                accessibilityState={{ selected: size === choice }}
+                selected={size === choice}
                 onPress={() => setSize(choice)}
               />
             ))}

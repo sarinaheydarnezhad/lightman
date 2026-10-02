@@ -45,9 +45,16 @@ test('foreground and background semantic pairs remain readable in every theme', 
       [colors.tertiaryText, colors.background],
       [colors.primaryText, colors.surface],
       [colors.primaryForeground, colors.primary],
+      [colors.primaryForeground, colors.primaryPressed],
+      [colors.primary, colors.primarySoft],
+      [colors.primary, colors.background],
       [colors.successForeground, colors.success],
       [colors.errorForeground, colors.error],
+      [colors.errorForeground, colors.errorPressed],
       [colors.warningForeground, colors.warning],
+      [colors.infoForeground, colors.info],
+      [colors.info, colors.background],
+      [colors.disabled, colors.surfaceElevated],
     ];
     for (const [foreground, background] of pairs) {
       const first = luminance(foreground!);

@@ -1,19 +1,19 @@
 import { ActivityIndicator, Pressable, type PressableProps } from 'react-native';
 import { useThemeColors } from '@/shared/theme/theme-provider';
-import { interaction } from '@/shared/theme/tokens';
 import { Text } from './text';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
   label: string;
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'destructive';
   loading?: boolean;
 };
 
 const appearance = {
-  primary: 'bg-primary border-primary',
-  secondary: 'bg-surface border-border',
-  tertiary: 'bg-transparent border-transparent',
-  destructive: 'bg-error border-error',
+  primary: 'bg-primary border-primary active:bg-primaryPressed',
+  secondary: 'bg-surface border-border active:bg-surfaceElevated',
+  tertiary: 'bg-transparent border-transparent active:bg-surfaceElevated',
+  ghost: 'bg-transparent border-transparent active:bg-surfaceElevated',
+  destructive: 'bg-error border-error active:bg-errorPressed',
 };
 
 export function Button({
@@ -27,8 +27,9 @@ export function Button({
 }: ButtonProps) {
   const colors = useThemeColors();
   const unavailable = disabled || loading;
-  const foreground =
-    variant === 'primary'
+  const foreground = disabled
+    ? colors.disabled
+    : variant === 'primary'
       ? colors.primaryForeground
       : variant === 'destructive'
         ? colors.errorForeground
@@ -39,34 +40,27 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ ...accessibilityState, disabled: unavailable, busy: loading }}
-      className={`min-h-button flex-row items-center justify-center gap-sm rounded-md border px-lg ${appearance[variant]}`}
-      style={(state) => [
-        typeof style === 'function' ? style(state) : style,
-        {
-          opacity: unavailable
-            ? interaction.disabledOpacity
-            : state.pressed
-              ? interaction.pressedOpacity
-              : 1,
-        },
-      ]}
+      className={`min-h-button flex-row items-center justify-center gap-sm rounded-md border px-lg ${disabled ? 'bg-surfaceElevated border-border' : appearance[variant]}`}
+      style={(state) => (typeof style === 'function' ? style(state) : style)}
       disabled={unavailable}
     >
       {loading ? <ActivityIndicator size="small" color={foreground} /> : null}
       {accessibilityState?.selected ? (
         <Text variant="labelLarge" style={{ color: foreground }} accessible={false}>
-          ✓
+          {'\u2713'}
         </Text>
       ) : null}
       <Text
         variant="labelLarge"
         className="flex-shrink text-center"
         tone={
-          variant === 'primary'
-            ? 'primaryForeground'
-            : variant === 'destructive'
-              ? 'errorForeground'
-              : 'primaryText'
+          disabled
+            ? 'disabled'
+            : variant === 'primary'
+              ? 'primaryForeground'
+              : variant === 'destructive'
+                ? 'errorForeground'
+                : 'primaryText'
         }
       >
         {label}

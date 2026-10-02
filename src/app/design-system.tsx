@@ -20,6 +20,7 @@ import { EmptyState } from '@/shared/ui/empty-state';
 import { IconButton } from '@/shared/ui/icon-button';
 import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
+import { Progress } from '@/shared/ui/progress';
 import { Screen } from '@/shared/ui/screen';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
@@ -54,7 +55,7 @@ export default function DesignSystemDemo() {
   const [sample, setSample] = useState('');
 
   return (
-    <Screen scroll edges={stackScreenEdges} testID="design-system-demo">
+    <Screen scroll keyboardAware edges={stackScreenEdges} testID="design-system-demo">
       <View className="gap-2xl">
         <View className="gap-sm">
           <Text variant="headingLarge">Design system</Text>
@@ -109,7 +110,7 @@ export default function DesignSystemDemo() {
           <Text variant="headingSmall">Actions</Text>
           <Button label="Primary" />
           <Button label="Secondary" variant="secondary" />
-          <Button label="Tertiary" variant="tertiary" />
+          <Button label="Ghost" variant="ghost" />
           <Button label="Destructive" variant="destructive" />
           <Button label="Loading" loading />
           <Button label="Disabled" disabled />
@@ -155,6 +156,7 @@ export default function DesignSystemDemo() {
             <Badge label="Success" variant="success" />
             <Badge label="Error" variant="error" />
             <Badge label="Warning" variant="warning" />
+            <Badge label="Info" variant="info" />
           </View>
           <Chip
             label="Select example"
@@ -177,6 +179,10 @@ export default function DesignSystemDemo() {
               onPress={() => setSelectedTab('examples')}
             />
             <Tab label="Disabled" disabled />
+          </View>
+          <View className="gap-sm">
+            <Text variant="labelMedium">Study progress · 62%</Text>
+            <Progress value={0.62} label="Study progress" />
           </View>
           <LoadingState label="Loading preview" />
           <EmptyState title="Nothing here yet" description="A quiet place for future content." />

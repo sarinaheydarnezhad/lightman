@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import { FlatList, View } from 'react-native';
+import { Layers3, Search } from 'lucide-react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
@@ -41,12 +42,17 @@ export function DecksScreen() {
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        contentContainerClassName="gap-md pb-3xl"
+        automaticallyAdjustKeyboardInsets
+        contentContainerClassName="pb-3xl"
         ListHeaderComponent={
           <View className="gap-lg pb-md">
             <ScreenHeader title={t('nav.decks')} description={t('decks.description')} />
             {totalCount > 0 ? (
-              <Button label={t('decks.create')} onPress={() => router.push('/decks/create')} />
+              <Button
+                label={t('decks.create')}
+                variant="secondary"
+                onPress={() => router.push('/decks/create')}
+              />
             ) : null}
             <Input
               label={t('decks.search')}
@@ -76,6 +82,7 @@ export function DecksScreen() {
               <EmptyState
                 title={t(search.trim() ? 'decks.noMatch' : 'decks.empty')}
                 description={t(search.trim() ? 'decks.noMatchHint' : 'decks.emptyHint')}
+                icon={search.trim() ? Search : Layers3}
               />
               {search.trim() && totalCount > 0 ? (
                 <Button
@@ -85,7 +92,11 @@ export function DecksScreen() {
                 />
               ) : null}
               {totalCount === 0 ? (
-                <Button label={t('decks.create')} onPress={() => router.push('/decks/create')} />
+                <Button
+                  label={t('decks.create')}
+                  variant="secondary"
+                  onPress={() => router.push('/decks/create')}
+                />
               ) : null}
             </View>
           )

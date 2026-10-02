@@ -39,7 +39,7 @@ export function IconButton({
       ]}
       disabled={disabled}
     >
-      <Icon color={color} size={icons.medium} accessible={false} />
+      <Icon color={color} size={icons.medium} />
     </Pressable>
   );
 }

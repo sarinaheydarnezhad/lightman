@@ -19,6 +19,7 @@ import { VocabularyHelper } from '@/features/vocabulary/presentation/vocabulary-
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { Card as Surface } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
@@ -207,7 +208,7 @@ export function CardForm({
                   <Text>{t('form.existingMeaning', { value: meaning })}</Text>
                   <Text tone="secondary">{t('form.meaningConflict')}</Text>
                   {(['keep', 'replace', 'append'] as const).map((choice) => (
-                    <Button
+                    <Chip
                       key={choice}
                       label={t(
                         choice === 'keep'
@@ -216,8 +217,7 @@ export function CardForm({
                             ? 'form.replaceMeaning'
                             : 'form.appendMeaning',
                       )}
-                      variant={meaningChoice === choice ? 'primary' : 'secondary'}
-                      accessibilityState={{ selected: meaningChoice === choice }}
+                      selected={meaningChoice === choice}
                       disabled={
                         choice === 'append' &&
                         !canAppendMeaning(meaning, pendingSuggestion.definition)
@@ -232,11 +232,10 @@ export function CardForm({
                   <Text>{t('form.existingPhonetic', { value: phonetic })}</Text>
                   <Text tone="secondary">{t('form.phoneticConflict')}</Text>
                   {(['keep', 'replace'] as const).map((choice) => (
-                    <Button
+                    <Chip
                       key={choice}
                       label={t(choice === 'keep' ? 'form.keepPhonetic' : 'form.replacePhonetic')}
-                      variant={phoneticChoice === choice ? 'primary' : 'secondary'}
-                      accessibilityState={{ selected: phoneticChoice === choice }}
+                      selected={phoneticChoice === choice}
                       onPress={() => setPhoneticChoice(choice)}
                     />
                   ))}
