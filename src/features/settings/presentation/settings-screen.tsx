@@ -315,6 +315,11 @@ export function SettingsScreen() {
 
             <SettingsSection title={t('settings.about')}>
               <SettingsRow
+                label={t('transfer.title')}
+                detail={t('transfer.description')}
+                onPress={() => router.push('/settings/transfer' as Href)}
+              />
+              <SettingsRow
                 label={t('sync.title')}
                 detail={t('sync.description')}
                 onPress={() => router.push('/settings/cloud' as Href)}

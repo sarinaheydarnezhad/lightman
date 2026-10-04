@@ -1,5 +1,23 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'transfer.title': 'Import / Export',
+  'transfer.description': 'Move cards locally using CSV, XLSX, or Anki APKG.',
+  'transfer.import': 'Import cards',
+  'transfer.importHint': 'Review a preview before saving. No existing cards are overwritten.',
+  'transfer.select': 'Select file',
+  'transfer.preview': 'Import preview',
+  'transfer.previewCounts':
+    'Format: {format}\nTotal cards: {total}\nNew cards: {new}\nDuplicates: {duplicates}\nInvalid rows: {invalid}',
+  'transfer.decks': 'Decks: {names}',
+  'transfer.confirmHint':
+    'New cards start in box 1. Anki scheduling, media, and tags are not stored by this card model.',
+  'transfer.confirm': 'Confirm import',
+  'transfer.summary':
+    'Imported: {imported}\nDuplicates skipped: {duplicates}\nInvalid / skipped rows: {invalid}',
+  'transfer.export': 'Export cards',
+  'transfer.exportHint': 'Choose a deck and format, then share or save the generated file.',
+  'transfer.allDecks': 'All decks',
+  'transfer.share': 'Share / Save file',
   'nav.home': 'Home',
   'nav.decks': 'Decks',
   'nav.study': 'Study',
@@ -378,6 +396,24 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'transfer.title': 'ورود / خروج فایل',
+  'transfer.description': 'انتقال محلی کارت‌ها با CSV، XLSX یا Anki APKG.',
+  'transfer.import': 'ورود کارت‌ها',
+  'transfer.importHint': 'پیش از ذخیره، پیش‌نمایش را بررسی کنید. کارت‌های موجود بازنویسی نمی‌شوند.',
+  'transfer.select': 'انتخاب فایل',
+  'transfer.preview': 'پیش‌نمایش ورود',
+  'transfer.previewCounts':
+    'قالب: {format}\nکل کارت‌ها: {total}\nکارت‌های جدید: {new}\nتکراری: {duplicates}\nردیف‌های نامعتبر: {invalid}',
+  'transfer.decks': 'دسته‌ها: {names}',
+  'transfer.confirmHint':
+    'کارت‌های جدید از جعبهٔ ۱ شروع می‌شوند. زمان‌بندی انکی، رسانه و برچسب‌ها در مدل کارت ذخیره نمی‌شوند.',
+  'transfer.confirm': 'تأیید ورود',
+  'transfer.summary':
+    'واردشده: {imported}\nتکراری‌های ردشده: {duplicates}\nردیف‌های نامعتبر / ردشده: {invalid}',
+  'transfer.export': 'خروج کارت‌ها',
+  'transfer.exportHint': 'دسته و قالب را انتخاب و فایل تولیدشده را ذخیره یا به اشتراک بگذارید.',
+  'transfer.allDecks': 'همهٔ دسته‌ها',
+  'transfer.share': 'اشتراک‌گذاری / ذخیرهٔ فایل',
   'nav.designSystem': 'سیستم طراحی',
   'nav.vocabulary': 'دستیار واژگان',
   'nav.home': 'خانه',
@@ -749,6 +785,24 @@ export const fa: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  'transfer.title': 'استيراد / تصدير',
+  'transfer.description': 'نقل البطاقات محليًا بصيغة CSV أو XLSX أو Anki APKG.',
+  'transfer.import': 'استيراد البطاقات',
+  'transfer.importHint': 'راجع المعاينة قبل الحفظ. لا تُستبدل البطاقات الموجودة.',
+  'transfer.select': 'اختيار ملف',
+  'transfer.preview': 'معاينة الاستيراد',
+  'transfer.previewCounts':
+    'الصيغة: {format}\nإجمالي البطاقات: {total}\nبطاقات جديدة: {new}\nمكررة: {duplicates}\nصفوف غير صالحة: {invalid}',
+  'transfer.decks': 'المجموعات: {names}',
+  'transfer.confirmHint':
+    'تبدأ البطاقات الجديدة في الصندوق ١. لا يخزن نموذج البطاقة جدولة Anki أو الوسائط أو الوسوم.',
+  'transfer.confirm': 'تأكيد الاستيراد',
+  'transfer.summary':
+    'تم استيراد: {imported}\nالمكررة المتخطاة: {duplicates}\nصفوف غير صالحة / متخطاة: {invalid}',
+  'transfer.export': 'تصدير البطاقات',
+  'transfer.exportHint': 'اختر مجموعة وصيغة ثم شارك الملف أو احفظه.',
+  'transfer.allDecks': 'جميع المجموعات',
+  'transfer.share': 'مشاركة / حفظ الملف',
   'nav.designSystem': 'نظام التصميم',
   'nav.vocabulary': 'مساعد المفردات',
   'nav.home': 'الرئيسية',

@@ -28,6 +28,7 @@ import Appearance from '@/app/settings/appearance';
 import SpeechSettings from '@/app/settings/speech';
 import LanguageSettings from '@/app/settings/language';
 import CloudSync from '@/app/settings/cloud';
+import Transfer from '@/app/settings/transfer';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
@@ -70,6 +71,12 @@ jest.mock('@/core/infrastructure/expo-local-notifications', () => ({
   clearLastNotificationResponse: jest.fn(),
 }));
 
+jest.mock('@/core/composition/transfer', () => ({
+  transferService: { preview: jest.fn(), confirm: jest.fn(), cancel: jest.fn(), export: jest.fn() },
+  selectTransferFile: jest.fn(),
+  shareTransferFile: jest.fn(),
+}));
+
 jest.mock('react-native-safe-area-context', () => {
   // Jest hoists the factory above imports.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -98,6 +105,7 @@ const routes = {
   'settings/speech': SpeechSettings,
   'settings/language': LanguageSettings,
   'settings/cloud': CloudSync,
+  'settings/transfer': Transfer,
   'design-system': DesignSystem,
 };
 
@@ -118,6 +126,13 @@ test('root layout renders the app and accessible tab navigation', async () => {
   }
   expect(screen.getByRole('button', { name: 'Home tab', selected: true })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/');
+});
+
+test('settings opens the local import/export route', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/settings' });
+  fireEvent.press(await screen.findByText('Import / Export'));
+  expect(await screen.findByRole('button', { name: 'Select file' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/settings/transfer');
 });
 
 test.each([

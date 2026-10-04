@@ -13,6 +13,16 @@ config.resolver.assetExts.push('wasm');
 const resolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (
+    ['node:fs', 'node:crypto'].includes(moduleName) &&
+    context.originModulePath.includes(path.join('sql.js', 'dist'))
+  ) {
+    return context.resolveRequest(
+      context,
+      path.join(__dirname, 'src/features/transfer/data/node-empty.js'),
+      platform,
+    );
+  }
+  if (
     platform === 'web' &&
     ['sqlite3-worker1.mjs', 'sqlite3-opfs-async-proxy.js'].includes(moduleName) &&
     context.originModulePath.includes(path.join('@sqlite.org', 'sqlite-wasm', 'dist'))

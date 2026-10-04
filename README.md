@@ -14,6 +14,13 @@ Install Node.js 22.13+ and pnpm 10.15.1 (for example, using Corepack), then run 
 
 Expo Go supports the app's local daily reminders. With Expo SDK 57 on Android, importing the `expo-notifications` package entry point also initializes unsupported push-token registration. The local-only imports are isolated in `src/core/infrastructure/expo-local-notifications.ts`; review that adapter when upgrading Expo. No push tokens or remote notifications are used. If an old Metro bundle still shows the import error, restart with `npx expo start --clear` and reopen the app.
 
+## Import / Export
+
+Open **Settings → Import / Export** to import CSV, XLSX, or real Anki APKG files,
+preview changes, and confirm before saving. Export one deck or all active decks in
+the same formats using local sharing/downloads. See `docs/import-export.md` for
+field mapping, duplicate rules, package compatibility, and verification.
+
 ## Architecture
 
 `src/app` contains only Expo Router routes and composition. `features/*/presentation` renders screens and loads them through `core/application` use cases; `domain` owns entities, validation, and repository contracts; `data` supplies replaceable adapters. `core/ports` holds shared contracts, `core/composition` binds them, `shared` holds UI primitives and theme, and `store` holds small session UI state. Presentation never imports data adapters. Domain and application use cases never import React Native, Expo, Zustand, or adapter implementations. The composition root can bind a future SQLite adapter without changing use cases, presentation, or domain.

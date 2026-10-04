@@ -114,6 +114,7 @@ function Navigation() {
         <Stack.Screen name="settings/language" options={{ title: t('settings.appLanguage') }} />
         <Stack.Screen name="settings/speech" options={{ title: t('nav.pronunciation') }} />
         <Stack.Screen name="settings/cloud" options={{ title: t('sync.title') }} />
+        <Stack.Screen name="settings/transfer" options={{ title: t('transfer.title') }} />
         <Stack.Screen name="+not-found" options={{ title: t('common.notFound') }} />
         <Stack.Screen name="design-system" options={{ title: t('nav.designSystem') }} />
       </Stack>

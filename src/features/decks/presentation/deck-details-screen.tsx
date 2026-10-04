@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 
 import { AppError } from '@/core/errors/app-error';
@@ -105,6 +105,13 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
         >
           <ScreenHeader title={deck.name} description={deck.description} />
+          <Button
+            label={t('transfer.export')}
+            variant="secondary"
+            onPress={() =>
+              router.push(`/settings/transfer?deckId=${encodeURIComponent(deckId)}` as Href)
+            }
+          />
           <Button
             label={t('study.start')}
             loading={study.starting}
