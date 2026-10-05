@@ -46,6 +46,7 @@ export function useDeckDetailsViewModel(deckId: string) {
       async () => ({
         deck: await application.getDeck(deckId),
         cardCount: await application.countActiveCardsForDeck(deckId),
+        distribution: await application.getDeckDistribution(deckId),
       }),
       [deckId],
     ),

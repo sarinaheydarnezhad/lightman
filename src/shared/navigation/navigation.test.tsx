@@ -962,6 +962,64 @@ test('deck-specific session reveals examples, retries one failure, completes, an
   expect(rendered.getPathname()).toContain('/study/');
 });
 
+test('deck settings persist the deck review system and deck details show scheduler-provided distribution', async () => {
+  const { deck } = await studyFixture(2);
+  renderRouter(routes, { initialUrl: `/decks/${deck.id}/edit` });
+  expect(await screen.findByText('Review System')).toBeTruthy();
+  expect(screen.getByText('This review system applies only to this deck.')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Leitner', selected: true })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'FSRS' })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Leitner' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
+  await screen.findByRole('header', { name: deck.name });
+  expect((await application.getDeck(deck.id)).reviewSystem).toBe('leitner');
+  expect(screen.getByRole('header', { name: 'Card distribution' })).toBeTruthy();
+  expect(screen.getByLabelText('Box 1: 2 active cards')).toBeTruthy();
+  for (const box of [2, 3, 4, 5])
+    expect(screen.getByLabelText(`Box ${box}: 0 active cards`)).toBeTruthy();
+});
+
+test('summary Review again opens only missed cards without reviewing them, then records one actual retry and ends normally', async () => {
+  const { deck, cards } = await studyFixture(2);
+  const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
+  for (const result of ['failure', 'success', 'success'] as const) {
+    const item = (await application.getCurrentStudyItem(session.id))!;
+    await application.submitStudyAnswer({
+      sessionId: session.id,
+      cardId: item.cardId,
+      presentationId: item.presentationId,
+      result,
+    });
+  }
+  const beforeEvents = await application.listReviewEvents({ deckId: deck.id });
+  const beforeState = await application.getReviewState(cards[0]!.id);
+  const rendered = renderRouter(routes, { initialUrl: `/study/${session.id}` });
+  expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+  expect(screen.getByLabelText('2 cards reviewed')).toBeTruthy();
+  expect(screen.getByText('1 correct')).toBeTruthy();
+  expect(screen.getByText('1 need more practice')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Review again' }));
+  expect(await screen.findByRole('header', { name: cards[0]!.frontText })).toBeTruthy();
+  const retry = (await application.getActiveStudySession())!;
+  expect(retry.initialQueue.map((item) => item.cardId)).toEqual([cards[0]!.id]);
+  expect(rendered.getPathname()).toBe(`/study/${retry.id}`);
+  expect(await application.listReviewEvents({ deckId: deck.id })).toEqual(beforeEvents);
+  expect(await application.getReviewState(cards[0]!.id)).toEqual(beforeState);
+  fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
+  expect(await application.listReviewEvents({ deckId: deck.id })).toEqual(beforeEvents);
+  fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
+  expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+  expect(screen.getByLabelText('1 card reviewed')).toBeTruthy();
+  expect(screen.getByText('0 correct')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Review again' })).toBeNull();
+  expect(await application.listReviewEvents({ deckId: deck.id })).toHaveLength(
+    beforeEvents.length + 1,
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+  expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
+  expect(await application.getActiveStudySession()).toBeNull();
+}, 20_000);
+
 test('empty scoped study is a normal state and offers deck navigation', async () => {
   const { deck } = await studyFixture(0);
   renderRouter(routes, { initialUrl: `/decks/${deck.id}` });

@@ -19,6 +19,7 @@ import { Text } from '@/shared/ui/text';
 import { deckAlignment, deckTypography } from './deck-presentation';
 import { useDeckActions, useDeckDetailsViewModel } from './use-decks-view-model';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
+import { ReviewDistribution } from '@/features/study/presentation/review-distribution';
 
 export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   const { t, number, language } = useLocalization();
@@ -135,6 +136,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               })}
             </Text>
           </View>
+          <ReviewDistribution distributions={[data.distribution]} />
           <Card className="gap-sm">
             <Text variant="labelLarge">{t('details.readingPreview')}</Text>
             <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>

@@ -238,12 +238,19 @@ const syncSchemaStatements = [
    SELECT ${syncUuid}, 'deck', id, 'archive', 'null', archived_at FROM decks WHERE archived_at IS NOT NULL`,
 ] as const;
 
+const schedulerSchemaStatements = [
+  "ALTER TABLE decks ADD COLUMN review_system TEXT NOT NULL DEFAULT 'leitner'",
+  "ALTER TABLE study_sessions ADD COLUMN workflow_json TEXT NOT NULL DEFAULT '{}'",
+  'ALTER TABLE card_review_state ADD COLUMN scheduler_state_json TEXT',
+  'ALTER TABLE review_events ADD COLUMN scheduler_json TEXT',
+] as const;
+
 export const migrations: readonly Migration[] = [
   { version: 1, statements: initialSchemaStatements },
   { version: 2, statements: productionSchemaStatements },
   { version: 3, statements: syncSchemaStatements },
+  { version: 4, statements: schedulerSchemaStatements },
 ];
-
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');
   let currentVersion = Number(result.rows[0]?.user_version ?? 0);

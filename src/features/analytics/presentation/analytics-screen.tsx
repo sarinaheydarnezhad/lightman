@@ -9,46 +9,12 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
-import type { AnalyticsWindow, BoxDistribution } from '../domain/analytics';
+import type { AnalyticsWindow } from '../domain/analytics';
+import { ReviewDistribution } from '@/features/study/presentation/review-distribution';
 import { ActivityChart } from './activity-chart';
 import { useAnalyticsViewModel } from './use-analytics-view-model';
 
 const windows: AnalyticsWindow[] = [7, 30, 90];
-
-function BoxSummary({ distribution, total }: { distribution: BoxDistribution; total: number }) {
-  const { t, number } = useLocalization();
-  return (
-    <View className="gap-md border-t border-border pt-xl">
-      <Text variant="headingSmall" accessibilityRole="header">
-        {t('analytics.boxes')}
-      </Text>
-      <Text variant="bodySmall" tone="secondary">
-        {t('analytics.boxesHint')}
-      </Text>
-      {total ? (
-        ([1, 2, 3, 4, 5] as const).map((box) => (
-          <View
-            key={box}
-            className="flex-row justify-between gap-md"
-            accessible
-            accessibilityLabel={t('analytics.boxA11y', {
-              box: number(box),
-              count: number(distribution[box]),
-              unit: t(distribution[box] === 1 ? 'analytics.cardUnit' : 'analytics.cardsUnit'),
-            })}
-          >
-            <Text className="min-w-0 flex-1">{t('analytics.box', { box: number(box) })}</Text>
-            <Text variant="labelLarge" className="flex-shrink">
-              {number(distribution[box])}
-            </Text>
-          </View>
-        ))
-      ) : (
-        <Text tone="secondary">{t('analytics.boxEmpty')}</Text>
-      )}
-    </View>
-  );
-}
 
 export function AnalyticsScreen() {
   const { t, number, language } = useLocalization();
@@ -165,7 +131,7 @@ export function AnalyticsScreen() {
                 />
               </>
             ) : null}
-            <BoxSummary distribution={data.boxDistribution} total={data.activeCardCount} />
+            <ReviewDistribution distributions={data.distribution} />
             <Text tone="secondary" variant="bodySmall">
               {t('analytics.summary', {
                 reviews: number(data.totalReviews),

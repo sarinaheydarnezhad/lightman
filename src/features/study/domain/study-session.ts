@@ -18,10 +18,11 @@ export interface StudyQueueItem {
   readonly cardId: string;
   readonly deckId: string;
   readonly dueDate: CalendarDate;
-  readonly box: LeitnerBox;
+  readonly box?: LeitnerBox;
 }
 
 export interface StudySession {
+  readonly sourceSessionId?: string | null;
   readonly id: string;
   readonly scope: StudyScope;
   readonly status: StudySessionStatus;
@@ -32,9 +33,12 @@ export interface StudySession {
   readonly initialQueue: readonly StudyQueueItem[];
   /** Initial failures, in first-failure order, appear at most once each. */
   readonly retryQueue: readonly StudyQueueItem[];
+  /** Unique cards failed during this session, in first-failure order. */
+  readonly missedQueue?: readonly StudyQueueItem[];
   /** Answered presentations; also the zero-based current position. */
   readonly currentIndex: number;
   readonly retrySuccesses: number;
+  readonly initialFailures?: number;
 }
 
 export function validateStudyScope(scope: StudyScope): StudyScope {
@@ -48,12 +52,17 @@ export function validateStudyQueueItem(item: StudyQueueItem): StudyQueueItem {
   requiredId(item.cardId, 'Card ID');
   requiredId(item.deckId, 'Deck ID');
   calendarDate(item.dueDate);
-  leitnerBox(item.box);
+  if (item.box !== undefined) leitnerBox(item.box);
   return { cardId: item.cardId, deckId: item.deckId, dueDate: item.dueDate, box: item.box };
 }
 
 export function validateStudySession(session: StudySession): StudySession {
   requiredId(session.id, 'Study session ID');
+  if (session.sourceSessionId) {
+    requiredId(session.sourceSessionId, 'Source session ID');
+    if (session.sourceSessionId === session.id || session.retryQueue.length)
+      throw new AppError('validation', 'Review-again sessions cannot recursively retry.');
+  }
   const scope = validateStudyScope(session.scope);
   if (!['not-started', 'in-progress', 'completed', 'cancelled'].includes(session.status))
     throw new AppError('validation', 'Invalid study session status.');
@@ -73,12 +82,26 @@ export function validateStudySession(session: StudySession): StudySession {
     throw new AppError('validation', 'Invalid study queue.');
   const initialQueue = session.initialQueue.map(validateStudyQueueItem);
   const retryQueue = session.retryQueue.map(validateStudyQueueItem);
+  if (session.missedQueue !== undefined && !Array.isArray(session.missedQueue))
+    throw new AppError('validation', 'Invalid missed-card queue.');
+  const missedQueue = session.missedQueue?.map(validateStudyQueueItem);
   const initialIds = new Set(initialQueue.map((item) => item.cardId));
   const initialById = new Map(initialQueue.map((item) => [item.cardId, item]));
   const retryIds = new Set(retryQueue.map((item) => item.cardId));
+  const missedIds = new Set((missedQueue ?? []).map((item) => item.cardId));
   if (
     initialIds.size !== initialQueue.length ||
     retryIds.size !== retryQueue.length ||
+    missedIds.size !== (missedQueue ?? []).length ||
+    (missedQueue ?? []).some((item) => {
+      const initial = initialById.get(item.cardId);
+      return (
+        !initial ||
+        item.deckId !== initial.deckId ||
+        item.dueDate !== initial.dueDate ||
+        item.box !== initial.box
+      );
+    }) ||
     retryQueue.some((item) => {
       const initial = initialById.get(item.cardId);
       return (
@@ -100,6 +123,14 @@ export function validateStudySession(session: StudySession): StudySession {
   )
     throw new AppError('validation', 'Invalid study position.');
   const answeredRetries = Math.max(0, session.currentIndex - initialQueue.length);
+  const initialFailures = session.initialFailures ?? retryQueue.length;
+  if (
+    !Number.isSafeInteger(initialFailures) ||
+    initialFailures < 0 ||
+    initialFailures > Math.min(session.currentIndex, initialQueue.length) ||
+    (!session.sourceSessionId && initialFailures !== retryQueue.length)
+  )
+    throw new AppError('validation', 'Invalid initial failure count.');
   if (
     !Number.isSafeInteger(session.retrySuccesses) ||
     session.retrySuccesses < 0 ||
@@ -120,5 +151,5 @@ export function validateStudySession(session: StudySession): StudySession {
     throw new AppError('validation', 'Cancelled study session requires a cancellation time.');
   if (session.status === 'not-started' && session.currentIndex !== 0)
     throw new AppError('validation', 'Unstarted session cannot have progress.');
-  return { ...session, scope, initialQueue, retryQueue };
+  return { ...session, scope, initialQueue, retryQueue, ...(missedQueue ? { missedQueue } : {}) };
 }

@@ -4,10 +4,20 @@ import type { ReviewRepository } from '@/features/study/domain/review-repository
 import type { StudySessionRepository } from '@/features/study/domain/study-session-repository';
 import type { SettingsRepository } from '@/features/settings/domain/settings-repository';
 import type { Card } from '@/features/study/domain/card';
-import type { CardReviewState } from '@/features/study/domain/review';
+import type { CardReviewState, ReviewEvent } from '@/features/study/domain/review';
+import type { StudySession } from '@/features/study/domain/study-session';
 
 export interface AtomicCardCreationRepository {
   createWithInitialReviewState(card: Card, state: CardReviewState): Promise<Card>;
+}
+
+export interface AtomicStudyAnswerRepository {
+  recordAnswer(
+    event: ReviewEvent,
+    state: CardReviewState,
+    session: StudySession,
+    expectedCurrentIndex: number,
+  ): Promise<StudySession>;
 }
 
 export interface Repositories {
@@ -17,4 +27,5 @@ export interface Repositories {
   readonly sessions: StudySessionRepository;
   readonly settings: SettingsRepository;
   readonly cardCreation?: AtomicCardCreationRepository;
+  readonly studyAnswers?: AtomicStudyAnswerRepository;
 }

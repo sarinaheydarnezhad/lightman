@@ -3,6 +3,8 @@ import { AppError } from '@/core/errors/app-error';
 import type { AppClock } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import { validateStudyScope } from '@/features/study/domain/study-session';
+import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
+import type { ReviewEngine } from '@/features/study/domain/review-engine';
 import {
   analyticsWindow,
   getStudySummary as calculateSummary,
@@ -16,6 +18,7 @@ export function createAnalyticsUseCases(
   repositories: Repositories,
   clock: AppClock,
   persistence: <T>(operation: () => Promise<T>) => Promise<T>,
+  reviewEngine: ReviewEngine = createReviewEngine(),
 ) {
   const { decks, cards, reviews } = repositories;
 
@@ -50,7 +53,16 @@ export function createAnalyticsUseCases(
       states.some((state) => !ids.has(state.cardId))
     )
       throw new AppError('not-found', 'Review state not found for an active card.');
-    return calculateSummary(events, states, range, today, currentInstant, timeZone);
+    const deckByCardId = new Map(activeCards.map((card) => [card.id, card.deckId]));
+    const distribution = reviewEngine.getDistribution(
+      activeDecks
+        .filter((deck) => !deck.archivedAt)
+        .map((deck) => ({
+          schedulerId: deck.reviewSystem,
+          states: states.filter((state) => deckByCardId.get(state.cardId) === deck.id),
+        })),
+    );
+    return calculateSummary(events, states, range, today, currentInstant, timeZone, distribution);
   }
 
   function getAnalyticsWindow(
@@ -80,6 +92,9 @@ export function createAnalyticsUseCases(
     },
     async getBoxDistribution(scope: AnalyticsScope = { kind: 'all-decks' }) {
       return (await getAnalyticsWindow(30, scope)).boxDistribution;
+    },
+    async getSchedulerDistribution(scope: AnalyticsScope = { kind: 'all-decks' }) {
+      return (await getAnalyticsWindow(30, scope)).distribution;
     },
     async getDailyActivity(range: AnalyticsRange, scope: AnalyticsScope = { kind: 'all-decks' }) {
       return (await loadSummary({ range, scope })).dailyActivity;

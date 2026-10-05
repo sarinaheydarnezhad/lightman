@@ -13,6 +13,8 @@ import {
   type ReviewEvent,
 } from '@/features/study/domain/review';
 import type { StudyScope } from '@/features/study/domain/study-session';
+import type { SchedulerDistributionGroup } from '@/features/study/domain/review-engine';
+import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
 
 export type AnalyticsWindow = 7 | 30 | 90;
 export type AnalyticsScope = StudyScope;
@@ -41,6 +43,7 @@ export interface StudySummary {
   readonly dailyActivity: readonly DailyReviewActivity[];
   readonly activeCardCount: number;
   readonly boxDistribution: BoxDistribution;
+  readonly distribution: readonly SchedulerDistributionGroup[];
 }
 
 export function analyticsWindow(today: CalendarDate, days: AnalyticsWindow): AnalyticsRange {
@@ -58,7 +61,11 @@ export function validateAnalyticsRange(range: AnalyticsRange): AnalyticsRange {
 
 export function getBoxDistribution(states: readonly CardReviewState[]): BoxDistribution {
   const counts: Record<LeitnerBox, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  for (const state of states) counts[validateReviewState(state).box]++;
+  for (const state of states) {
+    const valid = validateReviewState(state);
+    if ((!valid.schedulerState || valid.schedulerState.schedulerId === 'leitner') && valid.box)
+      counts[valid.box]++;
+  }
   return counts;
 }
 
@@ -158,6 +165,13 @@ export function getStudySummary(
   today: CalendarDate,
   currentInstant: Instant,
   timeZone: string,
+  distribution: readonly SchedulerDistributionGroup[] = createReviewEngine().getDistribution([
+    {
+      states: activeStates.filter(
+        (state) => !state.schedulerState || state.schedulerState.schedulerId === 'leitner',
+      ),
+    },
+  ]),
 ): StudySummary {
   const history = getDailyActivity(events, range, today, currentInstant, timeZone);
   const totalReviews = history.dailyActivity.reduce((total, day) => total + day.reviewCount, 0);
@@ -174,5 +188,6 @@ export function getStudySummary(
     activeStudyDays: history.dailyActivity.filter((day) => day.reviewCount > 0).length,
     activeCardCount: activeStates.length,
     boxDistribution: getBoxDistribution(activeStates),
+    distribution,
   };
 }

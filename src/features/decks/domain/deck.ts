@@ -10,6 +10,7 @@ import {
 
 export type DeckTextAlignment = 'ltr' | 'rtl' | 'center';
 export type TypographySize = 'small' | 'medium' | 'large';
+export type ReviewSystem = string;
 
 export interface Deck {
   readonly id: string;
@@ -18,6 +19,7 @@ export interface Deck {
   readonly language: LanguageTag;
   readonly textAlignment: DeckTextAlignment;
   readonly typographySize: TypographySize;
+  readonly reviewSystem?: ReviewSystem;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
   readonly archivedAt: Instant | null;
@@ -48,5 +50,6 @@ export function validateDeck(deck: Deck): Deck {
     if (deck.archivedAt < deck.createdAt)
       throw new AppError('validation', 'Archive date is out of order.');
   }
-  return { ...deck, name, description, language };
+  const reviewSystem = requiredId(deck.reviewSystem ?? 'leitner', 'Review system');
+  return { ...deck, name, description, language, reviewSystem };
 }

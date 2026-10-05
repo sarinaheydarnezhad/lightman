@@ -40,6 +40,7 @@ export function useStudySessionViewModel(sessionId: string) {
   const [swipeResetKey, setSwipeResetKey] = useState(0);
   const [cancelling, setCancelling] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  const [reviewingAgain, setReviewingAgain] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -216,6 +217,24 @@ export function useStudySessionViewModel(sessionId: string) {
     } else router.replace('/study');
   }, [session, progress, cancel]);
 
+  const reviewAgain = useCallback(async () => {
+    if (inFlight.current || !progress?.canReviewAgain) return;
+    inFlight.current = true;
+    setReviewingAgain(true);
+    setActionError(null);
+    try {
+      const retry = await application.reviewMissedCards(sessionId);
+      if (mounted.current)
+        router.replace({ pathname: '/study/[sessionId]', params: { sessionId: retry.id } });
+    } catch (cause) {
+      if (mounted.current)
+        setActionError(safeError(cause, 'Unable to review missed cards. Try again.'));
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setReviewingAgain(false);
+    }
+  }, [progress, sessionId]);
+
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (phase === 'loading') return true;
@@ -249,6 +268,8 @@ export function useStudySessionViewModel(sessionId: string) {
     error,
     actionError,
     start,
+    reviewAgain,
+    reviewingAgain,
     load,
     leave,
     cancel,

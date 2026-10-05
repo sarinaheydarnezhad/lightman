@@ -10,7 +10,7 @@ import { AppError } from '@/core/errors/app-error';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import type { Deck } from '@/features/decks/domain/deck';
-import { getDueReviewStates } from '../domain/leitner-srs';
+import type { ReviewEngine } from '../domain/review-engine';
 import { reviewResult, type ReviewResult } from '../domain/review';
 import {
   validateStudyScope,
@@ -30,11 +30,13 @@ import {
 export type { CurrentStudyItem, StudyProgress } from '../domain/study-session-workflow';
 
 interface StudyDependencies {
+  readonly reviewEngine: ReviewEngine;
   readonly repositories: Repositories;
   readonly clock: AppClock;
   readonly ids: IdGenerator;
   readonly getDeck: (id: string) => Promise<Deck>;
   readonly reviewCard: (input: ReviewCardInput) => Promise<ReviewCardOutput>;
+  readonly prepareReview: (input: ReviewCardInput) => Promise<ReviewCardOutput>;
   readonly persistence: <T>(operation: () => Promise<T>) => Promise<T>;
 }
 
@@ -52,7 +54,9 @@ export function createStudyUseCases({
   ids,
   getDeck,
   reviewCard,
+  prepareReview,
   persistence,
+  reviewEngine,
 }: StudyDependencies) {
   const { decks, cards, reviews, sessions } = repositories;
   const submitting = new Set<string>();
@@ -86,12 +90,32 @@ export function createStudyUseCases({
     }
     if (reviewStates.length !== deckIdByCardId.size)
       throw new AppError('not-found', 'Review state not found for an active card.');
-    return getDueReviewStates(reviewStates, targetDate).map((state) => ({
-      cardId: state.cardId,
-      deckId: deckIdByCardId.get(state.cardId)!,
-      dueDate: state.dueDate,
-      box: state.box,
-    }));
+    const dueStates = orderedDecks.flatMap((deck) =>
+      reviewEngine.getDueStates(
+        reviewStates.filter((state) => deckIdByCardId.get(state.cardId) === deck.id),
+        targetDate,
+        deck.reviewSystem,
+      ),
+    );
+    const deckById = new Map(orderedDecks.map((deck) => [deck.id, deck]));
+    const priority = (state: (typeof reviewStates)[number]) =>
+      reviewEngine.getQueuePriority(
+        state,
+        deckById.get(deckIdByCardId.get(state.cardId)!)!.reviewSystem,
+      );
+    return dueStates
+      .sort(
+        (first, second) =>
+          compareIds(first.dueDate, second.dueDate) ||
+          priority(first) - priority(second) ||
+          compareIds(first.cardId, second.cardId),
+      )
+      .map((state) => ({
+        cardId: state.cardId,
+        deckId: deckIdByCardId.get(state.cardId)!,
+        dueDate: state.dueDate,
+        box: state.box,
+      }));
   }
 
   async function getStudySession(sessionId: string): Promise<StudySession> {
@@ -118,6 +142,34 @@ export function createStudyUseCases({
       );
     },
     getStudySession,
+    async reviewMissedCards(sessionId: string): Promise<StudySession> {
+      const previous = await getStudySession(sessionId);
+      if (previous.status !== 'completed' || previous.sourceSessionId)
+        throw new AppError(
+          'conflict',
+          'Review again is available after an original completed session.',
+        );
+      if (await persistence(() => sessions.getActive()))
+        throw new AppError('conflict', 'Finish or cancel your current study session first.');
+      const missed = previous.missedQueue ?? previous.retryQueue;
+      const queue: StudyQueueItem[] = [];
+      for (const item of missed) {
+        const card = await persistence(() => cards.getById(item.cardId));
+        const deck = await persistence(() => decks.getById(item.deckId));
+        if (card && !card.archivedAt && deck && !deck.archivedAt && card.deckId === item.deckId) {
+          const state = await persistence(() => reviews.getState(card.id));
+          if (!state) throw new AppError('not-found', 'Review state not found.');
+          queue.push({ cardId: card.id, deckId: deck.id, dueDate: state.dueDate, box: state.box });
+        }
+      }
+      if (!queue.length)
+        throw new AppError('not-found', 'No missed cards are available to review.');
+      return persistence(() =>
+        sessions.create(
+          createSession(ids.create(), previous.scope, queue, now(clock), previous.id),
+        ),
+      );
+    },
     async getStudySnapshot(sessionId: string) {
       const session = await getStudySession(sessionId);
       return {
@@ -143,7 +195,7 @@ export function createStudyUseCases({
       try {
         const session = await getStudySession(input.sessionId);
         const item = assertCurrentStudyItem(session, input.cardId, input.presentationId);
-        const review = await reviewCard({
+        const review = await (repositories.studyAnswers ? prepareReview : reviewCard)({
           cardId: item.cardId,
           deckId: item.deckId,
           result: input.result,
@@ -155,7 +207,16 @@ export function createStudyUseCases({
           input.result,
           review.reviewEvent.reviewedAt,
         );
-        const saved = await persistence(() => sessions.update(next, session.currentIndex));
+        const saved = await persistence(() =>
+          repositories.studyAnswers
+            ? repositories.studyAnswers.recordAnswer(
+                review.reviewEvent,
+                review.updatedReviewState,
+                next,
+                session.currentIndex,
+              )
+            : sessions.update(next, session.currentIndex),
+        );
         return {
           session: saved,
           review,

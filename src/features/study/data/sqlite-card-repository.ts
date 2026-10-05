@@ -179,17 +179,18 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
           throw new AppError('validation', 'Card and review state IDs must match.');
         await this.insert(transaction, validCard);
         await transaction.execute(
-          `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             validState.cardId,
-            validState.box,
+            validState.box ?? 1,
             validState.dueDate,
             validState.lastReviewedAt,
             validState.consecutiveSuccesses,
             validState.totalReviews,
             validState.totalSuccesses,
             validState.updatedAt,
+            validState.schedulerState ? JSON.stringify(validState.schedulerState) : null,
           ],
         );
         return validCard;

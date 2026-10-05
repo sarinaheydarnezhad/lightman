@@ -443,3 +443,118 @@ test('unknown session and wrong deck scope fail cleanly without creating events'
   expect(scoped.status).toBe('completed');
   expect(await repos.reviews.listEvents()).toEqual([]);
 });
+
+test('missed cards are unique first failures, including cards recalled on their automatic retry', async () => {
+  const { app } = await setup(['A', 'B', 'C']);
+  const session = await app.startStudySession(all);
+  await answer(app, session.id, 'failure');
+  await answer(app, session.id, 'success');
+  await answer(app, session.id, 'failure');
+  await answer(app, session.id, 'success');
+  await answer(app, session.id, 'failure');
+  const completed = await app.getStudySession(session.id);
+  expect(completed.missedQueue?.map((item) => item.cardId)).toEqual(['A', 'C']);
+  expect(await app.getStudyProgress(session.id)).toMatchObject({
+    uniqueCardsStudied: 3,
+    successfulInitialAnswers: 1,
+    failedInitialAnswers: 2,
+    correctReviews: 2,
+    failedReviews: 3,
+    missedCardCount: 2,
+    canReviewAgain: true,
+  });
+});
+
+test('opening a missed-card session ignores due status and never changes states or creates review events', async () => {
+  const { app, repos } = await setup(['A', 'B']);
+  const session = await app.startStudySession(deckScope);
+  await answer(app, session.id, 'failure');
+  await answer(app, session.id, 'success');
+  await answer(app, session.id, 'success');
+  const states = await repos.reviews.listStates(['A', 'B']);
+  const events = await repos.reviews.listEvents();
+  expect(states[0]?.dueDate).toBe('2026-09-26');
+  const retry = await app.reviewMissedCards(session.id);
+  expect(retry.sourceSessionId).toBe(session.id);
+  expect(retry.initialQueue.map((item) => item.cardId)).toEqual(['A']);
+  expect(retry.retryQueue).toEqual([]);
+  await app.getStudySnapshot(retry.id);
+  expect(await repos.reviews.listStates(['A', 'B'])).toEqual(states);
+  expect(await repos.reviews.listEvents()).toEqual(events);
+  await expect(app.reviewMissedCards(session.id)).rejects.toMatchObject({ code: 'conflict' });
+});
+
+test('retry answers record exactly one event each, complete normally on failure, and cannot recursively retry', async () => {
+  const { app, repos } = await setup(['A', 'B']);
+  const session = await app.startStudySession(all);
+  await answer(app, session.id, 'failure');
+  await answer(app, session.id, 'success');
+  await answer(app, session.id, 'failure');
+  const retry = await app.reviewMissedCards(session.id);
+  const before = await repos.reviews.listEvents();
+  const current = (await app.getCurrentStudyItem(retry.id))!;
+  const result = await answer(app, retry.id, 'failure');
+  expect(result.session.status).toBe('completed');
+  expect(result.session.retryQueue).toEqual([]);
+  expect(result.progress).toMatchObject({
+    totalPresentations: 1,
+    uniqueCardsStudied: 1,
+    successfulInitialAnswers: 0,
+    failedInitialAnswers: 1,
+    failedReviews: 1,
+    canReviewAgain: false,
+  });
+  const events = await repos.reviews.listEvents();
+  expect(events).toHaveLength(before.length + 1);
+  expect(events.at(-1)).toMatchObject({ cardId: 'A', studySessionId: retry.id, result: 'failure' });
+  await expect(
+    app.submitStudyAnswer({
+      sessionId: retry.id,
+      cardId: current.cardId,
+      presentationId: current.presentationId,
+      result: 'success',
+    }),
+  ).rejects.toMatchObject({ code: 'conflict' });
+  await expect(app.reviewMissedCards(retry.id)).rejects.toMatchObject({ code: 'conflict' });
+  expect(await repos.reviews.listEvents()).toHaveLength(events.length);
+});
+
+test('retry can be cancelled normally, skips archived cards, and rejects active or successful-only sources', async () => {
+  const { app, repos } = await setup(['A', 'B']);
+  const session = await app.startStudySession(all);
+  await expect(app.reviewMissedCards(session.id)).rejects.toMatchObject({ code: 'conflict' });
+  for (const result of ['failure', 'failure', 'failure', 'failure'] as const)
+    await answer(app, session.id, result);
+  await repos.cards.archive('B', timestamp);
+  const retry = await app.reviewMissedCards(session.id);
+  expect(retry.initialQueue.map((item) => item.cardId)).toEqual(['A']);
+  await app.cancelStudySession(retry.id);
+  expect(await repos.reviews.listEvents()).toHaveLength(4);
+  expect(await app.getActiveStudySession()).toBeNull();
+  await repos.cards.archive('A', timestamp);
+  await expect(app.reviewMissedCards(session.id)).rejects.toMatchObject({ code: 'not-found' });
+  const successful = await setup(['C']);
+  const complete = await successful.app.startStudySession(all);
+  await answer(successful.app, complete.id, 'success');
+  await expect(successful.app.reviewMissedCards(complete.id)).rejects.toMatchObject({
+    code: 'not-found',
+  });
+});
+
+test('legacy completed sessions derive their missed list from saved failures after reload', async () => {
+  const { app, repos } = await setup(['A']);
+  const session = await app.startStudySession(all);
+  await answer(app, session.id, 'failure');
+  await answer(app, session.id, 'success');
+  const previous = await app.getStudySession(session.id);
+  jest
+    .spyOn(repos.sessions, 'getById')
+    .mockResolvedValueOnce({
+      ...previous,
+      missedQueue: undefined,
+      sourceSessionId: undefined,
+      initialFailures: undefined,
+    });
+  const retry = await app.reviewMissedCards(session.id);
+  expect(retry.initialQueue.map((item) => item.cardId)).toEqual(['A']);
+});

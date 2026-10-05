@@ -16,6 +16,7 @@ export function startStudySession(
   scope: StudyScope,
   initialQueue: readonly StudyQueueItem[],
   startedAt: Instant,
+  sourceSessionId: string | null = null,
 ): StudySession {
   const time = instant(startedAt);
   return validateStudySession({
@@ -27,6 +28,9 @@ export function startStudySession(
     cancelledAt: null,
     initialQueue,
     retryQueue: [],
+    missedQueue: [],
+    sourceSessionId,
+    initialFailures: 0,
     currentIndex: 0,
     retrySuccesses: 0,
   });
@@ -80,14 +84,23 @@ export function advanceStudySession(
   if (session.startedAt === null || reviewedAt < session.startedAt)
     throw new AppError('validation', 'Review time precedes the study session.');
   const retryQueue =
-    current.kind === 'initial' && result === 'failure'
+    current.kind === 'initial' && result === 'failure' && !session.sourceSessionId
       ? [...session.retryQueue, validateStudyQueueItem(current)]
       : session.retryQueue;
+  const missedQueue =
+    result === 'failure' &&
+    !(session.missedQueue ?? session.retryQueue).some((item) => item.cardId === current.cardId)
+      ? [...(session.missedQueue ?? session.retryQueue), validateStudyQueueItem(current)]
+      : (session.missedQueue ?? session.retryQueue);
   const currentIndex = session.currentIndex + 1;
   const completed = currentIndex === session.initialQueue.length + retryQueue.length;
   return validateStudySession({
     ...session,
     retryQueue,
+    missedQueue,
+    initialFailures:
+      (session.initialFailures ?? session.retryQueue.length) +
+      (current.kind === 'initial' && result === 'failure' ? 1 : 0),
     currentIndex,
     retrySuccesses:
       session.retrySuccesses + (current.kind === 'retry' && result === 'success' ? 1 : 0),
@@ -122,6 +135,10 @@ export interface StudyProgress {
   readonly retryCount: number;
   readonly finalSuccessCount: number;
   readonly durationMs: number | null;
+  readonly correctReviews: number;
+  readonly failedReviews: number;
+  readonly missedCardCount: number;
+  readonly canReviewAgain: boolean;
 }
 
 export function getStudyProgress(session: StudySession): StudyProgress {
@@ -129,7 +146,7 @@ export function getStudyProgress(session: StudySession): StudyProgress {
   const initialSize = valid.initialQueue.length;
   const initialAnswered = Math.min(valid.currentIndex, initialSize);
   const retries = Math.max(0, valid.currentIndex - initialSize);
-  const failedInitialAnswers = valid.retryQueue.length;
+  const failedInitialAnswers = valid.initialFailures ?? valid.retryQueue.length;
   const successfulInitialAnswers = initialAnswered - failedInitialAnswers;
   const end = valid.completedAt ?? valid.cancelledAt;
   return {
@@ -148,5 +165,12 @@ export function getStudyProgress(session: StudySession): StudyProgress {
     retryCount: retries,
     finalSuccessCount: successfulInitialAnswers + valid.retrySuccesses,
     durationMs: valid.startedAt && end ? durationInMilliseconds(valid.startedAt, end) : null,
+    correctReviews: successfulInitialAnswers + valid.retrySuccesses,
+    failedReviews: failedInitialAnswers + retries - valid.retrySuccesses,
+    missedCardCount: (valid.missedQueue ?? valid.retryQueue).length,
+    canReviewAgain:
+      valid.status === 'completed' &&
+      !valid.sourceSessionId &&
+      (valid.missedQueue ?? valid.retryQueue).length > 0,
   };
 }

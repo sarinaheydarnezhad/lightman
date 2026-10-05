@@ -21,6 +21,7 @@ export function makeDeck(changes: Partial<Deck> = {}): Deck {
     language: languageTag('en'),
     textAlignment: 'ltr',
     typographySize: 'medium',
+    reviewSystem: 'leitner',
     createdAt: timestamp,
     updatedAt: timestamp,
     archivedAt: null,

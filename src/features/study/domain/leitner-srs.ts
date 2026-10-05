@@ -12,6 +12,7 @@ import {
   reviewResult,
   validateReviewEvent,
   validateReviewState,
+  validateLeitnerReviewState,
   type CardReviewState,
   type LeitnerBox,
   type ReviewEvent,
@@ -77,7 +78,7 @@ export function calculateReviewTransition(
   reviewedAt: Instant,
   policy: LeitnerIntervalPolicy = defaultLeitnerIntervalPolicy,
 ): ReviewTransition {
-  const previous = validateReviewState(current);
+  const previous = validateLeitnerReviewState(current);
   reviewResult(result);
   calendarDate(reviewDate);
   instant(reviewedAt);
@@ -120,7 +121,7 @@ export function getDueReviewStates(
 ): CardReviewState[] {
   calendarDate(targetDate);
   return states
-    .map(validateReviewState)
+    .map(validateLeitnerReviewState)
     .filter((state) => isCardDue(state.dueDate, targetDate))
     .sort(
       (a, b) =>

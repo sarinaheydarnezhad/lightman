@@ -6,7 +6,6 @@ import { CircleCheck, X } from 'lucide-react-native';
 import { Badge } from '@/shared/ui/badge';
 import { speech } from '@/core/composition/speech';
 import { Button } from '@/shared/ui/button';
-import { Card } from '@/shared/ui/card';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { ErrorState } from '@/shared/ui/error-state';
@@ -17,6 +16,7 @@ import { Screen } from '@/shared/ui/screen';
 import { Text } from '@/shared/ui/text';
 import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
+import { StudyResultSummary } from './study-result-summary';
 import { useStudySessionViewModel } from './use-study-session-view-model';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
@@ -108,7 +108,6 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
     );
   }
   if (study.phase === 'completed' && session && progress) {
-    const minutes = Math.ceil((progress.durationMs ?? 0) / 60000);
     return (
       <Screen scroll>
         <View className="min-h-0 flex-1 justify-center gap-xl pb-xl">
@@ -117,29 +116,19 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             description={t('study.completeHint')}
             icon={CircleCheck}
           />
-          <Card className="gap-lg">
-            <View className="gap-xs">
-              <Text variant="headingLarge">{number(progress.uniqueCardsStudied)}</Text>
-              <Text variant="bodySmall" tone="secondary">
-                {t('study.cardsStudiedLabel')}
-              </Text>
-            </View>
-            <View className="flex-row flex-wrap gap-lg border-t border-border pt-lg">
-              <Text variant="bodySmall" tone="secondary">
-                {t('study.retries', { count: number(progress.retryCount) })}
-              </Text>
-              <Text variant="bodySmall" tone="secondary">
-                {t('study.time', {
-                  value:
-                    minutes < 1
-                      ? t('study.underMinute')
-                      : t(minutes === 1 ? 'study.minute' : 'study.minutes', {
-                          count: number(minutes),
-                        }),
-                })}
-              </Text>
-            </View>
-          </Card>
+          <StudyResultSummary progress={progress} />
+          {study.actionError ? (
+            <Text tone="error" accessibilityLiveRegion="polite">
+              {language === 'en' ? study.actionError : t('common.genericError')}
+            </Text>
+          ) : null}
+          {progress.canReviewAgain ? (
+            <Button
+              label={t('review.again')}
+              loading={study.reviewingAgain}
+              onPress={() => void study.reviewAgain()}
+            />
+          ) : null}
           {study.start.error ? (
             <Text tone="error" accessibilityLiveRegion="polite">
               {language === 'en' ? study.start.error : t('common.genericError')}

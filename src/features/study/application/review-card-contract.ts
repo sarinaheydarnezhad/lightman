@@ -1,4 +1,4 @@
-import type { ReviewTransition } from '../domain/leitner-srs';
+import type { SchedulerTransition } from '../domain/review-engine';
 import type { ReviewEvent, ReviewResult } from '../domain/review';
 
 export interface ReviewCardInput {
@@ -8,6 +8,8 @@ export interface ReviewCardInput {
   readonly studySessionId: string | null;
 }
 
-export interface ReviewCardOutput extends ReviewTransition {
+export interface ReviewCardOutput extends SchedulerTransition {
+  readonly previousBox?: ReviewEvent['previousBox'];
+  readonly newBox?: ReviewEvent['newBox'];
   readonly reviewEvent: ReviewEvent;
 }

@@ -3,6 +3,7 @@ import { requiredId } from '@/core/domain/values';
 import {
   validateReviewEvent,
   validateReviewState,
+  assertReviewRecord,
   type CardReviewState,
   type ReviewEvent,
 } from '../domain/review';
@@ -16,14 +17,14 @@ export class InMemoryReviewRepository implements ReviewRepository {
   async getState(cardId: string): Promise<CardReviewState | null> {
     requiredId(cardId, 'Card ID');
     const state = this.states.get(cardId);
-    return state ? { ...state } : null;
+    return state ? validateReviewState(state) : null;
   }
 
   async listStates(cardIds: readonly string[]): Promise<CardReviewState[]> {
     return cardIds.flatMap((id) => {
       requiredId(id, 'Card ID');
       const state = this.states.get(id);
-      return state ? [{ ...state }] : [];
+      return state ? [validateReviewState(state)] : [];
     });
   }
 
@@ -33,7 +34,7 @@ export class InMemoryReviewRepository implements ReviewRepository {
     if (existing && valid.updatedAt < existing.updatedAt)
       throw new AppError('conflict', 'Review state is older than the saved state.');
     this.states.set(valid.cardId, { ...valid });
-    return { ...valid };
+    return validateReviewState(valid);
   }
 
   async addEvent(event: ReviewEvent): Promise<ReviewEvent> {
@@ -49,16 +50,7 @@ export class InMemoryReviewRepository implements ReviewRepository {
     const previous = this.states.get(validState.cardId);
     if (this.events.has(validEvent.id))
       throw new AppError('conflict', 'Review event already exists.');
-    if (
-      validState.cardId !== validEvent.cardId ||
-      validState.box !== validEvent.newBox ||
-      (previous &&
-        (previous.box !== validEvent.previousBox ||
-          validState.totalReviews !== previous.totalReviews + 1)) ||
-      (!previous && (validEvent.previousBox !== 1 || validState.totalReviews !== 1))
-    ) {
-      throw new AppError('validation', 'Review event and state disagree.');
-    }
+    assertReviewRecord(validEvent, validState, previous ?? null);
     this.states.set(validState.cardId, { ...validState });
     this.events.set(validEvent.id, validEvent);
   }

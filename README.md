@@ -23,6 +23,10 @@ field mapping, duplicate rules, package compatibility, and verification.
 
 ## Architecture
 
+Per-deck review systems, scheduler contracts, distributions, session summaries, and
+missed-card retries are documented in `docs/review-system.md`. Leitner remains the
+only implemented scheduler; existing scheduling state and review history are preserved.
+
 `src/app` contains only Expo Router routes and composition. `features/*/presentation` renders screens and loads them through `core/application` use cases; `domain` owns entities, validation, and repository contracts; `data` supplies replaceable adapters. `core/ports` holds shared contracts, `core/composition` binds them, `shared` holds UI primitives and theme, and `store` holds small session UI state. Presentation never imports data adapters. Domain and application use cases never import React Native, Expo, Zustand, or adapter implementations. The composition root can bind a future SQLite adapter without changing use cases, presentation, or domain.
 
 ## Performance rules

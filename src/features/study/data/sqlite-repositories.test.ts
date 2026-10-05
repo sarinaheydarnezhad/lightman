@@ -67,7 +67,7 @@ function cardRow(card = makeCard()) {
 function stateRow(state = makeState()) {
   return {
     card_id: state.cardId,
-    box: state.box,
+    box: state.box ?? 1,
     due_date: state.dueDate,
     last_reviewed_at: state.lastReviewedAt,
     consecutive_successes: state.consecutiveSuccesses,
@@ -82,8 +82,8 @@ function eventRow(event = makeEvent()) {
     id: event.id,
     card_id: event.cardId,
     deck_id: event.deckId,
-    previous_box: event.previousBox,
-    new_box: event.newBox,
+    previous_box: event.previousBox ?? 1,
+    new_box: event.newBox ?? 1,
     result: event.result,
     reviewed_at: event.reviewedAt,
     study_session_id: event.studySessionId,
@@ -255,6 +255,11 @@ test('SQLite study-session repository maps a completed transition', async () => 
           retry_queue_json: JSON.stringify(session.retryQueue),
           current_index: session.currentIndex,
           retry_successes: session.retrySuccesses,
+          workflow_json: JSON.stringify({
+            missedQueue: session.missedQueue,
+            sourceSessionId: session.sourceSessionId,
+            initialFailures: session.initialFailures,
+          }),
         },
       ],
       rowsAffected: 1,

@@ -32,6 +32,12 @@ function mapSession(source: ReturnType<typeof row>): StudySession | null {
     retryQueue: json<StudySession['retryQueue']>(source, 'retry_queue_json'),
     currentIndex: integer(source, 'current_index'),
     retrySuccesses: integer(source, 'retry_successes'),
+    ...(nullableText(source, 'workflow_json')
+      ? json<Pick<StudySession, 'missedQueue' | 'sourceSessionId' | 'initialFailures'>>(
+          source,
+          'workflow_json',
+        )
+      : {}),
   });
 }
 
@@ -40,12 +46,12 @@ function writeSession(
   session: StudySession,
 ): Promise<unknown> {
   return database.execute(
-    `INSERT INTO study_sessions (id, scope_json, status, started_at, completed_at, cancelled_at, initial_queue_json, retry_queue_json, current_index, retry_successes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO study_sessions (id, scope_json, status, started_at, completed_at, cancelled_at, initial_queue_json, retry_queue_json, current_index, retry_successes, workflow_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET scope_json = excluded.scope_json, status = excluded.status, started_at = excluded.started_at,
        completed_at = excluded.completed_at, cancelled_at = excluded.cancelled_at,
        initial_queue_json = excluded.initial_queue_json, retry_queue_json = excluded.retry_queue_json,
-       current_index = excluded.current_index, retry_successes = excluded.retry_successes`,
+       current_index = excluded.current_index, retry_successes = excluded.retry_successes, workflow_json = excluded.workflow_json`,
     [
       session.id,
       JSON.stringify(session.scope),
@@ -57,6 +63,11 @@ function writeSession(
       JSON.stringify(session.retryQueue),
       session.currentIndex,
       session.retrySuccesses,
+      JSON.stringify({
+        missedQueue: session.missedQueue,
+        sourceSessionId: session.sourceSessionId,
+        initialFailures: session.initialFailures,
+      }),
     ],
   );
 }
@@ -115,6 +126,7 @@ export class SQLiteStudySessionRepository implements StudySessionRepository {
           throw new AppError('conflict', 'Study session changed during this answer.');
         if (
           previous.startedAt !== valid.startedAt ||
+          previous.sourceSessionId !== valid.sourceSessionId ||
           JSON.stringify(previous.scope) !== JSON.stringify(valid.scope) ||
           JSON.stringify(previous.initialQueue) !== JSON.stringify(valid.initialQueue)
         )
@@ -127,7 +139,7 @@ export class SQLiteStudySessionRepository implements StudySessionRepository {
         )
           throw new AppError('conflict', 'Study retry history cannot be changed.');
         const result = await transaction.execute(
-          `UPDATE study_sessions SET scope_json = ?, status = ?, started_at = ?, completed_at = ?, cancelled_at = ?, initial_queue_json = ?, retry_queue_json = ?, current_index = ?, retry_successes = ?
+          `UPDATE study_sessions SET scope_json = ?, status = ?, started_at = ?, completed_at = ?, cancelled_at = ?, initial_queue_json = ?, retry_queue_json = ?, current_index = ?, retry_successes = ?, workflow_json = ?
            WHERE id = ? AND status = 'in-progress' AND current_index = ?`,
           [
             JSON.stringify(valid.scope),
@@ -139,6 +151,11 @@ export class SQLiteStudySessionRepository implements StudySessionRepository {
             JSON.stringify(valid.retryQueue),
             valid.currentIndex,
             valid.retrySuccesses,
+            JSON.stringify({
+              missedQueue: valid.missedQueue,
+              sourceSessionId: valid.sourceSessionId,
+              initialFailures: valid.initialFailures,
+            }),
             valid.id,
             expectedCurrentIndex,
           ],

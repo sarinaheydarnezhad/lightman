@@ -44,6 +44,7 @@ export class InMemoryStudySessionRepository implements StudySessionRepository {
       throw new AppError('conflict', 'Study session changed during this answer.');
     if (
       previous.startedAt !== valid.startedAt ||
+      previous.sourceSessionId !== valid.sourceSessionId ||
       JSON.stringify(previous.scope) !== JSON.stringify(valid.scope) ||
       JSON.stringify(previous.initialQueue) !== JSON.stringify(valid.initialQueue)
     )

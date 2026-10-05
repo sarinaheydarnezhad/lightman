@@ -20,6 +20,7 @@ function mapDeck(source: ReturnType<typeof row>): Deck | null {
     language: text(source, 'language') as Deck['language'],
     textAlignment: text(source, 'text_alignment') as Deck['textAlignment'],
     typographySize: text(source, 'typography_size') as Deck['typographySize'],
+    reviewSystem: (nullableText(source, 'review_system') || 'leitner') as Deck['reviewSystem'],
     createdAt: instant(text(source, 'created_at')),
     updatedAt: instant(text(source, 'updated_at')),
     archivedAt: nullableText(source, 'archived_at')
@@ -64,8 +65,8 @@ export class SQLiteDeckRepository implements DeckRepository {
       if (valid.archivedAt !== null)
         throw new AppError('validation', 'Cannot create an archived deck.');
       await this.database.execute(
-        `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, created_at, updated_at, archived_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, review_system, created_at, updated_at, archived_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           valid.id,
           valid.name,
@@ -73,6 +74,7 @@ export class SQLiteDeckRepository implements DeckRepository {
           valid.language,
           valid.textAlignment,
           valid.typographySize,
+          valid.reviewSystem ?? 'leitner',
           valid.createdAt,
           valid.updatedAt,
           valid.archivedAt,
@@ -95,7 +97,7 @@ export class SQLiteDeckRepository implements DeckRepository {
       )
         throw new AppError('conflict', 'Deck history cannot be changed.');
       const result = await this.database.execute(
-        `UPDATE decks SET name = ?, description = ?, language = ?, text_alignment = ?, typography_size = ?, updated_at = ?
+        `UPDATE decks SET name = ?, description = ?, language = ?, text_alignment = ?, typography_size = ?, review_system = ?, updated_at = ?
            WHERE id = ? AND archived_at IS NULL`,
         [
           valid.name,
@@ -103,6 +105,7 @@ export class SQLiteDeckRepository implements DeckRepository {
           valid.language,
           valid.textAlignment,
           valid.typographySize,
+          valid.reviewSystem ?? 'leitner',
           valid.updatedAt,
           valid.id,
         ],

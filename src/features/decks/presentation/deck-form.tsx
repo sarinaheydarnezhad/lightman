@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Keyboard, TextInput, View } from 'react-native';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
+import { application } from '@/core/composition/application';
 import { languageTag } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 import { haptics } from '@/core/composition/haptics';
@@ -43,6 +44,7 @@ export function DeckForm({
   const [customLanguage, setCustomLanguage] = useState(initialChoice ? '' : initialTag);
   const [alignment, setAlignment] = useState<DeckTextAlignment>(existing?.textAlignment ?? 'ltr');
   const [size, setSize] = useState<TypographySize>(existing?.typographySize ?? 'medium');
+  const [reviewSystem, setReviewSystem] = useState(existing?.reviewSystem ?? 'leitner');
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [languageError, setLanguageError] = useState<string | null>(null);
@@ -102,6 +104,7 @@ export function DeckForm({
         language: validLanguage,
         textAlignment: alignment,
         typographySize: size,
+        reviewSystem,
       });
     } catch (cause) {
       if (mounted.current) {
@@ -203,6 +206,22 @@ export function DeckForm({
                 label={t(`form.size.${choice}`)}
                 selected={size === choice}
                 onPress={() => setSize(choice)}
+              />
+            ))}
+          </View>
+        </View>
+        <View className="gap-sm">
+          <Text variant="labelLarge">{t('review.system')}</Text>
+          <Text tone="secondary" variant="bodySmall">
+            {t('review.deckHint')}
+          </Text>
+          <View className="flex-row flex-wrap gap-sm">
+            {application.listSchedulers().map((scheduler) => (
+              <Chip
+                key={scheduler.id}
+                label={scheduler.localizedLabels?.[language] ?? scheduler.label}
+                selected={reviewSystem === scheduler.id}
+                onPress={() => setReviewSystem(scheduler.id)}
               />
             ))}
           </View>

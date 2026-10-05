@@ -1,5 +1,16 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'review.system': 'Review System',
+  'review.deckHint': 'This review system applies only to this deck.',
+  'review.distribution': 'Card distribution',
+  'review.distributionHint': 'Active cards in each state of the selected review system.',
+  'review.sectionA11y': '{label}: {count} active {unit}',
+  'review.cardsReviewed': '{count} cards reviewed',
+  'review.cardReviewed': '{count} card reviewed',
+  'review.initialRecall': 'First-pass recall',
+  'review.correct': '{count} correct',
+  'review.failed': '{count} need more practice',
+  'review.again': 'Review again',
   'transfer.title': 'Import / Export',
   'transfer.description': 'Move cards locally using CSV, XLSX, or Anki APKG.',
   'transfer.import': 'Import cards',
@@ -396,6 +407,17 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'review.system': 'سیستم مرور',
+  'review.deckHint': 'این سیستم مرور فقط برای این دسته اعمال می‌شود.',
+  'review.distribution': 'توزیع کارت‌ها',
+  'review.distributionHint': 'کارت‌های فعال در هر مرحله از سیستم مرور انتخاب‌شده.',
+  'review.sectionA11y': '{label}: {count} کارت فعال',
+  'review.cardsReviewed': '{count} کارت مرور شد',
+  'review.cardReviewed': '{count} کارت مرور شد',
+  'review.initialRecall': 'یادآوری در نوبت اول',
+  'review.correct': '{count} پاسخ درست',
+  'review.failed': '{count} نیازمند تمرین بیشتر',
+  'review.again': 'مرور دوباره',
   'transfer.title': 'ورود / خروج فایل',
   'transfer.description': 'انتقال محلی کارت‌ها با CSV، XLSX یا Anki APKG.',
   'transfer.import': 'ورود کارت‌ها',
@@ -785,6 +807,17 @@ export const fa: Dictionary = {
 };
 
 export const ar: Dictionary = {
+  'review.system': 'نظام المراجعة',
+  'review.deckHint': 'يُطبق نظام المراجعة هذا على هذه المجموعة فقط.',
+  'review.distribution': 'توزيع البطاقات',
+  'review.distributionHint': 'البطاقات النشطة في كل مرحلة من نظام المراجعة المحدد.',
+  'review.sectionA11y': '{label}: {count} بطاقات نشطة',
+  'review.cardsReviewed': 'تمت مراجعة {count} بطاقات',
+  'review.cardReviewed': 'تمت مراجعة {count} بطاقة',
+  'review.initialRecall': 'التذكر في المحاولة الأولى',
+  'review.correct': '{count} إجابات صحيحة',
+  'review.failed': '{count} تحتاج إلى مزيد من التدريب',
+  'review.again': 'مراجعة مرة أخرى',
   'transfer.title': 'استيراد / تصدير',
   'transfer.description': 'نقل البطاقات محليًا بصيغة CSV أو XLSX أو Anki APKG.',
   'transfer.import': 'استيراد البطاقات',

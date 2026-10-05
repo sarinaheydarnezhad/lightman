@@ -3,6 +3,7 @@ import type { Database, DatabaseTransaction } from '@/core/database/database';
 import {
   databaseOperation,
   integer,
+  json,
   nullableText,
   row,
   text,
@@ -18,6 +19,7 @@ import {
 import {
   validateReviewEvent,
   validateReviewState,
+  assertReviewRecord,
   type CardReviewState,
   type ReviewEvent,
 } from '../domain/review';
@@ -25,9 +27,14 @@ import type { ReviewRepository } from '../domain/review-repository';
 
 function mapState(source: ReturnType<typeof row>): CardReviewState | null {
   if (!source) return null;
+  const schedulerState = nullableText(source, 'scheduler_state_json')
+    ? json<NonNullable<CardReviewState['schedulerState']>>(source, 'scheduler_state_json')
+    : undefined;
   return validateReviewState({
     cardId: text(source, 'card_id'),
-    box: integer(source, 'box') as CardReviewState['box'],
+    ...(schedulerState && schedulerState.schedulerId !== 'leitner'
+      ? { schedulerState }
+      : { box: integer(source, 'box') as CardReviewState['box'] }),
     dueDate: calendarDate(text(source, 'due_date')) as CalendarDate,
     lastReviewedAt: nullableText(source, 'last_reviewed_at')
       ? instant(nullableText(source, 'last_reviewed_at')!)
@@ -45,8 +52,15 @@ function mapEvent(source: ReturnType<typeof row>): ReviewEvent | null {
     id: text(source, 'id'),
     cardId: text(source, 'card_id'),
     deckId: text(source, 'deck_id'),
-    previousBox: integer(source, 'previous_box') as ReviewEvent['previousBox'],
-    newBox: integer(source, 'new_box') as ReviewEvent['newBox'],
+    ...(nullableText(source, 'scheduler_json')
+      ? json<Pick<ReviewEvent, 'schedulerId' | 'previousState' | 'newState'>>(
+          source,
+          'scheduler_json',
+        )
+      : {
+          previousBox: integer(source, 'previous_box') as ReviewEvent['previousBox'],
+          newBox: integer(source, 'new_box') as ReviewEvent['newBox'],
+        }),
     result: text(source, 'result') as ReviewEvent['result'],
     reviewedAt: instant(text(source, 'reviewed_at')),
     studySessionId: nullableText(source, 'study_session_id'),
@@ -103,20 +117,21 @@ export class SQLiteReviewRepository implements ReviewRepository {
       if (existing && valid.updatedAt < existing.updatedAt)
         throw new AppError('conflict', 'Review state is older than the saved state.');
       await this.database.execute(
-        `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date, last_reviewed_at = excluded.last_reviewed_at,
              consecutive_successes = excluded.consecutive_successes, total_reviews = excluded.total_reviews,
-             total_successes = excluded.total_successes, updated_at = excluded.updated_at`,
+             total_successes = excluded.total_successes, updated_at = excluded.updated_at, scheduler_state_json = excluded.scheduler_state_json`,
         [
           valid.cardId,
-          valid.box,
+          valid.box ?? 1,
           valid.dueDate,
           valid.lastReviewedAt,
           valid.consecutiveSuccesses,
           valid.totalReviews,
           valid.totalSuccesses,
           valid.updatedAt,
+          valid.schedulerState ? JSON.stringify(valid.schedulerState) : null,
         ],
       );
       return valid;
@@ -148,15 +163,7 @@ export class SQLiteReviewRepository implements ReviewRepository {
         );
         if (existingEvent.rows.length)
           throw new AppError('conflict', 'Review event already exists.');
-        if (
-          validState.cardId !== validEvent.cardId ||
-          validState.box !== validEvent.newBox ||
-          (previous &&
-            (previous.box !== validEvent.previousBox ||
-              validState.totalReviews !== previous.totalReviews + 1)) ||
-          (!previous && (validEvent.previousBox !== 1 || validState.totalReviews !== 1))
-        )
-          throw new AppError('validation', 'Review event and state disagree.');
+        assertReviewRecord(validEvent, validState, previous);
         await this.writeState(transaction, validState);
         await this.insertEvent(transaction, validEvent);
       },
@@ -211,20 +218,21 @@ export class SQLiteReviewRepository implements ReviewRepository {
     state: CardReviewState,
   ): Promise<unknown> {
     return database.execute(
-      `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date, last_reviewed_at = excluded.last_reviewed_at,
          consecutive_successes = excluded.consecutive_successes, total_reviews = excluded.total_reviews,
-         total_successes = excluded.total_successes, updated_at = excluded.updated_at`,
+         total_successes = excluded.total_successes, updated_at = excluded.updated_at, scheduler_state_json = excluded.scheduler_state_json`,
       [
         state.cardId,
-        state.box,
+        state.box ?? 1,
         state.dueDate,
         state.lastReviewedAt,
         state.consecutiveSuccesses,
         state.totalReviews,
         state.totalSuccesses,
         state.updatedAt,
+        state.schedulerState ? JSON.stringify(state.schedulerState) : null,
       ],
     );
   }
@@ -234,17 +242,24 @@ export class SQLiteReviewRepository implements ReviewRepository {
     event: ReviewEvent,
   ): Promise<unknown> {
     return database.execute(
-      `INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         event.id,
         event.cardId,
         event.deckId,
-        event.previousBox,
-        event.newBox,
+        event.previousBox ?? 1,
+        event.newBox ?? 1,
         event.result,
         event.reviewedAt,
         event.studySessionId,
+        event.schedulerId && event.schedulerId !== 'leitner'
+          ? JSON.stringify({
+              schedulerId: event.schedulerId,
+              previousState: event.previousState,
+              newState: event.newState,
+            })
+          : null,
       ],
     );
   }
