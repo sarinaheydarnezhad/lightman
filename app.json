@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "Lightman",
-    "slug": "lightman",
-    "scheme": "lightman",
+    "name": "Lerona",
+    "slug": "lerona",
+    "scheme": "lerona",
+    "icon": "./assets/icon.jpg",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.example.lightman",
+      "bundleIdentifier": "com.example.lerona",
       "buildNumber": "1",
       "deploymentTarget": "16.4",
       "privacyManifests": {
@@ -29,7 +30,7 @@
       }
     },
     "android": {
-      "package": "com.example.lightman",
+      "package": "com.example.lerona",
       "versionCode": 1,
       "allowBackup": false,
       "blockedPermissions": [

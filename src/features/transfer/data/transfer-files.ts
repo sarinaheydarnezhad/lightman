@@ -43,7 +43,7 @@ export async function selectTransferFile(): Promise<{
 }
 
 export async function shareTransferFile(format: TransferFormat, bytes: Uint8Array) {
-  const name = `lightman-${new Date().toISOString().replace(/[:.]/g, '-')}.${format}`;
+  const name = `lerona-${new Date().toISOString().replace(/[:.]/g, '-')}.${format}`;
   if (Platform.OS === 'web') {
     const blob = new Blob([new Uint8Array(bytes).buffer], { type: mimeTypes[format] });
     const uri = URL.createObjectURL(blob);

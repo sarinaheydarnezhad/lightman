@@ -3,7 +3,7 @@ import appConfig from './app.json';
 describe('native release configuration', () => {
   it('declares release metadata and supported native settings', () => {
     expect(appConfig.expo.ios).toMatchObject({
-      bundleIdentifier: 'com.example.lightman',
+      bundleIdentifier: 'com.example.lerona',
       buildNumber: '1',
       deploymentTarget: '16.4',
       supportsTablet: true,
@@ -35,7 +35,7 @@ describe('native release configuration', () => {
 
   it('pins Android release settings and blocks broad storage permissions', () => {
     expect(appConfig.expo.android).toMatchObject({
-      package: 'com.example.lightman',
+      package: 'com.example.lerona',
       versionCode: 1,
       allowBackup: false,
       blockedPermissions: [

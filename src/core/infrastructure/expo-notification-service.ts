@@ -31,7 +31,7 @@ import {
   type NotificationService,
 } from '@/core/ports/notification';
 
-const reminderKey = 'lightman.daily-study-reminder';
+const reminderKey = 'lerona.daily-study-reminder';
 const channelId = 'study-reminder';
 let lastHandledResponse: string | null = null;
 

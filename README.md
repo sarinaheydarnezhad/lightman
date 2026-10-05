@@ -1,10 +1,10 @@
-# Lightman
+# Lerona
 
 Offline flashcard app. Business data flows through use cases and repository interfaces; SQLite persists decks, reviews, sessions, and settings locally. Zustand holds only transient UI state.
 
 ## Open on a device or in a browser
 
-The app stores decks and settings in OP SQLite. Expo Go does not include this native module, so install a development build on your phone. For a connected Android device with USB debugging enabled and the Android SDK installed, run `pnpm exec expo run:android --device`, then open the installed Lightman app. On a Mac with Xcode, use `pnpm exec expo run:ios --device` for an iPhone. After installing the build, run `pnpm start --dev-client` and open it from the development client; rebuild when native dependencies change. A QR code opened in Expo Go will not load this database.
+The app stores decks and settings in OP SQLite. Expo Go does not include this native module, so install a development build on your phone. For a connected Android device with USB debugging enabled and the Android SDK installed, run `pnpm exec expo run:android --device`, then open the installed Lerona app. On a Mac with Xcode, use `pnpm exec expo run:ios --device` for an iPhone. After installing the build, run `pnpm start --dev-client` and open it from the development client; rebuild when native dependencies change. A QR code opened in Expo Go will not load this database.
 
 For a browser, run `pnpm web`. The web database uses SQLite WASM and the browser's origin private file system. Serve deployed web pages with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` on the HTML document as well as web assets. Expo Router is configured with these headers for EAS Hosting; other hosts need matching server rules. Use a browser with OPFS support and a secure origin (localhost or HTTPS). The pnpm patch for OP SQLite starts its web worker in classic mode, matching Expo Metro worker bundles.
 

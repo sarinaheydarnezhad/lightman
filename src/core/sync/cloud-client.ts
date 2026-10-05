@@ -8,7 +8,7 @@ interface Tokens {
   readonly accessExpiresAtUtc: string;
 }
 
-const tokenKey = 'lightman.cloud.credentials.v1';
+const tokenKey = 'lerona.cloud.credentials.v1';
 
 export class CloudError extends Error {
   constructor(readonly status: number, readonly conflict?: SyncConflict) {

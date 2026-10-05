@@ -46,7 +46,7 @@ export class OpSqliteDatabase implements Database {
   private database: DB | null = null;
   private initialization: Promise<void> | null = null;
 
-  constructor(private readonly name = 'lightman.db') {}
+  constructor(private readonly name = 'lerona.db') {}
 
   initialize(): Promise<void> {
     if (!this.initialization) {

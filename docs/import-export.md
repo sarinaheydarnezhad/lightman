@@ -28,7 +28,7 @@ a new development/release build, rather than only refreshing JavaScript.
 - A missing/empty Deck cell uses the source filename without its extension.
   XLSX scans all worksheets for a recognized header row, ignoring unrelated sheets.
 - APKG export writes a real ZIP archive containing a schema-11 SQLite
-  `collection.anki2`, an empty `media` map, deck metadata, a five-field Lightman
+  `collection.anki2`, an empty `media` map, deck metadata, a five-field Lerona
   note type, and new Anki cards. Mobile uses the existing native SQLite engine on
   temporary cache files, opened read-only during import and deleted after use.
   Web uses sql.js's self-contained asm.js build. There is no extra application

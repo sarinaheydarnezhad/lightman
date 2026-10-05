@@ -285,7 +285,7 @@ test('APKG contains an actual SQLite Anki schema, valid note type, cards, and me
     expect(database.exec('SELECT count(*) FROM revlog')[0]?.values).toEqual([[0]]);
     const models = JSON.parse(String(database.exec('SELECT models FROM col')[0]?.values[0]?.[0]));
     expect(Object.values(models)[0]).toMatchObject({
-      name: 'Lightman',
+      name: 'Lerona',
       type: 0,
       tmpls: [{ qfmt: '{{Front}}' }],
     });

@@ -546,7 +546,7 @@ test('tapping the local reminder enters the normal all-decks study flow', async 
         date: 123450,
         request: {
           identifier: 'study-tap',
-          content: { data: { reminderKey: 'lightman.daily-study-reminder' } },
+          content: { data: { reminderKey: 'lerona.daily-study-reminder' } },
         },
       },
     } as never),
@@ -562,7 +562,7 @@ test('a cold-start reminder tap is consumed after navigation becomes ready', asy
       date: 123451,
       request: {
         identifier: 'cold-study-tap',
-        content: { data: { reminderKey: 'lightman.daily-study-reminder' } },
+        content: { data: { reminderKey: 'lerona.daily-study-reminder' } },
       },
     },
   } as never);

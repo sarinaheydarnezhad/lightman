@@ -11,7 +11,7 @@ export const idGenerator: IdGenerator = { create: randomUUID };
 export const config: AppConfig = {
   environment: __DEV__ ? 'development' : 'production',
   dictionaryApiBaseUrl: 'https://api.dictionaryapi.dev/api/v2',
-  appName: Constants.expoConfig?.name ?? 'Lightman',
+  appName: Constants.expoConfig?.name ?? 'Lerona',
   appVersion: Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? null,
   buildNumber:
     Constants.nativeBuildVersion ??

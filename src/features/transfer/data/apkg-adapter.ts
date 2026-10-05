@@ -269,7 +269,7 @@ export const apkgAdapter: TransferAdapter = {
       };
       const model = {
         id: modelId,
-        name: 'Lightman',
+        name: 'Lerona',
         type: 0,
         mod: seconds,
         usn: -1,

@@ -53,7 +53,7 @@ function reminder(id: string, time = '09:00', owned = true) {
     content: {
       title: 'Time to study',
       body: 'You have cards waiting for review.',
-      data: { reminderKey: owned ? 'lightman.daily-study-reminder' : 'other', uiLanguage: 'en' },
+      data: { reminderKey: owned ? 'lerona.daily-study-reminder' : 'other', uiLanguage: 'en' },
     },
     trigger: { type: 'daily', hour, minute },
   } as never;
