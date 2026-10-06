@@ -968,7 +968,11 @@ test('deck settings persist the deck review system and deck details show schedul
   expect(await screen.findByText('Review System')).toBeTruthy();
   expect(screen.getByText('This review system applies only to this deck.')).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Leitner', selected: true })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'FSRS' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'SM-2' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Explain review systems' }));
+  expect(await screen.findByText('Review systems')).toBeTruthy();
+  expect(screen.getByText(/SM-2 adjusts the next review/)).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
   fireEvent.press(screen.getByRole('button', { name: 'Leitner' }));
   fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
   await screen.findByRole('header', { name: deck.name });
@@ -977,6 +981,16 @@ test('deck settings persist the deck review system and deck details show schedul
   expect(screen.getByLabelText('Box 1: 2 active cards')).toBeTruthy();
   for (const box of [2, 3, 4, 5])
     expect(screen.getByLabelText(`Box ${box}: 0 active cards`)).toBeTruthy();
+});
+
+test('new empty decks can select and persist SM-2 from the deck form', async () => {
+  const { deck } = await studyFixture(0);
+  renderRouter(routes, { initialUrl: `/decks/${deck.id}/edit` });
+  expect(await screen.findByRole('button', { name: 'Leitner', selected: true })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'SM-2' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
+  await screen.findByRole('header', { name: deck.name });
+  expect((await application.getDeck(deck.id)).reviewSystem).toBe('sm2');
 });
 
 test('summary Review again opens only missed cards without reviewing them, then records one actual retry and ends normally', async () => {

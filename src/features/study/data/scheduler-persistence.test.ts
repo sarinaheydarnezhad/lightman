@@ -109,7 +109,7 @@ integrationTest(
         ],
       );
       const before = await database.execute('SELECT * FROM card_review_state');
-      expect(await runMigrations(database)).toBe(4);
+      expect(await runMigrations(database)).toBe(5);
       expect((await repositories.decks.getById(deck.id))?.reviewSystem).toBe('leitner');
       expect(await repositories.reviews.getState(card.id)).toMatchObject({
         box: 3,
@@ -120,7 +120,7 @@ integrationTest(
         before.rows[0]!,
       );
       expect(await repositories.reviews.listEvents()).toEqual([event]);
-      expect(await runMigrations(database)).toBe(4);
+      expect(await runMigrations(database)).toBe(5);
     } finally {
       database.connection.close();
     }

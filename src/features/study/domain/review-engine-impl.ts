@@ -1,11 +1,12 @@
 import { LeitnerScheduler } from './leitner-scheduler';
+import { Sm2Scheduler } from './sm2-scheduler';
 import { AppError } from '@/core/errors/app-error';
 import { requiredId } from '@/core/domain/values';
 import type { CardReviewState } from './review';
 import type { ReviewEngine, Scheduler } from './review-engine';
 
 export function createReviewEngine(
-  schedulers: readonly Scheduler[] = [LeitnerScheduler],
+  schedulers: readonly Scheduler[] = [LeitnerScheduler, Sm2Scheduler],
 ): ReviewEngine {
   const registered = [...schedulers];
   const schedulerIds = registered.map((scheduler) => requiredId(scheduler.id, 'Scheduler ID'));

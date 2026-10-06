@@ -2,6 +2,7 @@ import { createApplication } from '@/core/application/create-application';
 import { makeDeck, makeRepositories, fixedClock, sequenceIds } from '@/../test/fixtures';
 import { testScheduler } from '@/../test/scheduler-fixture';
 import { LeitnerScheduler } from '../domain/leitner-scheduler';
+import { Sm2Scheduler } from '../domain/sm2-scheduler';
 import { createReviewEngine } from '../domain/review-engine-impl';
 
 const cardInput = {
@@ -95,4 +96,35 @@ test('scheduler selection persists per empty deck and distribution excludes arch
   expect(
     (await app.getDeckDistribution('deck-1')).sections.every((section) => section.count === 0),
   ).toBe(true);
+});
+
+test('SM-2 can be selected for a new deck and is used for its cards and reviews', async () => {
+  const repos = makeRepositories();
+  const app = createApplication(
+    repos,
+    fixedClock,
+    sequenceIds(),
+    undefined,
+    createReviewEngine([LeitnerScheduler, Sm2Scheduler]),
+  );
+  await app.createDeck({
+    name: 'SM-2 deck',
+    description: '',
+    language: 'en' as never,
+    textAlignment: 'ltr',
+    typographySize: 'medium',
+    reviewSystem: 'sm2',
+  });
+  const deck = await app.getDeck('generated-1');
+  expect(deck.reviewSystem).toBe('sm2');
+  const card = await app.createCard({ ...cardInput, deckId: deck.id });
+  expect((await app.getReviewState(card.id))?.schedulerState).toMatchObject({ schedulerId: 'sm2' });
+  const review = await app.reviewCard({
+    cardId: card.id,
+    deckId: deck.id,
+    result: 'success',
+    studySessionId: null,
+  });
+  expect(review.reviewEvent).toMatchObject({ schedulerId: 'sm2', previousState: 'new', newState: 'learning' });
+  expect((await app.getReviewState(card.id))?.dueDate).toBe('2026-09-25');
 });

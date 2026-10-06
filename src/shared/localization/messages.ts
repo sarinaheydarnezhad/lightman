@@ -2,6 +2,11 @@
 export const en = {
   'review.system': 'Review System',
   'review.deckHint': 'This review system applies only to this deck.',
+  'review.infoButton': 'Explain review systems',
+  'review.infoTitle': 'Review systems',
+  'review.infoClose': 'Close',
+  'review.leitnerDescription': 'Cards move up one box when you remember them and return to box 1 when you struggle. Higher boxes are reviewed less often.',
+  'review.sm2Description': 'SM-2 adjusts the next review based on how well you remembered the card. Cards you remember well are shown less often, while cards you struggle with return sooner.',
   'review.distribution': 'Card distribution',
   'review.distributionHint': 'Active cards in each state of the selected review system.',
   'review.sectionA11y': '{label}: {count} active {unit}',

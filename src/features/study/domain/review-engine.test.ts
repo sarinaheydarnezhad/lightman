@@ -3,14 +3,15 @@ import { makeState, timestamp } from '@/../test/fixtures';
 import { testScheduler } from '@/../test/scheduler-fixture';
 import { calculateReviewTransition, createReviewEvent, getDueReviewStates } from './leitner-srs';
 import { LeitnerScheduler } from './leitner-scheduler';
+import { Sm2Scheduler } from './sm2-scheduler';
 import { createReviewEngine } from './review-engine-impl';
 
 const day = calendarDate('2026-09-24');
 
-test('only implemented schedulers are listed, legacy selection defaults to Leitner, and unknown IDs fail safely', () => {
+test('implemented schedulers are listed, legacy selection defaults to Leitner, and unknown IDs fail safely', () => {
   const engine = createReviewEngine();
   expect(engine.getScheduler()).toBe(LeitnerScheduler);
-  expect(engine.listSchedulers().map(({ id }) => id)).toEqual(['leitner']);
+  expect(engine.listSchedulers().map(({ id }) => id)).toEqual(['leitner', 'sm2']);
   expect(() => engine.getScheduler('fsrs')).toThrow('not available');
   expect(() => createReviewEngine([LeitnerScheduler, LeitnerScheduler])).toThrow();
   expect(() => createReviewEngine([testScheduler])).toThrow();

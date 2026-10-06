@@ -2,7 +2,7 @@
 
 Study use cases call the generic `ReviewEngine`. It selects a registered `Scheduler`
 using the deck's persisted `reviewSystem` ID. The production registry currently
-contains only `LeitnerScheduler`; no FSRS implementation or unavailable UI option
+contains `LeitnerScheduler` and `Sm2Scheduler`; no FSRS implementation or unavailable UI option
 is included. Missing selections on existing decks default to `leitner`. Unknown
 selections fail explicitly rather than silently running a different algorithm.
 

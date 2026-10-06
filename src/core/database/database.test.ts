@@ -36,8 +36,8 @@ class FailingMigrationDatabase extends RecordingDatabase {
 test('fresh migration applies every schema version transactionally', async () => {
   const database = new RecordingDatabase([{ rows: [{ user_version: 0 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(4);
-  expect(database.transactionCount).toBe(4);
+  await expect(runMigrations(database)).resolves.toBe(5);
+  expect(database.transactionCount).toBe(5);
   expect(database.calls.some(({ sql }) => sql.includes('CREATE TABLE IF NOT EXISTS decks'))).toBe(
     true,
   );
@@ -51,8 +51,8 @@ test('fresh migration applies every schema version transactionally', async () =>
 test('version one upgrade preserves rows through the production schema rebuild', async () => {
   const database = new RecordingDatabase([{ rows: [{ user_version: 1 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(4);
-  expect(database.transactionCount).toBe(3);
+  await expect(runMigrations(database)).resolves.toBe(5);
+  expect(database.transactionCount).toBe(4);
   expect(
     database.calls.some(
       ({ sql }) => sql === 'ALTER TABLE review_states RENAME TO review_states_v1',
@@ -74,9 +74,9 @@ test('version one upgrade preserves rows through the production schema rebuild',
 });
 
 test('migration runner skips an already current database', async () => {
-  const database = new RecordingDatabase([{ rows: [{ user_version: 4 }], rowsAffected: 0 }]);
+  const database = new RecordingDatabase([{ rows: [{ user_version: 5 }], rowsAffected: 0 }]);
 
-  await expect(runMigrations(database)).resolves.toBe(4);
+  await expect(runMigrations(database)).resolves.toBe(5);
   expect(database.transactionCount).toBe(0);
 });
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Keyboard, TextInput, View } from 'react-native';
+import { Keyboard, Modal, TextInput, View } from 'react-native';
+import { Info } from 'lucide-react-native';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
 import { application } from '@/core/composition/application';
@@ -16,6 +17,8 @@ import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { Chip } from '@/shared/ui/chip';
+import { Card } from '@/shared/ui/card';
+import { IconButton } from '@/shared/ui/icon-button';
 import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
@@ -45,6 +48,7 @@ export function DeckForm({
   const [alignment, setAlignment] = useState<DeckTextAlignment>(existing?.textAlignment ?? 'ltr');
   const [size, setSize] = useState<TypographySize>(existing?.typographySize ?? 'medium');
   const [reviewSystem, setReviewSystem] = useState(existing?.reviewSystem ?? 'leitner');
+  const [reviewInfoVisible, setReviewInfoVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [languageError, setLanguageError] = useState<string | null>(null);
@@ -211,7 +215,15 @@ export function DeckForm({
           </View>
         </View>
         <View className="gap-sm">
-          <Text variant="labelLarge">{t('review.system')}</Text>
+          <View className="flex-row items-center justify-between gap-sm">
+            <Text variant="labelLarge">{t('review.system')}</Text>
+            <IconButton
+              icon={Info}
+              label={t('review.infoButton')}
+              variant="ghost"
+              onPress={() => setReviewInfoVisible(true)}
+            />
+          </View>
           <Text tone="secondary" variant="bodySmall">
             {t('review.deckHint')}
           </Text>
@@ -226,6 +238,35 @@ export function DeckForm({
             ))}
           </View>
         </View>
+        <Modal
+          visible={reviewInfoVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setReviewInfoVisible(false)}
+        >
+          <View className="flex-1 justify-end bg-overlay/60 p-lg" accessibilityViewIsModal>
+            <Card variant="elevated" className="gap-md">
+              <Text variant="headingSmall">{t('review.infoTitle')}</Text>
+              {application.listSchedulers().map((scheduler) => (
+                <View key={scheduler.id} className="gap-xs">
+                  <Text variant="labelLarge">
+                    {scheduler.localizedLabels?.[language] ?? scheduler.label}
+                  </Text>
+                  <Text tone="secondary">
+                    {scheduler.id === 'sm2'
+                      ? t('review.sm2Description')
+                      : t('review.leitnerDescription')}
+                  </Text>
+                </View>
+              ))}
+              <Button
+                label={t('review.infoClose')}
+                variant="secondary"
+                onPress={() => setReviewInfoVisible(false)}
+              />
+            </Card>
+          </View>
+        </Modal>
         {error ? (
           <Text tone="error" accessibilityLiveRegion="polite">
             {error}

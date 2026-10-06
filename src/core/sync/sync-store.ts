@@ -38,7 +38,8 @@ function field(payload: Record<string, unknown>, key: string): string {
 
 function optionalField(payload: Record<string, unknown>, key: string): string | null {
   const result = payload[key];
-  if (result !== null && typeof result !== 'string') throw new Error(`Invalid server ${key}.`);
+  if (result === undefined || result === null) return null;
+  if (typeof result !== 'string') throw new Error(`Invalid server ${key}.`);
   return result;
 }
 
@@ -296,11 +297,12 @@ export class SyncStore {
         );
       } else {
         await transaction.execute(
-          `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, created_at, updated_at, archived_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
+          `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, review_system, created_at, updated_at, archived_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
            ON CONFLICT(id) DO UPDATE SET name = excluded.name, description = excluded.description,
              language = excluded.language, text_alignment = excluded.text_alignment,
-             typography_size = excluded.typography_size, updated_at = MAX(decks.created_at, excluded.updated_at)`,
+             typography_size = excluded.typography_size, review_system = excluded.review_system,
+             updated_at = MAX(decks.created_at, excluded.updated_at)`,
           [
             change.entityId,
             field(payload, 'name'),
@@ -308,6 +310,7 @@ export class SyncStore {
             field(payload, 'language'),
             field(payload, 'textAlignment'),
             field(payload, 'typographySize'),
+            optionalField(payload, 'reviewSystem') ?? 'leitner',
             time,
             time,
           ],

@@ -182,7 +182,7 @@ const syncSchemaStatements = [
   `CREATE TABLE sync_review_versions (event_id TEXT PRIMARY KEY NOT NULL REFERENCES review_events(id) ON DELETE RESTRICT, server_version INTEGER NOT NULL)`,
   `CREATE TRIGGER sync_deck_insert AFTER INSERT ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
     INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
-    VALUES (${syncUuid}, 'deck', NEW.id, 'upsert', json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size), NEW.updated_at);
+      VALUES (${syncUuid}, 'deck', NEW.id, 'upsert', json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size), NEW.updated_at);
   END`,
   `CREATE TRIGGER sync_deck_update AFTER UPDATE ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
     INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
@@ -245,11 +245,27 @@ const schedulerSchemaStatements = [
   'ALTER TABLE review_events ADD COLUMN scheduler_json TEXT',
 ] as const;
 
+const schedulerSyncStatements = [
+  'DROP TRIGGER IF EXISTS sync_deck_insert',
+  'DROP TRIGGER IF EXISTS sync_deck_update',
+  `CREATE TRIGGER sync_deck_insert AFTER INSERT ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, created_at)
+    VALUES (${syncUuid}, 'deck', NEW.id, 'upsert', json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size, 'reviewSystem', NEW.review_system), NEW.updated_at);
+  END`,
+  `CREATE TRIGGER sync_deck_update AFTER UPDATE ON decks WHEN (SELECT applying_remote FROM sync_account WHERE id = 1) = 0 BEGIN
+    INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
+    VALUES (${syncUuid}, 'deck', NEW.id, CASE WHEN NEW.archived_at IS NOT NULL THEN 'archive' ELSE 'upsert' END,
+      CASE WHEN NEW.archived_at IS NOT NULL THEN 'null' ELSE json_object('name', NEW.name, 'description', NEW.description, 'language', NEW.language, 'textAlignment', NEW.text_alignment, 'typographySize', NEW.typography_size, 'reviewSystem', NEW.review_system) END,
+      COALESCE((SELECT server_version FROM sync_entity_versions WHERE entity_type = 'deck' AND entity_id = NEW.id), 0), NEW.updated_at);
+  END`,
+] as const;
+
 export const migrations: readonly Migration[] = [
   { version: 1, statements: initialSchemaStatements },
   { version: 2, statements: productionSchemaStatements },
   { version: 3, statements: syncSchemaStatements },
   { version: 4, statements: schedulerSchemaStatements },
+  { version: 5, statements: schedulerSyncStatements },
 ];
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');
