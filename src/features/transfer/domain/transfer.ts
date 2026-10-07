@@ -10,32 +10,28 @@ export interface TransferCard {
   readonly category: string | null;
   readonly examples: readonly CardExample[];
   readonly tags?: readonly string[];
+  readonly extra?: Readonly<Record<string, string>>;
 }
 
 export interface ImportIssue {
   readonly location: string;
   readonly message: string;
 }
-
 export interface ImportRecord {
   readonly location: string;
   readonly card: TransferCard;
 }
-
 export interface ParsedImport {
   readonly records: readonly ImportRecord[];
   readonly issues: readonly ImportIssue[];
 }
-
 export interface TransferAdapter {
   parse(bytes: Uint8Array, fallbackDeck: string): Promise<ParsedImport>;
   serialize(cards: readonly TransferCard[], deckNames: readonly string[]): Promise<Uint8Array>;
 }
-
 export function normalizeIdentity(value: string): string {
   return value.normalize('NFKC').trim().replace(/\s+/gu, ' ').toLowerCase();
 }
-
 export function duplicateKey(
   card: Pick<TransferCard, 'deckName' | 'frontText' | 'meaning'>,
 ): string {
@@ -45,7 +41,6 @@ export function duplicateKey(
     normalizeIdentity(card.meaning),
   ]);
 }
-
 export function cardToTransfer(card: Card, deckName: string): TransferCard {
   return {
     deckName,

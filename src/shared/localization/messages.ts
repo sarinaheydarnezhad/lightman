@@ -5,8 +5,10 @@ export const en = {
   'review.infoButton': 'Explain review systems',
   'review.infoTitle': 'Review systems',
   'review.infoClose': 'Close',
-  'review.leitnerDescription': 'Cards move up one box when you remember them and return to box 1 when you struggle. Higher boxes are reviewed less often.',
-  'review.sm2Description': 'SM-2 adjusts the next review based on how well you remembered the card. Cards you remember well are shown less often, while cards you struggle with return sooner.',
+  'review.leitnerDescription':
+    'Cards move up one box when you remember them and return to box 1 when you struggle. Higher boxes are reviewed less often.',
+  'review.sm2Description':
+    'SM-2 adjusts the next review based on how well you remembered the card. Cards you remember well are shown less often, while cards you struggle with return sooner.',
   'review.distribution': 'Card distribution',
   'review.distributionHint': 'Active cards in each state of the selected review system.',
   'review.sectionA11y': '{label}: {count} active {unit}',
@@ -34,6 +36,16 @@ export const en = {
   'transfer.exportHint': 'Choose a deck and format, then share or save the generated file.',
   'transfer.allDecks': 'All decks',
   'transfer.share': 'Share / Save file',
+  'transfer.save': 'Save file to device',
+  'transfer.sample': 'Download Excel sample',
+  'transfer.requiredColumns':
+    'Front and Back are required. Deck, Phonetic, Category, Examples, and other columns are optional and preserved.',
+  'transfer.editHint':
+    'Review, edit, or delete rows before importing. Choose or edit the Deck value for each row.',
+  'transfer.deleteRow': 'Delete row',
+  'transfer.noDeck': 'No Deck supplied; the file name is used until you choose another Deck.',
+  'transfer.saved': 'Saved: {name}',
+  'transfer.shared': 'Ready to share: {name}',
   'nav.home': 'Home',
   'nav.decks': 'Decks',
   'nav.study': 'Study',

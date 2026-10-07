@@ -2,13 +2,16 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 import type { TransferFormat } from '../domain/transfer';
+import { xlsxAdapter } from './xlsx-adapter';
 
 const mimeTypes: Record<TransferFormat, string> = {
   csv: 'text/csv',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   apkg: 'application/octet-stream',
 };
+const extensionFor = (format: TransferFormat) => (format === 'apkg' ? 'colpkg' : format);
 
 export async function selectTransferFile(): Promise<{
   name: string;
@@ -26,14 +29,14 @@ export async function selectTransferFile(): Promise<{
   if (!asset) return null;
   try {
     const extension = asset.name.split('.').pop()?.toLowerCase();
-    if (extension !== 'csv' && extension !== 'xlsx' && extension !== 'apkg') {
-      throw new Error('Select a CSV, XLSX, or Anki APKG file.');
-    }
+    const format: TransferFormat = extension === 'colpkg' ? 'apkg' : (extension as TransferFormat);
+    if (format !== 'csv' && format !== 'xlsx' && format !== 'apkg')
+      throw new Error('Select a CSV, XLSX, XLS, or Anki .apkg/.colpkg file.');
     if ((asset.size ?? 0) > 50 * 1024 * 1024) throw new Error('Files must be smaller than 50 MB.');
     const bytes = asset.file
       ? new Uint8Array(await asset.file.arrayBuffer())
       : await new File(asset.uri).bytes();
-    return { name: asset.name, format: extension, bytes };
+    return { name: asset.name, format, bytes };
   } finally {
     if (Platform.OS !== 'web' && asset.uri.startsWith(Paths.cache.uri)) {
       const cached = new File(asset.uri);
@@ -42,8 +45,15 @@ export async function selectTransferFile(): Promise<{
   }
 }
 
-export async function shareTransferFile(format: TransferFormat, bytes: Uint8Array) {
-  const name = `lerona-${new Date().toISOString().replace(/[:.]/g, '-')}.${format}`;
+function toBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let index = 0; index < bytes.length; index += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  return btoa(binary);
+}
+
+export async function saveTransferFile(format: TransferFormat, bytes: Uint8Array): Promise<string> {
+  const name = `lerona-${new Date().toISOString().replace(/[:.]/g, '-')}.${extensionFor(format)}`;
   if (Platform.OS === 'web') {
     const blob = new Blob([new Uint8Array(bytes).buffer], { type: mimeTypes[format] });
     const uri = URL.createObjectURL(blob);
@@ -54,8 +64,31 @@ export async function shareTransferFile(format: TransferFormat, bytes: Uint8Arra
     anchor.click();
     anchor.remove();
     setTimeout(() => URL.revokeObjectURL(uri), 60_000);
-    return;
+    return name;
   }
+  if (Platform.OS === 'android') {
+    const permission =
+      await LegacyFileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+    if (!permission.granted) throw new Error('Choose a folder to save the export.');
+    const uri = await LegacyFileSystem.StorageAccessFramework.createFileAsync(
+      permission.directoryUri,
+      name,
+      mimeTypes[format],
+    );
+    await LegacyFileSystem.StorageAccessFramework.writeAsStringAsync(uri, toBase64(bytes), {
+      encoding: LegacyFileSystem.EncodingType.Base64,
+    });
+    return uri;
+  }
+  const file = new File(Paths.document, name);
+  file.create();
+  file.write(bytes);
+  return file.uri;
+}
+
+export async function shareTransferFile(format: TransferFormat, bytes: Uint8Array) {
+  const name = `lerona-${new Date().toISOString().replace(/[:.]/g, '-')}.${extensionFor(format)}`;
+  if (Platform.OS === 'web') return saveTransferFile(format, bytes);
   if (!(await Sharing.isAvailableAsync()))
     throw new Error('File sharing is unavailable on this device.');
   const file = new File(Paths.cache, name);
@@ -71,8 +104,26 @@ export async function shareTransferFile(format: TransferFormat, bytes: Uint8Arra
             ? 'org.openxmlformats.spreadsheetml.sheet'
             : 'public.data',
     });
+    return file.uri;
   } catch (error) {
     if (file.exists) file.delete();
     throw error;
   }
+}
+
+export async function downloadSampleFile(): Promise<string> {
+  const bytes = await xlsxAdapter.serialize(
+    [
+      {
+        deckName: 'Sample deck',
+        frontText: 'Hello',
+        meaning: 'A greeting',
+        phonetic: "/h?'lo?/",
+        category: 'phrase',
+        examples: [{ sentence: 'Hello, friend.' }],
+      },
+    ],
+    ['Sample deck'],
+  );
+  return saveTransferFile('xlsx', bytes);
 }

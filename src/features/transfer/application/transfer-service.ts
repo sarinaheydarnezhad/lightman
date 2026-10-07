@@ -11,9 +11,15 @@ import {
   type ImportRecord,
   type ParsedImport,
   type TransferAdapter,
+  type TransferCard,
   type TransferFormat,
 } from '../domain/transfer';
 
+export interface ImportPreviewRow {
+  location: string;
+  card: TransferCard;
+  status: 'ready' | 'duplicate';
+}
 export interface ImportPreview {
   readonly format: TransferFormat;
   readonly decks: readonly string[];
@@ -22,8 +28,9 @@ export interface ImportPreview {
   readonly duplicates: number;
   readonly invalidRows: number;
   readonly issues: readonly ImportIssue[];
+  readonly columns?: readonly string[];
+  readonly rows?: readonly ImportPreviewRow[];
 }
-
 export interface ImportSummary {
   imported: number;
   duplicatesSkipped: number;
@@ -46,9 +53,8 @@ export function createTransferService(
     for (const deck of decks) {
       const name = normalizeIdentity(deck.name);
       if (!matched.has(name) || matched.get(name)?.archivedAt) matched.set(name, deck);
-      for (const card of await repositories.cards.listByDeck(deck.id, { includeArchived: true })) {
+      for (const card of await repositories.cards.listByDeck(deck.id, { includeArchived: true }))
         keys.add(duplicateKey(cardToTransfer(card, deck.name)));
-      }
     }
     const issues = [...parsed.issues];
     const records: ImportRecord[] = [];
@@ -87,14 +93,24 @@ export function createTransferService(
       fileName: string,
     ): Promise<ImportPreview> {
       if (bytes.length > 50 * 1024 * 1024) throw new Error('Files must be smaller than 50 MB.');
-      const fallbackDeck = fileName.replace(/\.(csv|xlsx|apkg)$/i, '').trim() || 'Imported cards';
+      const fallbackDeck =
+        fileName.replace(/\.(csv|xlsx|apkg|colpkg)$/i, '').trim() || 'Imported cards';
       const parsed = await adapters[format].parse(bytes, fallbackDeck);
       const classified = await classify(parsed);
+      const readyLocations = new Set(classified.records.map(({ location }) => location));
       const names = new Map<string, string>();
-      parsed.records.forEach(({ card }) => {
-        names.set(normalizeIdentity(card.deckName), card.deckName.trim());
-      });
-      const preview = Object.freeze({
+      parsed.records.forEach(({ card }) =>
+        names.set(normalizeIdentity(card.deckName), card.deckName.trim()),
+      );
+      const columns = [
+        ...new Set(parsed.records.flatMap(({ card }) => Object.keys(card.extra ?? {}))),
+      ];
+      const rows = parsed.records.map(({ location, card }) => ({
+        location,
+        card,
+        status: readyLocations.has(location) ? ('ready' as const) : ('duplicate' as const),
+      }));
+      const preview: ImportPreview = {
         format,
         decks: Object.freeze([...names.values()]),
         totalCards: parsed.records.length + parsed.issues.length,
@@ -102,20 +118,35 @@ export function createTransferService(
         duplicates: classified.duplicates,
         invalidRows: classified.issues.length,
         issues: Object.freeze(classified.issues),
-      });
+        columns: Object.freeze(columns),
+        rows: Object.freeze(rows),
+      };
       plans.set(preview, parsed);
       return preview;
     },
     cancel(preview: ImportPreview) {
       plans.delete(preview);
     },
-    async confirm(preview: ImportPreview): Promise<ImportSummary> {
+    async confirm(
+      preview: ImportPreview,
+      editedRows: readonly ImportPreviewRow[] = preview.rows ?? [],
+    ): Promise<ImportSummary> {
       if (saving) throw new Error('An import is already being saved.');
       const parsed = plans.get(preview);
       if (!parsed) throw new Error('Select and preview a file before confirming.');
       saving = true;
       try {
-        const classified = await classify(parsed);
+        const selected = new Set(editedRows.map((row) => row.location));
+        const edited: ParsedImport = {
+          records: parsed.records
+            .filter((record) => selected.has(record.location))
+            .map((record) => {
+              const row = editedRows.find((candidate) => candidate.location === record.location);
+              return row ? { ...record, card: row.card } : record;
+            }),
+          issues: parsed.issues,
+        };
+        const classified = await classify(edited);
         const summary: ImportSummary = {
           imported: 0,
           duplicatesSkipped: classified.duplicates,
@@ -162,12 +193,10 @@ export function createTransferService(
     async export(format: TransferFormat, deckId?: string): Promise<Uint8Array> {
       const decks = (await app.listDecks()).filter((deck) => !deckId || deck.id === deckId);
       if (deckId && !decks.length) throw new Error('Selected deck is unavailable.');
-      const cards = [];
-      for (const deck of decks) {
-        for (const card of await app.listCardsForDeck(deck.id)) {
+      const cards = [] as TransferCard[];
+      for (const deck of decks)
+        for (const card of await app.listCardsForDeck(deck.id))
           cards.push(cardToTransfer(card, deck.name));
-        }
-      }
       return adapters[format].serialize(
         cards,
         decks.map((deck) => deck.name),
@@ -175,5 +204,4 @@ export function createTransferService(
     },
   };
 }
-
 export type TransferService = ReturnType<typeof createTransferService>;

@@ -78,11 +78,23 @@ export const xlsxAdapter: TransferAdapter = {
   async serialize(cards) {
     const workbook = XLSX.utils.book_new();
     const table = transferToTable(cards);
-    const splitRows = table.slice(1).map((row) => [...row.slice(0, 5), ...splitCell(row[5] ?? '')]);
-    const width = splitRows.reduce((maximum, row) => Math.max(maximum, row.length), 6);
+    const exampleWidth = table
+      .slice(1)
+      .reduce((maximum, row) => Math.max(maximum, splitCell(row[5] ?? '').length), 1);
+    const splitRows = table.slice(1).map((row) => {
+      const examples = splitCell(row[5] ?? '');
+      return [
+        ...row.slice(0, 5),
+        ...examples,
+        ...Array.from({ length: exampleWidth - examples.length }, () => ''),
+        ...row.slice(6),
+      ];
+    });
     const header = [
-      ...table[0]!,
-      ...Array.from({ length: width - 6 }, (_value, index) => `Examples ${index + 2}`),
+      ...table[0]!.slice(0, 5),
+      table[0]![5] ?? 'Examples',
+      ...Array.from({ length: exampleWidth - 1 }, (_value, index) => `Examples ${index + 2}`),
+      ...table[0]!.slice(6),
     ];
     const sheet = XLSX.utils.aoa_to_sheet([header, ...splitRows]);
     sheet['!cols'] = [24, 40, 40, 24, 24, 60].map((width) => ({ wch: width }));

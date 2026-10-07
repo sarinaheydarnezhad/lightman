@@ -5,7 +5,12 @@ import { apkgAdapter } from '@/features/transfer/data/apkg-adapter';
 import { application } from './application';
 import { repositories } from './repositories';
 
-export { selectTransferFile, shareTransferFile } from '@/features/transfer/data/transfer-files';
+export {
+  selectTransferFile,
+  shareTransferFile,
+  saveTransferFile,
+  downloadSampleFile,
+} from '@/features/transfer/data/transfer-files';
 
 export const transferService = createTransferService(application, repositories, {
   csv: csvAdapter,

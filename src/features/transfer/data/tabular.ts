@@ -31,6 +31,11 @@ export function hasCardHeaders(row: readonly string[]): boolean {
   return fields.includes('frontText') && fields.includes('meaning');
 }
 
+function extraKey(value: string, index: number): string {
+  const trimmed = value.replace(/^\uFEFF/, '').trim();
+  return trimmed || `Column ${index + 1}`;
+}
+
 export function tableToImport(
   rows: readonly (readonly string[])[],
   fallbackDeck: string,
@@ -49,11 +54,15 @@ export function tableToImport(
     if (row.every((value) => !value.trim())) return;
     const location = `${source} ${headerIndex + offset + 2}`;
     try {
-      if (row.length > header.length) throw new Error('More values than headers.');
       const values: Partial<Record<Field, string>> = {};
+      const extra: Record<string, string> = {};
       fields.forEach((field, index) => {
-        if (field) values[field] = row[index] ?? '';
+        const value = row[index] ?? '';
+        if (field) values[field] = value;
+        else extra[extraKey(header[index] ?? '', index)] = value;
       });
+      for (let index = header.length; index < row.length; index++)
+        extra[`Column ${index + 1}`] = row[index] ?? '';
       const examples: unknown = values.examples?.trim() ? JSON.parse(values.examples) : [];
       if (
         !Array.isArray(examples) ||
@@ -75,6 +84,7 @@ export function tableToImport(
           phonetic: values.phonetic || null,
           category: values.category || null,
           examples,
+          extra: Object.keys(extra).length ? extra : undefined,
         },
       });
     } catch (error) {
@@ -85,8 +95,9 @@ export function tableToImport(
 }
 
 export function transferToTable(cards: readonly TransferCard[]): string[][] {
+  const extraHeaders = [...new Set(cards.flatMap((card) => Object.keys(card.extra ?? {})))];
   return [
-    [...headers],
+    [...headers, ...extraHeaders],
     ...cards.map((card) => [
       card.deckName,
       card.frontText,
@@ -94,6 +105,7 @@ export function transferToTable(cards: readonly TransferCard[]): string[][] {
       card.phonetic ?? '',
       card.category ?? '',
       JSON.stringify(card.examples),
+      ...extraHeaders.map((key) => card.extra?.[key] ?? ''),
     ]),
   ];
 }
