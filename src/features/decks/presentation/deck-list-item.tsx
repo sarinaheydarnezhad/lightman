@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
@@ -18,9 +18,8 @@ export const DeckListItem = memo(function DeckListItem({
   cardCount: number;
   onPress: (deckId: string) => void;
 }) {
-  const { t, number, language, direction } = useLocalization();
+  const { t, number, language } = useLocalization();
   const colors = useThemeColors();
-  const Next = direction === 'rtl' ? ChevronLeft : ChevronRight;
   const count =
     cardCount === 0
       ? t('cards.empty')
@@ -48,7 +47,7 @@ export const DeckListItem = memo(function DeckListItem({
           {deckLanguage} · {count}
         </Text>
       </View>
-      <Next color={colors.tertiaryText} size={icons.medium} />
+      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
     </Pressable>
   );
 });

@@ -59,3 +59,11 @@ test('SQLite deck repository reports missing updates as not found', async () => 
 
   await expect(repository.update(makeDeck())).rejects.toMatchObject({ code: 'not-found' });
 });
+
+test('existing Arabic decks remain readable and are never silently converted to Persian', async () => {
+  const legacy = makeDeck({ language: 'ar' as never });
+  const database = new ScriptedDatabase([{ rows: [deckRow(legacy)], rowsAffected: 1 }]);
+  const repository = new SQLiteDeckRepository(database);
+  await expect(repository.getById(legacy.id)).resolves.toMatchObject({ language: 'ar' });
+  await expect(repository.create(legacy)).rejects.toMatchObject({ code: 'validation' });
+});

@@ -18,6 +18,7 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
+          direction: 'ltr',
           ...(Platform.OS === 'web'
             ? { height: heights.tab + spacing.lg, paddingBottom: spacing.sm }
             : {}),

@@ -1,16 +1,28 @@
 import type { Deck, DeckTextAlignment, TypographySize } from '@/features/decks/domain/deck';
 import type { LanguageTag } from '@/core/domain/values';
+import { getTextDirection } from '@/shared/localization/localization';
 import type { TypographyVariant } from '@/shared/theme/tokens';
 
 export const languageChoices = [
   { label: 'English', tag: 'en' },
   { label: 'Persian', tag: 'fa' },
-  { label: 'Arabic', tag: 'ar' },
 ] as const;
 
 export function languageLabel(tag: LanguageTag): string {
   const base = tag.toLowerCase().split('-')[0];
-  return languageChoices.find((choice) => choice.tag === base)?.label ?? `Other (${tag})`;
+  return languageChoices.find((choice) => choice.tag === base)?.label ?? 'Unsupported language';
+}
+
+export function deckContentStyle(value: string, alignment: DeckTextAlignment = 'ltr') {
+  const writingDirection = value.trim()
+    ? getTextDirection(value)
+    : alignment === 'rtl'
+      ? 'rtl'
+      : 'ltr';
+  return {
+    textAlign: alignment === 'center' ? 'center' : writingDirection === 'rtl' ? 'right' : 'left',
+    writingDirection,
+  } as const;
 }
 
 export function cardCountLabel(count: number): string {

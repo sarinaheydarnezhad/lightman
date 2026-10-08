@@ -8,10 +8,10 @@ const voices: DeviceVoice[] = [
 ];
 
 test('deck language outranks speech fallback and narrow script detection', () => {
-  expect(resolveSpeechLanguage('bonjour', { language: 'fr', preferredLanguage: 'en' })).toBe('fr');
+  expect(resolveSpeechLanguage('bonjour', { language: 'fr', preferredLanguage: 'en' })).toBeUndefined();
   expect(resolveSpeechLanguage('سلام', { preferredLanguage: 'en' })).toBe('en');
   expect(resolveSpeechLanguage('کتاب', {})).toBe('fa');
-  expect(resolveSpeechLanguage('مرحبا', {})).toBe('ar');
+  expect(resolveSpeechLanguage('legacy Arabic', {})).toBeUndefined();
   expect(resolveSpeechLanguage('bonjour', {})).toBeUndefined();
 });
 
@@ -19,7 +19,7 @@ test('UK/US preferences choose available English voices without crossing languag
   expect(resolveVoice([...voices].reverse(), 'en', 'uk')?.id).toBe('uk');
   expect(resolveVoice(voices, 'en', 'us')?.id).toBe('us');
   expect(resolveVoice(voices, 'fa', 'uk')?.id).toBe('persian');
-  expect(resolveVoice(voices, 'ar', 'us')?.id).toBe('arabic');
+  expect(resolveVoice(voices, 'ar', 'us')).toBeNull();
   expect(resolveVoice(voices, 'es', null)).toBeNull();
   expect(resolveVoice(voices, 'en-GB', 'us')?.id).toBe('uk');
   expect(

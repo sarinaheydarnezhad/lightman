@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 
 import { vocabularyHelper } from '@/core/composition/vocabulary';
+import { deckContentStyle } from '@/features/decks/presentation/deck-presentation';
 import type { DeckTextAlignment } from '@/features/decks/domain/deck';
 import type { DictionaryLookupResult, DictionaryMeaning } from '../domain/dictionary';
 import { Button } from '@/shared/ui/button';
@@ -106,7 +107,7 @@ export function VocabularyHelper({
                 <View className="gap-md" accessibilityLiveRegion="polite">
                   <Text
                     variant="labelLarge"
-                    style={{ writingDirection: textAlignment === 'rtl' ? 'rtl' : 'ltr' }}
+                    style={deckContentStyle(result.suggestion.word, textAlignment)}
                   >
                     {result.suggestion.word}
                     {result.suggestion.phonetic ? ` · ${result.suggestion.phonetic}` : ''}
@@ -157,7 +158,6 @@ function DefinitionChoice({
   onPress: () => void;
 }) {
   const { t, number } = useLocalization();
-  const direction = { writingDirection: alignment === 'rtl' ? ('rtl' as const) : ('ltr' as const) };
   return (
     <Card variant="outlined" className="gap-sm">
       {meaning.partOfSpeech ? (
@@ -165,9 +165,9 @@ function DefinitionChoice({
           {meaning.partOfSpeech}
         </Text>
       ) : null}
-      <Text style={direction}>{meaning.definition}</Text>
+      <Text style={deckContentStyle(meaning.definition, alignment)}>{meaning.definition}</Text>
       {meaning.examples.map((sample, index) => (
-        <Text key={`${index}-${sample}`} variant="bodySmall" tone="secondary" style={direction}>
+        <Text key={`${index}-${sample}`} variant="bodySmall" tone="secondary" style={deckContentStyle(sample, alignment)}>
           {sample}
         </Text>
       ))}

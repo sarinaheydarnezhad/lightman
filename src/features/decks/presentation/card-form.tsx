@@ -26,7 +26,7 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { CardContent } from './card-content';
-import { deckAlignment } from './deck-presentation';
+import { deckContentStyle } from './deck-presentation';
 
 export function CardForm({
   deck,
@@ -38,8 +38,6 @@ export function CardForm({
   onSubmit: (content: Omit<CreateCardInput, 'deckId'>) => Promise<void>;
 }) {
   const { t, number, language } = useLocalization();
-  const contentDirection = deck.textAlignment === 'rtl' ? 'rtl' : 'ltr';
-  const contentAlignment = deckAlignment[deck.textAlignment];
   const [frontText, setFrontText] = useState(existing?.frontText ?? '');
   const [phonetic, setPhonetic] = useState(existing?.phonetic ?? '');
   const [category, setCategory] = useState(existing?.category ?? '');
@@ -170,8 +168,7 @@ export function CardForm({
           </Text>
           <Input
             label={t('form.frontText')}
-            textAlign={contentAlignment}
-            style={{ writingDirection: contentDirection }}
+            style={deckContentStyle((frontText) || deck.language, deck.textAlignment)}
             value={frontText}
             onChangeText={(value) => {
               setFrontText(value);
@@ -269,8 +266,7 @@ export function CardForm({
           <Input
             ref={phoneticRef}
             label={t('form.phonetic')}
-            textAlign={contentAlignment}
-            style={{ writingDirection: contentDirection }}
+            style={deckContentStyle((phonetic) || deck.language, deck.textAlignment)}
             value={phonetic}
             onChangeText={setPhonetic}
             maxLength={500}
@@ -280,8 +276,7 @@ export function CardForm({
           <Input
             ref={categoryRef}
             label={t('form.category')}
-            textAlign={contentAlignment}
-            style={{ writingDirection: contentDirection }}
+            style={deckContentStyle((category) || deck.language, deck.textAlignment)}
             value={category}
             onChangeText={setCategory}
             maxLength={120}
@@ -296,8 +291,7 @@ export function CardForm({
           <Input
             ref={meaningRef}
             label={t('form.meaning')}
-            textAlign={contentAlignment}
-            style={{ writingDirection: contentDirection }}
+            style={deckContentStyle((meaning) || deck.language, deck.textAlignment)}
             value={meaning}
             onChangeText={(value) => {
               setMeaning(value);
@@ -315,8 +309,7 @@ export function CardForm({
               <Text variant="labelLarge">{t('form.example', { number: number(index + 1) })}</Text>
               <Input
                 label={t('form.sentence', { number: number(index + 1) })}
-                textAlign={contentAlignment}
-                style={{ writingDirection: contentDirection }}
+                style={deckContentStyle((example.sentence) || deck.language, deck.textAlignment)}
                 value={example.sentence}
                 onChangeText={(value) => changeExample(index, { sentence: value })}
                 error={exampleError === index ? t('form.sentenceRequired') : undefined}
@@ -326,8 +319,7 @@ export function CardForm({
               />
               <Input
                 label={t('form.translation', { number: number(index + 1) })}
-                textAlign={contentAlignment}
-                style={{ writingDirection: contentDirection }}
+                style={deckContentStyle((example.translation ?? '') || deck.language, deck.textAlignment)}
                 value={example.translation ?? ''}
                 onChangeText={(value) => changeExample(index, { translation: value })}
                 multiline
@@ -335,8 +327,7 @@ export function CardForm({
               />
               <Input
                 label={t('form.notes', { number: number(index + 1) })}
-                textAlign={contentAlignment}
-                style={{ writingDirection: contentDirection }}
+                style={deckContentStyle((example.notes ?? '') || deck.language, deck.textAlignment)}
                 value={example.notes ?? ''}
                 onChangeText={(value) => changeExample(index, { notes: value })}
                 multiline

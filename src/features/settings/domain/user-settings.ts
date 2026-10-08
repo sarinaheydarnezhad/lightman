@@ -1,4 +1,4 @@
-import { languageTag, localTime, type LanguageTag, type LocalTime } from '@/core/domain/values';
+import { supportedLanguageTag, localTime, type LanguageTag, type LocalTime } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 
 export type ThemeMode = 'system' | 'light' | 'dark' | 'oled';
@@ -19,8 +19,8 @@ export function validateUserSettings(settings: UserSettings): UserSettings {
     throw new AppError('validation', 'Invalid theme.');
   if (typeof settings.hapticsEnabled !== 'boolean')
     throw new AppError('validation', 'Invalid haptics setting.');
-  const language = languageTag(settings.language);
-  const preferredSpeechLanguage = languageTag(settings.preferredSpeechLanguage);
+  const language = supportedLanguageTag(settings.language);
+  const preferredSpeechLanguage = supportedLanguageTag(settings.preferredSpeechLanguage);
   if (typeof settings.dailyReminderEnabled !== 'boolean')
     throw new AppError('validation', 'Invalid reminder setting.');
   if (settings.dailyReminderTime !== null) localTime(settings.dailyReminderTime);

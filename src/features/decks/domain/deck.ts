@@ -3,6 +3,7 @@ import { AppError } from '@/core/errors/app-error';
 import {
   instant,
   languageTag,
+  supportedLanguageTag,
   requiredId,
   type Instant,
   type LanguageTag,
@@ -29,12 +30,12 @@ export function validateDeckTitle(title: string): string {
   return requiredText(title, 'Deck name', 120);
 }
 
-export function validateDeck(deck: Deck): Deck {
+export function validateDeck(deck: Deck, allowLegacyLanguage = false): Deck {
   requiredId(deck.id, 'Deck ID');
   const name = validateDeckTitle(deck.name);
   const description = deck.description.trim();
   if (description.length > 1000) throw new AppError('validation', 'Description is too long.');
-  const language = languageTag(deck.language);
+  const language = allowLegacyLanguage ? languageTag(deck.language) : supportedLanguageTag(deck.language);
   if (!(['ltr', 'rtl', 'center'] as const).includes(deck.textAlignment)) {
     throw new AppError('validation', 'Invalid deck text alignment.');
   }

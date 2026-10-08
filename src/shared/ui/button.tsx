@@ -52,7 +52,8 @@ export function Button({
       ) : null}
       <Text
         variant="labelLarge"
-        className="flex-shrink text-center"
+        className="flex-shrink"
+        align="center"
         tone={
           disabled
             ? 'disabled'

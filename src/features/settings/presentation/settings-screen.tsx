@@ -2,7 +2,7 @@ import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 
 import { config } from '@/core/infrastructure/platform';
 import { localTime, type LocalTime } from '@/core/domain/values';
@@ -52,9 +52,8 @@ function SettingsRow({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const { t, direction } = useLocalization();
+  const { t } = useLocalization();
   const colors = useThemeColors();
-  const Next = direction === 'rtl' ? ChevronLeft : ChevronRight;
   const content = (
     <View className="min-w-0 flex-1 gap-xs">
       <Text variant="labelLarge">{label}</Text>
@@ -84,7 +83,7 @@ function SettingsRow({
       }
     >
       {content}
-      <Next color={colors.tertiaryText} size={icons.medium} />
+      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
     </Pressable>
   );
 }

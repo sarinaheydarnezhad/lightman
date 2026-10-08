@@ -33,7 +33,7 @@ function transition(
 export const LeitnerScheduler: Scheduler = Object.freeze({
   id: 'leitner',
   label: 'Leitner',
-  localizedLabels: { fa: 'لایتنر', ar: 'لايتنر' },
+  localizedLabels: { fa: 'لایتنر' },
   createInitialState(cardId: string, reviewDate: CalendarDate, createdAt: Instant) {
     return createInitialReviewState(cardId, reviewDate, createdAt);
   },
@@ -61,7 +61,6 @@ export const LeitnerScheduler: Scheduler = Object.freeze({
       label: `Box ${box}`,
       localizedLabels: {
         fa: `جعبهٔ ${box.toLocaleString('fa-IR')}`,
-        ar: `الصندوق ${box.toLocaleString('ar')}`,
       },
       count: 0,
     }));

@@ -16,7 +16,7 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { deckAlignment, deckTypography } from './deck-presentation';
+import { deckContentStyle, deckTypography } from './deck-presentation';
 import { useDeckActions, useDeckDetailsViewModel } from './use-decks-view-model';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 import { ReviewDistribution } from '@/features/study/presentation/review-distribution';
@@ -91,10 +91,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
     );
   }
 
-  const contentStyle = {
-    textAlign: deckAlignment[deck.textAlignment],
-    writingDirection: deck.textAlignment === 'rtl' ? ('rtl' as const) : ('ltr' as const),
-  };
+  const contentStyle = deckContentStyle(deck.description, deck.textAlignment);
 
   return (
     <Screen scroll edges={stackScreenEdges}>

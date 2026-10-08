@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 
-import { languageTag } from '@/core/domain/values';
+import { languageTag, supportedLanguages } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Chip } from '@/shared/ui/chip';
@@ -11,7 +11,7 @@ import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useSettingsViewModel } from './use-settings-view-model';
 
-const languages = ['en', 'fa', 'ar'] as const;
+const languages = supportedLanguages;
 
 export function LanguageScreen() {
   const vm = useSettingsViewModel();

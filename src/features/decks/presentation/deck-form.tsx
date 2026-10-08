@@ -4,7 +4,7 @@ import { Info } from 'lucide-react-native';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
 import { application } from '@/core/composition/application';
-import { languageTag } from '@/core/domain/values';
+import { supportedLanguageTag } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 import { haptics } from '@/core/composition/haptics';
 import {
@@ -25,7 +25,7 @@ import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { languageChoices } from './deck-presentation';
 
-type LanguageChoice = (typeof languageChoices)[number]['tag'] | 'other';
+type LanguageChoice = (typeof languageChoices)[number]['tag'];
 
 export function DeckForm({
   existing,
@@ -41,10 +41,9 @@ export function DeckForm({
   const initialChoice = languageChoices.find(
     (choice) => initialTag.toLowerCase().split('-')[0] === choice.tag,
   );
-  const [languageChoice, setLanguageChoice] = useState<LanguageChoice>(
-    initialChoice?.tag ?? 'other',
+  const [languageChoice, setLanguageChoice] = useState<LanguageChoice | null>(
+    initialChoice?.tag ?? null,
   );
-  const [customLanguage, setCustomLanguage] = useState(initialChoice ? '' : initialTag);
   const [alignment, setAlignment] = useState<DeckTextAlignment>(existing?.textAlignment ?? 'ltr');
   const [size, setSize] = useState<TypographySize>(existing?.typographySize ?? 'medium');
   const [reviewSystem, setReviewSystem] = useState(existing?.reviewSystem ?? 'leitner');
@@ -75,7 +74,7 @@ export function DeckForm({
       return;
     }
     let validName: string;
-    let validLanguage: ReturnType<typeof languageTag>;
+    let validLanguage: ReturnType<typeof supportedLanguageTag>;
     try {
       validName = validateDeckTitle(name);
     } catch (cause) {
@@ -86,13 +85,7 @@ export function DeckForm({
       return;
     }
     try {
-      validLanguage = languageTag(
-        languageChoice === 'other'
-          ? customLanguage
-          : languageChoice === initialChoice?.tag
-            ? initialTag
-            : languageChoice,
-      );
+      validLanguage = supportedLanguageTag(languageChoice === initialChoice?.tag ? initialTag : languageChoice ?? initialTag);
     } catch {
       setLanguageError(t('form.languageInvalid'));
       void haptics.actionRejected();
@@ -161,10 +154,10 @@ export function DeckForm({
             {t('form.languageHint')}
           </Text>
           <View className="flex-row flex-wrap gap-sm">
-            {([...languageChoices, { label: 'Other', tag: 'other' }] as const).map((choice) => (
+            {languageChoices.map((choice) => (
               <Chip
                 key={choice.tag}
-                label={choice.tag === 'other' ? t('form.other') : t(`language.${choice.tag}`)}
+                label={t(`language.${choice.tag}`)}
                 selected={languageChoice === choice.tag}
                 onPress={() => {
                   setLanguageChoice(choice.tag);
@@ -173,20 +166,7 @@ export function DeckForm({
               />
             ))}
           </View>
-          {languageChoice === 'other' ? (
-            <Input
-              label={t('form.languageTag')}
-              helperText={t('form.languageTagHint')}
-              error={languageError ?? undefined}
-              value={customLanguage}
-              onChangeText={(value) => {
-                setCustomLanguage(value);
-                setLanguageError(null);
-              }}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          ) : null}
+          {languageError ? <Text tone="error" accessibilityLiveRegion="polite">{languageError}</Text> : null}
         </View>
         <View className="gap-sm">
           <Text variant="labelLarge">{t('form.alignment')}</Text>

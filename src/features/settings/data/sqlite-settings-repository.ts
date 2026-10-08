@@ -13,6 +13,7 @@ import {
   type EnglishAccent,
   type UserSettings,
 } from '../domain/user-settings';
+import { resolveUiLanguage } from '@/shared/localization/localization';
 import type { SettingsRepository } from '../domain/settings-repository';
 
 function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
@@ -20,12 +21,12 @@ function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
   return validateUserSettings({
     theme: text(source, 'theme') as UserSettings['theme'],
     hapticsEnabled: booleanValue(source, 'haptics_enabled'),
-    language: languageTag(text(source, 'language')),
+    language: languageTag(resolveUiLanguage(text(source, 'language'))),
     dailyReminderEnabled: booleanValue(source, 'daily_reminder_enabled'),
     dailyReminderTime: nullableText(source, 'daily_reminder_time')
       ? localTime(nullableText(source, 'daily_reminder_time')!)
       : null,
-    preferredSpeechLanguage: languageTag(text(source, 'preferred_speech_language')),
+    preferredSpeechLanguage: languageTag(resolveUiLanguage(text(source, 'preferred_speech_language'))),
     preferredSpeechAccent: nullableText(source, 'preferred_speech_accent') as EnglishAccent | null,
   });
 }

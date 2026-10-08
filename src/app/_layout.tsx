@@ -3,6 +3,7 @@ import '@/shared/theme/global.css';
 import { useEffect } from 'react';
 import { LocaleProvider, Stack, router, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ import { createReminderTapHandler } from '@/features/study/application/create-re
 import { BootstrapGate } from '@/shared/bootstrap/bootstrap-gate';
 import { LocalizationProvider, useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
+import { fontAssets } from '@/shared/theme/font';
 import { ErrorState } from '@/shared/ui/error-state';
 import { Screen } from '@/shared/ui/screen';
 
@@ -51,7 +53,7 @@ function LocalizedError({ retry }: { retry: ErrorBoundaryProps['retry'] }) {
 function Navigation() {
   const mode = useThemeMode();
   const colors = useThemeColors();
-  const { t, direction } = useLocalization();
+  const { t } = useLocalization();
   useEffect(() => {
     const handleTap = createReminderTapHandler(
       application,
@@ -73,7 +75,7 @@ function Navigation() {
     return unsubscribe;
   }, []);
   return (
-    <LocaleProvider direction={direction}>
+    <LocaleProvider direction="ltr">
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
       <Stack
         screenOptions={{
@@ -123,6 +125,8 @@ function Navigation() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts(fontAssets);
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#F8F7FA' }} />;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

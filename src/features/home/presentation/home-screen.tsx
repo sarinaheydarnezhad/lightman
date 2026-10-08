@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -19,11 +19,10 @@ import { useHomeViewModel } from './use-home-view-model';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 
 export function HomeScreen() {
-  const { t, number, language, direction } = useLocalization();
+  const { t, number, language } = useLocalization();
   const colors = useThemeColors();
   const home = useHomeViewModel();
   const study = useStartStudy();
-  const Next = direction === 'rtl' ? ChevronLeft : ChevronRight;
 
   return (
     <Screen scroll edges={tabScreenEdges}>
@@ -126,7 +125,7 @@ export function HomeScreen() {
                           {deckLanguageLabel(deck.language, language)}
                         </Text>
                       </View>
-                      <Next color={colors.tertiaryText} size={icons.medium} />
+                      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
                     </Pressable>
                   ))}
                 </View>

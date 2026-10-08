@@ -20,5 +20,5 @@ Run this checklist on a small phone and a larger phone or tablet in light, dark,
 ## Both platforms
 
 - Verify a reminder permission denial and a dictionary failure are readable, with clear next actions. Confirm search-empty and no-cards-due states are spoken.
-- Check long English and Persian/Arabic text and a deck with RTL alignment. Labels and confirmation actions should follow logical reading order; the physical swipe direction still uses its existing meaning.
+- Check long English and Persian text and a deck with RTL alignment. Labels and confirmation actions should follow logical reading order; the physical swipe direction still uses its existing meaning.
 - Verify focus and contrast in all themes on physical screens. Token calculations against the surface give a minimum ratio of 5.9:1 for primary/secondary/tertiary and semantic status text in light, dark, and OLED; native disabled opacity and translucent overlays need visual inspection.

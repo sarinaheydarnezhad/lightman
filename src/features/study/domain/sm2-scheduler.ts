@@ -126,7 +126,7 @@ export function calculateSm2Transition(
 export const Sm2Scheduler: Scheduler = Object.freeze({
   id: SM2_SCHEDULER_ID,
   label: 'SM-2',
-  localizedLabels: { fa: 'SM-2', ar: 'SM-2' },
+  localizedLabels: { fa: 'SM-2' },
   createInitialState(cardId: string, reviewDate: CalendarDate, createdAt: Instant) {
     return validateReviewState({
       cardId: requiredId(cardId, 'Card ID'),

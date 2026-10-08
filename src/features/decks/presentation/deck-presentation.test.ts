@@ -11,8 +11,8 @@ import {
 
 test('deck presentation reads language tags, truthful counts and semantic display settings', () => {
   expect(languageLabel(languageTag('fa-IR'))).toBe('Persian');
-  expect(languageLabel(languageTag('ar'))).toBe('Arabic');
-  expect(languageLabel(languageTag('es'))).toBe('Other (es)');
+  expect(languageLabel(languageTag('ar'))).toBe('Unsupported language');
+  expect(languageLabel(languageTag('es'))).toBe('Unsupported language');
   expect(cardCountLabel(0)).toBe('No cards yet');
   expect(cardCountLabel(1)).toBe('1 card');
   expect(cardCountLabel(2)).toBe('2 cards');

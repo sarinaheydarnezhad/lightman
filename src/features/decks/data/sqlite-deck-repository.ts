@@ -26,7 +26,7 @@ function mapDeck(source: ReturnType<typeof row>): Deck | null {
     archivedAt: nullableText(source, 'archived_at')
       ? instant(nullableText(source, 'archived_at')!)
       : null,
-  });
+  }, true);
 }
 
 export class SQLiteDeckRepository implements DeckRepository {
@@ -86,9 +86,10 @@ export class SQLiteDeckRepository implements DeckRepository {
 
   update(deck: Deck): Promise<Deck> {
     return databaseOperation(async () => {
-      const valid = validateDeck(deck);
+      const valid = validateDeck(deck, true);
       const existing = await this.getById(valid.id);
       if (!existing) throw new AppError('not-found', 'Deck not found.');
+      if (valid.language !== existing.language) validateDeck(valid);
       if (existing.archivedAt) throw new AppError('conflict', 'Archived decks cannot be edited.');
       if (
         valid.createdAt !== existing.createdAt ||
@@ -126,7 +127,7 @@ export class SQLiteDeckRepository implements DeckRepository {
       if (existing.archivedAt) throw new AppError('conflict', 'Deck is already archived.');
       if (archivedAt < existing.updatedAt)
         throw new AppError('conflict', 'Archive date is older than the last edit.');
-      const archived = validateDeck({ ...existing, updatedAt: archivedAt, archivedAt });
+      const archived = validateDeck({ ...existing, updatedAt: archivedAt, archivedAt }, true);
       const result = await this.database.execute(
         'UPDATE decks SET updated_at = ?, archived_at = ? WHERE id = ? AND archived_at IS NULL',
         [archived.updatedAt, archived.archivedAt, id],

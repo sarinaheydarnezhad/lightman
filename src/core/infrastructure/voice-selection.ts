@@ -1,3 +1,4 @@
+import { supportedLanguages, type SupportedLanguage } from '@/core/domain/values';
 import type { EnglishAccent, SpeechRequest } from '@/core/ports/speech';
 
 export interface DeviceVoice {
@@ -10,10 +11,15 @@ export interface DeviceVoice {
 
 /** Explicit deck language outranks the user's fallback; script detection is deliberately narrow. */
 export function resolveSpeechLanguage(text: string, options: SpeechRequest): string | undefined {
-  if (options.language?.trim()) return options.language.trim();
-  if (options.preferredLanguage?.trim()) return options.preferredLanguage.trim();
-  if (/[\u067e\u0686\u0698\u06af\u06a9\u06cc]/u.test(text)) return 'fa';
-  if (/[\u0600-\u06ff]/u.test(text)) return 'ar';
+  if (options.language?.trim()) {
+    const tag = options.language.trim();
+    return supportedLanguages.includes(tag.toLowerCase().split('-')[0] as SupportedLanguage) ? tag : undefined;
+  }
+  if (options.preferredLanguage?.trim()) {
+    const tag = options.preferredLanguage.trim();
+    return supportedLanguages.includes(tag.toLowerCase().split('-')[0] as SupportedLanguage) ? tag : undefined;
+  }
+  if (/[\u0600-\u06ff]/u.test(text)) return 'fa';
   return undefined;
 }
 
@@ -25,11 +31,12 @@ export function resolveVoice(
 ): DeviceVoice | null {
   const requested = language?.toLowerCase().replaceAll('_', '-');
   const base = requested?.split('-')[0];
+  const supportedVoices = voices.filter((voice) => supportedLanguages.includes(voice.language.toLowerCase().replaceAll('_', '-').split('-')[0] as SupportedLanguage));
   const candidates = base
-    ? voices.filter(
+    ? supportedVoices.filter(
         (voice) => voice.language.toLowerCase().replaceAll('_', '-').split('-')[0] === base,
       )
-    : [...voices];
+    : [...supportedVoices];
   if (!candidates.length) return null;
   const preferredAccent = base === 'en' && accent ? (accent === 'uk' ? 'en-gb' : 'en-us') : null;
   return (

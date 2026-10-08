@@ -131,13 +131,13 @@ test('localizes reminder content from app language and replaces old-language nat
     }),
   );
   existing.mockResolvedValueOnce([reminder('old-english', '09:00')]);
-  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'ar');
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'fa');
   expect(cancel).toHaveBeenCalledWith('old-english');
   expect(schedule).toHaveBeenLastCalledWith(
     expect.objectContaining({
       content: expect.objectContaining({
-        title: 'حان وقت الدراسة',
-        data: expect.objectContaining({ uiLanguage: 'ar' }),
+        title: 'وقت مطالعه است',
+        data: expect.objectContaining({ uiLanguage: 'fa' }),
       }),
     }),
   );

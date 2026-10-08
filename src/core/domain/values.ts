@@ -91,6 +91,17 @@ export function languageTag(value: string): LanguageTag {
   return normalized as LanguageTag;
 }
 
+export const supportedLanguages = ['en', 'fa'] as const;
+export type SupportedLanguage = (typeof supportedLanguages)[number];
+
+export function supportedLanguageTag(value: string): LanguageTag {
+  const tag = languageTag(value);
+  if (!supportedLanguages.includes(tag.toLowerCase().split('-')[0] as SupportedLanguage)) {
+    throw new AppError('validation', 'Only English and Persian are supported.');
+  }
+  return tag;
+}
+
 export function requiredId(value: string, name = 'ID'): string {
   if (!value?.trim()) throw new AppError('validation', `${name} is required.`);
   return value;

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
@@ -8,7 +8,7 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { icons } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
-import { deckAlignment, deckTypography } from './deck-presentation';
+import { deckContentStyle, deckTypography } from './deck-presentation';
 
 export const CardListItem = memo(function CardListItem({
   card,
@@ -19,13 +19,9 @@ export const CardListItem = memo(function CardListItem({
   deck: Deck;
   onPress: (cardId: string) => void;
 }) {
-  const { t, direction } = useLocalization();
+  const { t } = useLocalization();
   const colors = useThemeColors();
-  const Next = direction === 'rtl' ? ChevronLeft : ChevronRight;
-  const style = {
-    textAlign: deckAlignment[deck.textAlignment],
-    writingDirection: deck.textAlignment === 'rtl' ? ('rtl' as const) : ('ltr' as const),
-  };
+
   return (
     <Pressable
       className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
@@ -42,26 +38,26 @@ export const CardListItem = memo(function CardListItem({
         <Text
           variant={deckTypography[deck.typographySize]}
           weight="semibold"
-          style={style}
+          style={deckContentStyle(card.frontText, deck.textAlignment)}
           numberOfLines={2}
         >
           {card.frontText}
         </Text>
         {card.phonetic ? (
-          <Text tone="secondary" variant="bodySmall" style={style} numberOfLines={1}>
+          <Text tone="secondary" variant="bodySmall" style={deckContentStyle(card.phonetic, deck.textAlignment)} numberOfLines={1}>
             {card.phonetic}
           </Text>
         ) : null}
-        <Text tone="secondary" variant="bodySmall" numberOfLines={2} style={style}>
+        <Text tone="secondary" variant="bodySmall" numberOfLines={2} style={deckContentStyle(card.meaning, deck.textAlignment)}>
           {card.meaning}
         </Text>
         {card.category ? (
-          <Text tone="tertiary" variant="caption" style={style}>
+          <Text tone="tertiary" variant="caption" style={deckContentStyle(card.category, deck.textAlignment)}>
             {card.category}
           </Text>
         ) : null}
       </View>
-      <Next color={colors.tertiaryText} size={icons.medium} />
+      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
     </Pressable>
   );
 });

@@ -51,7 +51,7 @@ export function LocalizationProvider({ children }: PropsWithChildren) {
   );
   return (
     <LocalizationContext.Provider value={value}>
-      <View className="flex-1" style={{ direction }}>
+      <View className="flex-1" style={{ direction: 'ltr' }}>
         {children}
       </View>
     </LocalizationContext.Provider>

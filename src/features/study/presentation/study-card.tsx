@@ -5,7 +5,7 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 
 import type { Deck, TypographySize } from '@/features/decks/domain/deck';
 import {
-  deckAlignment,
+  deckContentStyle,
   deckBadgeAlignment,
   deckTypography,
 } from '@/features/decks/presentation/deck-presentation';
@@ -30,11 +30,6 @@ interface StudyCardProps {
   readonly onSwipeAnswer?: (result: ReviewResult) => void;
 }
 
-type ContentAlignment = {
-  readonly textAlign: 'left' | 'right' | 'center';
-  readonly writingDirection: 'ltr' | 'rtl';
-};
-
 const frontTypography: Record<TypographySize, TypographyVariant> = {
   small: 'headingMedium',
   medium: 'headingLarge',
@@ -53,10 +48,6 @@ export const StudyCard = memo(function StudyCard({
   onSwipeAnswer,
 }: StudyCardProps) {
   const { t } = useLocalization();
-  const alignment: ContentAlignment = {
-    textAlign: deckAlignment[deck.textAlignment],
-    writingDirection: deck.textAlignment === 'rtl' ? 'rtl' : 'ltr',
-  };
   const size = deckTypography[deck.typographySize];
 
   const content = (
@@ -64,12 +55,12 @@ export const StudyCard = memo(function StudyCard({
       key={card.id}
       revealed={revealed}
       accessibilityLabel={t('study.flashcard', { term: card.frontText })}
-      front={<FrontContent card={card} deck={deck} alignment={alignment} size={size} />}
+      front={<FrontContent card={card} deck={deck} size={size} />}
       back={
         <BackContent
           card={card}
           revealed={revealed}
-          alignment={alignment}
+          deck={deck}
           size={size}
           backTab={backTab}
           onSelectBackTab={onSelectBackTab}
@@ -94,12 +85,10 @@ export const StudyCard = memo(function StudyCard({
 function FrontContent({
   card,
   deck,
-  alignment,
   size,
 }: {
   card: StudyCardData;
   deck: Deck;
-  alignment: ContentAlignment;
   size: TypographyVariant;
 }) {
   const { t } = useLocalization();
@@ -120,7 +109,7 @@ function FrontContent({
         <View className="gap-md py-md">
           <Text
             variant={frontTypography[deck.typographySize]}
-            style={alignment}
+            style={deckContentStyle(card.frontText, deck.textAlignment)}
             accessibilityRole="header"
           >
             {card.frontText}
@@ -129,7 +118,7 @@ function FrontContent({
             <Text
               variant={size}
               tone="secondary"
-              style={alignment}
+              style={deckContentStyle(card.phonetic, deck.textAlignment)}
               accessibilityLabel={t('study.phonetic', { value: card.phonetic })}
             >
               {card.phonetic}
@@ -151,14 +140,14 @@ function FrontContent({
 function BackContent({
   card,
   revealed,
-  alignment,
+  deck,
   size,
   backTab,
   onSelectBackTab,
 }: {
   card: StudyCardData;
   revealed: boolean;
-  alignment: ContentAlignment;
+  deck: Deck;
   size: TypographyVariant;
   backTab: 'meaning' | 'examples';
   onSelectBackTab: (tab: 'meaning' | 'examples') => void;
@@ -206,7 +195,7 @@ function BackContent({
         {backTab === 'meaning' ? (
           <Text
             variant={size}
-            style={alignment}
+            style={deckContentStyle(card.meaning || t('study.noDefinition'), deck.textAlignment)}
             accessibilityLabel={t('study.definition', {
               value: card.meaning || t('study.noDefinition'),
             })}
@@ -222,7 +211,7 @@ function BackContent({
               >
                 <Text
                   variant={size}
-                  style={alignment}
+                  style={deckContentStyle(example.sentence, deck.textAlignment)}
                   accessibilityLabel={t('study.example', {
                     index: index + 1,
                     value: example.sentence,
@@ -234,7 +223,7 @@ function BackContent({
                   <Text
                     tone="secondary"
                     variant={size}
-                    style={alignment}
+                    style={deckContentStyle(example.translation, deck.textAlignment)}
                     accessibilityLabel={t('study.translation', { value: example.translation })}
                   >
                     {example.translation}
@@ -244,7 +233,7 @@ function BackContent({
                   <Text
                     tone="tertiary"
                     variant="bodySmall"
-                    style={alignment}
+                    style={deckContentStyle(example.notes, deck.textAlignment)}
                     accessibilityLabel={t('study.notes', { value: example.notes })}
                   >
                     {example.notes}
@@ -254,7 +243,7 @@ function BackContent({
             ))}
           </View>
         ) : (
-          <Text tone="secondary" style={alignment}>
+          <Text tone="secondary" style={deckContentStyle(t('study.noExamples'), deck.textAlignment)}>
             {t('study.noExamples')}
           </Text>
         )}

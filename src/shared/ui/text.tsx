@@ -1,5 +1,8 @@
-import { Text as NativeText, type TextProps } from 'react-native';
+import { Children, isValidElement, type ReactNode } from 'react';
+import { getTextDirection } from '@/shared/localization/localization';
+import { Text as NativeText, type TextProps, type TextStyle } from 'react-native';
 import { useLocalization } from '@/shared/localization/localization-provider';
+import { fontFamilyForWeight, type AppFontWeight } from '@/shared/theme/font';
 import type { SemanticColor, TypographyVariant } from '@/shared/theme/tokens';
 
 type AppTextProps = TextProps & {
@@ -14,7 +17,7 @@ type AppTextProps = TextProps & {
     | 'warning'
     | 'info'
     | SemanticColor;
-  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
+  weight?: AppFontWeight;
   align?: 'auto' | 'start' | 'center' | 'end' | 'justify';
   truncate?: boolean;
 };
@@ -46,7 +49,6 @@ const toneClass = {
   disabled: 'text-disabled',
   overlay: 'text-overlay',
 } as const;
-
 const variantClass: Record<TypographyVariant, string> = {
   display: 'text-display',
   headingLarge: 'text-headingLarge',
@@ -59,14 +61,19 @@ const variantClass: Record<TypographyVariant, string> = {
   labelMedium: 'text-labelMedium',
   caption: 'text-caption',
 };
-
 const weightClass = {
   regular: 'font-normal',
   medium: 'font-medium',
   semibold: 'font-semibold',
   bold: 'font-bold',
 };
-const alignClass = { auto: '', center: 'text-center', justify: 'text-justify' };
+
+function contentText(children: ReactNode): string {
+  return Children.toArray(children).map((child) => {
+    if (typeof child === 'string' || typeof child === 'number') return String(child);
+    return isValidElement<{ children?: ReactNode }>(child) ? contentText(child.props.children) : '';
+  }).join('');
+}
 
 export function Text({
   variant = 'bodyMedium',
@@ -76,26 +83,55 @@ export function Text({
   truncate,
   numberOfLines,
   className,
+  style,
+  children,
   ...props
 }: AppTextProps) {
-  const { direction } = useLocalization();
-  const alignment =
-    align === 'auto' || align === 'start'
-      ? direction === 'rtl'
-        ? 'text-right'
-        : 'text-left'
+  const { direction: fallbackDirection } = useLocalization();
+  const content = contentText(children);
+  const direction = /[\p{Letter}\u200e\u200f]/u.test(content)
+    ? getTextDirection(content)
+    : fallbackDirection;
+  const resolvedWeight: AppFontWeight =
+    weight ??
+    (variant === 'display' || variant === 'headingLarge'
+      ? 'bold'
+      : variant === 'headingMedium' ||
+          variant === 'headingSmall' ||
+          variant === 'labelLarge' ||
+          variant === 'labelMedium'
+        ? 'semibold'
+        : variant === 'caption'
+          ? 'medium'
+          : 'regular');
+  const textAlign: TextStyle['textAlign'] =
+    align === 'center' || align === 'justify'
+      ? align
       : align === 'end'
         ? direction === 'rtl'
-          ? 'text-left'
-          : 'text-right'
-        : alignClass[align];
-
+          ? 'left'
+          : 'right'
+        : direction === 'rtl'
+          ? 'right'
+          : 'left';
+  const baseStyle = {
+    fontFamily: fontFamilyForWeight(resolvedWeight),
+    writingDirection: direction,
+    textAlign,
+  } as const;
+  const mergedStyle = Array.isArray(style)
+    ? [baseStyle, ...style]
+    : style
+      ? { ...baseStyle, ...style }
+      : baseStyle;
   return (
     <NativeText
       allowFontScaling
       numberOfLines={truncate ? (numberOfLines ?? 1) : numberOfLines}
-      className={`${variantClass[variant]} ${toneClass[tone]} ${weight ? weightClass[weight] : ''} ${alignment} ${className ?? ''}`}
+      className={`${variantClass[variant]} ${toneClass[tone]} ${weight ? weightClass[weight] : ''} ${className ?? ''}`}
+      style={mergedStyle}
       {...props}
+      children={children}
     />
   );
 }

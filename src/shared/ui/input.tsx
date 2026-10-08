@@ -2,7 +2,9 @@ import { forwardRef, useState } from 'react';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
+import { fontFamilyForWeight } from '@/shared/theme/font';
 import { interaction } from '@/shared/theme/tokens';
+import { getTextDirection } from '@/shared/localization/localization';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from './text';
 
@@ -35,7 +37,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 ) {
   const colors = useThemeColors();
   const mode = useThemeMode();
-  const { direction } = useLocalization();
+  const { direction: fallbackDirection } = useLocalization();
+  const content = props.value || props.defaultValue || props.placeholder || '';
+  const direction = /[\p{Letter}\u200e\u200f]/u.test(content)
+    ? getTextDirection(content)
+    : fallbackDirection;
   const [focused, setFocused] = useState(false);
   const unavailable = disabled || !editable;
   return (
@@ -66,7 +72,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           onBlur?.(event);
         }}
         className={`min-h-input rounded-md border bg-surface px-lg py-md text-bodyMedium text-primaryText ${error ? 'border-error' : focused ? 'border-primary' : 'border-border'} ${className ?? ''}`}
-        style={[style, unavailable && { opacity: interaction.disabledOpacity }]}
+        style={[
+          { fontFamily: fontFamilyForWeight('regular'), writingDirection: direction, textAlign: textAlign ?? (direction === 'rtl' ? 'right' : 'left') },
+          style,
+          unavailable && { opacity: interaction.disabledOpacity },
+        ]}
         placeholderTextColor={colors.tertiaryText}
         selectionColor={colors.primary}
       />
