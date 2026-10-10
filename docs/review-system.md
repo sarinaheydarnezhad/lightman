@@ -31,7 +31,22 @@ No card progress, due dates, review counters, or history are reset. Switching a
 populated deck to a different scheduler is rejected until an explicit state-conversion
 policy exists; changing the same selection never changes card progress.
 
+## Deck deletion
+
+The deck's **Delete deck** action removes it and its cards from the user's collection
+and study. It uses the existing sync tombstone rather than physically erasing rows,
+so removal propagates to other devices and recorded review history remains intact.
+The app does not offer an undo or restore action for deleted decks.
+
 ## Session results and Review again
+
+During review, the header shows **Correct Answers** from the persisted session's
+`correctReviews` total. Every accepted Success, including an automatic retry,
+adds one; failures and failed saves do not. Resuming retains the total, while
+Study again and Review again start new sessions at zero. Accepted answers use
+the existing haptics service once, with a light impact on iOS and a native tick
+on Android for Success. The service checks the app's Haptics preference and uses
+system-controlled feedback without forcing vibration when unavailable or disabled.
 
 The existing original-session behavior is preserved: each initial failure receives
 at most one automatic retry. The summary shows unique cards studied, successful

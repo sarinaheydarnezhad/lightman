@@ -17,6 +17,8 @@ interface FlipCardProps {
   readonly front: ReactNode;
   readonly back: ReactNode;
   readonly accessibilityLabel: string;
+  readonly onFlip?: () => void;
+  readonly disabled?: boolean;
 }
 
 const perspective = 900;
@@ -28,7 +30,15 @@ export function FlipCard(props: FlipCardProps) {
 
   if (reduceMotion || Platform.OS === 'web') {
     return (
-      <Card className="min-h-studyCard flex-1" accessibilityLabel={props.accessibilityLabel}>
+      <Card
+        variant={props.onFlip ? 'interactive' : 'default'}
+        className="min-h-studyCard flex-1"
+        testID="study-flip-card"
+        accessible={false}
+        accessibilityLabel={props.accessibilityLabel}
+        onPress={props.onFlip}
+        disabled={props.disabled}
+      >
         {props.revealed ? props.back : props.front}
       </Card>
     );
@@ -37,7 +47,14 @@ export function FlipCard(props: FlipCardProps) {
   return <AnimatedFaces {...props} />;
 }
 
-function AnimatedFaces({ revealed, front, back, accessibilityLabel }: FlipCardProps) {
+function AnimatedFaces({
+  revealed,
+  front,
+  back,
+  accessibilityLabel,
+  onFlip,
+  disabled,
+}: FlipCardProps) {
   const colors = useThemeColors();
   // Each new card mounts at its logical face; an old card's rotation never carries over.
   const rotation = useSharedValue(revealed ? 180 : 0);
@@ -56,9 +73,14 @@ function AnimatedFaces({ revealed, front, back, accessibilityLabel }: FlipCardPr
 
   return (
     <Card
+      variant={onFlip ? 'interactive' : 'default'}
       className="min-h-studyCard flex-1"
+      testID="study-flip-card"
+      accessible={false}
       style={{ padding: 0 }}
       accessibilityLabel={accessibilityLabel}
+      onPress={onFlip}
+      disabled={disabled}
     >
       <Animated.View
         testID="flip-card-front"

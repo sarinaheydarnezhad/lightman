@@ -37,3 +37,18 @@ test('native failure or missing settings never breaks an interaction and warns o
   }, jest.fn());
   await expect(missingSettings.answerFailure()).resolves.toBeUndefined();
 });
+
+test('each correct answer rechecks the haptics setting and emits once only when enabled', async () => {
+  let enabled = true;
+  const preference = jest.fn(async () => enabled);
+  const perform = jest.fn(async () => {});
+  const feedback = createHapticFeedbackService(preference, perform);
+  await feedback.answerSuccess();
+  await feedback.answerSuccess();
+  enabled = false;
+  await feedback.answerSuccess();
+  enabled = true;
+  await feedback.answerSuccess();
+  expect(preference).toHaveBeenCalledTimes(4);
+  expect(perform.mock.calls).toEqual([['answerSuccess'], ['answerSuccess'], ['answerSuccess']]);
+});

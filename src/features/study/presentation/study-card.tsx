@@ -25,6 +25,7 @@ interface StudyCardProps {
   readonly revealed: boolean;
   readonly backTab: 'meaning' | 'examples';
   readonly onSelectBackTab: (tab: 'meaning' | 'examples') => void;
+  readonly onFlip?: () => void;
   readonly swipePending?: boolean;
   readonly onSwipeStart?: () => void;
   readonly onSwipeAnswer?: (result: ReviewResult) => void;
@@ -43,19 +44,23 @@ export const StudyCard = memo(function StudyCard({
   revealed,
   backTab,
   onSelectBackTab,
+  onFlip,
   swipePending = false,
   onSwipeStart,
   onSwipeAnswer,
 }: StudyCardProps) {
   const { t } = useLocalization();
   const size = deckTypography[deck.typographySize];
+  const flip = swipePending ? undefined : onFlip;
 
   const content = (
     <FlipCard
       key={card.id}
       revealed={revealed}
       accessibilityLabel={t('study.flashcard', { term: card.frontText })}
-      front={<FrontContent card={card} deck={deck} size={size} />}
+      onFlip={onFlip}
+      disabled={swipePending}
+      front={<FrontContent card={card} deck={deck} size={size} onFlip={flip} />}
       back={
         <BackContent
           card={card}
@@ -64,6 +69,7 @@ export const StudyCard = memo(function StudyCard({
           size={size}
           backTab={backTab}
           onSelectBackTab={onSelectBackTab}
+          onFlip={flip}
         />
       }
     />
@@ -86,18 +92,17 @@ function FrontContent({
   card,
   deck,
   size,
+  onFlip,
 }: {
   card: StudyCardData;
   deck: Deck;
   size: TypographyVariant;
+  onFlip?: () => void;
 }) {
   const { t } = useLocalization();
   return (
     <View className="min-h-0 flex-1 gap-lg">
-      <View className="flex-row items-center justify-between gap-sm">
-        <Text variant="labelMedium" tone="secondary">
-          {t('study.front')}
-        </Text>
+      <View className="flex-row items-center justify-end gap-sm">
         <PronunciationButton text={card.frontText} language={deck.language} />
       </View>
       <ScrollView
@@ -111,6 +116,10 @@ function FrontContent({
             variant={frontTypography[deck.typographySize]}
             style={deckContentStyle(card.frontText, deck.textAlignment)}
             accessibilityRole="header"
+            accessibilityActions={onFlip ? [{ name: 'activate', label: t('study.reveal') }] : []}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === 'activate') onFlip?.();
+            }}
           >
             {card.frontText}
           </Text>
@@ -144,6 +153,7 @@ function BackContent({
   size,
   backTab,
   onSelectBackTab,
+  onFlip,
 }: {
   card: StudyCardData;
   revealed: boolean;
@@ -151,6 +161,7 @@ function BackContent({
   size: TypographyVariant;
   backTab: 'meaning' | 'examples';
   onSelectBackTab: (tab: 'meaning' | 'examples') => void;
+  onFlip?: () => void;
 }) {
   const { t } = useLocalization();
   const title = useRef<View>(null);
@@ -170,15 +181,16 @@ function BackContent({
     <View className="min-h-0 flex-1 gap-lg">
       <View
         ref={title}
+        style={{ position: 'absolute', width: 1, height: 1 }}
         collapsable={false}
         accessible
         accessibilityRole="header"
         accessibilityLabel={t('study.answerRevealed')}
-      >
-        <Text variant="labelMedium" tone="secondary">
-          {t('study.answer')}
-        </Text>
-      </View>
+        accessibilityActions={onFlip ? [{ name: 'activate', label: t('study.showFront') }] : []}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'activate') onFlip?.();
+        }}
+      />
       <View className="flex-row border-b border-border" accessibilityRole="tablist">
         <Tab
           label={t('study.meaning')}
@@ -243,7 +255,10 @@ function BackContent({
             ))}
           </View>
         ) : (
-          <Text tone="secondary" style={deckContentStyle(t('study.noExamples'), deck.textAlignment)}>
+          <Text
+            tone="secondary"
+            style={deckContentStyle(t('study.noExamples'), deck.textAlignment)}
+          >
             {t('study.noExamples')}
           </Text>
         )}

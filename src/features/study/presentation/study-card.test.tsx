@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { useReducedMotion, withTiming } from 'react-native-reanimated';
 
@@ -16,6 +17,78 @@ const card = makeCard({
     { sentence: 'Hello, friend.', translation: 'A friendly greeting.' },
     { sentence: 'A second example.', notes: 'Conversation.' },
   ],
+});
+
+function FlippableCard() {
+  const [revealed, setRevealed] = useState(false);
+  const [backTab, setBackTab] = useState<'meaning' | 'examples'>('meaning');
+  return (
+    <ThemeProvider>
+      <StudyCard
+        card={card}
+        deck={makeDeck()}
+        revealed={revealed}
+        backTab={backTab}
+        onSelectBackTab={setBackTab}
+        onFlip={() => setRevealed((current) => !current)}
+      />
+    </ThemeProvider>
+  );
+}
+
+test.each([false, true])(
+  'tapping either card face flips it with reduced motion %s',
+  (reducedMotion) => {
+    jest.mocked(useReducedMotion).mockReturnValue(reducedMotion);
+    render(<FlippableCard />);
+    expect(screen.queryByText('FRONT', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByText('ANSWER', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pronounce hello' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('header', { name: 'hello' }));
+    expect(screen.getByText('greeting')).toBeTruthy();
+    expect(screen.queryByText('FRONT', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByText('ANSWER', { includeHiddenElements: true })).toBeNull();
+    expect(screen.getByRole('header', { name: 'Answer revealed' })).toHaveStyle({
+      position: 'absolute',
+      width: 1,
+      height: 1,
+    });
+    expect(screen.queryByRole('header', { name: 'hello' })).toBeNull();
+    fireEvent.press(screen.getByText('greeting'));
+    expect(screen.getByRole('header', { name: 'hello' })).toBeTruthy();
+    expect(screen.queryByText('greeting')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('study-flip-card'));
+    fireEvent.press(screen.getByRole('tab', { name: 'Examples' }));
+    expect(screen.getByText('Hello, friend.')).toBeTruthy();
+    fireEvent.press(screen.getByText('Hello, friend.'));
+    expect(screen.getByRole('header', { name: 'hello' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Examples' })).toBeNull();
+  },
+);
+
+test('screen reader activation flips both ways while keeping nested controls accessible', () => {
+  render(<FlippableCard />);
+  const front = screen.getByRole('header', { name: 'hello' });
+  expect(front.props.accessibilityActions).toEqual([{ name: 'activate', label: 'Reveal answer' }]);
+  fireEvent(front, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+  const answer = screen.getByRole('header', { name: 'Answer revealed' });
+  expect(answer.props.accessibilityActions).toEqual([
+    { name: 'activate', label: 'Show card front' },
+  ]);
+  expect(screen.getByRole('tab', { name: 'Examples' })).toBeTruthy();
+  fireEvent(answer, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+  expect(screen.getByRole('button', { name: 'Pronounce hello' })).toBeTruthy();
+});
+
+test('pending study actions disable card taps and accessible flip actions', () => {
+  const flip = jest.fn();
+  show({ onFlip: flip, revealed: true, swipePending: true });
+  fireEvent.press(screen.getByTestId('study-flip-card'));
+  const answer = screen.getByRole('header', { name: 'Answer revealed' });
+  expect(answer.props.accessibilityActions).toEqual([]);
+  fireEvent(answer, 'accessibilityAction', { nativeEvent: { actionName: 'activate' } });
+  expect(flip).not.toHaveBeenCalled();
 });
 
 beforeEach(() => jest.mocked(useReducedMotion).mockReturnValue(false));
@@ -57,13 +130,15 @@ test('category badge follows the deck content alignment in RTL', () => {
 });
 
 test('revealed answer shows Meaning and switches to multiple Examples without submitting', () => {
-  const select = show({ revealed: true });
+  const flip = jest.fn();
+  const select = show({ revealed: true, onFlip: flip });
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
   expect(screen.getByRole('header', { name: 'Answer revealed' })).toBeTruthy();
   expect(screen.getByText('greeting')).toBeTruthy();
   expect(screen.getByLabelText('Meaning: greeting')).toBeTruthy();
   fireEvent.press(screen.getByRole('tab', { name: 'Examples' }));
   expect(select).toHaveBeenCalledWith('examples');
+  expect(flip).not.toHaveBeenCalled();
   // The caller controls the active tab; this component never advances a study session.
 });
 
@@ -259,33 +334,20 @@ test.each(['light', 'dark', 'oled'] as const)(
   },
 );
 
-test('controls reveal before offering labeled Success and Failure actions', () => {
-  const reveal = jest.fn();
+test('controls offer only Success and Failure after the card is flipped to its answer', () => {
   const success = jest.fn();
   const failure = jest.fn();
   const { rerender } = render(
     <ThemeProvider>
-      <StudyControls
-        revealed={false}
-        submitting={false}
-        onReveal={reveal}
-        onSuccess={success}
-        onFailure={failure}
-      />
+      <StudyControls revealed={false} submitting={false} onSuccess={success} onFailure={failure} />
     </ThemeProvider>,
   );
   expect(screen.queryByRole('button', { name: 'Success' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Reveal answer' }));
-  expect(reveal).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole('button', { name: 'Failure' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Reveal answer' })).toBeNull();
   rerender(
     <ThemeProvider>
-      <StudyControls
-        revealed
-        submitting={false}
-        onReveal={reveal}
-        onSuccess={success}
-        onFailure={failure}
-      />
+      <StudyControls revealed submitting={false} onSuccess={success} onFailure={failure} />
     </ThemeProvider>,
   );
   fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
@@ -294,13 +356,7 @@ test('controls reveal before offering labeled Success and Failure actions', () =
   expect(success).toHaveBeenCalledTimes(1);
   rerender(
     <ThemeProvider>
-      <StudyControls
-        revealed
-        submitting
-        onReveal={reveal}
-        onSuccess={success}
-        onFailure={failure}
-      />
+      <StudyControls revealed submitting onSuccess={success} onFailure={failure} />
     </ThemeProvider>,
   );
   expect(screen.getByRole('button', { name: 'Success' }).props.accessibilityState.busy).toBe(true);

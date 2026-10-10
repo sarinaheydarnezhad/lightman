@@ -9,7 +9,7 @@ export function performExpoHaptic(event: HapticEvent): Promise<void> {
     const effects: Record<HapticEvent, Haptics.AndroidHaptics> = {
       selection: Haptics.AndroidHaptics.Segment_Tick,
       cardReveal: Haptics.AndroidHaptics.Segment_Frequent_Tick,
-      answerSuccess: Haptics.AndroidHaptics.Confirm,
+      answerSuccess: Haptics.AndroidHaptics.Segment_Tick,
       answerFailure: Haptics.AndroidHaptics.Segment_Tick,
       swipeCommit: Haptics.AndroidHaptics.Segment_Frequent_Tick,
       actionConfirmed: Haptics.AndroidHaptics.Confirm,

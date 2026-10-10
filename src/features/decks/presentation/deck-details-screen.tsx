@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 
-import { AppError } from '@/core/errors/app-error';
 import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { deckLanguageLabel } from '@/shared/localization/localization';
@@ -27,8 +26,8 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   const actions = useDeckActions();
   const study = useStartStudy();
   const [actionError, setActionError] = useState<string | null>(null);
-  const [confirmArchive, setConfirmArchive] = useState(false);
-  const [archiving, setArchiving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const submitting = useRef(false);
   const mounted = useRef(true);
   const deck = data?.deck;
@@ -40,27 +39,23 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
     [],
   );
 
-  async function archive() {
+  async function remove() {
     if (submitting.current) return;
     submitting.current = true;
-    setArchiving(true);
+    setDeleting(true);
     setActionError(null);
     try {
-      await actions.archive(deckId);
+      await actions.remove(deckId);
       if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.replace('/decks');
-    } catch (cause) {
+    } catch {
       if (mounted.current) {
-        setActionError(
-          language === 'en' && cause instanceof AppError
-            ? cause.message
-            : t('details.deckArchiveError'),
-        );
+        setActionError(t('details.deckDeleteError'));
       }
       void haptics.actionRejected();
       submitting.current = false;
-      if (mounted.current) setArchiving(false);
+      if (mounted.current) setDeleting(false);
     }
   }
 
@@ -98,9 +93,9 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
       <View className="gap-2xl pb-3xl">
         <View
           className="gap-2xl"
-          pointerEvents={confirmArchive ? 'none' : 'auto'}
-          accessibilityElementsHidden={confirmArchive}
-          importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
+          pointerEvents={confirmDelete ? 'none' : 'auto'}
+          accessibilityElementsHidden={confirmDelete}
+          importantForAccessibility={confirmDelete ? 'no-hide-descendants' : 'auto'}
         >
           <ScreenHeader title={deck.name} description={deck.description} />
           <Button
@@ -187,24 +182,24 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
             />
           </View>
           <Button
-            label={t('details.archiveDeck')}
-            variant="tertiary"
-            onPress={() => setConfirmArchive(true)}
+            label={t('details.deleteDeck')}
+            variant="destructive"
+            onPress={() => setConfirmDelete(true)}
           />
         </View>
-        {confirmArchive ? (
+        {confirmDelete ? (
           <ConfirmationPanel
-            title={t('details.archiveDeckTitle')}
-            description={t('details.archiveDeckHint')}
+            title={t('details.deleteDeckTitle')}
+            description={t('details.deleteDeckHint')}
             cancelLabel={t('details.keepDeck')}
-            confirmLabel={t('details.confirmArchive')}
-            busy={archiving}
+            confirmLabel={t('details.confirmDelete')}
+            busy={deleting}
             error={actionError}
             onCancel={() => {
-              setConfirmArchive(false);
+              setConfirmDelete(false);
               setActionError(null);
             }}
-            onConfirm={() => void archive()}
+            onConfirm={() => void remove()}
           />
         ) : null}
       </View>

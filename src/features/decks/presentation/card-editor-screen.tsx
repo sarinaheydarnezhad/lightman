@@ -35,13 +35,9 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
         params: { deckId, cardId },
       });
     } else {
-      const card = await create({ ...content, deckId });
+      await create({ ...content, deckId });
       if (!mounted.current) return;
       void haptics.actionConfirmed();
-      router.replace({
-        pathname: '/decks/[deckId]/cards/[cardId]',
-        params: { deckId, cardId: card.id },
-      });
     }
   }
 

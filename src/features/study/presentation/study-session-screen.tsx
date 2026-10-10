@@ -177,6 +177,14 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               <Text variant="headingSmall" accessibilityRole="header">
                 {t('study.session')}
               </Text>
+              <Text
+                testID="study-correct-answers"
+                variant="labelMedium"
+                tone="success"
+                accessibilityLiveRegion="polite"
+              >
+                {t('study.correctAnswers', { count: number(progress.correctReviews) })}
+              </Text>
             </View>
             <IconButton
               icon={X}
@@ -219,6 +227,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             revealed={study.revealed}
             backTab={study.backTab}
             onSelectBackTab={study.selectBackTab}
+            onFlip={study.flip}
             swipePending={study.swipePending || study.submitting || study.confirmExit}
             onSwipeStart={study.beginSwipe}
             onSwipeAnswer={study.submitSwipe}
@@ -231,7 +240,6 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           <StudyControls
             revealed={study.revealed}
             submitting={study.submitting || study.swipePending || study.confirmExit}
-            onReveal={study.reveal}
             onFailure={study.submitFailure}
             onSuccess={study.submitSuccess}
           />

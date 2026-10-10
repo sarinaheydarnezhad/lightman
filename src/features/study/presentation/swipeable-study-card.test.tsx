@@ -1,9 +1,13 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { useReducedMotion, withTiming } from 'react-native-reanimated';
+import { LinearGradient, Stop } from 'react-native-svg';
 
 import { makeCard, makeDeck } from '@/../test/fixtures';
+import { setTestTheme } from '@/../test/set-test-theme';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
 import { haptics } from '@/core/composition/haptics';
 import { StudyCard } from './study-card';
 
@@ -83,7 +87,19 @@ function show(overrides: Partial<Parameters<typeof StudyCard>[0]> = {}) {
   fireEvent(screen.getByTestId('study-swipe-card'), 'layout', {
     nativeEvent: { layout: { width: 320 } },
   });
-  return { ...rendered, props, onSwipeStart, onSwipeAnswer };
+  const refresh = () =>
+    rendered.rerender(
+      <ThemeProvider>
+        <StudyCard {...props} onSelectBackTab={jest.fn()} />
+      </ThemeProvider>,
+    );
+  return { ...rendered, props, onSwipeStart, onSwipeAnswer, refresh };
+}
+
+function lightingStyle(result: 'success' | 'failure') {
+  return StyleSheet.flatten(
+    screen.getByTestId(`study-swipe-light-${result}`, { includeHiddenElements: true }).props.style,
+  );
 }
 
 function drag(x: number, velocityX = 0, translationY = 0) {
@@ -102,6 +118,105 @@ beforeEach(() => {
   mockPans.length = 0;
   jest.mocked(haptics.swipeCommit).mockClear();
   jest.mocked(useReducedMotion).mockReturnValue(false);
+});
+
+afterEach(async () => setTestTheme('system'));
+
+test.each([
+  [1, 'success', 'failure'],
+  [-1, 'failure', 'success'],
+] as const)(
+  'direction %i strengthens only its %s lighting and clears it on cancellation',
+  (direction, result, opposite) => {
+    const { refresh, onSwipeAnswer } = show();
+    const pan = mockPans.at(-1)!;
+    expect(lightingStyle(result).opacity).toBe(0);
+    act(() => {
+      pan.onBegin?.();
+      pan.onUpdate?.({ translationX: direction * 45, translationY: 0, velocityX: 0 });
+    });
+    refresh();
+    expect(lightingStyle(result).opacity).toBeCloseTo(45 / (320 * 0.28));
+    expect(lightingStyle(opposite).opacity).toBe(0);
+    expect(onSwipeAnswer).not.toHaveBeenCalled();
+
+    act(() => pan.onUpdate?.({ translationX: direction * 120, translationY: 0, velocityX: 0 }));
+    refresh();
+    expect(lightingStyle(result).opacity).toBe(1);
+    expect(lightingStyle(opposite).opacity).toBe(0);
+    expect(onSwipeAnswer).not.toHaveBeenCalled();
+
+    act(() => pan.onFinalize?.());
+    refresh();
+    expect(lightingStyle(result).opacity).toBe(0);
+    expect(lightingStyle(opposite).opacity).toBe(0);
+    expect(onSwipeAnswer).not.toHaveBeenCalled();
+  },
+);
+
+test('reversing a drag switches lighting to the new physical direction', () => {
+  const { refresh } = show();
+  const pan = mockPans.at(-1)!;
+  act(() => pan.onUpdate?.({ translationX: 60, translationY: 0, velocityX: 0 }));
+  refresh();
+  expect(lightingStyle('success').opacity).toBeGreaterThan(0);
+  expect(lightingStyle('failure').opacity).toBe(0);
+  act(() => pan.onUpdate?.({ translationX: -60, translationY: 0, velocityX: 0 }));
+  refresh();
+  expect(lightingStyle('failure').opacity).toBeGreaterThan(0);
+  expect(lightingStyle('success').opacity).toBe(0);
+});
+
+test('returning to the front hides any lingering swipe lighting', () => {
+  const { refresh, rerender, props } = show();
+  act(() => mockPans.at(-1)?.onUpdate?.({ translationX: 60, translationY: 0, velocityX: 0 }));
+  refresh();
+  expect(lightingStyle('success').opacity).toBeGreaterThan(0);
+  rerender(
+    <ThemeProvider>
+      <StudyCard {...props} revealed={false} />
+    </ThemeProvider>,
+  );
+  expect(lightingStyle('success').opacity).toBe(0);
+  expect(lightingStyle('failure').opacity).toBe(0);
+});
+
+test.each(['light', 'dark', 'oled'] as const)(
+  '%s theme uses matching semantic borders and directional light gradients',
+  async (theme) => {
+    await setTestTheme(theme);
+    const rendered = show();
+    expect(lightingStyle('success').borderColor).toBe(palette[theme].success);
+    expect(lightingStyle('failure').borderColor).toBe(palette[theme].error);
+    expect(lightingStyle('success').shadowColor).toBe(palette[theme].success);
+    expect(lightingStyle('failure').shadowColor).toBe(palette[theme].error);
+    const gradients = rendered.UNSAFE_getAllByType(LinearGradient);
+    expect(gradients.map((gradient) => [gradient.props.x1, gradient.props.x2])).toEqual([
+      ['100%', '0%'],
+      ['0%', '100%'],
+    ]);
+    expect(gradients).toHaveLength(2);
+    expect(gradients[0]?.props.id).not.toBe(gradients[1]?.props.id);
+    expect(rendered.UNSAFE_getAllByType(Stop).map((stop) => stop.props.stopColor)).toEqual([
+      palette[theme].error,
+      palette[theme].error,
+      palette[theme].error,
+      palette[theme].success,
+      palette[theme].success,
+      palette[theme].success,
+    ]);
+  },
+);
+
+test('reduced motion keeps directional lighting without an added timing animation', () => {
+  jest.mocked(useReducedMotion).mockReturnValue(true);
+  const { refresh } = show();
+  const before = jest.mocked(withTiming).mock.calls.length;
+  act(() => mockPans.at(-1)?.onUpdate?.({ translationX: -60, translationY: 0, velocityX: 0 }));
+  refresh();
+  expect(lightingStyle('failure').opacity).toBeGreaterThan(0);
+  expect(lightingStyle('success').opacity).toBe(0);
+  expect(jest.mocked(withTiming).mock.calls.length).toBe(before);
 });
 
 test('unrevealed cards disable the pan and cannot submit a gesture', () => {
@@ -219,6 +334,13 @@ test('a committed swipe does not submit after the card unmounts', () => {
 
 test('feedback is visual only; accessible answer and button controls remain separate', () => {
   show();
+  for (const result of ['success', 'failure']) {
+    expect(screen.queryByTestId(`study-swipe-light-${result}`)).toBeNull();
+    expect(
+      screen.getByTestId(`study-swipe-light-${result}`, { includeHiddenElements: true }).props
+        .pointerEvents,
+    ).toBe('none');
+  }
   expect(screen.queryByText('← Failure')).toBeNull();
   expect(screen.getByText('greeting')).toBeTruthy();
   expect(Gesture.Pan).toBeDefined();

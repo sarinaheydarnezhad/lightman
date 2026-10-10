@@ -47,6 +47,7 @@ export function CardForm({
   );
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [created, setCreated] = useState(false);
   const [frontError, setFrontError] = useState<string | null>(null);
   const [meaningError, setMeaningError] = useState<string | null>(null);
   const [exampleError, setExampleError] = useState<number | null>(null);
@@ -107,6 +108,7 @@ export function CardForm({
 
   async function save() {
     if (submitting.current) return;
+    setCreated(false);
     setFrontError(null);
     setMeaningError(null);
     setExampleError(null);
@@ -142,6 +144,19 @@ export function CardForm({
     Keyboard.dismiss();
     try {
       await onSubmit(content);
+      if (mounted.current && !existing) {
+        setFrontText('');
+        setPhonetic('');
+        setCategory('');
+        setMeaning('');
+        setExamples([]);
+        setPreview(false);
+        setPendingSuggestion(null);
+        setMeaningChoice(null);
+        setPhoneticChoice(null);
+        setImportMessage(null);
+        setCreated(true);
+      }
     } catch (cause) {
       if (mounted.current) {
         setError(
@@ -168,7 +183,7 @@ export function CardForm({
           </Text>
           <Input
             label={t('form.frontText')}
-            style={deckContentStyle((frontText) || deck.language, deck.textAlignment)}
+            style={deckContentStyle(frontText || deck.language, deck.textAlignment)}
             value={frontText}
             onChangeText={(value) => {
               setFrontText(value);
@@ -182,18 +197,20 @@ export function CardForm({
             returnKeyType="next"
             onSubmitEditing={() => phoneticRef.current?.focus()}
           />
-          <VocabularyHelper
-            key={`${deck.language}:${frontText}`}
-            word={frontText}
-            language={deck.language}
-            textAlignment={deck.textAlignment}
-            onSelect={(selection) => {
-              setPendingSuggestion(selection);
-              setMeaningChoice(null);
-              setPhoneticChoice(null);
-              setImportMessage(null);
-            }}
-          />
+          <View style={existing ? undefined : { display: 'none' }}>
+            <VocabularyHelper
+              key={`${deck.language}:${frontText}`}
+              word={frontText}
+              language={deck.language}
+              textAlignment={deck.textAlignment}
+              onSelect={(selection) => {
+                setPendingSuggestion(selection);
+                setMeaningChoice(null);
+                setPhoneticChoice(null);
+                setImportMessage(null);
+              }}
+            />
+          </View>
           {pendingSuggestion ? (
             <Surface className="gap-md" accessibilityLiveRegion="polite">
               <Text variant="headingSmall" accessibilityRole="header">
@@ -266,7 +283,7 @@ export function CardForm({
           <Input
             ref={phoneticRef}
             label={t('form.phonetic')}
-            style={deckContentStyle((phonetic) || deck.language, deck.textAlignment)}
+            style={deckContentStyle(phonetic || deck.language, deck.textAlignment)}
             value={phonetic}
             onChangeText={setPhonetic}
             maxLength={500}
@@ -276,7 +293,7 @@ export function CardForm({
           <Input
             ref={categoryRef}
             label={t('form.category')}
-            style={deckContentStyle((category) || deck.language, deck.textAlignment)}
+            style={deckContentStyle(category || deck.language, deck.textAlignment)}
             value={category}
             onChangeText={setCategory}
             maxLength={120}
@@ -291,7 +308,7 @@ export function CardForm({
           <Input
             ref={meaningRef}
             label={t('form.meaning')}
-            style={deckContentStyle((meaning) || deck.language, deck.textAlignment)}
+            style={deckContentStyle(meaning || deck.language, deck.textAlignment)}
             value={meaning}
             onChangeText={(value) => {
               setMeaning(value);
@@ -309,7 +326,7 @@ export function CardForm({
               <Text variant="labelLarge">{t('form.example', { number: number(index + 1) })}</Text>
               <Input
                 label={t('form.sentence', { number: number(index + 1) })}
-                style={deckContentStyle((example.sentence) || deck.language, deck.textAlignment)}
+                style={deckContentStyle(example.sentence || deck.language, deck.textAlignment)}
                 value={example.sentence}
                 onChangeText={(value) => changeExample(index, { sentence: value })}
                 error={exampleError === index ? t('form.sentenceRequired') : undefined}
@@ -319,7 +336,10 @@ export function CardForm({
               />
               <Input
                 label={t('form.translation', { number: number(index + 1) })}
-                style={deckContentStyle((example.translation ?? '') || deck.language, deck.textAlignment)}
+                style={deckContentStyle(
+                  (example.translation ?? '') || deck.language,
+                  deck.textAlignment,
+                )}
                 value={example.translation ?? ''}
                 onChangeText={(value) => changeExample(index, { translation: value })}
                 multiline
@@ -373,6 +393,11 @@ export function CardForm({
                 })),
             }}
           />
+        ) : null}
+        {created ? (
+          <Text tone="success" accessibilityLiveRegion="polite">
+            {t('form.cardCreated')}
+          </Text>
         ) : null}
         {error ? (
           <Text tone="error" accessibilityLiveRegion="polite">

@@ -7,13 +7,11 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 export const StudyControls = memo(function StudyControls({
   revealed,
   submitting,
-  onReveal,
   onFailure,
   onSuccess,
 }: {
   readonly revealed: boolean;
   readonly submitting: boolean;
-  readonly onReveal: () => void;
   readonly onFailure: () => void;
   readonly onSuccess: () => void;
 }) {
@@ -35,7 +33,5 @@ export const StudyControls = memo(function StudyControls({
         onPress={onSuccess}
       />
     </View>
-  ) : (
-    <Button label={t('study.reveal')} onPress={onReveal} />
-  );
+  ) : null;
 });

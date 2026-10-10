@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { useEffect, useId, useState, type ReactNode } from 'react';
+import { StyleSheet, useWindowDimensions, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -8,7 +8,9 @@ import Animated, {
   useSharedValue,
   withSpring,
   withTiming,
+  type AnimatedStyle,
 } from 'react-native-reanimated';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { haptics } from '@/core/composition/haptics';
 import { useThemeColors } from '@/shared/theme/theme-provider';
@@ -134,10 +136,14 @@ export function SwipeableStudyCard({
     };
   });
   const successStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, Math.max(0, translationX.value / swipeThreshold(cardWidth))),
+    opacity: revealed
+      ? Math.min(1, Math.max(0, translationX.value / swipeThreshold(cardWidth)))
+      : 0,
   }));
   const failureStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, Math.max(0, -translationX.value / swipeThreshold(cardWidth))),
+    opacity: revealed
+      ? Math.min(1, Math.max(0, -translationX.value / swipeThreshold(cardWidth)))
+      : 0,
   }));
   const feedbackSurface = {
     backgroundColor: colors.surfaceElevated,
@@ -158,6 +164,8 @@ export function SwipeableStudyCard({
         }}
       >
         {children}
+        <SwipeLighting result="failure" color={colors.error} style={failureStyle} />
+        <SwipeLighting result="success" color={colors.success} style={successStyle} />
         <Animated.View
           pointerEvents="none"
           importantForAccessibility="no-hide-descendants"
@@ -188,5 +196,56 @@ export function SwipeableStudyCard({
         </Animated.View>
       </Animated.View>
     </GestureDetector>
+  );
+}
+
+function SwipeLighting({
+  result,
+  color,
+  style,
+}: {
+  readonly result: ReviewResult;
+  readonly color: string;
+  readonly style: AnimatedStyle<ViewStyle>;
+}) {
+  const gradientId = `swipe-light-${useId().replace(/:/g, '')}`;
+
+  return (
+    <Animated.View
+      testID={`study-swipe-light-${result}`}
+      pointerEvents="none"
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          borderRadius: radii.lg,
+          borderWidth: 2,
+          borderColor: color,
+          shadowColor: color,
+          shadowOpacity: 0.4,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 0 },
+        },
+        style,
+      ]}
+    >
+      <Svg width="100%" height="100%" accessible={false}>
+        <Defs>
+          <LinearGradient
+            id={gradientId}
+            x1={result === 'success' ? '0%' : '100%'}
+            y1="0%"
+            x2={result === 'success' ? '100%' : '0%'}
+            y2="0%"
+          >
+            <Stop offset="0%" stopColor={color} stopOpacity={0.02} />
+            <Stop offset="50%" stopColor={color} stopOpacity={0.06} />
+            <Stop offset="100%" stopColor={color} stopOpacity={0.28} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" rx={radii.lg} ry={radii.lg} fill={`url(#${gradientId})`} />
+      </Svg>
+    </Animated.View>
   );
 }

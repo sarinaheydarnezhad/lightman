@@ -111,21 +111,21 @@ export function useStudySessionViewModel(sessionId: string) {
       !mounted.current ||
       inFlight.current ||
       swipePendingRef.current ||
-      !revealed ||
+      !revealedRef.current ||
       !item ||
       phase !== 'ready'
     )
       return;
     swipePendingRef.current = true;
     setSwipePending(true);
-  }, [item, phase, revealed]);
+  }, [item, phase]);
 
   const submitAnswer = useCallback(
     async (result: ReviewResult, source: 'button' | 'swipe') => {
       if (
         !mounted.current ||
         inFlight.current ||
-        !revealed ||
+        !revealedRef.current ||
         !item ||
         phase !== 'ready' ||
         (source === 'button' && swipePendingRef.current) ||
@@ -166,7 +166,7 @@ export function useStudySessionViewModel(sessionId: string) {
         }
       }
     },
-    [item, load, phase, revealed, sessionId, t],
+    [item, load, phase, sessionId, t],
   );
 
   const submit = useCallback(
@@ -176,13 +176,20 @@ export function useStudySessionViewModel(sessionId: string) {
   const submitFailure = useCallback(() => void submit('failure'), [submit]);
   const submitSuccess = useCallback(() => void submit('success'), [submit]);
 
-  const reveal = useCallback(() => {
-    if (!mounted.current || revealedRef.current || inFlight.current || !item || phase !== 'ready')
+  const flip = useCallback(() => {
+    if (
+      !mounted.current ||
+      inFlight.current ||
+      swipePendingRef.current ||
+      confirmExit ||
+      !item ||
+      phase !== 'ready'
+    )
       return;
-    revealedRef.current = true;
-    setRevealed(true);
-    void haptics.cardReveal();
-  }, [item, phase]);
+    revealedRef.current = !revealedRef.current;
+    setRevealed(revealedRef.current);
+    if (revealedRef.current) void haptics.cardReveal();
+  }, [confirmExit, item, phase]);
   const submitSwipe = useCallback(
     (result: ReviewResult) => submitAnswer(result, 'swipe'),
     [submitAnswer],
@@ -274,7 +281,7 @@ export function useStudySessionViewModel(sessionId: string) {
     leave,
     cancel,
     dismissExit: () => setConfirmExit(false),
-    reveal,
+    flip,
     selectBackTab: setBackTab,
     submit,
     submitFailure,

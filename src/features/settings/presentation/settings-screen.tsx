@@ -2,7 +2,7 @@ import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { config } from '@/core/infrastructure/platform';
 import { localTime, type LocalTime } from '@/core/domain/values';
@@ -52,8 +52,9 @@ function SettingsRow({
   onPress?: () => void;
   disabled?: boolean;
 }) {
-  const { t } = useLocalization();
+  const { t, direction } = useLocalization();
   const colors = useThemeColors();
+  const Chevron = direction === 'rtl' ? ChevronLeft : ChevronRight;
   const content = (
     <View className="min-w-0 flex-1 gap-xs">
       <Text variant="labelLarge">{label}</Text>
@@ -73,7 +74,9 @@ function SettingsRow({
       accessibilityLabel={t('settings.choose', { label, detail })}
       disabled={disabled}
       onPress={onPress}
-      className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
+      className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
+        direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'
+      }`}
       style={(state) =>
         disabled
           ? { opacity: interaction.disabledOpacity }
@@ -83,7 +86,7 @@ function SettingsRow({
       }
     >
       {content}
-      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
+      <Chevron color={colors.tertiaryText} size={icons.medium} />
     </Pressable>
   );
 }
@@ -103,7 +106,7 @@ function SettingsSwitch({
   disabled?: boolean;
   onChange: () => void;
 }) {
-  const { t } = useLocalization();
+  const { t, direction } = useLocalization();
   const colors = useThemeColors();
   return (
     <Pressable
@@ -113,7 +116,9 @@ function SettingsSwitch({
       accessibilityState={{ checked: value, busy }}
       disabled={busy || disabled}
       onPress={onChange}
-      className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
+      className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
+        direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'
+      }`}
       style={(state) =>
         busy || disabled
           ? { opacity: interaction.disabledOpacity }
@@ -297,20 +302,22 @@ export function SettingsScreen() {
               />
             </SettingsSection>
 
-            <SettingsSection title={t('settings.interaction')}>
-              <SettingsSwitch
-                label={t('settings.haptics')}
-                description={t('settings.hapticsHint')}
-                value={settings.hapticsEnabled}
-                busy={!!vm.busy.haptics}
-                onChange={() => void vm.setHaptics(!settings.hapticsEnabled)}
-              />
-              {vm.errors.haptics ? (
-                <Text tone="error" accessibilityLiveRegion="polite">
-                  {language === 'en' ? vm.errors.haptics : t('common.genericError')}
-                </Text>
-              ) : null}
-            </SettingsSection>
+            <View style={{ display: 'none' }}>
+              <SettingsSection title={t('settings.interaction')}>
+                <SettingsSwitch
+                  label={t('settings.haptics')}
+                  description={t('settings.hapticsHint')}
+                  value={settings.hapticsEnabled}
+                  busy={!!vm.busy.haptics}
+                  onChange={() => void vm.setHaptics(!settings.hapticsEnabled)}
+                />
+                {vm.errors.haptics ? (
+                  <Text tone="error" accessibilityLiveRegion="polite">
+                    {language === 'en' ? vm.errors.haptics : t('common.genericError')}
+                  </Text>
+                ) : null}
+              </SettingsSection>
+            </View>
 
             <SettingsSection title={t('settings.about')}>
               <SettingsRow

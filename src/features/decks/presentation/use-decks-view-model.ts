@@ -9,7 +9,7 @@ export function useDeckActions() {
     get: application.getDeck,
     create: application.createDeck,
     update: application.updateDeck,
-    archive: application.archiveDeck,
+    remove: application.archiveDeck,
   };
 }
 

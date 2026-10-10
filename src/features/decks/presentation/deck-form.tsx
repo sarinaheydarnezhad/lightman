@@ -34,7 +34,11 @@ export function DeckForm({
   existing?: Deck;
   onSubmit: (values: CreateDeckInput) => Promise<void>;
 }) {
-  const { t, language } = useLocalization();
+  const { t, language, direction } = useLocalization();
+  const optionRowStyle = {
+    direction: 'ltr',
+    flexDirection: direction === 'rtl' ? 'row-reverse' : 'row',
+  } as const;
   const [name, setName] = useState(existing?.name ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
   const initialTag = existing?.language ?? 'en';
@@ -153,7 +157,7 @@ export function DeckForm({
           <Text tone="secondary" variant="bodySmall">
             {t('form.languageHint')}
           </Text>
-          <View className="flex-row flex-wrap gap-sm">
+          <View className="flex-row flex-wrap gap-sm" style={optionRowStyle}>
             {languageChoices.map((choice) => (
               <Chip
                 key={choice.tag}
@@ -170,7 +174,7 @@ export function DeckForm({
         </View>
         <View className="gap-sm">
           <Text variant="labelLarge">{t('form.alignment')}</Text>
-          <View className="flex-row flex-wrap gap-sm">
+          <View className="flex-row flex-wrap gap-sm" style={optionRowStyle}>
             {(['ltr', 'rtl', 'center'] as const).map((choice) => (
               <Chip
                 key={choice}
@@ -183,7 +187,7 @@ export function DeckForm({
         </View>
         <View className="gap-sm">
           <Text variant="labelLarge">{t('form.size')}</Text>
-          <View className="flex-row flex-wrap gap-sm">
+          <View className="flex-row flex-wrap gap-sm" style={optionRowStyle}>
             {(['small', 'medium', 'large'] as const).map((choice) => (
               <Chip
                 key={choice}
@@ -195,7 +199,7 @@ export function DeckForm({
           </View>
         </View>
         <View className="gap-sm">
-          <View className="flex-row items-center justify-between gap-sm">
+          <View className="flex-row items-center justify-between gap-sm" style={optionRowStyle}>
             <Text variant="labelLarge">{t('review.system')}</Text>
             <IconButton
               icon={Info}
@@ -207,7 +211,7 @@ export function DeckForm({
           <Text tone="secondary" variant="bodySmall">
             {t('review.deckHint')}
           </Text>
-          <View className="flex-row flex-wrap gap-sm">
+          <View className="flex-row flex-wrap gap-sm" style={optionRowStyle}>
             {application.listSchedulers().map((scheduler) => (
               <Chip
                 key={scheduler.id}
@@ -224,7 +228,7 @@ export function DeckForm({
           animationType="fade"
           onRequestClose={() => setReviewInfoVisible(false)}
         >
-          <View className="flex-1 justify-end bg-overlay/60 p-lg" accessibilityViewIsModal>
+          <View className="flex-1 justify-center bg-overlay/60 p-lg" accessibilityViewIsModal>
             <Card variant="elevated" className="gap-md">
               <Text variant="headingSmall">{t('review.infoTitle')}</Text>
               {application.listSchedulers().map((scheduler) => (

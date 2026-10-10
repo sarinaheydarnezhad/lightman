@@ -8,6 +8,15 @@ import {
 } from './localization';
 import { en, fa } from './messages';
 
+test('card creation confirmation is localized in English and Persian', () => {
+  expect(translate('en', 'form.cardCreated')).toBe(
+    'Card added successfully. You can add another card.',
+  );
+  expect(translate('fa', 'form.cardCreated')).toBe(
+    'کارت با موفقیت اضافه شد. می‌توانید کارت دیگری اضافه کنید.',
+  );
+});
+
 test('resolves explicit UI language and direction independently of deck content', () => {
   expect(resolveUiLanguage('en-US')).toBe('en');
   expect(resolveUiLanguage('fa-IR')).toBe('fa');
