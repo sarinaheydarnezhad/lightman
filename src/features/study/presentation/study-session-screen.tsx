@@ -54,6 +54,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
         <View className="flex-1 justify-center gap-lg">
           <View
             className="gap-lg"
+            collapsable={false}
             pointerEvents={study.confirmExit ? 'none' : 'auto'}
             accessibilityElementsHidden={study.confirmExit}
             importantForAccessibility={study.confirmExit ? 'no-hide-descendants' : 'auto'}
@@ -164,7 +165,9 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
     <Screen scroll testID="study-session-screen">
       <View className="min-h-0 flex-1 gap-lg">
         <View
+          testID="study-session-content"
           className="min-h-0 flex-1 gap-lg"
+          collapsable={false}
           pointerEvents={study.confirmExit ? 'none' : 'auto'}
           accessibilityElementsHidden={study.confirmExit}
           importantForAccessibility={study.confirmExit ? 'no-hide-descendants' : 'auto'}

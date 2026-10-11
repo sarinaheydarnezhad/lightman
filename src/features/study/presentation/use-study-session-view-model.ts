@@ -203,8 +203,7 @@ export function useStudySessionViewModel(sessionId: string) {
     try {
       await application.cancelStudySession(sessionId);
       if (!mounted.current) return;
-      setConfirmExit(false);
-      router.replace('/study');
+      router.dismissTo('/');
     } catch (cause) {
       if (mounted.current) {
         setActionError(safeError(cause, 'Unable to end this session. Try again.'));

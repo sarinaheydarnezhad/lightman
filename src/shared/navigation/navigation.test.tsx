@@ -987,7 +987,8 @@ test('Study tab starts an all-deck session, reveals answers and lets users leave
   expect(screen.getByRole('tab', { name: 'Meaning', selected: true })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Success' })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
-  expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
+  expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/');
   expect(await application.getActiveStudySession()).toBeNull();
 }, 20_000);
 
@@ -1008,7 +1009,8 @@ test('advancing a study card and leaving study stop pronunciation without auto-p
   const beforeLeaving = stop.mock.calls.length;
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
   fireEvent.press(screen.getByRole('button', { name: 'End session' }));
-  await screen.findByRole('header', { name: 'Study' });
+  await screen.findByRole('header', { name: 'Welcome back' });
+  expect((await application.getStudySession(session.id)).status).toBe('cancelled');
   expect(stop.mock.calls.length).toBeGreaterThan(beforeLeaving);
 });
 
@@ -1243,8 +1245,9 @@ test('empty scoped study is a normal state and offers deck navigation', async ()
 });
 
 test('exit after an answer confirms cancellation and keeps completed reviews', async () => {
+  const cancel = jest.spyOn(application, 'cancelStudySession');
   const { deck } = await studyFixture(2);
-  renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
+  const rendered = renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
   await screen.findByRole('header', { name: deck.name });
   fireEvent.press(screen.getByRole('button', { name: 'Start study' }));
   await screen.findByRole('header', { name: 'Study session' });
@@ -1262,8 +1265,14 @@ test('exit after an answer confirms cancellation and keeps completed reviews', a
   fireEvent.press(screen.getByRole('button', { name: 'Keep studying' }));
   expect(screen.getByTestId('study-flip-card')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
-  fireEvent.press(screen.getByRole('button', { name: 'End session' }));
-  expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
+  const end = screen.getByRole('button', { name: 'End session' });
+  fireEvent.press(end);
+  fireEvent.press(end);
+  expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/');
+  expect(screen.getByRole('button', { name: 'Home tab', selected: true })).toBeTruthy();
+  expect(cancel).toHaveBeenCalledTimes(1);
+  expect(await application.getActiveStudySession()).toBeNull();
   expect((await application.getStudySession(active.id)).status).toBe('cancelled');
   expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(1);
   expect((await application.listReviewEvents({ cardId: first.cardId })).length).toBe(1);
@@ -1283,7 +1292,7 @@ test('session start failure shows a recoverable error', async () => {
   }
 });
 
-test('Home starts an all-deck study session and exits back to Study', async () => {
+test('Home starts an all-deck study session and exits back to Home', async () => {
   jest.spyOn(idGenerator, 'create').mockImplementation(() => `study-ui-${++studyId}`);
   const rendered = renderRouter(routes, { initialUrl: '/' });
   await screen.findByRole('header', { name: 'Welcome back' });
@@ -1292,8 +1301,9 @@ test('Home starts an all-deck study session and exits back to Study', async () =
   const active = (await application.getActiveStudySession())!;
   expect(active.scope).toEqual({ kind: 'all-decks' });
   fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
-  await screen.findByRole('header', { name: 'Study' });
-  expect(rendered.getPathname()).toBe('/study');
+  await screen.findByRole('header', { name: 'Welcome back' });
+  expect(rendered.getPathname()).toBe('/');
+  expect(await application.getActiveStudySession()).toBeNull();
 });
 
 test('answer failure keeps the current card available for a safe retry', async () => {
@@ -1391,6 +1401,54 @@ test('an unavailable current card shows retry and an exit that cancels its activ
   expect(await screen.findByRole('header', { name: 'Study unavailable' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Leave study' }));
-  expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
+  expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeTruthy();
   expect(await application.getActiveStudySession()).toBeNull();
+});
+
+test('ending study keeps the confirmation and native content stable until navigation unmounts it', async () => {
+  const { deck, cards } = await studyFixture(2);
+  const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
+  renderRouter(routes, { initialUrl: `/study/${session.id}` });
+  await screen.findByRole('header', { name: cards[0]!.frontText });
+  expect(screen.getByTestId('study-session-content').props.collapsable).toBe(false);
+  fireEvent.press(screen.getByTestId('study-flip-card'));
+  fireEvent.press(screen.getByRole('button', { name: 'Success' }));
+  await screen.findByRole('header', { name: cards[1]!.frontText });
+  fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
+  const dismiss = jest.spyOn(router, 'dismissTo').mockImplementation(() => {});
+  fireEvent.press(screen.getByRole('button', { name: 'End session' }));
+  await waitFor(() => expect(dismiss).toHaveBeenCalledWith('/'));
+  expect(screen.getByRole('header', { name: 'End this session?' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'End session', disabled: true })).toBeTruthy();
+  const content = screen.getByTestId('study-session-content', { includeHiddenElements: true });
+  expect(content.props.collapsable).toBe(false);
+  expect(content.props.importantForAccessibility).toBe('no-hide-descendants');
+  expect(content.props.pointerEvents).toBe('none');
+  expect((await application.getStudySession(session.id)).status).toBe('cancelled');
+});
+
+test('failed session cancellation stays in study and can retry ending at Home', async () => {
+  const { deck, cards } = await studyFixture(2);
+  const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
+  const rendered = renderRouter(routes, { initialUrl: `/study/${session.id}` });
+  await screen.findByRole('header', { name: cards[0]!.frontText });
+  fireEvent.press(screen.getByTestId('study-flip-card'));
+  fireEvent.press(screen.getByRole('button', { name: 'Success' }));
+  await screen.findByRole('header', { name: cards[1]!.frontText });
+  const cancel = jest
+    .spyOn(application, 'cancelStudySession')
+    .mockRejectedValueOnce(new AppError('persistence', 'Unable to end this session. Try again.'));
+  fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
+  fireEvent.press(screen.getByRole('button', { name: 'End session' }));
+  await screen.findByText('Unable to end this session. Try again.');
+  expect(rendered.getPathname()).toBe(`/study/${session.id}`);
+  expect((await application.getActiveStudySession())?.id).toBe(session.id);
+  expect(screen.getByRole('header', { name: cards[1]!.frontText })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Exit study' }));
+  fireEvent.press(screen.getByRole('button', { name: 'End session' }));
+  await screen.findByRole('header', { name: 'Welcome back' });
+  expect(rendered.getPathname()).toBe('/');
+  expect(cancel).toHaveBeenCalledTimes(2);
+  expect(await application.getActiveStudySession()).toBeNull();
+  expect(await application.listReviewEvents({ deckId: deck.id })).toHaveLength(1);
 });

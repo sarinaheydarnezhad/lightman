@@ -40,6 +40,14 @@ The app does not offer an undo or restore action for deleted decks.
 
 ## Session results and Review again
 
+Ending an active study session saves its cancellation and returns to Home without
+closing the app. Already recorded answers are kept. If cancellation cannot be saved,
+the session stays open with an error so the user can retry.
+
+The outgoing review screen keeps its confirmation state until navigation unmounts
+it. Its accessibility-gated content has a non-collapsible native wrapper so toggling
+the confirmation cannot reparent retained views during Android stack transitions.
+
 During review, the header shows **Correct Answers** from the persisted session's
 `correctReviews` total. Every accepted Success, including an automatic retry,
 adds one; failures and failed saves do not. Resuming retains the total, while
