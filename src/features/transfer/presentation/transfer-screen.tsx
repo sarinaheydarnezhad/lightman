@@ -24,6 +24,7 @@ import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
+import { formatTransferLocation } from './format-transfer-location';
 
 const formatHelp = [
   [
@@ -133,7 +134,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
             onPress={() =>
               void run(async () => {
                 const name = await downloadSampleFile();
-                setResult(t('transfer.saved', { name }));
+                setResult(t('transfer.saved', { name: formatTransferLocation(name) }));
               })
             }
           />
@@ -293,7 +294,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
               void run(async () => {
                 const bytes = await transferService.export(format, deckId);
                 const name = await saveTransferFile(format, bytes);
-                setResult(t('transfer.saved', { name }));
+                setResult(t('transfer.saved', { name: formatTransferLocation(name) }));
               })
             }
           />
@@ -305,7 +306,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
               void run(async () => {
                 const bytes = await transferService.export(format, deckId);
                 const name = await shareTransferFile(format, bytes);
-                setResult(t('transfer.shared', { name }));
+                setResult(t('transfer.shared', { name: formatTransferLocation(name) }));
               })
             }
           />

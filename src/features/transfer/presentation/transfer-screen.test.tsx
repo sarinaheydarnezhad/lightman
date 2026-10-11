@@ -4,6 +4,8 @@ import {
   transferService,
   selectTransferFile,
   shareTransferFile,
+  saveTransferFile,
+  downloadSampleFile,
 } from '@/core/composition/transfer';
 import { makeDeck } from '@/../test/fixtures';
 import { TransferScreen } from './transfer-screen';
@@ -14,6 +16,8 @@ jest.mock('@/core/composition/application', () => ({ application: { listDecks: j
 jest.mock('@/core/composition/transfer', () => ({
   selectTransferFile: jest.fn(),
   shareTransferFile: jest.fn(),
+  saveTransferFile: jest.fn(),
+  downloadSampleFile: jest.fn(),
   transferService: {
     preview: jest.fn(),
     confirm: jest.fn(),
@@ -41,6 +45,7 @@ beforeEach(() => {
     .mocked(transferService.confirm)
     .mockResolvedValue({ imported: 1, duplicatesSkipped: 1, invalidSkipped: 1, issues: [] });
   jest.mocked(transferService.export).mockResolvedValue(new Uint8Array([2]));
+  jest.mocked(shareTransferFile).mockResolvedValue('file:///cache/cards.csv');
 });
 
 test('selection parses to preview; nothing saves before explicit confirmation', async () => {
@@ -89,4 +94,28 @@ test('exports a selected deck in chosen format using the platform sharing adapte
   fireEvent.press(screen.getByText('Anki (.apkg)'));
   fireEvent.press(screen.getByText('Share / Save file'));
   await waitFor(() => expect(transferService.export).toHaveBeenCalledWith('apkg', undefined));
+});
+
+test('export confirmation displays the chosen folder and filename instead of the Android URI', async () => {
+  const uri =
+    'content://com.android.externalstorage.documents/tree/primary%3ADownload%2FLerona/document/primary%3ADownload%2FLerona%2Flerona-2026-10-11T10-36-32-200Z.csv';
+  jest.mocked(saveTransferFile).mockResolvedValue(uri);
+  render(<TransferScreen />);
+  await screen.findByText('Vocabulary');
+  fireEvent.press(screen.getByText('Save file to device'));
+  await screen.findByText('Saved: Download/Lerona/lerona-2026-10-11T10-36-32-200Z.csv');
+  expect(saveTransferFile).toHaveBeenCalledWith('csv', new Uint8Array([2]));
+  expect(screen.queryByText(`Saved: ${uri}`)).toBeNull();
+});
+
+test('sample download confirmation also displays a readable path', async () => {
+  jest
+    .mocked(downloadSampleFile)
+    .mockResolvedValue(
+      'content://com.android.externalstorage.documents/document/primary%3ADownload%2Fsample.xlsx',
+    );
+  render(<TransferScreen />);
+  await screen.findByText('Vocabulary');
+  fireEvent.press(screen.getByText('Download Excel sample'));
+  await screen.findByText('Saved: Download/sample.xlsx');
 });
