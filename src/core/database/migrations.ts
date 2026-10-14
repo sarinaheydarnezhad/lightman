@@ -266,6 +266,19 @@ export const migrations: readonly Migration[] = [
   { version: 3, statements: syncSchemaStatements },
   { version: 4, statements: schedulerSchemaStatements },
   { version: 5, statements: schedulerSyncStatements },
+  {
+    version: 6,
+    statements: [
+      `CREATE TABLE guest_transfers (
+      id TEXT PRIMARY KEY NOT NULL,
+      source_device_id TEXT UNIQUE NOT NULL,
+      user_id TEXT NOT NULL,
+      snapshot_json TEXT NOT NULL,
+      operation_ids_json TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('pending', 'complete'))
+    )`,
+    ],
+  },
 ];
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');

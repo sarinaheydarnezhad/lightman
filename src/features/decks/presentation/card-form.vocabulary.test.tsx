@@ -9,6 +9,7 @@ import type { DictionaryLookupResult } from '@/features/vocabulary/domain/dictio
 import { ThemeProvider } from '@/shared/theme/theme-provider';
 import { setTestTheme } from '@/../test/set-test-theme';
 import { CardForm } from './card-form';
+import { AppError } from '@/core/errors/app-error';
 
 jest.mock('@/core/composition/vocabulary', () => ({
   vocabularyHelper: {
@@ -32,6 +33,24 @@ const found: DictionaryLookupResult = {
     ],
   },
 };
+
+test('card quota errors explain the limit and preserve unsaved card fields', async () => {
+  showForm({
+    onSubmit: async () => {
+      throw new AppError('free-tier-limit', 'Quota');
+    },
+  });
+  fireEvent.changeText(screen.getByLabelText('Front text'), 'Fifty first card');
+  fireEvent.changeText(screen.getByLabelText('Meaning'), 'Keep this text');
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(
+    await screen.findByText(
+      'The free plan allows 50 active cards in total. Existing data is preserved.',
+    ),
+  ).toBeTruthy();
+  expect(screen.getByLabelText('Front text').props.value).toBe('Fifty first card');
+  expect(screen.getByLabelText('Meaning').props.value).toBe('Keep this text');
+});
 
 function showForm({
   existing,

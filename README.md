@@ -14,6 +14,14 @@ Install Node.js 22.13+ and pnpm 10.15.1 (for example, using Corepack), then run 
 
 Expo Go supports the app's local daily reminders. With Expo SDK 57 on Android, importing the `expo-notifications` package entry point also initializes unsupported push-token registration. The local-only imports are isolated in `src/core/infrastructure/expo-local-notifications.ts`; review that adapter when upgrading Expo. No push tokens or remote notifications are used. If an old Metro bundle still shows the import error, restart with `npx expo start --clear` and reopen the app.
 
+## Guest mode and free limits
+
+The app starts in guest mode without requiring a backend connection. Guest and account data use separate local SQLite scopes; signing in does not automatically upload or merge guest data. After login, a preview offers an explicitly confirmed, non-destructive copy of supported guest data through the existing sync queue. Creating data is limited to one active deck and 50 active cards per scope, with matching authenticated backend enforcement. Existing oversized data is retained and remains editable/studiable. Subscription entitlement infrastructure is not implemented, so all accounts currently receive the free limits; there is no client-side premium bypass. See `docs/guest-mode.md`, `docs/guest-data-migration.md` and `docs/guest-migration-verification.md` for supported transfer data, limits, isolation and actual checks.
+
+## Phone authentication
+
+The **Account** card at the top of **Settings** always shows **Sign in** for guests, even when cloud authentication is unavailable. Signed-in users see their username and phone/email, with an account-ID fallback while offline, and a Cloud sync action. The sign-in screen offers phone/password login, OTP login, or registration (request code → verify → username/password/confirmation). The forms reuse Lerona's UI, localization and navigation. See `docs/phone-authentication.md` for matching backend contracts, deployment configuration, and failure behavior.
+
 ## Import / Export
 
 Open **Settings → Import / Export** to import CSV, XLSX, or real Anki APKG files,
@@ -91,6 +99,8 @@ Deck management lives in `features/decks/presentation`: `DecksScreen` loads the 
 Card management uses `CardListScreen` with a deck-scoped virtualized list, category choices and local search through `useCardListViewModel`; `CardListItem` has no storage access. `CardForm` shares create/edit field state and offers structured examples with sentence, translation and notes; `CardContent` shares front/back presentation between form preview and details. A card inherits alignment and semantic typography from its parent deck. Create routes to card details; edit dismisses to existing details; confirmed archive dismisses to the deck's card list. Read and write hooks call the use cases, which validate the deck relationship and delegate to `CardRepository`. Repository search covers term, phonetic, category and meaning, normalizes whitespace and excludes archived cards; category filtering is exact and case-insensitive. Active counts use a repository count operation instead of loading every card into a screen. `CardSort` prepares alphabetical, created and updated ordering without exposing unsupported review filters. Form values stay local and buttons guard rapid saves and archives. No study scheduling or review calculations are performed.
 
 ## Domain and persistence contracts
+
+Secure logout offers verified account synchronization or explicit logout without backup, preserves separate guest/account databases, and records only non-secret references for later owner-authenticated session revocation. See `docs/secure-logout.md` and `docs/secure-logout-verification.md` for supported behavior, deployment dependencies and actual checks; no retained backup service is claimed.
 
 `Deck`, `Card`, `CardReviewState`, `ReviewEvent`, `StudySession`, and `UserSettings` live under feature `domain` folders. IDs are opaque strings. `Instant` is a validated UTC timestamp with milliseconds, `CalendarDate` is an ISO day without a time zone, and `LocalTime` is a 24-hour `HH:mm` wall-clock time. Language tags accept basic BCP 47 syntax such as `en` and `fa-IR`. The single `AppClock` source supplies current instants in use cases; reminder local times and due calendar days stay distinct from timestamps. SRS intervals and analytics streaks are calculated in separate domain modules.
 

@@ -6,6 +6,18 @@ export function mapDatabaseError(
 ): AppError {
   if (error instanceof AppError) return error;
   const text = error instanceof Error ? error.message.toLowerCase() : '';
+  if (text.includes('free_tier_deck_limit'))
+    return new AppError(
+      'free-tier-limit',
+      'The free plan allows 1 active deck. Existing data is preserved.',
+      error,
+    );
+  if (text.includes('free_tier_card_limit'))
+    return new AppError(
+      'free-tier-limit',
+      'The free plan allows 50 active cards in total. Existing data is preserved.',
+      error,
+    );
   if (text.includes('unique constraint') || text.includes('already exists')) {
     return new AppError('conflict', 'The local record already exists.', error);
   }

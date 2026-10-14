@@ -12,6 +12,7 @@ import {
   type UiLanguage,
 } from '@/shared/localization/localization';
 import { DeckForm } from './deck-form';
+import { AppError } from '@/core/errors/app-error';
 
 jest.mock('@/core/composition/application', () => ({
   application: {
@@ -110,6 +111,36 @@ function expectRows(language: UiLanguage) {
     within(header!).getByRole('button', { name: translate(language, 'review.infoButton') }),
   ).toBeTruthy();
 }
+
+test.each(['en', 'fa'] as const)(
+  'deck quota errors are explicit in %s and retain entered data',
+  async (language) => {
+    setLanguage(language);
+    render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 320, height: 850 },
+          insets: { top: 0, right: 0, bottom: 0, left: 0 },
+        }}
+      >
+        <DeckForm
+          onSubmit={jest.fn().mockRejectedValue(new AppError('free-tier-limit', 'Quota'))}
+        />
+      </SafeAreaProvider>,
+    );
+    fireEvent.changeText(
+      screen.getByLabelText(translate(language, 'form.deckName')),
+      'Unsaved deck',
+    );
+    fireEvent.press(
+      screen.getByRole('button', { name: translate(language, 'form.createDeckAction') }),
+    );
+    expect(await screen.findByText(translate(language, 'guest.deckLimit'))).toBeTruthy();
+    expect(screen.getByLabelText(translate(language, 'form.deckName')).props.value).toBe(
+      'Unsaved deck',
+    );
+  },
+);
 
 test.each(['create', 'edit'] as const)(
   '%s option rows and review header switch from RTL back to LTR',

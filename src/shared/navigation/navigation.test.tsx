@@ -29,6 +29,7 @@ import Appearance from '@/app/settings/appearance';
 import SpeechSettings from '@/app/settings/speech';
 import LanguageSettings from '@/app/settings/language';
 import CloudSync from '@/app/settings/cloud';
+import Authentication from '@/app/auth';
 import Transfer from '@/app/settings/transfer';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
@@ -107,6 +108,7 @@ const routes = {
   'settings/speech': SpeechSettings,
   'settings/language': LanguageSettings,
   'settings/cloud': CloudSync,
+  'auth/index': Authentication,
   'settings/transfer': Transfer,
   'design-system': DesignSystem,
 };
@@ -135,6 +137,19 @@ test('settings opens the local import/export route', async () => {
   fireEvent.press(await screen.findByText('Import / Export'));
   expect(await screen.findByRole('button', { name: 'Select file' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/settings/transfer');
+});
+
+test('authentication route resolves within the existing navigation stack', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/auth' });
+  expect(await screen.findByRole('header', { name: 'Sign in to Lerona' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/auth');
+});
+
+test('settings has a direct sign-in entry even when cloud authentication is unavailable', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/settings' });
+  fireEvent.press(await screen.findByRole('button', { name: 'Sign in' }));
+  expect(await screen.findByRole('header', { name: 'Sign in to Lerona' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/auth');
 });
 
 test.each([

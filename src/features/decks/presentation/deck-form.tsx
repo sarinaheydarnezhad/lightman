@@ -89,7 +89,9 @@ export function DeckForm({
       return;
     }
     try {
-      validLanguage = supportedLanguageTag(languageChoice === initialChoice?.tag ? initialTag : languageChoice ?? initialTag);
+      validLanguage = supportedLanguageTag(
+        languageChoice === initialChoice?.tag ? initialTag : (languageChoice ?? initialTag),
+      );
     } catch {
       setLanguageError(t('form.languageInvalid'));
       void haptics.actionRejected();
@@ -110,7 +112,11 @@ export function DeckForm({
     } catch (cause) {
       if (mounted.current) {
         setError(
-          language === 'en' && cause instanceof AppError ? cause.message : t('form.deckSaveError'),
+          cause instanceof AppError && cause.code === 'free-tier-limit'
+            ? t('guest.deckLimit')
+            : language === 'en' && cause instanceof AppError
+              ? cause.message
+              : t('form.deckSaveError'),
         );
       }
       void haptics.actionRejected();
@@ -170,7 +176,11 @@ export function DeckForm({
               />
             ))}
           </View>
-          {languageError ? <Text tone="error" accessibilityLiveRegion="polite">{languageError}</Text> : null}
+          {languageError ? (
+            <Text tone="error" accessibilityLiveRegion="polite">
+              {languageError}
+            </Text>
+          ) : null}
         </View>
         <View className="gap-sm">
           <Text variant="labelLarge">{t('form.alignment')}</Text>

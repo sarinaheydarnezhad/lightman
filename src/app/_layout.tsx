@@ -13,6 +13,7 @@ import { application } from '@/core/composition/application';
 import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
 import { createReminderTapHandler } from '@/features/study/application/create-reminder-tap-handler';
 import { BootstrapGate } from '@/shared/bootstrap/bootstrap-gate';
+import { DataScopeBoundary } from '@/shared/bootstrap/data-scope-boundary';
 import { LocalizationProvider, useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
 import { fontAssets } from '@/shared/theme/font';
@@ -116,6 +117,9 @@ function Navigation() {
         <Stack.Screen name="settings/language" options={{ title: t('settings.appLanguage') }} />
         <Stack.Screen name="settings/speech" options={{ title: t('nav.pronunciation') }} />
         <Stack.Screen name="settings/cloud" options={{ title: t('sync.title') }} />
+        <Stack.Screen name="settings/logout" options={{ title: t('logout.title') }} />
+        <Stack.Screen name="auth/index" options={{ title: t('auth.title') }} />
+        <Stack.Screen name="auth/guest-data" options={{ title: t('migration.title') }} />
         <Stack.Screen name="settings/transfer" options={{ title: t('transfer.title') }} />
         <Stack.Screen name="+not-found" options={{ title: t('common.notFound') }} />
         <Stack.Screen name="design-system" options={{ title: t('nav.designSystem') }} />
@@ -133,7 +137,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <LocalizationProvider>
             <BootstrapGate>
-              <Navigation />
+              <DataScopeBoundary>
+                <Navigation />
+              </DataScopeBoundary>
             </BootstrapGate>
           </LocalizationProvider>
         </ThemeProvider>

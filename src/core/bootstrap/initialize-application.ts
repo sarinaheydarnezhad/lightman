@@ -10,7 +10,9 @@ export function initializeApplication(): Promise<void> {
     initialization = (async () => {
       await initializeRepositories();
       if (database) {
-        void import('@/core/composition/sync').then(({ syncEngine }) => syncEngine?.start()).catch(() => {});
+        const { restoreLocalSession, syncEngine } = await import('@/core/composition/sync');
+        await restoreLocalSession();
+        syncEngine?.start();
       }
       void Promise.resolve()
         .then(() => application.settings.initialize(defaultSettings()))

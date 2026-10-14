@@ -2,8 +2,8 @@ import { createTransferService } from '@/features/transfer/application/transfer-
 import { csvAdapter } from '@/features/transfer/data/csv-adapter';
 import { xlsxAdapter } from '@/features/transfer/data/xlsx-adapter';
 import { apkgAdapter } from '@/features/transfer/data/apkg-adapter';
-import { application } from './application';
-import { repositories } from './repositories';
+import { activeApplication } from './application';
+import { storageScopes } from './repositories';
 
 export {
   selectTransferFile,
@@ -12,8 +12,30 @@ export {
   downloadSampleFile,
 } from '@/features/transfer/data/transfer-files';
 
-export const transferService = createTransferService(application, repositories, {
-  csv: csvAdapter,
-  xlsx: xlsxAdapter,
-  apkg: apkgAdapter,
+const services = new WeakMap<object, ReturnType<typeof createTransferService>>();
+export const transferService = new Proxy({} as ReturnType<typeof createTransferService>, {
+  get: (_target, property) => {
+    const scope = storageScopes.current();
+    let service = services.get(scope.value);
+    if (!service) {
+      service = createTransferService(activeApplication(), scope.value, {
+        csv: csvAdapter,
+        xlsx: xlsxAdapter,
+        apkg: apkgAdapter,
+      });
+      services.set(scope.value, service);
+    }
+    const value = Reflect.get(service, property);
+    if (typeof value !== 'function') return value;
+    return (...args: unknown[]) => {
+      storageScopes.assertCurrent(scope);
+      const result: unknown = value(...args);
+      if (result instanceof Promise)
+        return result.then((next: unknown) => {
+          storageScopes.assertCurrent(scope);
+          return next;
+        });
+      return result;
+    };
+  },
 });

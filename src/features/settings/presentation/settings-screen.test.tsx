@@ -48,7 +48,15 @@ function settingsScreen() {
 
 function expectControls(language: UiLanguage, enabled: boolean) {
   const direction = resolveDirection(language);
-  const buttons = screen.getAllByRole('button');
+  expect(screen.getAllByRole('header').slice(0, 3)).toEqual([
+    screen.getByRole('header', { name: translate(language, 'nav.settings') }),
+    screen.getByRole('header', { name: translate(language, 'settings.account') }),
+    screen.getByRole('header', { name: translate(language, 'settings.appearance') }),
+  ]);
+  expect(screen.getByRole('button', { name: translate(language, 'sync.signIn') })).toBeTruthy();
+  const buttons = screen
+    .getAllByRole('button')
+    .filter((button) => button.props.accessibilityLabel !== translate(language, 'sync.signIn'));
   expect(buttons).toHaveLength(enabled ? 6 : 5);
   for (const button of buttons) {
     const classes = button.props.className.split(' ');

@@ -3,6 +3,7 @@ import { instant } from '@/core/domain/values';
 import { reviewResult } from '@/features/study/domain/review';
 import { mergeReviewEvents } from './review-merge';
 import { randomUUID } from 'expo-crypto';
+import type { CloudClient } from './cloud-client';
 import type {
   PendingOperation,
   PullPage,
@@ -51,7 +52,10 @@ function integerField(payload: Record<string, unknown>, key: string): number {
 }
 
 export class SyncStore {
-  constructor(private readonly database: Database) {}
+  constructor(
+    private readonly database: Database,
+    private readonly canBind: () => boolean = () => true,
+  ) {}
 
   async account(): Promise<{ userId: string; deviceId: string; cursor: number }> {
     const result = await this.database.execute(
@@ -67,6 +71,8 @@ export class SyncStore {
   }
 
   async bind(userId: string): Promise<void> {
+    if (!this.canBind())
+      throw new Error('Guest data cannot be linked to an account in this version.');
     const account = await this.account();
     if (account.userId && account.userId !== userId)
       throw new Error(
@@ -206,6 +212,116 @@ export class SyncStore {
         counts[status] = number(entry, 'count');
     }
     return counts;
+  }
+
+  async verifySynchronized(cloud: CloudClient): Promise<void> {
+    const account = await this.account();
+    if ((await cloud.accountProfile()).id !== account.userId)
+      throw new Error(
+        'The verified identity does not own this local account. Logout sync is blocked.',
+      );
+    const counts = await this.counts();
+    if (counts.pending || counts.failed || counts.conflict)
+      throw new Error(
+        'Account changes remain pending, failed or conflicted. Nothing was backed up.',
+      );
+    const missing = await this.database.execute(
+      `
+      SELECT 'deck' AS kind FROM decks d LEFT JOIN sync_entity_versions v
+        ON v.entity_type = 'deck' AND v.entity_id = d.id WHERE v.server_version IS NULL
+      UNION ALL SELECT 'card' FROM cards c LEFT JOIN sync_entity_versions v
+        ON v.entity_type = 'card' AND v.entity_id = c.id WHERE v.server_version IS NULL
+      UNION ALL SELECT 'reviewEvent' FROM review_events e LEFT JOIN sync_review_versions v
+        ON v.event_id = e.id WHERE v.server_version IS NULL
+      UNION ALL SELECT 'reviewState' FROM card_review_state s
+        WHERE NOT EXISTS (SELECT 1 FROM sync_entity_versions v WHERE v.entity_type = 'reviewState' AND v.entity_id = s.card_id)
+        AND NOT EXISTS (SELECT 1 FROM review_events e JOIN sync_review_versions v ON v.event_id = e.id WHERE e.card_id = s.card_id)
+      UNION ALL SELECT 'settings' FROM user_settings s
+        WHERE NOT EXISTS (SELECT 1 FROM sync_entity_versions v WHERE v.entity_type = 'settings' AND v.entity_id = ?)
+      UNION ALL SELECT 'scheduler' FROM decks WHERE review_system <> 'leitner'
+      LIMIT 1`,
+      [account.userId],
+    );
+    if (missing.rows.length)
+      throw new Error(
+        'Some local account data has no verified sync version or uses an unsupported scheduler. Keep it locally and resolve sync before logout.',
+      );
+    const decks = (
+      await this.database.execute('SELECT id, name FROM decks WHERE archived_at IS NULL')
+    ).rows;
+    const remoteDecks = (await cloud.ownedDecks()).filter((deck) => !deck.archivedAtUtc);
+    if (
+      decks.length !== remoteDecks.length ||
+      decks.some(
+        (deck) => !remoteDecks.some((remote) => remote.id === deck.id && remote.name === deck.name),
+      )
+    )
+      throw new Error(
+        'Account deck inventory does not match the server. Synchronization is not verified.',
+      );
+    for (const deck of decks) {
+      const cards = (
+        await this.database.execute(
+          'SELECT id, front_text, meaning FROM cards WHERE deck_id = ? AND archived_at IS NULL',
+          [deck.id!],
+        )
+      ).rows;
+      const remoteCards = (await cloud.ownedCards(value(deck, 'id'))).filter(
+        (card) => !card.archivedAtUtc,
+      );
+      if (
+        cards.length !== remoteCards.length ||
+        cards.some(
+          (card) =>
+            !remoteCards.some(
+              (remote) =>
+                remote.id === card.id &&
+                remote.frontText === card.front_text &&
+                remote.meaning === card.meaning,
+            ),
+        )
+      )
+        throw new Error(
+          'Account card inventory does not match the server. Synchronization is not verified.',
+        );
+      for (const card of cards) {
+        const state = (
+          await this.database.execute('SELECT * FROM card_review_state WHERE card_id = ?', [
+            card.id!,
+          ])
+        ).rows[0];
+        const remote = await cloud.ownedReviewState(value(card, 'id'));
+        if (
+          !state ||
+          state.box !== remote.box ||
+          state.due_date !== remote.dueDate ||
+          state.total_reviews !== remote.totalReviews ||
+          state.total_successes !== remote.totalSuccesses ||
+          state.consecutive_successes !== remote.consecutiveSuccesses ||
+          (state.last_reviewed_at ? utc(state.last_reviewed_at) : null) !==
+            (remote.lastReviewedAtUtc ? utc(remote.lastReviewedAtUtc) : null)
+        )
+          throw new Error(
+            'Account review progress does not match the server. Synchronization is not verified.',
+          );
+      }
+    }
+    const acknowledgements = await this.database.execute(
+      'SELECT MAX(ack_version) AS latest FROM sync_operations WHERE status = ?',
+      ['synced'],
+    );
+    const latest = acknowledgements.rows[0]?.latest ?? 0;
+    const final = await this.counts();
+    if (
+      final.pending ||
+      final.failed ||
+      final.conflict ||
+      typeof latest !== 'number' ||
+      (await this.account()).cursor < latest
+    )
+      throw new Error(
+        'Account synchronization changed or acknowledgements are not pulled. Retry before logging out.',
+      );
   }
 
   async retryFailed(): Promise<void> {

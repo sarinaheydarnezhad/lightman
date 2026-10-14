@@ -21,6 +21,7 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { appearanceChoices } from './appearance-options';
 import { useSettingsViewModel } from './use-settings-view-model';
+import { SettingsAccountCard } from './settings-account-card';
 
 const permissionLabels: Record<NotificationPermissionState, MessageKey> = {
   notDetermined: 'settings.permission.notDetermined',
@@ -198,6 +199,7 @@ export function SettingsScreen() {
     <Screen scroll edges={tabScreenEdges}>
       <View className="gap-2xl">
         <ScreenHeader title={t('nav.settings')} description={t('settings.description')} />
+        <SettingsAccountCard />
         {vm.loading && !settings ? <LoadingState label={t('settings.loading')} /> : null}
         {vm.loadError && !settings ? (
           <ErrorState

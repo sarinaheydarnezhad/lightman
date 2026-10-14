@@ -1,5 +1,125 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'logout.title': 'Log out?',
+  'logout.confirm':
+    'Account decks, cards and progress will no longer be accessible while signed out. Your separate guest data and server data are not deleted.',
+  'logout.withBackup': 'Back Up and Log Out',
+  'logout.withoutBackup': 'Log Out Without Backing Up',
+  'logout.coverage':
+    'Back Up uses the existing account sync, not a separate backup. Supported decks, cards, review history, Leitner progress and settings must be acknowledged and verified. Local study sessions and other scheduler metadata are not backed up.',
+  'logout.retention':
+    'No backup retention period, expiry or historical restore guarantee is available.',
+  'logout.unavailable':
+    'Verified server sync is unavailable in this environment. You may cancel or log out without backing up.',
+  'logout.syncing': 'Synchronizing and verifying account data before logout…',
+  'logout.signingOut': 'Securing this device and requesting session revocation…',
+  'logout.backupFailed':
+    'Logout was not completed. No backup is claimed. Retry, cancel, or explicitly log out without backing up.',
+  'logout.success': 'Signed out on this device. Only guest data is accessible.',
+  'logout.synced':
+    'Supported account data was synchronized and verified before logout. No separate retained backup was created.',
+  'logout.skipped':
+    'Logged out without creating or verifying a backup. Account data remains separate; server data was not deleted.',
+  'logout.revoked': 'The server confirmed session revocation.',
+  'logout.pending':
+    'Server revocation is unconfirmed. A non-secret session reference is saved for retry when this same account signs in online; the retry does not use saved login tokens.',
+  'logout.unconfirmed':
+    'Server revocation is unconfirmed, and a retry reference could not be saved. No backup or server logout success is assumed.',
+  'logout.clearFailed':
+    'Account access is blocked, but secure credentials could not be fully erased. Keep the app open and retry before restarting.',
+  'logout.retryClear': 'Retry secure credential removal',
+  'migration.title': 'Guest data transfer',
+  'migration.preserve':
+    'Guest and account data stay separate until you confirm. Nothing is deleted.',
+  'migration.checking': 'Checking account data and guest storage…',
+  'migration.incomplete':
+    'Account data exists but could not be fully loaded from sync. Transfer is blocked; review the dependency below.',
+  'migration.guest-only': 'Your account is empty. You can copy your guest decks into this account.',
+  'migration.account-only':
+    'Your account data is loaded. There are no active guest decks to transfer.',
+  'migration.both': 'Both environments have data. Review both lists before deciding.',
+  'migration.empty': 'Neither environment has active decks. Continue with an empty account.',
+  'migration.guestDecks': 'Guest decks on this device',
+  'migration.accountDecks': 'Account decks',
+  'migration.noDecks': 'No active decks',
+  'migration.deck': '{name} · {cards} cards',
+  'migration.reviews': '{count} guest review events',
+  'migration.sameNames':
+    'Same-name decks: {names}. Matching titles do not mean matching cards or progress. Only separate copies are supported; no automatic merging or replacement.',
+  'migration.supported':
+    'Copies active Leitner decks, active cards, and review progress reproducible from complete history. Settings, archived data, other schedulers, and study sessions are not copied. Original creation timestamps are not retained by the server.',
+  'migration.confirm':
+    'Add separate copies to this account? Titles and identical card text are never used to combine data. Your guest originals will remain on this device.',
+  'migration.add': 'Add guest decks as separate copies',
+  'migration.confirmAdd': 'Confirm copy to account',
+  'migration.cancel': 'Cancel without copying',
+  'migration.separate': 'Keep datasets separate',
+  'migration.continue': 'Continue to account',
+  'migration.later': 'Continue later · originals preserved',
+  'migration.retry': 'Refresh preview / check connection',
+  'migration.resume': 'Resume the previously confirmed transfer',
+  'migration.progress':
+    'Verified acknowledgements: {acknowledged} / {total}. Checking server data…',
+  'migration.pending':
+    'A previously confirmed snapshot is pending. Retry resumes the same IDs; later guest edits are not included. Some data may already be on the server.',
+  'migration.already':
+    'A guest snapshot was already copied to this account. Later guest edits are not automatically recopied.',
+  'migration.success':
+    'The copied snapshot is acknowledged, synchronized, and verified in your account. Guest originals remain unchanged.',
+  'migration.failure':
+    'Transfer completion is not confirmed. Both originals and recoverable account copies are preserved. Check your connection, retry the same transfer, or review cloud sync conflicts in Settings.',
+  'migration.unavailable':
+    'Cloud transfer is unavailable on this device. Configure the backend and sign in; guest study remains available offline.',
+  'guest.mode': 'Guest mode · Local data only · Free plan',
+  'guest.accountMode': 'Account mode · Offline data available · Free plan',
+  'guest.explanation':
+    'Guest data stays on this device. Signing in opens separate account data and offers a confirmed, non-destructive guest copy.',
+  'guest.deckLimit': 'The free plan allows 1 active deck. Existing data is preserved.',
+  'guest.cardLimit': 'The free plan allows 50 active cards in total. Existing data is preserved.',
+  'guest.switching': 'Opening your local data…',
+  'guest.storageError': 'Unable to open local data',
+  'guest.storageErrorHint': 'Your data has not been deleted. Retry opening guest storage.',
+  'auth.title': 'Sign in to Lerona',
+  'auth.phone': 'Mobile number',
+  'auth.phoneHint': 'Include the country code, for example +989121234567.',
+  'auth.passwordLogin': 'Login with password',
+  'auth.emailLogin': 'Existing email account',
+  'auth.invalidEmail': 'Enter a valid email address.',
+  'auth.otpLogin': 'Login with OTP',
+  'auth.register': 'Create account',
+  'auth.request': 'Request code',
+  'auth.verify': 'Verify code',
+  'auth.code': 'Six-digit verification code',
+  'auth.requested': 'Code requested. Delivery may take a moment.',
+  'auth.resend': 'Request another code',
+  'auth.resendWait': 'You can request another code in {seconds} seconds.',
+  'auth.codeExpiry': 'Code expires in {seconds} seconds.',
+  'auth.changePhone': 'Change mobile number',
+  'auth.verified': 'Mobile number verified. Complete your account below.',
+  'auth.username': 'Username',
+  'auth.confirmPassword': 'Confirm password',
+  'auth.passwordHint': 'Use 12–128 characters.',
+  'auth.complete': 'Complete registration',
+  'auth.success': 'You are signed in.',
+  'auth.done': 'Continue to cloud sync',
+  'auth.invalidPhone': 'Enter a mobile number with + and its country code.',
+  'auth.invalidCode': 'Enter the six digits from your SMS.',
+  'auth.invalidPassword': 'Use a password between 12 and 128 characters.',
+  'auth.passwordMismatch': 'The passwords do not match.',
+  'auth.invalidUsername': 'Enter a username of 1–120 characters.',
+  'auth.credentials': 'Invalid mobile number or password.',
+  'auth.invalidOtp':
+    'Verification is invalid, expired, already used, or has too many attempts. Request another code.',
+  'auth.expired': 'Verification expired. Request another code.',
+  'auth.duplicate': 'This mobile number already has an account. Please sign in.',
+  'auth.rateLimit': 'Too many requests. Wait before trying again.',
+  'auth.smsUnavailable':
+    'SMS authentication is unavailable or not configured. Please try again later.',
+  'auth.network':
+    'Network request failed. Check your connection and try again. If verification was interrupted, request a new code.',
+  'auth.unexpected': 'Authentication could not be completed. Please try again.',
+  'auth.passwordRequired': 'Enter your password.',
+  'auth.sessionExpired': 'Your session expired. Please sign in again.',
   'review.system': 'Review System',
   'review.deckHint': 'This review system applies only to this deck.',
   'review.infoButton': 'Explain review systems',
@@ -206,6 +326,7 @@ export const en = {
   'notification.title': 'Time to study',
   'notification.body': 'You have cards waiting for review.',
   'settings.description': 'Make the app comfortable for your study routine.',
+  'settings.account': 'Account',
   'settings.loading': 'Loading settings',
   'settings.loadError': 'Could not load settings.',
   'settings.appearance': 'Appearance',
@@ -428,6 +549,121 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'logout.title': 'از حساب خارج می‌شوید؟',
+  'logout.confirm':
+    'پس از خروج، دسته‌ها، کارت‌ها و پیشرفت حساب در دسترس نیستند. داده‌های مستقل مهمان و داده‌های سرور حذف نمی‌شوند.',
+  'logout.withBackup': 'همگام‌سازی و خروج',
+  'logout.withoutBackup': 'خروج بدون پشتیبان‌گیری',
+  'logout.coverage':
+    'پشتیبان‌گیری از همگام‌سازی فعلی حساب استفاده می‌کند، نه سرویس پشتیبان جداگانه. دسته‌ها، کارت‌ها، تاریخچه مرور، پیشرفت لایتنر و تنظیمات باید تأیید شوند. جلسه‌های مطالعه محلی و اطلاعات دیگر زمان‌بندها پشتیبان‌گیری نمی‌شوند.',
+  'logout.retention': 'مدت نگهداری، تاریخ انقضا یا بازیابی نسخه‌های قبلی پشتیبان تضمین نشده است.',
+  'logout.unavailable':
+    'همگام‌سازی تأییدشده سرور در این محیط در دسترس نیست. می‌توانید لغو کنید یا بدون پشتیبان‌گیری خارج شوید.',
+  'logout.syncing': 'در حال همگام‌سازی و تأیید داده‌های حساب پیش از خروج…',
+  'logout.signingOut': 'در حال ایمن‌سازی دستگاه و درخواست لغو نشست…',
+  'logout.backupFailed':
+    'خروج کامل نشده و ایجاد پشتیبان تأیید نشده است. دوباره تلاش کنید، لغو کنید یا خروج بدون پشتیبان‌گیری را انتخاب کنید.',
+  'logout.success': 'از حساب در این دستگاه خارج شدید. فقط داده‌های مهمان در دسترس هستند.',
+  'logout.synced':
+    'داده‌های پشتیبانی‌شده حساب پیش از خروج همگام و تأیید شدند. پشتیبان مستقل با نگهداری تضمین‌شده ایجاد نشده است.',
+  'logout.skipped':
+    'بدون ایجاد یا تأیید پشتیبان خارج شدید. داده‌های حساب جدا باقی می‌مانند و داده‌های سرور حذف نشده‌اند.',
+  'logout.revoked': 'سرور لغو نشست را تأیید کرد.',
+  'logout.pending':
+    'لغو نشست در سرور تأیید نشده است. شناسه غیرمحرمانه برای تلاش مجدد پس از ورود آنلاین به همین حساب ذخیره شده است؛ تلاش مجدد از توکن ورود ذخیره‌شده استفاده نمی‌کند.',
+  'logout.unconfirmed':
+    'لغو نشست در سرور تأیید نشده و شناسه تلاش مجدد ذخیره نشده است. موفقیت خروج سرور یا پشتیبان‌گیری فرض نمی‌شود.',
+  'logout.clearFailed':
+    'دسترسی به حساب مسدود است، اما پاک‌کردن کامل اطلاعات ورود انجام نشد. برنامه را باز نگه دارید و پیش از راه‌اندازی مجدد دوباره تلاش کنید.',
+  'logout.retryClear': 'تلاش مجدد برای پاک‌کردن اطلاعات ورود',
+  'migration.title': 'انتقال داده‌های مهمان',
+  'migration.preserve': 'داده‌های مهمان و حساب تا تأیید شما جدا می‌مانند. هیچ داده‌ای حذف نمی‌شود.',
+  'migration.checking': 'بررسی داده‌های حساب و مهمان…',
+  'migration.incomplete':
+    'داده‌های حساب وجود دارد اما از همگام‌سازی کامل بارگذاری نشد. انتقال متوقف است؛ وابستگی زیر را بررسی کنید.',
+  'migration.guest-only': 'حساب خالی است. می‌توانید دسته‌های مهمان را در حساب کپی کنید.',
+  'migration.account-only': 'داده‌های حساب بارگذاری شد. دستهٔ فعال مهمانی برای انتقال وجود ندارد.',
+  'migration.both': 'هر دو محیط داده دارند. پیش از تصمیم، هر دو فهرست را بررسی کنید.',
+  'migration.empty': 'هیچ دستهٔ فعالی در دو محیط نیست. با حساب خالی ادامه دهید.',
+  'migration.guestDecks': 'دسته‌های مهمان روی این دستگاه',
+  'migration.accountDecks': 'دسته‌های حساب',
+  'migration.noDecks': 'دستهٔ فعالی وجود ندارد',
+  'migration.deck': '{name} · {cards} کارت',
+  'migration.reviews': '{count} رویداد مرور مهمان',
+  'migration.sameNames':
+    'دسته‌های هم‌نام: {names}. نام یکسان به معنی کارت یا پیشرفت یکسان نیست. فقط کپی جداگانه پشتیبانی می‌شود؛ ادغام یا جایگزینی خودکار انجام نمی‌شود.',
+  'migration.supported':
+    'دسته‌ها و کارت‌های فعال لایتنر و پیشرفت قابل بازسازی از تاریخچهٔ کامل کپی می‌شوند. تنظیمات، داده‌های بایگانی، زمان‌بندهای دیگر و جلسه‌های مطالعه منتقل نمی‌شوند. سرور زمان ایجاد اصلی را حفظ نمی‌کند.',
+  'migration.confirm':
+    'کپی جداگانه به حساب اضافه شود؟ نام دسته و متن یکسان کارت برای ادغام استفاده نمی‌شود. نسخه‌های مهمان روی دستگاه باقی می‌مانند.',
+  'migration.add': 'افزودن دسته‌های مهمان به‌صورت کپی جداگانه',
+  'migration.confirmAdd': 'تأیید کپی به حساب',
+  'migration.cancel': 'لغو بدون کپی',
+  'migration.separate': 'جدا نگه داشتن داده‌ها',
+  'migration.continue': 'ادامه به حساب',
+  'migration.later': 'ادامه در آینده · نسخه‌های اصلی محفوظ‌اند',
+  'migration.retry': 'تازه‌سازی پیش‌نمایش / بررسی اتصال',
+  'migration.resume': 'ادامهٔ انتقال قبلاً تأییدشده',
+  'migration.progress': 'تأییدهای دریافت‌شده: {acknowledged} از {total}. بررسی داده‌های سرور…',
+  'migration.pending':
+    'انتقال تصویر قبلاً تأییدشده ناتمام است. تلاش دوباره با همان شناسه‌ها ادامه می‌یابد؛ ویرایش‌های بعدی مهمان شامل نمی‌شود. ممکن است بخشی روی سرور باشد.',
+  'migration.already':
+    'یک تصویر از داده‌های مهمان قبلاً به این حساب کپی شده است. ویرایش‌های بعدی به‌صورت خودکار کپی نمی‌شوند.',
+  'migration.success':
+    'کپی در حساب تأیید، همگام و بررسی شد. نسخه‌های مهمان بدون تغییر باقی مانده‌اند.',
+  'migration.failure':
+    'پایان انتقال تأیید نشده است. نسخه‌های اصلی و کپی‌های قابل بازیابی محفوظ‌اند. اتصال را بررسی کنید، همین انتقال را دوباره ادامه دهید یا تعارض‌ها را در تنظیمات همگام‌سازی بررسی کنید.',
+  'migration.unavailable':
+    'انتقال ابری در این دستگاه در دسترس نیست. سرور را تنظیم و وارد حساب شوید؛ مطالعهٔ مهمان آفلاین در دسترس می‌ماند.',
+  'guest.mode': 'حالت مهمان · داده‌ها فقط روی دستگاه · طرح رایگان',
+  'guest.accountMode': 'حالت حساب · داده‌ها در حالت آفلاین در دسترس‌اند · طرح رایگان',
+  'guest.explanation':
+    'داده‌های مهمان روی دستگاه می‌مانند. ورود، فضای جداگانهٔ حساب را باز می‌کند و کپی امن داده‌های مهمان را با تأیید شما پیشنهاد می‌دهد.',
+  'guest.deckLimit': 'طرح رایگان حداکثر ۱ دستهٔ فعال دارد. داده‌های موجود حفظ می‌شوند.',
+  'guest.cardLimit': 'طرح رایگان در مجموع حداکثر ۵۰ کارت فعال دارد. داده‌های موجود حفظ می‌شوند.',
+  'guest.switching': 'در حال باز کردن داده‌های محلی…',
+  'guest.storageError': 'داده‌های محلی باز نشدند',
+  'guest.storageErrorHint': 'داده‌های شما حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کنید.',
+  'auth.title': 'ورود به لرونا',
+  'auth.phone': 'شماره موبایل',
+  'auth.phoneHint': 'شماره را با کد کشور وارد کنید، مانند ‎+989121234567.',
+  'auth.passwordLogin': 'ورود با رمز عبور',
+  'auth.emailLogin': 'حساب ایمیلی قبلی',
+  'auth.invalidEmail': 'ایمیل معتبر وارد کنید.',
+  'auth.otpLogin': 'ورود با کد یک‌بارمصرف',
+  'auth.register': 'ساخت حساب',
+  'auth.request': 'درخواست کد',
+  'auth.verify': 'تأیید کد',
+  'auth.code': 'کد تأیید شش‌رقمی',
+  'auth.requested': 'کد درخواست شد. دریافت پیامک ممکن است کمی طول بکشد.',
+  'auth.resend': 'درخواست کد جدید',
+  'auth.resendWait': 'تا درخواست کد جدید {seconds} ثانیه مانده است.',
+  'auth.codeExpiry': 'کد تا {seconds} ثانیه دیگر اعتبار دارد.',
+  'auth.changePhone': 'تغییر شماره موبایل',
+  'auth.verified': 'شماره تأیید شد. اطلاعات حساب را تکمیل کنید.',
+  'auth.username': 'نام کاربری',
+  'auth.confirmPassword': 'تکرار رمز عبور',
+  'auth.passwordHint': 'از ۱۲ تا ۱۲۸ نویسه استفاده کنید.',
+  'auth.complete': 'تکمیل ثبت‌نام',
+  'auth.success': 'وارد حساب شدید.',
+  'auth.done': 'ادامه به همگام‌سازی',
+  'auth.invalidPhone': 'شماره موبایل را با + و کد کشور وارد کنید.',
+  'auth.invalidCode': 'شش رقم کد پیامک را وارد کنید.',
+  'auth.invalidPassword': 'رمز عبور باید بین ۱۲ تا ۱۲۸ نویسه باشد.',
+  'auth.passwordMismatch': 'رمزهای عبور یکسان نیستند.',
+  'auth.invalidUsername': 'نام کاربری بین ۱ تا ۱۲۰ نویسه وارد کنید.',
+  'auth.credentials': 'شماره موبایل یا رمز عبور نادرست است.',
+  'auth.invalidOtp':
+    'کد نامعتبر، منقضی، استفاده‌شده یا تعداد تلاش‌ها بیش از حد است. کد جدید درخواست کنید.',
+  'auth.expired': 'اعتبار تأیید تمام شد. کد جدید درخواست کنید.',
+  'auth.duplicate': 'این شماره قبلاً ثبت شده است. وارد حساب شوید.',
+  'auth.rateLimit': 'تعداد درخواست‌ها بیش از حد است. کمی صبر کنید.',
+  'auth.smsUnavailable': 'سرویس پیامک در دسترس یا تنظیم‌شده نیست. بعداً تلاش کنید.',
+  'auth.network':
+    'ارتباط برقرار نشد. اینترنت را بررسی کنید. اگر تأیید قطع شد کد جدید درخواست کنید.',
+  'auth.unexpected': 'ورود یا ثبت‌نام کامل نشد. دوباره تلاش کنید.',
+  'auth.passwordRequired': 'رمز عبور را وارد کنید.',
+  'auth.sessionExpired': 'نشست شما منقضی شد. دوباره وارد شوید.',
   'review.system': 'سیستم مرور',
   'review.deckHint': 'این سیستم مرور فقط برای این دسته اعمال می‌شود.',
   'review.infoButton': 'توضیح سیستم‌های مرور',
@@ -632,6 +868,7 @@ export const fa: Dictionary = {
   'notification.title': 'وقت مطالعه است',
   'notification.body': 'کارت‌هایی برای مرور دارید.',
   'settings.description': 'تنظیمات را برای مطالعهٔ راحت‌تر انتخاب کنید.',
+  'settings.account': 'حساب کاربری',
   'settings.loading': 'در حال بارگذاری تنظیمات',
   'settings.loadError': 'تنظیمات بارگذاری نشد.',
   'settings.appearance': 'ظاهر',

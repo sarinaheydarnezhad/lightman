@@ -160,7 +160,11 @@ export function CardForm({
     } catch (cause) {
       if (mounted.current) {
         setError(
-          language === 'en' && cause instanceof AppError ? cause.message : t('form.cardSaveError'),
+          cause instanceof AppError && cause.code === 'free-tier-limit'
+            ? t('guest.cardLimit')
+            : language === 'en' && cause instanceof AppError
+              ? cause.message
+              : t('form.cardSaveError'),
         );
       }
       void haptics.actionRejected();
