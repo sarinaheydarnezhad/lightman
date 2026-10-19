@@ -3,6 +3,8 @@ import type { Database, SqlRow } from '@/core/database/database';
 import type { SyncEngine } from './sync-engine';
 import { CloudError, type CloudClient } from './cloud-client';
 import type { SyncStore } from './sync-store';
+import { serverEntitlementCache } from '@/core/access/learning-access';
+import { writeEntitlementCache } from '@/core/database/entitlement-cache';
 import { readGuest, text, unsupportedReasons, type GuestSnapshot } from './guest-transfer-snapshot';
 
 export interface TransferDeck {
@@ -186,7 +188,29 @@ export class GuestTransfer {
         (await database.execute('SELECT COUNT(*) AS count FROM cards WHERE archived_at IS NULL'))
           .rows[0]?.count,
       );
-      if (!journal && (account.length + guest.length > 1 || cards + source.cards.length > 50))
+      const entitlementRequestedAt = Date.now();
+      const entitlements = await cloud.entitlements();
+      const entitlementCache = await writeEntitlementCache(
+        database,
+        (await store.account()).userId,
+        serverEntitlementCache(entitlements, entitlementRequestedAt),
+      );
+      if (
+        !entitlementCache ||
+        entitlementCache.validUntil <= Date.now() ||
+        entitlementCache.fetchedAt > Date.now()
+      )
+        throw new Error(
+          'Account permissions expired while preparing the preview. Reconnect and refresh before transferring.',
+        );
+      const limits = entitlementCache.entitlements.limits;
+      if (
+        !journal &&
+        ((limits.decks !== null &&
+          Math.max(account.length, entitlements.usage.decks) + guest.length > limits.decks) ||
+          (limits.cards !== null &&
+            Math.max(cards, entitlements.usage.cards) + source.cards.length > limits.cards))
+      )
         blockers.push(
           'Adding these decks would exceed the current free limits: 1 active deck and 50 active cards. Keep the datasets separate.',
         );

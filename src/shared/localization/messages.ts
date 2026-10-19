@@ -1,14 +1,127 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'account.loginSignup': 'Log In / Sign Up',
+  'account.logout': 'Log Out',
+  'account.signedIn': 'Account status: Signed in',
+  'account.guestLocal':
+    'You are using a local guest account. Guest data stays on this device and is not backed up or synced to the cloud automatically.',
+  'account.guestLimits': 'Free limits: {decks} Deck and {cards} Cards in total.',
+  'account.loading': 'Loading account details…',
+  'account.noUsername': 'Username not set',
+  'account.error':
+    'Account details could not be verified. Reconnect or sign in again. No saved data was deleted.',
+  'account.retry': 'Refresh account details',
+  'account.subscription': 'Subscription and access',
+  'account.plusPlan': 'Plus',
+  'account.freePlan': 'Free tier',
+  'account.starts': 'Subscription start (local time): {time}',
+  'account.activePurchaseBlocked':
+    'Another purchase is unavailable while your current Plus subscription is active.',
+  'account.subscriptionUnknown':
+    'Subscription status is unavailable or not server-confirmed. Reconnect and refresh; this does not confirm activation or expiration.',
+  'paywall.title': 'Lerona Plus',
+  'paywall.status': 'Subscription status: {status}',
+  'paywall.active': 'Plus active',
+  'paywall.activeProvisional': 'Last known Plus — provisional, not server-confirmed',
+  'paywall.free': 'Free account — no subscription',
+  'paywall.status.Active': 'Plus active',
+  'paywall.status.Expired': 'Expired',
+  'paywall.status.Cancelled': 'Cancelled',
+  'paywall.status.Scheduled': 'Not started yet',
+  'paywall.status.Unavailable': 'Unavailable',
+  'paywall.usage': 'Current usage: {decks} active decks, {cards} active cards',
+  'paywall.withinLimits': 'Your data is within the free limits.',
+  'paywall.overLimits':
+    'Your data exceeds the free limits. Active Plus is required for study and new content.',
+  'paywall.reason': 'Why you cannot continue',
+  'paywall.deckReason': 'This operation exceeds the free limit of 1 active deck.',
+  'paywall.cardReason': 'This operation exceeds the free limit of 50 active cards in total.',
+  'paywall.studyReason':
+    'Study is restricted because your data exceeds the free limits without active Plus.',
+  'paywall.expired':
+    'Your subscription expired. Free limits apply; all decks, cards and review history are preserved.',
+  'paywall.benefits': 'While Plus is active',
+  'paywall.unlimited': 'Unlimited decks and cards under the current product rules.',
+  'paywall.study': 'Study and review without free-tier deck and card limits.',
+  'paywall.cloud':
+    'Account sync and server backup are implemented for signed-in accounts with a configured cloud connection. They are not extra purchase guarantees; guest data stays local until an explicit transfer.',
+  'paywall.choose': 'Choose a Plus duration',
+  'paywall.loading': 'Loading current server prices…',
+  'paywall.empty': 'No Plus durations are available from the server. Refresh to try again.',
+  'paywall.total': 'Selected: {months} months — total {amount} toman',
+  'paywall.monthPrice': '1 month: {amount} toman',
+  'paywall.monthTotal': 'Selected: 1 month — total {amount} toman',
+  'paywall.cloudUnavailable':
+    'Cloud sync and server backup are unavailable in this environment. Guest data remains local.',
+  'paywall.purchaseUnavailable': 'Purchase unavailable',
+  'paywall.providerMissing':
+    'Payment integration is not available yet. Selecting a duration does not charge you or activate Plus.',
+  'paywall.alreadyActive':
+    'You already have active Plus. Another purchase is not allowed while it is active. Payment integration is also unavailable.',
+  'paywall.statusError':
+    'Could not confirm account status or usage. Reconnect, sign in if needed, and refresh. No purchase or activation has occurred.',
+  'access.plans': 'View plans',
+  'access.current': 'Current access: {plan}',
+  'access.expires': 'Subscription expiration (local time): {time}',
+  'access.unknown': 'Unconfirmed',
+  'access.free':
+    'Free access: 1 active deck and 50 active cards in total. Excess data is preserved; viewing, editing and exporting remain available.',
+  'access.plus': 'Active Plus removes deck/card limits and enables study.',
+  'access.fullUnavailable': 'Full is not available.',
+  'access.price': '{months} months: {amount} toman',
+  'access.purchaseUnavailable':
+    'Purchases are not available yet. This screen only displays the server plan catalog.',
+  'access.provisional':
+    'Subscription status is not server-confirmed. Offline access is provisional; unknown or expired status uses free limits.',
+  'access.restricted':
+    'Study and new content are restricted above 1 active deck or 50 active cards without active Plus. Viewing, editing and export remain available.',
+  'access.refresh': 'Refresh access',
+  'access.unavailable': 'The server could not confirm the plan catalog. Reconnect and retry.',
+  'backup.title': 'Server backup',
+  'backup.now': 'Back Up Now',
+  'backup.refresh': 'Refresh backup status',
+  'backup.loading': 'Checking server backup status…',
+  'backup.unknown': 'Server backup status is unconfirmed.',
+  'backup.never': 'Never backed up',
+  'backup.inProgress': 'Backup in progress',
+  'backup.completed': 'Backup completed',
+  'backup.failed': 'Backup failed',
+  'backup.expired': 'Backup expired — create a new backup.',
+  'backup.last': 'Last successful backup: {time} (local time)',
+  'backup.expires': 'Expires: {time} (local time)',
+  'backup.remaining': 'Retention remaining: up to {hours} hours',
+  'backup.progress': 'Synchronizing account data, creating and verifying the server backup…',
+  'backup.verified': 'The server confirmed and verified the backup.',
+  'backup.coverage':
+    'Backs up synchronized account decks, cards, supported review progress and settings. Guest data and local study sessions are excluded. Restore is not yet available.',
+  'backup.error':
+    'The operation could not be confirmed. Check your connection and resolve account sync errors, then retry Back Up Now. Your data was not deleted.',
+  'backup.networkError':
+    'The server cannot be reached. Reconnect and refresh status, or retry the operation.',
+  'backup.authError': 'Your session expired. Sign in again before backing up.',
+  'backup.rateError': 'Too many backup requests. Wait a minute, then retry.',
+  'backup.capacityError':
+    'Stored backup capacity is reached. Contact support to clean up expired backup artifacts; your learning data was not deleted.',
+  'backup.unavailable':
+    'Server backup is unavailable. Retry later or contact support to check backup configuration.',
+  'backup.sizeError':
+    'Account data exceeds the server backup size limit. Contact support; your data was not deleted.',
+  'migration.backupSafety':
+    'This transfer only adds separate copies and never replaces account data, so no backup is required. You can back up the account in Settings. Replacement and destructive merging are not supported.',
+  'migration.backupAndCopy': 'Back Up Account and Confirm Copy',
   'logout.title': 'Log out?',
   'logout.confirm':
     'Account decks, cards and progress will no longer be accessible while signed out. Your separate guest data and server data are not deleted.',
   'logout.withBackup': 'Back Up and Log Out',
   'logout.withoutBackup': 'Log Out Without Backing Up',
   'logout.coverage':
-    'Back Up uses the existing account sync, not a separate backup. Supported decks, cards, review history, Leitner progress and settings must be acknowledged and verified. Local study sessions and other scheduler metadata are not backed up.',
+    'Back Up synchronizes and verifies supported account data, then creates an encrypted server snapshot of decks, cards, review history, Leitner progress and settings. Local study sessions and other scheduler metadata are not included. Restore is not yet available.',
   'logout.retention':
-    'No backup retention period, expiry or historical restore guarantee is available.',
+    'A completed backup shows its server-configured retention and UTC expiry after logout. Expired backups are unavailable; automatic deletion is not scheduled.',
+  'logout.backupCompleted':
+    'Server backup {id} was completed and verified. Retention: {days} days; expires {expires} (UTC). Restore is not yet available.',
+  'logout.backupExpired':
+    'Server backup {id} expired at {expires} (UTC) and is no longer available. Account and guest data were not deleted.',
   'logout.unavailable':
     'Verified server sync is unavailable in this environment. You may cancel or log out without backing up.',
   'logout.syncing': 'Synchronizing and verifying account data before logout…',
@@ -47,7 +160,7 @@ export const en = {
   'migration.sameNames':
     'Same-name decks: {names}. Matching titles do not mean matching cards or progress. Only separate copies are supported; no automatic merging or replacement.',
   'migration.supported':
-    'Copies active Leitner decks, active cards, and review progress reproducible from complete history. Settings, archived data, other schedulers, and study sessions are not copied. Original creation timestamps are not retained by the server.',
+    'Copies active Leitner decks, active cards, and review progress reproducible from complete history. Settings, deleted data, other schedulers, and study sessions are not copied. Original creation timestamps are not retained by the server.',
   'migration.confirm':
     'Add separate copies to this account? Titles and identical card text are never used to combine data. Your guest originals will remain on this device.',
   'migration.add': 'Add guest decks as separate copies',
@@ -74,14 +187,17 @@ export const en = {
   'guest.accountMode': 'Account mode · Offline data available · Free plan',
   'guest.explanation':
     'Guest data stays on this device. Signing in opens separate account data and offers a confirmed, non-destructive guest copy.',
-  'guest.deckLimit': 'The free plan allows 1 active deck. Existing data is preserved.',
-  'guest.cardLimit': 'The free plan allows 50 active cards in total. Existing data is preserved.',
+  'guest.limitTitle': 'Free plan limit',
+  'guest.deckLimit':
+    'On the free plan, you can add a maximum of 1 active deck. Your existing data is preserved.',
+  'guest.cardLimit':
+    'On the free plan, you can add a maximum of 50 active cards in total across all decks. Your existing data is preserved.',
   'guest.switching': 'Opening your local data…',
   'guest.storageError': 'Unable to open local data',
   'guest.storageErrorHint': 'Your data has not been deleted. Retry opening guest storage.',
   'auth.title': 'Sign in to Lerona',
   'auth.phone': 'Mobile number',
-  'auth.phoneHint': 'Include the country code, for example +989121234567.',
+  'auth.phoneHint': 'Enter 11 digits starting with 0, for example 09121234567.',
   'auth.passwordLogin': 'Login with password',
   'auth.emailLogin': 'Existing email account',
   'auth.invalidEmail': 'Enter a valid email address.',
@@ -92,8 +208,8 @@ export const en = {
   'auth.code': 'Six-digit verification code',
   'auth.requested': 'Code requested. Delivery may take a moment.',
   'auth.resend': 'Request another code',
-  'auth.resendWait': 'You can request another code in {seconds} seconds.',
-  'auth.codeExpiry': 'Code expires in {seconds} seconds.',
+  'auth.resendWait': 'You can request another code in {time}.',
+  'auth.codeExpiry': 'Code expires in {time}.',
   'auth.changePhone': 'Change mobile number',
   'auth.verified': 'Mobile number verified. Complete your account below.',
   'auth.username': 'Username',
@@ -102,7 +218,7 @@ export const en = {
   'auth.complete': 'Complete registration',
   'auth.success': 'You are signed in.',
   'auth.done': 'Continue to cloud sync',
-  'auth.invalidPhone': 'Enter a mobile number with + and its country code.',
+  'auth.invalidPhone': 'Enter an 11-digit mobile number starting with 0.',
   'auth.invalidCode': 'Enter the six digits from your SMS.',
   'auth.invalidPassword': 'Use a password between 12 and 128 characters.',
   'auth.passwordMismatch': 'The passwords do not match.',
@@ -324,7 +440,8 @@ export const en = {
   'analytics.cardsUnit': 'cards',
   'analytics.streakA11y': 'Current streak: {current}. Best streak: {best}.',
   'notification.title': 'Time to study',
-  'notification.body': 'You have cards waiting for review.',
+  'notification.body': 'You have {count} cards to study.',
+  'notification.singleBody': 'You have {count} card to study.',
   'settings.description': 'Make the app comfortable for your study routine.',
   'settings.account': 'Account',
   'settings.loading': 'Loading settings',
@@ -335,7 +452,7 @@ export const en = {
   'settings.choose': '{label}, {detail}. Choose setting',
   'settings.study': 'Study',
   'settings.dailyReminder': 'Daily reminder',
-  'settings.reminderHint': 'A local reminder to review your cards each day.',
+  'settings.reminderHint': 'Only reminds you when cards are due, with the number to study.',
   'settings.reminderTime': 'Reminder time',
   'settings.localTime': '{time} (local time)',
   'settings.permission': 'Notification permission: {value}',
@@ -375,7 +492,7 @@ export const en = {
   'sync.reviewConflict': 'Review histories are preserved. Review state needs manual inspection.',
   'sync.keepServer': 'Use server version',
   'sync.keepLocal': 'Keep my edit (retry)',
-  'sync.archived': 'Archived on another device; edits cannot restore it.',
+  'sync.deleted': 'Deleted on another device; edits cannot restore it.',
   'sync.error': 'Unable to synchronize. Your offline changes are safe.',
   'settings.yourDataHint': 'Study data is currently stored locally for this session.',
   'settings.privacy': 'Privacy Policy',
@@ -387,13 +504,11 @@ export const en = {
   'settings.appLanguageHint': 'Changes menus and layout; deck language stays the same.',
   'settings.themeHint': 'Choose a theme that feels comfortable.',
   'settings.themeLifetime':
-    'Your choice lasts until you close the app. System follows your device’s light or dark mode; OLED uses a true black background.',
+    'Choose Light or Dark. Your selection applies throughout the app and is saved on this device.',
   'settings.themeSelected': 'Selected theme',
   'settings.themeSelect': 'Select theme',
-  'settings.theme.system': 'System',
   'settings.theme.light': 'Light',
   'settings.theme.dark': 'Dark',
-  'settings.theme.oled': 'OLED',
   'settings.languageHint': 'Choose the language for menus and navigation.',
   'settings.languageSelected': 'Selected language',
   'settings.languageSelect': 'Select app language',
@@ -446,6 +561,7 @@ export const en = {
   'form.frontPlaceholder': 'Term or vocabulary',
   'form.termRequired': 'Enter a term.',
   'form.phonetic': 'Phonetic (optional)',
+  'form.optionalDetails': 'Optional details',
   'form.category': 'Category (optional)',
   'form.back': 'Back',
   'form.meaning': 'Meaning',
@@ -500,7 +616,6 @@ export const en = {
   'details.deleteDeckHint':
     'This deck and its cards will be removed. This action cannot be undone.',
   'details.keepDeck': 'Keep deck',
-  'details.confirmArchive': 'Confirm archive',
   'details.confirmDelete': 'Confirm delete',
   'details.deckDeleteError': 'Unable to delete this deck. Try again.',
   'details.cardLoading': 'Loading card',
@@ -509,11 +624,12 @@ export const en = {
   'details.cardUnavailableHint': 'This card is not available.',
   'details.fromDeck': 'From {name}',
   'details.editCard': 'Edit card',
-  'details.archiveCard': 'Archive card',
-  'details.archiveCardTitle': 'Archive this card?',
-  'details.archiveCardHint': 'It will be removed from the active cards in this deck.',
+  'details.deleteCard': 'Delete card',
+  'details.deleteCardTitle': 'Delete this card?',
+  'details.deleteCardHint':
+    'This card will be removed from this deck. This action cannot be undone.',
   'details.keepCard': 'Keep card',
-  'details.cardArchiveError': 'Unable to archive this card. Try again.',
+  'details.cardDeleteError': 'Unable to delete this card. Try again.',
   'details.openCard': 'Open {name} card{category}',
   'details.openCardHint': 'Opens card details',
   'vocab.title': 'Vocabulary helper',
@@ -549,14 +665,128 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'account.loginSignup': 'ورود / ثبت‌نام',
+  'account.logout': 'خروج از حساب',
+  'account.signedIn': 'وضعیت حساب: واردشده',
+  'account.guestLocal':
+    'شما از حساب مهمان محلی استفاده می‌کنید. داده مهمان روی همین دستگاه می‌ماند و خودکار در فضای ابری پشتیبان‌گیری یا همگام‌سازی نمی‌شود.',
+  'account.guestLimits': 'محدودیت رایگان: {decks} دسته و در مجموع {cards} کارت.',
+  'account.loading': 'دریافت اطلاعات حساب…',
+  'account.noUsername': 'نام کاربری تنظیم نشده',
+  'account.error':
+    'تأیید اطلاعات حساب ممکن نشد. اتصال را بررسی کنید یا دوباره وارد شوید. هیچ داده ذخیره‌شده‌ای حذف نشد.',
+  'account.retry': 'تازه‌سازی اطلاعات حساب',
+  'account.subscription': 'اشتراک و دسترسی',
+  'account.plusPlan': 'پلاس',
+  'account.freePlan': 'طرح رایگان',
+  'account.starts': 'شروع اشتراک (زمان محلی): {time}',
+  'account.activePurchaseBlocked':
+    'تا زمانی که اشتراک فعلی پلاس فعال است، خرید دیگری در دسترس نیست.',
+  'account.subscriptionUnknown':
+    'وضعیت اشتراک در دسترس نیست یا توسط سرور تأیید نشده است. اتصال را بررسی و تازه‌سازی کنید؛ این وضعیت تأیید فعال‌سازی یا انقضا نیست.',
+  'paywall.title': 'لرونا پلاس',
+  'paywall.status': 'وضعیت اشتراک: {status}',
+  'paywall.active': 'پلاس فعال',
+  'paywall.activeProvisional': 'آخرین وضعیت پلاس — موقتی و تأییدنشده توسط سرور',
+  'paywall.free': 'حساب رایگان — بدون اشتراک',
+  'paywall.status.Active': 'پلاس فعال',
+  'paywall.status.Expired': 'منقضی‌شده',
+  'paywall.status.Cancelled': 'لغوشده',
+  'paywall.status.Scheduled': 'هنوز شروع نشده',
+  'paywall.status.Unavailable': 'در دسترس نیست',
+  'paywall.usage': 'مصرف فعلی: {decks} دسته و {cards} کارت فعال',
+  'paywall.withinLimits': 'داده‌های شما در محدوده رایگان است.',
+  'paywall.overLimits':
+    'داده‌های شما از محدوده رایگان بیشتر است. برای مطالعه و محتوای جدید به پلاس فعال نیاز دارید.',
+  'paywall.reason': 'چرا نمی‌توانید ادامه دهید',
+  'paywall.deckReason': 'این عملیات از محدودیت رایگان یک دسته فعال فراتر می‌رود.',
+  'paywall.cardReason': 'این عملیات از محدودیت رایگان مجموع ۵۰ کارت فعال فراتر می‌رود.',
+  'paywall.studyReason':
+    'به دلیل عبور داده‌ها از محدوده رایگان و نبود پلاس فعال، مطالعه محدود است.',
+  'paywall.expired':
+    'اشتراک شما منقضی شده است. محدودیت رایگان اعمال می‌شود؛ همه دسته‌ها، کارت‌ها و سابقه مرور حفظ می‌شوند.',
+  'paywall.benefits': 'در مدت فعال بودن پلاس',
+  'paywall.unlimited': 'دسته‌ها و کارت‌های نامحدود طبق قوانین فعلی محصول.',
+  'paywall.study': 'مطالعه و مرور بدون محدودیت تعداد دسته و کارت رایگان.',
+  'paywall.cloud':
+    'همگام‌سازی حساب و پشتیبان سرور برای حساب واردشده با اتصال ابری پیکربندی‌شده پیاده‌سازی شده‌اند. این‌ها تضمین اضافی خرید نیستند؛ داده مهمان تا انتقال صریح محلی می‌ماند.',
+  'paywall.choose': 'مدت پلاس را انتخاب کنید',
+  'paywall.loading': 'دریافت قیمت‌های فعلی از سرور…',
+  'paywall.empty': 'مدت اشتراک پلاس از سرور در دسترس نیست. دوباره تازه‌سازی کنید.',
+  'paywall.total': 'انتخاب: {months} ماه — مبلغ کل {amount} تومان',
+  'paywall.monthPrice': '۱ ماه: {amount} تومان',
+  'paywall.monthTotal': 'انتخاب: ۱ ماه — مبلغ کل {amount} تومان',
+  'paywall.cloudUnavailable':
+    'همگام‌سازی ابری و پشتیبان سرور در این محیط در دسترس نیست. داده مهمان محلی می‌ماند.',
+  'paywall.purchaseUnavailable': 'خرید در دسترس نیست',
+  'paywall.providerMissing':
+    'اتصال پرداخت هنوز آماده نیست. انتخاب مدت هیچ مبلغی کسر نمی‌کند و پلاس را فعال نمی‌کند.',
+  'paywall.alreadyActive':
+    'پلاس شما فعال است. تا پایان اشتراک، خرید دیگری مجاز نیست. اتصال پرداخت نیز هنوز در دسترس نیست.',
+  'paywall.statusError':
+    'تأیید وضعیت حساب یا مصرف ممکن نشد. اتصال را بررسی کنید، در صورت نیاز وارد شوید و تازه‌سازی کنید. هیچ خرید یا فعال‌سازی انجام نشده است.',
+  'access.plans': 'مشاهده طرح‌ها',
+  'access.current': 'دسترسی فعلی: {plan}',
+  'access.expires': 'انقضای اشتراک (زمان محلی): {time}',
+  'access.unknown': 'تأیید نشده',
+  'access.free':
+    'دسترسی رایگان: یک دسته و در مجموع ۵۰ کارت فعال. داده‌های اضافی حفظ می‌شوند و مشاهده، ویرایش و خروجی گرفتن ممکن است.',
+  'access.plus': 'اشتراک فعال پلاس محدودیت دسته و کارت را حذف و مطالعه را فعال می‌کند.',
+  'access.fullUnavailable': 'طرح کامل در دسترس نیست.',
+  'access.price': '{months} ماه: {amount} تومان',
+  'access.purchaseUnavailable':
+    'خرید هنوز فعال نیست. این صفحه فقط فهرست طرح‌های سرور را نشان می‌دهد.',
+  'access.provisional':
+    'وضعیت اشتراک توسط سرور تأیید نشده است. دسترسی آفلاین موقتی است؛ وضعیت نامشخص یا منقضی محدودیت رایگان دارد.',
+  'access.restricted':
+    'بدون پلاس فعال، مطالعه و ایجاد محتوای جدید با بیش از یک دسته یا ۵۰ کارت فعال محدود است. مشاهده، ویرایش و خروجی گرفتن ممکن است.',
+  'access.refresh': 'تازه‌سازی دسترسی',
+  'access.unavailable': 'دریافت طرح‌ها از سرور ممکن نشد. اتصال را بررسی و دوباره تلاش کنید.',
+  'backup.title': 'پشتیبان سرور',
+  'backup.now': 'پشتیبان‌گیری اکنون',
+  'backup.refresh': 'تازه‌سازی وضعیت پشتیبان',
+  'backup.loading': 'در حال بررسی وضعیت پشتیبان سرور…',
+  'backup.unknown': 'وضعیت پشتیبان سرور تأیید نشده است.',
+  'backup.never': 'هنوز پشتیبان‌گیری نشده',
+  'backup.inProgress': 'در حال پشتیبان‌گیری',
+  'backup.completed': 'پشتیبان‌گیری تکمیل شد',
+  'backup.failed': 'پشتیبان‌گیری ناموفق بود',
+  'backup.expired': 'پشتیبان منقضی شده؛ پشتیبان جدید بسازید.',
+  'backup.last': 'آخرین پشتیبان موفق: {time} (زمان محلی)',
+  'backup.expires': 'انقضا: {time} (زمان محلی)',
+  'backup.remaining': 'زمان نگهداری باقی‌مانده: حداکثر {hours} ساعت',
+  'backup.progress': 'در حال همگام‌سازی داده‌های حساب، ساخت و تأیید پشتیبان سرور…',
+  'backup.verified': 'ساخت پشتیبان در سرور تأیید شد.',
+  'backup.coverage':
+    'دسته‌ها، کارت‌ها، پیشرفت مرور پشتیبانی‌شده و تنظیمات همگام‌شدهٔ حساب ذخیره می‌شوند. داده‌های مهمان و جلسات مطالعهٔ محلی شامل نمی‌شوند. بازیابی هنوز در دسترس نیست.',
+  'backup.error':
+    'عملیات تأیید نشد. اتصال و خطاهای همگام‌سازی حساب را بررسی کرده و دوباره پشتیبان بگیرید. داده‌ای حذف نشده است.',
+  'backup.networkError':
+    'ارتباط با سرور برقرار نیست. پس از اتصال وضعیت را تازه‌سازی کرده یا عملیات را دوباره امتحان کنید.',
+  'backup.authError': 'نشست شما منقضی شده است. برای پشتیبان‌گیری دوباره وارد شوید.',
+  'backup.rateError': 'درخواست‌های پشتیبان زیاد است. یک دقیقه صبر کنید و دوباره تلاش کنید.',
+  'backup.capacityError':
+    'ظرفیت پشتیبان‌ها پر است. برای پاک‌سازی پشتیبان‌های منقضی‌شده با پشتیبانی تماس بگیرید؛ داده‌های یادگیری حذف نشده‌اند.',
+  'backup.unavailable':
+    'پشتیبان سرور در دسترس نیست. بعداً تلاش کنید یا برای بررسی تنظیمات با پشتیبانی تماس بگیرید.',
+  'backup.sizeError':
+    'حجم داده‌ها از حد پشتیبان سرور بیشتر است. با پشتیبانی تماس بگیرید؛ داده‌ای حذف نشده است.',
+  'migration.backupSafety':
+    'این انتقال فقط نسخه‌های جداگانه اضافه می‌کند و دادهٔ حساب را جایگزین نمی‌کند؛ پشتیبان اجباری نیست. می‌توانید در تنظیمات از حساب پشتیبان بگیرید. جایگزینی و ادغام مخرب پشتیبانی نمی‌شوند.',
+  'migration.backupAndCopy': 'پشتیبان‌گیری از حساب و تأیید کپی',
   'logout.title': 'از حساب خارج می‌شوید؟',
   'logout.confirm':
     'پس از خروج، دسته‌ها، کارت‌ها و پیشرفت حساب در دسترس نیستند. داده‌های مستقل مهمان و داده‌های سرور حذف نمی‌شوند.',
-  'logout.withBackup': 'همگام‌سازی و خروج',
+  'logout.withBackup': 'پشتیبان‌گیری و خروج',
   'logout.withoutBackup': 'خروج بدون پشتیبان‌گیری',
   'logout.coverage':
-    'پشتیبان‌گیری از همگام‌سازی فعلی حساب استفاده می‌کند، نه سرویس پشتیبان جداگانه. دسته‌ها، کارت‌ها، تاریخچه مرور، پیشرفت لایتنر و تنظیمات باید تأیید شوند. جلسه‌های مطالعه محلی و اطلاعات دیگر زمان‌بندها پشتیبان‌گیری نمی‌شوند.',
-  'logout.retention': 'مدت نگهداری، تاریخ انقضا یا بازیابی نسخه‌های قبلی پشتیبان تضمین نشده است.',
+    'داده‌های پشتیبانی‌شده ابتدا همگام و تأیید می‌شوند؛ سپس یک نسخه رمزگذاری‌شده سرور از دسته‌ها، کارت‌ها، تاریخچه مرور، پیشرفت لایتنر و تنظیمات ایجاد می‌شود. جلسه‌های محلی و اطلاعات دیگر زمان‌بندها شامل نمی‌شوند. بازیابی هنوز در دسترس نیست.',
+  'logout.retention':
+    'پس از خروج، مدت نگهداری تنظیم‌شده سرور و انقضای UTC نسخه تأییدشده نمایش داده می‌شود. نسخه منقضی‌شده در دسترس نیست؛ حذف خودکار زمان‌بندی نشده است.',
+  'logout.backupCompleted':
+    'نسخه پشتیبان سرور {id} ایجاد و تأیید شد. نگهداری: {days} روز؛ انقضا: {expires} (UTC). بازیابی هنوز در دسترس نیست.',
+  'logout.backupExpired':
+    'نسخه پشتیبان سرور {id} در {expires} (UTC) منقضی شد و دیگر در دسترس نیست. داده‌های حساب و مهمان حذف نشده‌اند.',
   'logout.unavailable':
     'همگام‌سازی تأییدشده سرور در این محیط در دسترس نیست. می‌توانید لغو کنید یا بدون پشتیبان‌گیری خارج شوید.',
   'logout.syncing': 'در حال همگام‌سازی و تأیید داده‌های حساب پیش از خروج…',
@@ -593,7 +823,7 @@ export const fa: Dictionary = {
   'migration.sameNames':
     'دسته‌های هم‌نام: {names}. نام یکسان به معنی کارت یا پیشرفت یکسان نیست. فقط کپی جداگانه پشتیبانی می‌شود؛ ادغام یا جایگزینی خودکار انجام نمی‌شود.',
   'migration.supported':
-    'دسته‌ها و کارت‌های فعال لایتنر و پیشرفت قابل بازسازی از تاریخچهٔ کامل کپی می‌شوند. تنظیمات، داده‌های بایگانی، زمان‌بندهای دیگر و جلسه‌های مطالعه منتقل نمی‌شوند. سرور زمان ایجاد اصلی را حفظ نمی‌کند.',
+    'دسته‌ها و کارت‌های فعال لایتنر و پیشرفت قابل بازسازی از تاریخچهٔ کامل کپی می‌شوند. تنظیمات، داده‌های حذف‌شده، زمان‌بندهای دیگر و جلسه‌های مطالعه منتقل نمی‌شوند. سرور زمان ایجاد اصلی را حفظ نمی‌کند.',
   'migration.confirm':
     'کپی جداگانه به حساب اضافه شود؟ نام دسته و متن یکسان کارت برای ادغام استفاده نمی‌شود. نسخه‌های مهمان روی دستگاه باقی می‌مانند.',
   'migration.add': 'افزودن دسته‌های مهمان به‌صورت کپی جداگانه',
@@ -619,14 +849,17 @@ export const fa: Dictionary = {
   'guest.accountMode': 'حالت حساب · داده‌ها در حالت آفلاین در دسترس‌اند · طرح رایگان',
   'guest.explanation':
     'داده‌های مهمان روی دستگاه می‌مانند. ورود، فضای جداگانهٔ حساب را باز می‌کند و کپی امن داده‌های مهمان را با تأیید شما پیشنهاد می‌دهد.',
-  'guest.deckLimit': 'طرح رایگان حداکثر ۱ دستهٔ فعال دارد. داده‌های موجود حفظ می‌شوند.',
-  'guest.cardLimit': 'طرح رایگان در مجموع حداکثر ۵۰ کارت فعال دارد. داده‌های موجود حفظ می‌شوند.',
+  'guest.limitTitle': 'محدودیت طرح رایگان',
+  'guest.deckLimit':
+    'در طرح رایگان می‌توانید حداکثر ۱ دستهٔ فعال اضافه کنید. داده‌های موجود حفظ می‌شوند.',
+  'guest.cardLimit':
+    'در طرح رایگان می‌توانید در مجموع حداکثر ۵۰ کارت فعال در همهٔ دسته‌ها اضافه کنید. داده‌های موجود حفظ می‌شوند.',
   'guest.switching': 'در حال باز کردن داده‌های محلی…',
   'guest.storageError': 'داده‌های محلی باز نشدند',
   'guest.storageErrorHint': 'داده‌های شما حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کنید.',
   'auth.title': 'ورود به لرونا',
   'auth.phone': 'شماره موبایل',
-  'auth.phoneHint': 'شماره را با کد کشور وارد کنید، مانند ‎+989121234567.',
+  'auth.phoneHint': 'شمارهٔ ۱۱ رقمی را با ۰ وارد کنید، مانند ۰۹۱۲۱۲۳۴۵۶۷.',
   'auth.passwordLogin': 'ورود با رمز عبور',
   'auth.emailLogin': 'حساب ایمیلی قبلی',
   'auth.invalidEmail': 'ایمیل معتبر وارد کنید.',
@@ -637,8 +870,8 @@ export const fa: Dictionary = {
   'auth.code': 'کد تأیید شش‌رقمی',
   'auth.requested': 'کد درخواست شد. دریافت پیامک ممکن است کمی طول بکشد.',
   'auth.resend': 'درخواست کد جدید',
-  'auth.resendWait': 'تا درخواست کد جدید {seconds} ثانیه مانده است.',
-  'auth.codeExpiry': 'کد تا {seconds} ثانیه دیگر اعتبار دارد.',
+  'auth.resendWait': 'تا درخواست کد جدید {time} مانده است.',
+  'auth.codeExpiry': 'کد تا {time} دیگر اعتبار دارد.',
   'auth.changePhone': 'تغییر شماره موبایل',
   'auth.verified': 'شماره تأیید شد. اطلاعات حساب را تکمیل کنید.',
   'auth.username': 'نام کاربری',
@@ -647,7 +880,7 @@ export const fa: Dictionary = {
   'auth.complete': 'تکمیل ثبت‌نام',
   'auth.success': 'وارد حساب شدید.',
   'auth.done': 'ادامه به همگام‌سازی',
-  'auth.invalidPhone': 'شماره موبایل را با + و کد کشور وارد کنید.',
+  'auth.invalidPhone': 'شماره موبایل باید ۱۱ رقم باشد و با ۰ شروع شود.',
   'auth.invalidCode': 'شش رقم کد پیامک را وارد کنید.',
   'auth.invalidPassword': 'رمز عبور باید بین ۱۲ تا ۱۲۸ نویسه باشد.',
   'auth.passwordMismatch': 'رمزهای عبور یکسان نیستند.',
@@ -866,7 +1099,8 @@ export const fa: Dictionary = {
   'analytics.cardsUnit': 'کارت',
   'analytics.streakA11y': 'رشتهٔ فعلی: {current}. بهترین رشته: {best}.',
   'notification.title': 'وقت مطالعه است',
-  'notification.body': 'کارت‌هایی برای مرور دارید.',
+  'notification.body': '{count} کارت برای مطالعه دارید.',
+  'notification.singleBody': '{count} کارت برای مطالعه دارید.',
   'settings.description': 'تنظیمات را برای مطالعهٔ راحت‌تر انتخاب کنید.',
   'settings.account': 'حساب کاربری',
   'settings.loading': 'در حال بارگذاری تنظیمات',
@@ -877,7 +1111,7 @@ export const fa: Dictionary = {
   'settings.choose': '{label}، {detail}. انتخاب تنظیم',
   'settings.study': 'مطالعه',
   'settings.dailyReminder': 'یادآور روزانه',
-  'settings.reminderHint': 'یادآور محلی برای مرور روزانهٔ کارت‌ها.',
+  'settings.reminderHint': 'فقط وقتی کارت برای مرور دارید، با تعداد دقیق کارت‌ها یادآوری می‌شود.',
   'settings.reminderTime': 'زمان یادآور',
   'settings.localTime': '{time} (به وقت محلی)',
   'settings.permission': 'مجوز اعلان: {value}',
@@ -917,7 +1151,7 @@ export const fa: Dictionary = {
   'sync.reviewConflict': 'تاریخچهٔ مرور حفظ شده است. وضعیت مرور نیاز به بررسی دارد.',
   'sync.keepServer': 'نگه‌داشتن نسخهٔ سرور',
   'sync.keepLocal': 'نگه‌داشتن و بازفرستادن ویرایش من',
-  'sync.archived': 'در دستگاه دیگر بایگانی شده و ویرایش قابل بازگردانی نیست.',
+  'sync.deleted': 'در دستگاه دیگر حذف شده و با ویرایش قابل بازگردانی نیست.',
   'sync.error': 'همگام‌سازی ناموفق بود؛ تغییرات آفلاین محفوظ‌اند.',
   'settings.yourDataHint': 'داده‌های مطالعه فعلاً فقط در این نشست به‌صورت محلی نگهداری می‌شوند.',
   'settings.privacy': 'سیاست حفظ حریم خصوصی',
@@ -929,13 +1163,11 @@ export const fa: Dictionary = {
   'settings.appLanguageHint': 'منوها و چیدمان را تغییر می‌دهد؛ زبان دسته‌ها ثابت می‌ماند.',
   'settings.themeHint': 'پوستهٔ دلخواهتان را انتخاب کنید.',
   'settings.themeLifetime':
-    'این انتخاب تا بستن برنامه باقی می‌ماند. حالت سیستم از تنظیم روشن یا تاریک دستگاه پیروی می‌کند؛ OLED پس‌زمینهٔ سیاه دارد.',
+    'حالت روشن یا تاریک را انتخاب کنید. انتخاب شما در سراسر برنامه اعمال و روی این دستگاه ذخیره می‌شود.',
   'settings.themeSelected': 'پوستهٔ انتخاب‌شده',
   'settings.themeSelect': 'انتخاب پوسته',
-  'settings.theme.system': 'سیستم',
   'settings.theme.light': 'روشن',
   'settings.theme.dark': 'تاریک',
-  'settings.theme.oled': 'OLED',
   'settings.languageHint': 'زبان منوها و مسیریابی را انتخاب کنید.',
   'settings.languageSelected': 'زبان انتخاب‌شده',
   'settings.languageSelect': 'انتخاب زبان برنامه',
@@ -989,6 +1221,7 @@ export const fa: Dictionary = {
   'form.category': 'دسته‌بندی (اختیاری)',
   'form.back': 'پشت',
   'form.meaning': 'معنی',
+  'form.optionalDetails': 'جزئیات اختیاری',
   'form.meaningPlaceholder': 'معنی یا تعریف',
   'form.meaningRequired': 'معنی را وارد کنید.',
   'form.examples': 'مثال‌های کاربرد (اختیاری)',
@@ -1039,7 +1272,6 @@ export const fa: Dictionary = {
   'details.deleteDeckTitle': 'این دسته حذف شود؟',
   'details.deleteDeckHint': 'این دسته و کارت‌های آن حذف می‌شوند. این کار قابل بازگشت نیست.',
   'details.keepDeck': 'نگه‌داشتن دسته',
-  'details.confirmArchive': 'تأیید بایگانی',
   'details.confirmDelete': 'تأیید حذف',
   'details.deckDeleteError': 'حذف دسته انجام نشد. دوباره تلاش کنید.',
   'details.cardLoading': 'بارگذاری کارت',
@@ -1048,11 +1280,11 @@ export const fa: Dictionary = {
   'details.cardUnavailableHint': 'این کارت در دسترس نیست.',
   'details.fromDeck': 'از {name}',
   'details.editCard': 'ویرایش کارت',
-  'details.archiveCard': 'بایگانی کارت',
-  'details.archiveCardTitle': 'این کارت بایگانی شود؟',
-  'details.archiveCardHint': 'از کارت‌های فعال این دسته حذف می‌شود.',
+  'details.deleteCard': 'حذف کارت',
+  'details.deleteCardTitle': 'این کارت حذف شود؟',
+  'details.deleteCardHint': 'این کارت از دسته حذف می‌شود. این کار قابل بازگشت نیست.',
   'details.keepCard': 'نگه‌داشتن کارت',
-  'details.cardArchiveError': 'بایگانی کارت انجام نشد. دوباره تلاش کنید.',
+  'details.cardDeleteError': 'حذف کارت انجام نشد. دوباره تلاش کنید.',
   'details.openCard': 'باز کردن کارت {name}{category}',
   'details.openCardHint': 'جزئیات کارت را باز می‌کند',
   'vocab.title': 'راهنمای واژگان',

@@ -80,6 +80,13 @@ async function setup(withGuest = true) {
   let holdLogout: (() => Promise<void>) | null = null;
   let holdPush: (() => Promise<void>) | null = null;
   let corruptProgress = false;
+  let backupFailure = false;
+  let interruptBackup = false;
+  let failBackupVerification = false;
+  const backups = new Map<
+    string,
+    { owner: string; requestId: string; metadata: Record<string, unknown> }
+  >();
   const cloud = new CloudClient(() => {
     void engine.enterGuest().catch(() => {});
   });
@@ -101,7 +108,7 @@ async function setup(withGuest = true) {
     status,
     json: async () => body,
   });
-  globalThis.fetch = jest.fn(async (input, init) => {
+  globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     if (!online) throw new TypeError('Offline');
     const path = String(input).replace('https://api.example.test/api/v1', '');
     if (path === '/auth/phone/login') {
@@ -142,6 +149,61 @@ async function setup(withGuest = true) {
       remote.set(session.userId, { database, store, feed: [] });
     }
     const server = remote.get(session.userId)!;
+    if (path === '/backups/') {
+      if (backupFailure) return response({ code: 'backup_storage_failed' }, 503) as Response;
+      const request = JSON.parse(init!.body as string) as {
+        requestId: string;
+        expectedSyncVersion: number;
+      };
+      let stored = [...backups.values()].find(
+        (saved) => saved.owner === session.userId && saved.requestId === request.requestId,
+      );
+      if (!stored) {
+        const completedAtUtc = new Date().toISOString();
+        const metadata = {
+          id: randomUUID(),
+          status: 'Completed',
+          formatVersion: 1,
+          createdAtUtc: completedAtUtc,
+          completedAtUtc,
+          expiresAtUtc: new Date(Date.parse(completedAtUtc) + 7 * 86_400_000).toISOString(),
+          retentionDays: 7,
+          syncVersion: server.feed.length,
+          sizeBytes: 1000,
+          failureCode: null,
+          isExpired: false,
+          canRestore: false,
+        };
+        stored = { owner: session.userId, requestId: request.requestId, metadata };
+        backups.set(metadata.id, stored);
+      }
+      if (interruptBackup) {
+        interruptBackup = false;
+        throw new TypeError('Interrupted after server commit');
+      }
+      return response(stored.metadata, 201) as Response;
+    }
+    if (path === '/backups/status') {
+      const owned = [...backups.values()].filter((item) => item.owner === session.userId);
+      return response({ latestCompleted: owned.at(-1)?.metadata ?? null }) as Response;
+    }
+    if (path === '/backups/?page=1&limit=1') {
+      const owned = [...backups.values()].filter((item) => item.owner === session.userId);
+      return response({
+        items: owned.length ? [owned.at(-1)!.metadata] : [],
+        nextPage: null,
+      }) as Response;
+    }
+    if (path.startsWith('/backups/')) {
+      if (failBackupVerification) {
+        failBackupVerification = false;
+        return response(null, 503) as Response;
+      }
+      const stored = backups.get(path.slice('/backups/'.length));
+      return stored?.owner === session.userId
+        ? (response(stored.metadata) as Response)
+        : (response(null, 404) as Response);
+    }
     if (path === '/sync/push') {
       const request = JSON.parse(init!.body as string) as {
         changes: Omit<ServerChange, 'serverVersion'>[];
@@ -246,6 +308,7 @@ async function setup(withGuest = true) {
     engine,
     store,
     remote,
+    backups,
     revoked,
     login,
     createPrivate,
@@ -263,6 +326,15 @@ async function setup(withGuest = true) {
     },
     corruptProgress: () => {
       corruptProgress = true;
+    },
+    failBackup: () => {
+      backupFailure = true;
+    },
+    interruptBackup: () => {
+      interruptBackup = true;
+    },
+    failBackupVerification: () => {
+      failBackupVerification = true;
     },
   };
 }
@@ -286,6 +358,12 @@ test('verified account sync completes before logout; guest data and account revi
     serverRevoked: true,
     credentialsCleared: true,
     retryAvailable: true,
+    backup: expect.objectContaining({
+      status: 'Completed',
+      retentionDays: 7,
+      isExpired: false,
+      canRestore: false,
+    }),
   });
   expect(await fixture.scopes.current().value.decks.list()).toEqual([
     makeDeck({ name: 'Guest only' }),
@@ -301,10 +379,118 @@ test('verified account sync completes before logout; guest data and account revi
   expect(secure.has(credentialKey)).toBe(false);
   expect(JSON.stringify([...secure.values()])).not.toMatch(/access-|refresh-/);
   expect(await fixture.cloud.hasSession()).toBe(false);
+  expect(fixture.backups.size).toBe(1);
+  expect((await fixture.cloud.logoutStatus())?.backup?.id).toBe(result.backup!.id);
   const uploads = jest
     .mocked(fetch)
     .mock.calls.filter(([url]) => String(url).endsWith('/sync/push'));
   expect(uploads.every(([, init]) => !String(init?.body).includes('Guest only'))).toBe(true);
+});
+
+test('server backup failure preserves the authenticated session and requires an explicit no-backup logout', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  fixture.failBackup();
+  await expect(fixture.engine.signOut(true)).rejects.toThrow('Server backup was not confirmed');
+  expect(await fixture.cloud.hasSession()).toBe(true);
+  expect(fixture.scopes.snapshot().mode).toBe('account');
+  expect(fixture.revoked.size).toBe(0);
+  expect(fixture.backups.size).toBe(0);
+  await fixture.engine.signOut(false);
+  expect(fixture.scopes.snapshot().mode).toBe('guest');
+  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+});
+
+test('interrupted backup retry reuses its durable ID across restart; a later explicit logout requests a new backup', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  fixture.interruptBackup();
+  await expect(fixture.engine.signOut(true)).rejects.toThrow('Server backup was not confirmed');
+  expect(fixture.backups.size).toBe(1);
+  expect(fixture.revoked.size).toBe(0);
+  const originalId = [...fixture.backups.keys()][0];
+  const restartedClient = new CloudClient();
+  const receipt = await restartedClient.createBackup((await fixture.store.account()).cursor);
+  expect(receipt.id).toBe(originalId);
+  const result = await fixture.engine.signOut(true);
+  expect(result.backup!.id).not.toBe(originalId);
+  expect(fixture.backups.size).toBe(2);
+  const requests = jest
+    .mocked(fetch)
+    .mock.calls.filter(([url]) => String(url).endsWith('/backups/'));
+  const requestIds = requests.map(
+    ([, init]) => (JSON.parse(init!.body as string) as { requestId: string }).requestId,
+  );
+  expect(requestIds[0]).toBe(requestIds[1]);
+  expect(new Set(requestIds).size).toBe(2);
+  expect(requests.every(([, init]) => !String(init!.body).includes('userId'))).toBe(true);
+});
+
+test('manual backup syncs and verifies account data without logout; a later manual request creates a new artifact', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  expect(await fixture.engine.backupStatus()).toEqual({ latest: null, lastSuccessful: null });
+  const first = await fixture.engine.createBackup();
+  expect(first.syncVersion).toBe(fixture.remote.get(accountA)!.feed.length);
+  expect(await fixture.engine.backupStatus()).toEqual({
+    latest: expect.objectContaining({ id: first.id }),
+    lastSuccessful: expect.objectContaining({ id: first.id }),
+  });
+  expect(fixture.revoked.size).toBe(0);
+  expect(await fixture.cloud.hasSession()).toBe(true);
+  expect(fixture.scopes.snapshot().mode).toBe('account');
+  const second = await fixture.engine.createBackup();
+  expect(second.id).not.toBe(first.id);
+  expect(second.syncVersion).toBe(first.syncVersion);
+  expect(fixture.backups.size).toBe(2);
+  await fixture.engine.signOut(false);
+  await fixture.login(accountB);
+  expect(await fixture.engine.backupStatus()).toEqual({ latest: null, lastSuccessful: null });
+});
+
+test('offline manual backup fails before creation and does not revoke or expose account data to guests', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  fixture.offline();
+  await expect(fixture.engine.createBackup()).rejects.toThrow('connection is required');
+  expect(fixture.backups.size).toBe(0);
+  expect(fixture.revoked.size).toBe(0);
+  expect(fixture.scopes.snapshot().mode).toBe('account');
+  await fixture.engine.signOut(false);
+  await expect(fixture.engine.backupStatus()).rejects.toThrow('authenticated account');
+  await expect(fixture.engine.createBackup()).rejects.toThrow('authenticated account');
+});
+
+test('expired authentication during manual backup invokes the existing credential clearing and guest isolation', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  const session = JSON.parse(secure.get(credentialKey)!) as { sessionId: string };
+  fixture.revoked.add(session.sessionId);
+  await expect(fixture.engine.createBackup()).rejects.toMatchObject({ status: 401 });
+  expect(fixture.backups.size).toBe(0);
+  expect(secure.has(credentialKey)).toBe(false);
+  expect(fixture.scopes.snapshot().mode).toBe('guest');
+  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+});
+
+test('backup metadata verification failure cannot log out or create a duplicate on retry', async () => {
+  const fixture = await setup();
+  await fixture.login();
+  await fixture.createPrivate();
+  fixture.failBackupVerification();
+  await expect(fixture.engine.signOut(true)).rejects.toThrow();
+  expect(fixture.scopes.snapshot().mode).toBe('account');
+  expect(await fixture.cloud.hasSession()).toBe(true);
+  expect(fixture.revoked.size).toBe(0);
+  expect(fixture.backups.size).toBe(1);
+  const originalId = [...fixture.backups.keys()][0];
+  expect((await fixture.engine.signOut(true)).backup!.id).toBe(originalId);
+  expect(fixture.backups.size).toBe(1);
 });
 
 test('logout without sync preserves queued account writes, server data, and guest data', async () => {

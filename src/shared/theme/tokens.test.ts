@@ -1,24 +1,20 @@
-import { palette, resolveTheme, typography, spacing, radii, heights, shadows } from './tokens';
+import { palette, typography, spacing, radii, heights, shadows } from './tokens';
+import { appearanceChoices } from '@/features/settings/presentation/appearance-options';
 
-test('system preference follows the device and explicit preference overrides it', () => {
-  expect(resolveTheme('system', 'dark')).toBe('dark');
-  expect(resolveTheme('system', null)).toBe('light');
-  expect(resolveTheme('light', 'dark')).toBe('light');
-  expect(resolveTheme('system', 'light')).toBe('light');
-  expect(resolveTheme('system', 'dark')).not.toBe('oled');
-  expect(resolveTheme('oled', 'light')).toBe('oled');
-  expect(resolveTheme('oled', 'dark')).toBe('oled');
+test('only light and dark themes are offered and have palettes', () => {
+  expect(appearanceChoices.map((choice) => choice.value)).toEqual(['light', 'dark']);
+  expect(Object.keys(palette)).toEqual(['light', 'dark']);
 });
 
-test('every appearance exposes the same semantic colors and OLED has a true black base', () => {
+test('both appearances expose the same semantic colors with distinct surfaces', () => {
   const keys = Object.keys(palette.light);
   for (const colors of Object.values(palette)) {
     expect(Object.keys(colors)).toEqual(keys);
     for (const color of Object.values(colors)) expect(color).toMatch(/^#[0-9A-F]{6}$/i);
   }
-  expect(palette.oled.background).toBe('#000000');
-  expect(palette.oled.surface).not.toBe(palette.oled.background);
-  expect(palette.dark.background).not.toBe(palette.oled.background);
+  expect(palette.light.background).not.toBe(palette.light.surface);
+  expect(palette.dark.background).not.toBe(palette.dark.surface);
+  expect(palette.dark.background).not.toBe(palette.light.background);
 });
 
 test('shared typography, spacing, radii, heights and elevation tokens are available', () => {

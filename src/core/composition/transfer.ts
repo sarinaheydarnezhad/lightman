@@ -12,27 +12,33 @@ export {
   downloadSampleFile,
 } from '@/features/transfer/data/transfer-files';
 
-const services = new WeakMap<object, ReturnType<typeof createTransferService>>();
+const services = new WeakMap<
+  object,
+  { revision: number; service: ReturnType<typeof createTransferService> }
+>();
 export const transferService = new Proxy({} as ReturnType<typeof createTransferService>, {
   get: (_target, property) => {
     const scope = storageScopes.current();
-    let service = services.get(scope.value);
-    if (!service) {
-      service = createTransferService(activeApplication(), scope.value, {
+    const revision = storageScopes.snapshot().revision;
+    let entry = services.get(scope.value);
+    if (!entry || entry.revision !== revision) {
+      const service = createTransferService(activeApplication(), scope.value, {
         csv: csvAdapter,
         xlsx: xlsxAdapter,
         apkg: apkgAdapter,
       });
-      services.set(scope.value, service);
+      entry = { revision, service };
+      services.set(scope.value, entry);
     }
+    const { service } = entry;
     const value = Reflect.get(service, property);
     if (typeof value !== 'function') return value;
     return (...args: unknown[]) => {
-      storageScopes.assertCurrent(scope);
+      storageScopes.assertCurrent(scope, revision);
       const result: unknown = value(...args);
       if (result instanceof Promise)
         return result.then((next: unknown) => {
-          storageScopes.assertCurrent(scope);
+          storageScopes.assertCurrent(scope, revision);
           return next;
         });
       return result;

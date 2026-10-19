@@ -7,6 +7,7 @@ import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
+import { FreePlanLimit } from '@/shared/access/free-plan-limit';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { CardForm } from './card-form';
@@ -47,6 +48,7 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
         <LoadingState label={t('details.cardLoading')} />
       </Screen>
     );
+  if (resource.errorCode === 'free-tier-limit') return <FreePlanLimit operation="card" />;
   if (!resource.data || resource.error)
     return (
       <FeaturePlaceholder

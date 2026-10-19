@@ -63,7 +63,7 @@ export function validateCard(card: Card): Card {
   if (card.archivedAt !== null) {
     instant(card.archivedAt);
     if (card.archivedAt < card.createdAt)
-      throw new AppError('validation', 'Archive date is out of order.');
+      throw new AppError('validation', 'Deletion date is out of order.');
   }
   return {
     ...card,

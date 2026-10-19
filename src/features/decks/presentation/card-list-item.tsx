@@ -6,6 +6,7 @@ import type { Deck } from '@/features/decks/domain/deck';
 import type { Card as CardEntity } from '@/features/study/domain/card';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useSurfaceStyle } from '@/shared/theme/use-surface-style';
 import { icons } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
 import { deckContentStyle, deckTypography } from './deck-presentation';
@@ -21,10 +22,11 @@ export const CardListItem = memo(function CardListItem({
 }) {
   const { t } = useLocalization();
   const colors = useThemeColors();
+  const shadow = useSurfaceStyle();
 
   return (
     <Pressable
-      className="min-h-listItem flex-row items-center gap-md border-b border-border py-lg"
+      className="mb-md min-h-listItem flex-row items-center gap-md rounded-lg border border-surface bg-surface p-lg"
       accessibilityRole="button"
       accessibilityLabel={t('details.openCard', {
         name: card.frontText,
@@ -32,7 +34,10 @@ export const CardListItem = memo(function CardListItem({
       })}
       accessibilityHint={t('details.openCardHint')}
       onPress={() => onPress(card.id)}
-      style={(state) => (state.pressed ? { backgroundColor: colors.surfaceElevated } : undefined)}
+      style={(state) => [
+        shadow,
+        state.pressed ? { backgroundColor: colors.surfaceElevated } : undefined,
+      ]}
     >
       <View className="min-w-0 flex-1 gap-xs">
         <Text
@@ -44,15 +49,29 @@ export const CardListItem = memo(function CardListItem({
           {card.frontText}
         </Text>
         {card.phonetic ? (
-          <Text tone="secondary" variant="bodySmall" style={deckContentStyle(card.phonetic, deck.textAlignment)} numberOfLines={1}>
+          <Text
+            tone="secondary"
+            variant="bodySmall"
+            style={deckContentStyle(card.phonetic, deck.textAlignment)}
+            numberOfLines={1}
+          >
             {card.phonetic}
           </Text>
         ) : null}
-        <Text tone="secondary" variant="bodySmall" numberOfLines={2} style={deckContentStyle(card.meaning, deck.textAlignment)}>
+        <Text
+          tone="secondary"
+          variant="bodySmall"
+          numberOfLines={2}
+          style={deckContentStyle(card.meaning, deck.textAlignment)}
+        >
           {card.meaning}
         </Text>
         {card.category ? (
-          <Text tone="tertiary" variant="caption" style={deckContentStyle(card.category, deck.textAlignment)}>
+          <Text
+            tone="tertiary"
+            variant="caption"
+            style={deckContentStyle(card.category, deck.textAlignment)}
+          >
             {card.category}
           </Text>
         ) : null}

@@ -28,12 +28,23 @@ export interface PhoneRegistration {
   readonly username: string;
 }
 
-export function normalizePhoneNumber(value: string): string {
-  const normalized = value
+function normalizePhoneDigits(value: string): string {
+  return value
     .trim()
     .replace(/[۰-۹٠-٩]/g, (digit) =>
       String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)),
     );
+}
+
+export function normalizeLocalPhoneNumber(value: string): string {
+  const normalized = normalizePhoneDigits(value);
+  if (!/^0[0-9]{10}$/.test(normalized)) throw new Error('invalid_phone');
+  return normalized;
+}
+
+export function normalizePhoneNumber(value: string): string {
+  const normalized = normalizePhoneDigits(value);
+  if (/^0[0-9]{10}$/.test(normalized)) return `+98${normalized.slice(1)}`;
   if (!/^\+[1-9][0-9]{7,14}$/.test(normalized)) throw new Error('invalid_phone');
   return normalized;
 }

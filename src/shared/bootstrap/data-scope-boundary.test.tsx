@@ -48,13 +48,14 @@ test('scope changes hide account screens while opening storage and discard cache
     </SafeAreaProvider>,
   );
   expect(screen.getByText('Private account deck')).toBeTruthy();
+  expect(screen.queryByText(/Account mode.*Offline data available.*Free plan/)).toBeNull();
   update({ ...mockState, phase: 'loading', revision: 2 });
   expect(screen.queryByText('Private account deck')).toBeNull();
   update({ phase: 'ready', mode: 'guest', userId: null, revision: 2 });
   expect(router.dismissAll).toHaveBeenCalled();
   expect(router.replace).toHaveBeenCalledWith('/(tabs)/settings');
   expect(screen.getByText('Guest deck')).toBeTruthy();
-  expect(screen.getByText('Guest mode · Local data only · Free plan')).toBeTruthy();
+  expect(screen.queryByText(/Guest mode.*Local data only.*Free plan/)).toBeNull();
   expect(screen.queryByText('Private account deck')).toBeNull();
   update({ ...mockState, phase: 'error', revision: 3 });
   expect(screen.queryByText('Guest deck')).toBeNull();

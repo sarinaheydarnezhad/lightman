@@ -1,13 +1,37 @@
 import { createApplication, type Application } from '@/core/application/create-application';
-import { clock, idGenerator } from '@/core/infrastructure/platform';
+import { clock, idGenerator, logger } from '@/core/infrastructure/platform';
+import { AppState } from 'react-native';
 import { storageScopes } from './repositories';
 import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
 import type { LocalScope } from '@/core/storage/local-storage-scopes';
 import type { Repositories } from '@/core/ports/repositories';
+import { learningAccess } from './learning-access';
 
 const applications = new WeakMap<Repositories, Application>();
 let cachedRepositories: Repositories | null = null;
 let observingScopes = false;
+const reminderMutations = new Set<PropertyKey>([
+  'createDeck',
+  'updateDeck',
+  'archiveDeck',
+  'createCard',
+  'updateCard',
+  'archiveCard',
+  'reviewCard',
+  'submitStudyAnswer',
+]);
+
+export async function refreshStudyReminder(): Promise<void> {
+  if (storageScopes.snapshot().phase !== 'ready') return;
+  const revision = storageScopes.snapshot().revision;
+  try {
+    await activeApplication().settings.reconcileReminder();
+  } catch (error) {
+    if (storageScopes.snapshot().revision !== revision) return;
+    await expoNotificationService.cancelDailyReminder().catch(() => {});
+    logger.error('Unable to refresh study reminders', error);
+  }
+}
 
 function guarded<Services extends object>(
   services: Services,
@@ -24,7 +48,9 @@ function guarded<Services extends object>(
           storageScopes.assertCurrent(scope, revision);
           const result: unknown = Reflect.apply(value, target, args);
           if (result instanceof Promise)
-            return result.then((next: unknown) => {
+            return result.then(async (next: unknown) => {
+              storageScopes.assertCurrent(scope, revision);
+              if (reminderMutations.has(property)) await refreshStudyReminder();
               storageScopes.assertCurrent(scope, revision);
               return next;
             });
@@ -50,6 +76,18 @@ export function activeApplication(): Application {
         applications.delete(cachedRepositories);
         cachedRepositories = null;
       }
+      if (storageScopes.snapshot().phase !== 'ready') {
+        void expoNotificationService
+          .cancelDailyReminder()
+          .catch((error: unknown) =>
+            logger.error('Unable to clear previous study reminders', error),
+          );
+      } else {
+        void refreshStudyReminder();
+      }
+    });
+    AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refreshStudyReminder();
     });
     observingScopes = true;
   }
@@ -57,7 +95,25 @@ export function activeApplication(): Application {
   cachedRepositories = scope.value;
   let current = applications.get(scope.value);
   if (!current) {
-    const created = createApplication(scope.value, clock, idGenerator, expoNotificationService);
+    const revision = storageScopes.snapshot().revision;
+    const created = createApplication(
+      scope.value,
+      clock,
+      idGenerator,
+      {
+        ...expoNotificationService,
+        scheduleDailyReminder: (time, language, plan) => {
+          storageScopes.assertCurrent(scope, revision);
+          return expoNotificationService.scheduleDailyReminder(time, language, plan);
+        },
+        cancelDailyReminder: () => {
+          storageScopes.assertCurrent(scope, revision);
+          return expoNotificationService.cancelDailyReminder();
+        },
+      },
+      undefined,
+      learningAccess(),
+    );
     current = guarded({ ...created, settings: guarded(created.settings, scope) }, scope);
     applications.set(scope.value, current);
   }

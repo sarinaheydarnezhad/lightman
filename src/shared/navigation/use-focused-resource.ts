@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { AppError } from '@/core/errors/app-error';
+import { AppError, type AppErrorCode } from '@/core/errors/app-error';
 
 /** Reload after navigation returns to a screen; stale asynchronous results are ignored. */
 export function useFocusedResource<T>(load: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<AppErrorCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
 
@@ -17,6 +18,7 @@ export function useFocusedResource<T>(load: () => Promise<T>) {
           if (!active) return;
           setLoading(true);
           setError(null);
+          setErrorCode(null);
           return load();
         })
         .then((value) => {
@@ -26,6 +28,7 @@ export function useFocusedResource<T>(load: () => Promise<T>) {
           if (active) {
             setData(null);
             setError(cause instanceof AppError ? cause.message : 'Unable to load this screen.');
+            setErrorCode(cause instanceof AppError ? cause.code : null);
           }
         })
         .finally(() => {
@@ -41,5 +44,5 @@ export function useFocusedResource<T>(load: () => Promise<T>) {
 
   const refresh = useCallback(() => setVersion((current) => current + 1), []);
 
-  return { data, error, loading, refresh };
+  return { data, error, errorCode, loading, refresh };
 }

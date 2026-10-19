@@ -9,6 +9,7 @@ import { SyncStore } from './sync-store';
 import { CloudError, type CloudClient } from './cloud-client';
 import { mergeReviewEvents } from './review-merge';
 import type { PendingOperation, ServerChange } from './contract';
+import type { Entitlements } from './subscription';
 
 jest.mock('expo-network', () => ({ getNetworkStateAsync: jest.fn() }));
 jest.mock('expo-crypto', () => ({
@@ -99,6 +100,28 @@ async function setup() {
   let online = true;
   let lostReplyAt: number | null = null;
   const cloud = {
+    entitlements: jest.fn<Promise<Entitlements>, []>(async () => ({
+      currentPlan: 'Free' as const,
+      isActive: false,
+      startsAtUtc: null,
+      expiresAtUtc: null,
+      limits: { decks: 1, cards: 50 },
+      features: { unlimitedDecks: false, unlimitedCards: false },
+      isPurchasable: false as const,
+      purchaseSupported: false as const,
+      withinFreeTierLimits: true,
+      usage: {
+        decks: Number(
+          (await server.execute('SELECT COUNT(*) AS count FROM decks WHERE archived_at IS NULL'))
+            .rows[0]?.count,
+        ),
+        cards: Number(
+          (await server.execute('SELECT COUNT(*) AS count FROM cards WHERE archived_at IS NULL'))
+            .rows[0]?.count,
+        ),
+      },
+      validatedAtUtc: new Date().toISOString(),
+    })),
     available: true,
     hasSession: jest.fn(async () => owned),
     accountProfile: jest.fn(async () => ({
@@ -341,6 +364,36 @@ test('both datasets with same-name decks and different contents warn without mer
   expect(await count(fixture.account, 'decks')).toBe(1);
   expect(await count(fixture.guest, 'cards')).toBe(1);
   expect(await count(fixture.account, 'guest_transfers')).toBe(0);
+});
+
+test('verified Plus permits explicit additive guest transfer above free limits without merging same-name decks', async () => {
+  const fixture = await setup();
+  await guestData(fixture.guest, 1, true, 'Words');
+  await guestData(fixture.account, 2, false, 'Words');
+  const now = Date.now();
+  fixture.cloud.entitlements.mockResolvedValue({
+    currentPlan: 'Plus',
+    isActive: true,
+    startsAtUtc: new Date(now - 1000).toISOString(),
+    expiresAtUtc: new Date(now + 3_600_000).toISOString(),
+    limits: { decks: null, cards: null },
+    features: { unlimitedDecks: true, unlimitedCards: true },
+    isPurchasable: false,
+    purchaseSupported: false,
+    withinFreeTierLimits: true,
+    usage: { decks: 1, cards: 2 },
+    validatedAtUtc: new Date(now).toISOString(),
+  });
+  const guest = fixture.guest.handle.export();
+  const preview = await fixture.transfer.preview();
+  expect(preview.scenario).toBe('both');
+  expect(preview.sameNames).toEqual(['Words']);
+  expect(preview.blockers).toEqual([]);
+  await fixture.transfer.transfer(preview);
+  expect(await count(fixture.account, 'decks')).toBe(2);
+  expect(await count(fixture.server, 'cards')).toBe(3);
+  expect(await count(fixture.server, 'review_events')).toBe(3);
+  expect(fixture.guest.handle.export()).toEqual(guest);
 });
 
 test('neither dataset and preview/cancellation do not create account data or a journal', async () => {

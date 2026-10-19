@@ -81,7 +81,9 @@ test('the APKG SQLite codec runs without Node, WASM, DOM, or network APIs', asyn
 describe.each(adapters)('%s adapter', (_name, adapter) => {
   test('imports into repositories only after confirmation, with normal SRS and repeat-import deduplication', async () => {
     const repositories = makeRepositories();
-    const app = createApplication(repositories, fixedClock, sequenceIds());
+    const app = createApplication(repositories, fixedClock, sequenceIds(), undefined, undefined, {
+      assertAllowed: async () => {},
+    });
     const service = createTransferService(app, repositories, {
       csv: adapter,
       xlsx: adapter,

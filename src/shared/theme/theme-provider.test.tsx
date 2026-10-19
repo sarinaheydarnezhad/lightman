@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import { setTestTheme } from '@/../test/set-test-theme';
 import { ThemeProvider, useThemeColors, useThemeMode } from './theme-provider';
 import { Text } from '@/shared/ui/text';
+import { palette } from './tokens';
 
 function ThemeReading() {
   const mode = useThemeMode();
@@ -13,7 +14,7 @@ function ThemeReading() {
   );
 }
 
-afterEach(async () => setTestTheme('system'));
+afterEach(async () => setTestTheme('light'));
 
 test('switches appearance from UserSettings and updates semantic values', async () => {
   await setTestTheme('light');
@@ -22,11 +23,11 @@ test('switches appearance from UserSettings and updates semantic values', async 
       <ThemeReading />
     </ThemeProvider>,
   );
-  expect(screen.getByText('light: #F8F7FA')).toBeTruthy();
+  expect(screen.getByText(`light: ${palette.light.background}`)).toBeTruthy();
 
   await act(async () => setTestTheme('dark'));
-  expect(screen.getByText('dark: #191820')).toBeTruthy();
+  expect(screen.getByText(`dark: ${palette.dark.background}`)).toBeTruthy();
 
-  await act(async () => setTestTheme('oled'));
-  expect(screen.getByText('oled: #000000')).toBeTruthy();
+  await act(async () => setTestTheme('light'));
+  expect(screen.getByText(`light: ${palette.light.background}`)).toBeTruthy();
 });

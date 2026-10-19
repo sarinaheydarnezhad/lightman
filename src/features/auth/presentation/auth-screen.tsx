@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
 import { CloudError } from '@/core/sync/cloud-client';
 import {
-  normalizePhoneNumber,
+  normalizeLocalPhoneNumber,
   type OtpChallenge,
   type OtpVerification,
 } from '@/core/sync/phone-auth';
@@ -106,7 +106,7 @@ export function AuthScreen() {
   }
 
   async function requestCode() {
-    const phoneNumber = normalizePhoneNumber(phone);
+    const phoneNumber = normalizeLocalPhoneNumber(phone);
     const result = await syncEngine!.requestOtp(
       phoneNumber,
       mode === 'register' ? 'register' : 'login',
@@ -189,7 +189,7 @@ export function AuthScreen() {
       signedIn();
       return;
     }
-    const phoneNumber = normalizePhoneNumber(phone);
+    const phoneNumber = normalizeLocalPhoneNumber(phone);
     if (!password) {
       setError(t('auth.passwordRequired'));
       return;
@@ -205,6 +205,12 @@ export function AuthScreen() {
   const expiresSeconds = challenge
     ? Math.max(0, Math.ceil((Date.parse(challenge.expiresAtUtc) - now) / 1000))
     : 0;
+
+  function countdown(seconds: number): string {
+    const minutes = number(Math.floor(seconds / 60)).padStart(2, number(0));
+    const remainingSeconds = number(seconds % 60).padStart(2, number(0));
+    return `${minutes}:${remainingSeconds}`;
+  }
 
   return (
     <Screen scroll keyboardAware>
@@ -261,10 +267,11 @@ export function AuthScreen() {
                   <Input
                     label={t('auth.phone')}
                     helperText={t('auth.phoneHint')}
+                    placeholder="09121234567"
                     value={phone}
                     onChangeText={setPhone}
                     disabled={busy}
-                    maxLength={32}
+                    maxLength={11}
                     keyboardType="phone-pad"
                     autoComplete="tel"
                     autoCapitalize="none"
@@ -296,7 +303,7 @@ export function AuthScreen() {
                 <Text>{phone}</Text>
                 <Text tone={expiresSeconds ? 'secondary' : 'error'}>
                   {expiresSeconds
-                    ? t('auth.codeExpiry', { seconds: number(expiresSeconds) })
+                    ? t('auth.codeExpiry', { time: countdown(expiresSeconds) })
                     : t('auth.expired')}
                 </Text>
                 <Input
@@ -316,7 +323,7 @@ export function AuthScreen() {
                   onPress={() => void perform(verifyCode)}
                 />
                 {!!resendSeconds && (
-                  <Text>{t('auth.resendWait', { seconds: number(resendSeconds) })}</Text>
+                  <Text>{t('auth.resendWait', { time: countdown(resendSeconds) })}</Text>
                 )}
                 <Button
                   label={t('auth.resend')}

@@ -1,0 +1,9 @@
+# Subscription access limits
+
+Authenticated creation and study consume the backend's existing subscription entitlements. Guests retain fully local 1-deck/50-card access. Existing excess content is preserved: viewing, editing, exporting and explicit archiving remain available, while new content/study is blocked without active Plus.
+
+The application policy, editor entry checks, import preflight, explicit guest-transfer preview, SQLite write/review guards and shared study use cases all enforce these rules. The Plus Paywall at /settings/subscription supports catalog-backed duration selection, but purchases remain unavailable without a verified payment integration. Deck/card entry limits appear within the editor screen with explicit free-plan maximums and a View plans action; save-time errors stay beside the form actions. No global top-of-screen access banner is displayed. Subscription status and structured deck/card/study reasons remain available in Settings and the Paywall. See `plus-paywall.md`. Full remains unavailable.
+
+Authenticated offline access is explicitly provisional, based on the last verified owner-scoped metadata, bounded by subscription expiration and a five-minute lease measured from request start. Unknown/expired access uses free limits. Server sync rechecks current entitlements for every new content/review mutation. Rejected pending data is preserved for explicit resolution/retry.
+
+The authoritative operation-by-operation matrix, complete task changed-file manifest, storage/clock/account isolation rules and remaining risks are in the sibling backend repository's ACCESS-LIMITS.md. Exact executed commands/results are in ACCESS-LIMITS-VERIFICATION.md. No new subscription secret or SQL Server migration is required; Task 7's subscription migration and existing native HTTPS/JWT/SQL configuration must already be deployed.

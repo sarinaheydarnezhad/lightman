@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, TextInput, View } from 'react-native';
+import { Check } from 'lucide-react-native';
 
 import type { CreateCardInput } from '@/core/application/create-application';
 import { MAX_CARD_TEXT_LENGTH } from '@/core/constants';
@@ -22,6 +23,7 @@ import { Button } from '@/shared/ui/button';
 import { Chip } from '@/shared/ui/chip';
 import { Card as Surface } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
+import { IconButton } from '@/shared/ui/icon-button';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
@@ -175,12 +177,42 @@ export function CardForm({
   }
 
   return (
-    <Screen scroll keyboardAware edges={stackScreenEdges}>
+    <Screen
+      scroll
+      keyboardAware
+      edges={stackScreenEdges}
+      header={
+        <View className="gap-md">
+          <View style={{ flexDirection: 'row', direction: 'ltr', alignItems: 'flex-start' }}>
+            <View className="flex-1">
+              <ScreenHeader
+                title={t(existing ? 'form.editCard' : 'form.createCard')}
+                description={t('form.cardHint', { name: deck.name })}
+              />
+            </View>
+            <IconButton
+              icon={Check}
+              label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
+              variant="ghost"
+              tone="success"
+              loading={saving}
+              onPress={() => void save()}
+            />
+          </View>
+          {created ? (
+            <Text tone="success" accessibilityLiveRegion="polite">
+              {t('form.cardCreated')}
+            </Text>
+          ) : null}
+          {error ? (
+            <Text tone="error" accessibilityLiveRegion="polite">
+              {error}
+            </Text>
+          ) : null}
+        </View>
+      }
+    >
       <View className="gap-xl pb-3xl">
-        <ScreenHeader
-          title={t(existing ? 'form.editCard' : 'form.createCard')}
-          description={t('form.cardHint', { name: deck.name })}
-        />
         <View className="gap-md">
           <Text variant="headingMedium" accessibilityRole="header">
             {t('form.front')}
@@ -199,8 +231,33 @@ export function CardForm({
             placeholder={t('form.frontPlaceholder')}
             maxLength={MAX_CARD_TEXT_LENGTH}
             returnKeyType="next"
-            onSubmitEditing={() => phoneticRef.current?.focus()}
+            onSubmitEditing={() => meaningRef.current?.focus()}
           />
+        </View>
+        <View className="gap-md">
+          <Text variant="headingMedium" accessibilityRole="header">
+            {t('form.back')}
+          </Text>
+          <Input
+            ref={meaningRef}
+            label={t('form.meaning')}
+            style={deckContentStyle(meaning || deck.language, deck.textAlignment)}
+            value={meaning}
+            onChangeText={(value) => {
+              setMeaning(value);
+              setMeaningError(null);
+            }}
+            error={meaningError ?? undefined}
+            multiline
+            numberOfLines={4}
+            maxLength={MAX_CARD_TEXT_LENGTH}
+            placeholder={t('form.meaningPlaceholder')}
+          />
+        </View>
+        <View className="gap-md">
+          <Text variant="headingMedium" accessibilityRole="header">
+            {t('form.optionalDetails')}
+          </Text>
           <View style={existing ? undefined : { display: 'none' }}>
             <VocabularyHelper
               key={`${deck.language}:${frontText}`}
@@ -301,29 +358,11 @@ export function CardForm({
             value={category}
             onChangeText={setCategory}
             maxLength={120}
-            returnKeyType="next"
-            onSubmitEditing={() => meaningRef.current?.focus()}
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
         </View>
         <View className="gap-md">
-          <Text variant="headingMedium" accessibilityRole="header">
-            {t('form.back')}
-          </Text>
-          <Input
-            ref={meaningRef}
-            label={t('form.meaning')}
-            style={deckContentStyle(meaning || deck.language, deck.textAlignment)}
-            value={meaning}
-            onChangeText={(value) => {
-              setMeaning(value);
-              setMeaningError(null);
-            }}
-            error={meaningError ?? undefined}
-            multiline
-            numberOfLines={4}
-            maxLength={MAX_CARD_TEXT_LENGTH}
-            placeholder={t('form.meaningPlaceholder')}
-          />
           <Text variant="labelLarge">{t('form.examples')}</Text>
           {examples.map((example, index) => (
             <Surface key={index} className="gap-md">
@@ -398,21 +437,6 @@ export function CardForm({
             }}
           />
         ) : null}
-        {created ? (
-          <Text tone="success" accessibilityLiveRegion="polite">
-            {t('form.cardCreated')}
-          </Text>
-        ) : null}
-        {error ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {error}
-          </Text>
-        ) : null}
-        <Button
-          label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
-          loading={saving}
-          onPress={() => void save()}
-        />
       </View>
     </Screen>
   );

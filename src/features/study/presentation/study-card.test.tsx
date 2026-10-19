@@ -92,7 +92,7 @@ test('pending study actions disable card taps and accessible flip actions', () =
 });
 
 beforeEach(() => jest.mocked(useReducedMotion).mockReturnValue(false));
-afterEach(async () => setTestTheme('system'));
+afterEach(async () => setTestTheme('light'));
 
 function show(overrides: Partial<Parameters<typeof StudyCard>[0]> = {}) {
   const select = jest.fn();
@@ -322,7 +322,7 @@ test('RTL alignment is preserved on the answer face', () => {
   });
 });
 
-test.each(['light', 'dark', 'oled'] as const)(
+test.each(['light', 'dark'] as const)(
   '%s surface is opaque on both animated faces',
   async (mode) => {
     await setTestTheme(mode);

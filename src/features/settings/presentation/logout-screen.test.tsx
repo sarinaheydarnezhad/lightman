@@ -55,10 +55,64 @@ test('logout confirmation presents explicit choices and cancellation changes no 
   mount();
   expect(screen.getByRole('button', { name: 'Back Up and Log Out' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Log Out Without Backing Up' })).toBeTruthy();
-  expect(screen.getByText(/No backup retention period/)).toBeTruthy();
+  expect(screen.getByText(/server-configured retention/)).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
   expect(engine.signOut).not.toHaveBeenCalled();
   expect(router.replace).toHaveBeenCalledWith('/(tabs)/settings');
+});
+
+test('confirmed retained backup shows actual UTC expiration and explicitly discloses unavailable restore', () => {
+  const completedAtUtc = new Date().toISOString();
+  const expiresAtUtc = new Date(Date.parse(completedAtUtc) + 7 * 86_400_000).toISOString();
+  mockResult = {
+    ...result,
+    synchronized: true,
+    backup: {
+      id: '11111111-1111-1111-1111-111111111111',
+      status: 'Completed',
+      formatVersion: 1,
+      createdAtUtc: completedAtUtc,
+      completedAtUtc,
+      expiresAtUtc,
+      retentionDays: 7,
+      syncVersion: 4,
+      sizeBytes: 1000,
+      isExpired: false,
+      canRestore: false,
+    },
+  };
+  mount(<LogoutNotice />);
+  expect(
+    screen.getByText(
+      new RegExp(
+        `Retention: 7 days; expires ${expiresAtUtc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`,
+      ),
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText(/Restore is not yet available/)).toBeTruthy();
+});
+
+test('an expired receipt after restart is not displayed as an available retained backup', () => {
+  mockResult = {
+    ...result,
+    synchronized: true,
+    backup: {
+      id: '11111111-1111-1111-1111-111111111111',
+      status: 'Completed',
+      formatVersion: 1,
+      createdAtUtc: '2020-01-01T00:00:00.000Z',
+      completedAtUtc: '2020-01-01T00:00:00.000Z',
+      expiresAtUtc: '2020-01-08T00:00:00.000Z',
+      retentionDays: 7,
+      syncVersion: 4,
+      sizeBytes: 1000,
+      isExpired: false,
+      canRestore: false,
+    },
+  };
+  mount(<LogoutNotice />);
+  expect(screen.getByText(/expired at 2020-01-08T00:00:00.000Z/)).toBeTruthy();
+  expect(screen.queryByText(/was completed and verified/)).toBeNull();
 });
 
 test('verified backup choice shows progress, blocks duplicate submissions and then returns to settings', async () => {

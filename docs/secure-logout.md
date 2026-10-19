@@ -4,9 +4,9 @@
 
 The authenticated Account section at the top of Settings and the existing Cloud Sync screen both open `/settings/logout`. The dialog offers **Back Up and Log Out**, **Log Out Without Backing Up**, and cancellation. Repeated taps cannot submit multiple operations; native back/gestures cannot dismiss an in-progress synchronization. If cloud sync is unavailable, the dialog explains the limitation and disables the verified-sync choice, not local logout.
 
-“Back Up” reuses the existing account SyncEngine, outbox, acknowledgements, versions and pull feed. It is **not a new backup service**. Before logout, it drains the account queue, pulls all pages, checks for failed/conflicted/pending changes, checks known versions for local decks/cards/history/progress/settings, verifies the pulled cursor covers acknowledgements, and compares owned server inventory/card text and review progress. Missing feed/version data, unsupported schedulers, incomplete cursors, conflicts or network failures block the backup success claim. If the session remains valid, the user stays signed in and may retry, cancel, or explicitly choose logout without backup. Actual session expiration can instead require signing in again.
+“Back Up” reuses the existing account SyncEngine, outbox, acknowledgements, versions and pull feed to synchronize and verify supported account data. It then creates and independently checks a [retained server backup](server-backups.md), and rechecks synchronized data before logout. Missing feed/version data, unsupported schedulers, incomplete cursors, conflicts, failed backup creation/verification or network failures block the success claim. If the session remains valid, the user stays signed in and may retry, cancel, or explicitly choose logout without backup. Actual session expiration can instead require signing in again.
 
-Supported synchronization covers the existing deck/card contract, immutable review history, compatible Leitner progress and user settings. Local study-session records/queues, other scheduler metadata and historical restore points are not backed up. There is no configured backup retention period, expiry or historical restore guarantee. These limits are disclosed before choosing either operation. The result says “synchronized and verified,” not that a retained backup was created.
+Supported synchronization and server snapshots cover the existing deck/card contract, immutable review history, compatible Leitner progress and user settings. Local study-session records/queues and other scheduler metadata are not backed up. A confirmed artifact's configured retention and actual UTC expiration are shown after logout; expired receipts are identified as expired after restart. Restore is not yet implemented, and automatic deletion is not scheduled. Historical sync-only logout receipts are never retroactively described as retained backups.
 
 ## Immediate local isolation
 
@@ -34,7 +34,7 @@ Legacy credentials missing the originally verified account ID also require a fre
 
 ## Deployment and limitations
 
-- Deploy the additive token fields and owner-authenticated deferred revocation endpoint. No backend entities, migrations, packages, subscriptions or backup service are added.
+- Deploy the additive token fields and owner-authenticated deferred revocation endpoint. Retained backup creation additionally requires the new backup migration/API and durable encryption key-ring configuration; see [server backups](server-backups.md). No subscriptions or purchase flows are added.
 - The existing full review-state response is required for verified sync before logout; the client fails closed against incomplete responses.
 - Existing server rows absent from sync versions/feed need authoritative backfill before the backup choice can succeed. Logout without backup remains available.
 - A multi-operation sync can partially complete before a backup failure. A failure is not rolled back across the server, not called a successful backup, and does not delete either dataset.

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { syncEngine } from '@/core/composition/sync';
 import { CloudError } from '@/core/sync/cloud-client';
@@ -19,7 +19,7 @@ jest.mock('@/core/composition/sync', () => ({
 }));
 
 const auth = syncEngine!;
-const phone = '+989121234567';
+const phone = '09121234567';
 
 jest.setTimeout(15_000);
 
@@ -59,7 +59,45 @@ async function request(mode: 'Create account' | 'Login with OTP') {
   fireEvent.changeText(screen.getByLabelText('Mobile number'), phone);
   fireEvent.press(screen.getByRole('button', { name: 'Request code' }));
   await screen.findByLabelText('Six-digit verification code');
+  expect(auth.requestOtp).toHaveBeenCalledWith(
+    phone,
+    mode === 'Create account' ? 'register' : 'login',
+  );
+  expect(screen.getByText(phone)).toBeTruthy();
 }
+
+test.each(['Create account', 'Login with OTP'] as const)(
+  '%s countdowns use padded minutes and seconds and retain expiry behavior',
+  async (mode) => {
+    jest.useFakeTimers();
+    const view = mount();
+    try {
+      jest.mocked(auth.requestOtp).mockResolvedValueOnce({
+        challengeId: 'challenge',
+        expiresAtUtc: new Date(Date.now() + 246_000).toISOString(),
+        resendAtUtc: new Date(Date.now() + 66_000).toISOString(),
+      });
+      await request(mode);
+      expect(screen.getByText('Code expires in 04:06.')).toBeTruthy();
+      expect(screen.getByText('You can request another code in 01:06.')).toBeTruthy();
+      act(() => jest.advanceTimersByTime(6000));
+      expect(screen.getByText('Code expires in 04:00.')).toBeTruthy();
+      expect(screen.getByText('You can request another code in 01:00.')).toBeTruthy();
+      act(() => jest.advanceTimersByTime(60_000));
+      expect(screen.getByText('Code expires in 03:00.')).toBeTruthy();
+      expect(screen.queryByText(/You can request another code in/)).toBeNull();
+      expect(
+        screen.getByRole('button', { name: 'Request another code', disabled: false }),
+      ).toBeTruthy();
+      act(() => jest.advanceTimersByTime(180_000));
+      expect(screen.queryByText(/Code expires in/)).toBeNull();
+      expect(screen.getByRole('button', { name: 'Verify code', disabled: true })).toBeTruthy();
+    } finally {
+      view.unmount();
+      jest.useRealTimers();
+    }
+  },
+);
 
 test('registration verifies phone before showing password confirmation and username', async () => {
   mount();
@@ -97,7 +135,7 @@ test('OTP login requires no password and shows success', async () => {
 test('password login validates phone then submits the password', async () => {
   mount();
   fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
-  await screen.findByText('Enter a mobile number with + and its country code.');
+  await screen.findByText('Enter an 11-digit mobile number starting with 0.');
   expect(auth.signInPhone).not.toHaveBeenCalled();
   fireEvent.changeText(screen.getByLabelText('Mobile number'), phone);
   fireEvent.changeText(screen.getByLabelText('Password'), 'private-password');
@@ -105,6 +143,34 @@ test('password login validates phone then submits the password', async () => {
   await screen.findByText('You are signed in.');
   expect(auth.signInPhone).toHaveBeenCalledWith(phone, 'private-password');
 });
+
+test.each(['۰۹۱۲۱۲۳۴۵۶۷', '٠٩١٢١٢٣٤٥٦٧'])(
+  'localized local phone digits support password login: %s',
+  async (value) => {
+    mount();
+    expect(screen.getByLabelText('Mobile number').props.maxLength).toBe(11);
+    expect(
+      screen.getByText('Enter 11 digits starting with 0, for example 09121234567.'),
+    ).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Mobile number'), value);
+    fireEvent.changeText(screen.getByLabelText('Password'), 'private-password');
+    fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
+    await screen.findByText('You are signed in.');
+    expect(auth.signInPhone).toHaveBeenCalledWith(phone, 'private-password');
+  },
+);
+
+test.each(['0912123456', '091212345678', '19121234567', '+989121234567'])(
+  'invalid local phone entry cannot request an OTP: %s',
+  async (value) => {
+    mount();
+    fireEvent.press(screen.getByRole('button', { name: 'Login with OTP' }));
+    fireEvent.changeText(screen.getByLabelText('Mobile number'), value);
+    fireEvent.press(screen.getByRole('button', { name: 'Request code' }));
+    await screen.findByText('Enter an 11-digit mobile number starting with 0.');
+    expect(auth.requestOtp).not.toHaveBeenCalled();
+  },
+);
 
 test('existing email accounts retain access without an implicit account migration', async () => {
   mount();

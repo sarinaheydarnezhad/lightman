@@ -11,7 +11,7 @@ export function useCardActions() {
     getCard: application.getCard,
     create: application.createCard,
     update: application.updateCard,
-    archive: application.archiveCard,
+    remove: application.archiveCard,
   };
 }
 
@@ -57,7 +57,10 @@ export function useCardEditorViewModel(deckId: string, cardId?: string) {
   return useFocusedResource(
     useCallback(async () => {
       const deck = await application.getDeck(deckId);
-      if (!cardId) return { deck, card: null };
+      if (!cardId) {
+        await application.assertLearningAccess('card');
+        return { deck, card: null };
+      }
       const card = await application.getCard(cardId);
       if (card.deckId !== deckId) throw new AppError('not-found', 'Card not found.');
       return { deck, card };

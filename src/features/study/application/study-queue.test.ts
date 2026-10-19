@@ -56,7 +56,9 @@ test('all active decks contribute due and overdue cards, ordered by date, box, t
   await addCard(repos, 'C', 'deck-a', '2026-09-22', 1);
   await addCard(repos, 'today', 'deck-a', '2026-09-24', 1);
   await addCard(repos, 'future', 'deck-z', '2026-09-25');
-  const app = createApplication(repos, fixedClock, sequenceIds());
+  const app = createApplication(repos, fixedClock, sequenceIds(), undefined, undefined, {
+    assertAllowed: async () => {},
+  });
   const first = await app.getStudyQueue({ scope: all, targetDate: today });
   expect(first.map((entry) => entry.cardId)).toEqual(['B', 'D', 'A', 'C', 'today']);
   expect(first.map((entry) => entry.deckId)).toEqual([

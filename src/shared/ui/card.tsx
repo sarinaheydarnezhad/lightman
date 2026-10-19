@@ -1,17 +1,17 @@
 import { type PropsWithChildren } from 'react';
-import { Platform, Pressable, View, type PressableProps } from 'react-native';
-import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
-import { interaction, shadows } from '@/shared/theme/tokens';
+import { Pressable, View, type PressableProps } from 'react-native';
+import { useSurfaceStyle } from '@/shared/theme/use-surface-style';
+import { interaction } from '@/shared/theme/tokens';
 
 type CardProps = PropsWithChildren<
   PressableProps & { variant?: 'default' | 'elevated' | 'outlined' | 'interactive' }
 >;
 
 const appearance = {
-  default: 'border-border bg-surface',
-  elevated: 'border-transparent bg-surfaceElevated',
+  default: 'border-surface bg-surface',
+  elevated: 'border-border bg-surface',
   outlined: 'border-border bg-background',
-  interactive: 'border-border bg-surface',
+  interactive: 'border-surface bg-surface',
 };
 
 export function Card({
@@ -25,19 +25,7 @@ export function Card({
   accessibilityState,
   ...props
 }: CardProps) {
-  const colors = useThemeColors();
-  const mode = useThemeMode();
-  const shadow = shadows.small;
-  const elevation =
-    variant === 'elevated' && mode === 'light' && Platform.OS !== 'web'
-      ? {
-          shadowColor: colors.overlay,
-          shadowOpacity: shadow.opacity,
-          shadowRadius: shadow.radius,
-          shadowOffset: { width: 0, height: shadow.offset },
-          elevation: shadow.elevation,
-        }
-      : undefined;
+  const elevation = useSurfaceStyle();
   const classes = `rounded-lg border p-xl ${appearance[variant]} ${className ?? ''}`;
 
   if (variant === 'interactive') {
@@ -50,6 +38,7 @@ export function Card({
         className={classes}
         disabled={disabled}
         style={(state) => [
+          elevation,
           typeof style === 'function' ? style(state) : style,
           {
             opacity: disabled
@@ -72,7 +61,10 @@ export function Card({
       accessibilityState={accessibilityState}
       accessibilityLabel={accessibilityLabel}
       className={classes}
-      style={[typeof style === 'function' ? undefined : style, elevation]}
+      style={[
+        variant === 'outlined' ? undefined : elevation,
+        typeof style === 'function' ? undefined : style,
+      ]}
     >
       {children}
     </View>

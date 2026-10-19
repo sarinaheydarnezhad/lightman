@@ -1,9 +1,9 @@
 import { createContext, useContext, useSyncExternalStore, type PropsWithChildren } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { View } from 'react-native';
 import { vars } from 'nativewind';
 
 import { application } from '@/core/composition/application';
-import { palette, resolveTheme, type ThemeMode } from './tokens';
+import { palette, type ThemeMode } from './tokens';
 
 const ThemeContext = createContext<ThemeMode>('light');
 
@@ -28,14 +28,9 @@ const variables = Object.fromEntries(
 ) as Record<ThemeMode, ReturnType<typeof vars>>;
 
 export function ThemeProvider({ children }: PropsWithChildren) {
-  const preference =
+  const mode =
     useSyncExternalStore(application.settings.subscribe, application.settings.snapshot)?.theme ??
-    'system';
-  const deviceScheme = useColorScheme();
-  const mode = resolveTheme(
-    preference,
-    deviceScheme === 'dark' ? 'dark' : deviceScheme === 'light' ? 'light' : null,
-  );
+    'light';
 
   return (
     <ThemeContext.Provider value={mode}>

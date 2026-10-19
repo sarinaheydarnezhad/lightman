@@ -38,7 +38,9 @@ test('existing decks without a selection persist as Leitner and updating configu
 test('each deck uses its persisted scheduler for creation, study, events, statuses, and analytics', async () => {
   const repos = makeRepositories();
   const engine = createReviewEngine([LeitnerScheduler, testScheduler]);
-  const app = createApplication(repos, fixedClock, sequenceIds(), undefined, engine);
+  const app = createApplication(repos, fixedClock, sequenceIds(), undefined, engine, {
+    assertAllowed: async () => {},
+  });
   await repos.decks.create(makeDeck());
   await repos.decks.create(makeDeck({ id: 'custom', reviewSystem: testScheduler.id }));
   const classic = await app.createCard({ ...cardInput, deckId: 'deck-1' });
@@ -73,7 +75,9 @@ test('each deck uses its persisted scheduler for creation, study, events, status
   await expect(app.updateDeck('custom', { reviewSystem: 'leitner' })).rejects.toMatchObject({
     code: 'conflict',
   });
-  const reloaded = createApplication(repos, fixedClock, sequenceIds(), undefined, engine);
+  const reloaded = createApplication(repos, fixedClock, sequenceIds(), undefined, engine, {
+    assertAllowed: async () => {},
+  });
   expect((await reloaded.getDeck('custom')).reviewSystem).toBe(testScheduler.id);
 });
 
@@ -85,6 +89,7 @@ test('scheduler selection persists per empty deck and distribution excludes arch
     sequenceIds(),
     undefined,
     createReviewEngine([LeitnerScheduler, testScheduler]),
+    { assertAllowed: async () => {} },
   );
   await repos.decks.create(makeDeck());
   await repos.decks.create(makeDeck({ id: 'unchanged' }));
@@ -125,6 +130,10 @@ test('SM-2 can be selected for a new deck and is used for its cards and reviews'
     result: 'success',
     studySessionId: null,
   });
-  expect(review.reviewEvent).toMatchObject({ schedulerId: 'sm2', previousState: 'new', newState: 'learning' });
+  expect(review.reviewEvent).toMatchObject({
+    schedulerId: 'sm2',
+    previousState: 'new',
+    newState: 'learning',
+  });
   expect((await app.getReviewState(card.id))?.dueDate).toBe('2026-09-25');
 });

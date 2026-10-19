@@ -8,6 +8,19 @@ import {
 } from './localization';
 import { en, fa } from './messages';
 
+test.each(['en', 'fa'] as const)('deletion terminology is consistent in %s', (language) => {
+  expect(translate(language, 'details.deleteCard')).toBe(
+    language === 'en' ? 'Delete card' : 'حذف کارت',
+  );
+  expect(translate(language, 'details.confirmDelete')).toBe(
+    language === 'en' ? 'Confirm delete' : 'تأیید حذف',
+  );
+  expect(translate(language, 'sync.deleted')).toContain(language === 'en' ? 'Deleted' : 'حذف');
+  for (const message of Object.values(language === 'en' ? en : fa)) {
+    expect(message).not.toMatch(/archiv|بایگانی/i);
+  }
+});
+
 test('card creation confirmation is localized in English and Persian', () => {
   expect(translate('en', 'form.cardCreated')).toBe(
     'Card added successfully. You can add another card.',

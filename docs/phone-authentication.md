@@ -8,7 +8,20 @@ The backend needs its .NET 10 runtime/SDK, SQL Server connection, stable `Auth__
 
 ## Contracts
 
-All paths include `/api/v1`. Phone numbers require international format such as `+989121234567`; Persian and Arabic digits normalize to ASCII. National numbers without a country code are rejected. Usernames need not be unique. The backend stores the username in its existing `DisplayName` field.
+### API address changes in installed Android release builds
+
+`EXPO_PUBLIC_API_URL` is embedded in the JavaScript bundle at build time; an installed release APK does not reread the project's `.env`. Restarting Metro or reopening the installed app cannot update that address. An incremental native build can reuse an older JavaScript bundle after only `.env` changes.
+
+After changing the backend origin, regenerate the release bundle and assemble a new APK. From `android/` on Windows:
+
+```powershell
+.\gradlew.bat :app:createBundleReleaseJsAndAssets --rerun-tasks --no-build-cache
+.\gradlew.bat :app:assembleRelease --no-build-cache
+```
+
+Install the updated APK using `adb install -r android/app/build/outputs/apk/release/app-release.apk` from the project root. This updates the existing app without uninstalling it or clearing its local data. For development builds served by Metro, restart with `pnpm start --dev-client --clear` and reload the app instead. Use the backend HTTPS origin without an `/api/v1` suffix.
+
+All paths include `/api/v1`. The app accepts exactly 11 digits starting with `0`, for example `09121234567`, including Persian and Arabic digits. The entered number remains in local format throughout OTP, resend and registration screens. The cloud client converts the leading `0` to `+98` before password login, OTP requests and registration, preserving the backend's international-format contract (`+989121234567`) without a backend change. Existing international-format cloud-client callers remain supported; the phone-entry form requires local format. Usernames need not be unique. The backend stores the username in its existing `DisplayName` field.
 
 - `POST /auth/phone/otp/request`: `{ phoneNumber, purpose: "register" | "login" }` → `{ challengeId, expiresAtUtc, resendAtUtc }`.
 - `POST /auth/phone/otp/verify`: `{ challengeId, code }` → registration `{ registrationToken, expiresAtUtc, tokens: null }`, or login `{ registrationToken: null, expiresAtUtc: null, tokens: { accessToken, refreshToken, accessExpiresAtUtc } }`.

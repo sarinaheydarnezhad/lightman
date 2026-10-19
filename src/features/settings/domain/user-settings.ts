@@ -1,7 +1,12 @@
-import { supportedLanguageTag, localTime, type LanguageTag, type LocalTime } from '@/core/domain/values';
+import {
+  supportedLanguageTag,
+  localTime,
+  type LanguageTag,
+  type LocalTime,
+} from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 
-export type ThemeMode = 'system' | 'light' | 'dark' | 'oled';
+export type ThemeMode = 'light' | 'dark';
 export type EnglishAccent = 'us' | 'uk';
 
 export interface UserSettings {
@@ -15,8 +20,9 @@ export interface UserSettings {
 }
 
 export function validateUserSettings(settings: UserSettings): UserSettings {
-  if (!(['system', 'light', 'dark', 'oled'] as const).includes(settings.theme))
-    throw new AppError('validation', 'Invalid theme.');
+  const storedTheme: string = settings.theme;
+  const theme = storedTheme === 'oled' ? 'dark' : storedTheme === 'system' ? 'light' : storedTheme;
+  if (theme !== 'light' && theme !== 'dark') throw new AppError('validation', 'Invalid theme.');
   if (typeof settings.hapticsEnabled !== 'boolean')
     throw new AppError('validation', 'Invalid haptics setting.');
   const language = supportedLanguageTag(settings.language);
@@ -39,6 +45,7 @@ export function validateUserSettings(settings: UserSettings): UserSettings {
     throw new AppError('validation', 'English accent requires English speech language.');
   return {
     ...settings,
+    theme,
     language,
     preferredSpeechLanguage,
   };

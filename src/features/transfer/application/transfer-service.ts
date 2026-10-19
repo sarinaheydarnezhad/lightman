@@ -39,7 +39,8 @@ export interface ImportSummary {
 }
 
 export function createTransferService(
-  app: Pick<Application, 'createDeck' | 'createCard' | 'listDecks' | 'listCardsForDeck'>,
+  app: Pick<Application, 'createDeck' | 'createCard' | 'listDecks' | 'listCardsForDeck'> &
+    Partial<Pick<Application, 'assertLearningAccess'>>,
   repositories: Pick<Repositories, 'decks' | 'cards'>,
   adapters: Record<TransferFormat, TransferAdapter>,
 ) {
@@ -73,7 +74,7 @@ export function createTransferService(
         }
         const deck = matched.get(normalizeIdentity(card.deckName));
         if (deck?.archivedAt)
-          throw new Error('Matching deck is archived. Restore it before importing.');
+          throw new Error('Matching deck was deleted. Import into a different deck.');
         keys.add(key);
         records.push({ location: record.location, card });
       } catch (error) {
@@ -147,6 +148,14 @@ export function createTransferService(
           issues: parsed.issues,
         };
         const classified = await classify(edited);
+        const newDecks = new Set(
+          classified.records
+            .map(({ card }) => normalizeIdentity(card.deckName))
+            .filter((name) => !classified.matched.has(name)),
+        );
+        if (newDecks.size) await app.assertLearningAccess?.('deck', newDecks.size);
+        if (classified.records.length)
+          await app.assertLearningAccess?.('card', classified.records.length);
         const summary: ImportSummary = {
           imported: 0,
           duplicatesSkipped: classified.duplicates,

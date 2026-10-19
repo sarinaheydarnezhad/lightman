@@ -14,6 +14,7 @@ import { expoNotificationService } from '@/core/infrastructure/expo-notification
 import { createReminderTapHandler } from '@/features/study/application/create-reminder-tap-handler';
 import { BootstrapGate } from '@/shared/bootstrap/bootstrap-gate';
 import { DataScopeBoundary } from '@/shared/bootstrap/data-scope-boundary';
+import { LearningAccessNotice } from '@/shared/access/learning-access-notice';
 import { LocalizationProvider, useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
 import { fontAssets } from '@/shared/theme/font';
@@ -78,11 +79,13 @@ function Navigation() {
   return (
     <LocaleProvider direction="ltr">
       <StatusBar style={mode === 'light' ? 'dark' : 'light'} />
+      <LearningAccessNotice />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primaryText,
+          headerShadowVisible: false,
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -118,6 +121,7 @@ function Navigation() {
         <Stack.Screen name="settings/speech" options={{ title: t('nav.pronunciation') }} />
         <Stack.Screen name="settings/cloud" options={{ title: t('sync.title') }} />
         <Stack.Screen name="settings/logout" options={{ title: t('logout.title') }} />
+        <Stack.Screen name="settings/subscription" options={{ title: t('access.plans') }} />
         <Stack.Screen name="auth/index" options={{ title: t('auth.title') }} />
         <Stack.Screen name="auth/guest-data" options={{ title: t('migration.title') }} />
         <Stack.Screen name="settings/transfer" options={{ title: t('transfer.title') }} />
@@ -130,7 +134,7 @@ function Navigation() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fontAssets);
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#F8F7FA' }} />;
+  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: '#F6F5FD' }} />;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

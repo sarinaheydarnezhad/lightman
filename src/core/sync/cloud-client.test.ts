@@ -13,11 +13,96 @@ const credential = {
   refreshToken: 'old-refresh',
   accessExpiresAtUtc: '2026-01-01T00:00:00.000Z',
 };
+
 const rotated = {
   accessToken: 'new-access',
   refreshToken: 'new-refresh',
   accessExpiresAtUtc: '2099-01-01T00:00:00.000Z',
 };
+
+test('backup status uses authenticated metadata APIs with no owner or payload supplied by the client', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest.fn().mockImplementation(async (url) => ({
+    ok: true,
+    json: async () =>
+      String(url).endsWith('/backups/status')
+        ? {
+            latestCompleted: null,
+            retentionDays: 30,
+            maxPayloadBytes: 10485760,
+            restoreSupported: false,
+            automaticCleanup: false,
+          }
+        : { items: [], nextPage: null },
+  }));
+  expect(await new CloudClient().backupStatus()).toEqual({ latest: null, lastSuccessful: null });
+  expect(jest.mocked(fetch).mock.calls.map(([url]) => String(url))).toEqual([
+    'https://api.example.test/api/v1/backups/status',
+    'https://api.example.test/api/v1/backups/?page=1&limit=1',
+  ]);
+  for (const [, init] of jest.mocked(fetch).mock.calls) {
+    expect(init!.method).toBe('GET');
+    expect(init!.body).toBeUndefined();
+    expect(init!.headers).toEqual(expect.objectContaining({ Authorization: 'Bearer new-access' }));
+  }
+});
+
+test.each([undefined, { items: {} }, { items: [null] }, { items: [null, null] }])(
+  'invalid backup status is not treated as never backed up: %j',
+  async (page) => {
+    jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+    globalThis.fetch = jest.fn().mockImplementation(async (url) => ({
+      ok: true,
+      json: async () =>
+        String(url).endsWith('/backups/status') ? { latestCompleted: null } : page,
+    }));
+    await expect(new CloudClient().backupStatus()).rejects.toThrow();
+  },
+);
+
+test('expired backup authentication clears credentials rather than returning cached status', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest.fn().mockResolvedValue({ ok: false, status: 401 });
+  const lost = jest.fn();
+  await expect(new CloudClient(lost).backupStatus()).rejects.toMatchObject({ status: 401 });
+  expect(lost).toHaveBeenCalled();
+  expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('lerona.cloud.credentials.v1');
+});
+
+test('late backup status after local logout is rejected by the existing session epoch', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  let finish!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  globalThis.fetch = jest.fn().mockImplementation(async (url) => {
+    await gate;
+    return {
+      ok: true,
+      json: async () =>
+        String(url).endsWith('/backups/status') ? { latestCompleted: null } : { items: [] },
+    };
+  });
+  const cloud = new CloudClient();
+  const result = cloud.backupStatus();
+  const rejected = expect(result).rejects.toMatchObject({ status: 401 });
+  await cloud.forgetLocalSession();
+  finish();
+  await rejected;
+});
+
+test('backup capacity machine codes survive the existing authenticated request pipeline', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest.fn().mockResolvedValue({
+    ok: false,
+    status: 409,
+    json: async () => ({ code: 'backup_capacity_reached', error: 'Capacity reached.' }),
+  });
+  await expect(new CloudClient().backupStatus()).rejects.toMatchObject({
+    status: 409,
+    code: 'backup_capacity_reached',
+  });
+});
 
 test('Leitner sync writes match the backend contract and unsupported schedulers never upload', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
@@ -148,11 +233,13 @@ test('authoritative backend quota errors retain the restriction message and mach
       code: 'free_tier_deck_limit',
     }),
   });
-  await expect(new CloudClient().pull(0)).rejects.toMatchObject({
+  const rejected = jest.fn(async () => {});
+  await expect(new CloudClient(undefined, rejected).pull(0)).rejects.toMatchObject({
     status: 403,
     code: 'free_tier_deck_limit',
     message: 'The free plan allows 1 active deck.',
   });
+  expect(rejected).toHaveBeenCalledWith('The free plan allows 1 active deck.');
 });
 
 beforeEach(() => {
@@ -259,7 +346,7 @@ test('phone password login matches the backend contract and binds before storing
     .mockResolvedValueOnce({ ok: true, json: async () => rotated })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'phone-user' }) });
   await expect(
-    new CloudClient().signInPhone('+۹۸۹۱۲۱۲۳۴۵۶۷', 'private-password', bind),
+    new CloudClient().signInPhone('۰۹۱۲۱۲۳۴۵۶۷', 'private-password', bind),
   ).resolves.toBe('phone-user');
   expect(globalThis.fetch).toHaveBeenCalledWith(
     'https://api.example.test/api/v1/auth/phone/login',
@@ -290,7 +377,7 @@ test('OTP request and registration verification never persist OTPs or registrati
     .mockResolvedValueOnce({ ok: true, json: async () => challenge })
     .mockResolvedValueOnce({ ok: true, json: async () => verification });
   const cloud = new CloudClient();
-  await expect(cloud.requestOtp('+989121234567', 'register')).resolves.toEqual(challenge);
+  await expect(cloud.requestOtp('09121234567', 'register')).resolves.toEqual(challenge);
   await expect(cloud.verifyRegistrationOtp('challenge', '123456')).resolves.toEqual(verification);
   expect(globalThis.fetch).toHaveBeenNthCalledWith(
     1,
@@ -309,7 +396,7 @@ test('OTP request and registration verification never persist OTPs or registrati
 
 test('registration sends the proof password confirmation and non-unique username', async () => {
   const registration = {
-    phoneNumber: '+989121234567',
+    phoneNumber: '09121234567',
     registrationToken: 'proof',
     password: 'long-password',
     confirmPassword: 'long-password',
@@ -322,7 +409,9 @@ test('registration sends the proof password confirmation and non-unique username
   await new CloudClient().registerPhone(registration, async () => {});
   expect(globalThis.fetch).toHaveBeenCalledWith(
     'https://api.example.test/api/v1/auth/phone/register',
-    expect.objectContaining({ body: JSON.stringify(registration) }),
+    expect.objectContaining({
+      body: JSON.stringify({ ...registration, phoneNumber: '+989121234567' }),
+    }),
   );
   expect(SecureStore.setItemAsync).toHaveBeenCalled();
 });

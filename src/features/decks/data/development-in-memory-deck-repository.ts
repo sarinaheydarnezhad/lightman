@@ -27,7 +27,7 @@ export class InMemoryDeckRepository implements DeckRepository {
     const valid = validateDeck(deck);
     if (this.decks.has(valid.id)) throw new AppError('conflict', 'Deck already exists.');
     if (valid.archivedAt !== null)
-      throw new AppError('validation', 'Cannot create an archived deck.');
+      throw new AppError('validation', 'Cannot create a deleted deck.');
     this.decks.set(valid.id, { ...valid });
     return { ...valid };
   }
@@ -36,7 +36,7 @@ export class InMemoryDeckRepository implements DeckRepository {
     const valid = validateDeck(deck);
     const existing = this.decks.get(valid.id);
     if (!existing) throw new AppError('not-found', 'Deck not found.');
-    if (existing.archivedAt) throw new AppError('conflict', 'Archived decks cannot be edited.');
+    if (existing.archivedAt) throw new AppError('conflict', 'Deleted decks cannot be edited.');
     if (
       valid.createdAt !== existing.createdAt ||
       valid.archivedAt !== null ||
@@ -50,13 +50,13 @@ export class InMemoryDeckRepository implements DeckRepository {
 
   async archive(id: string, archivedAt: Deck['archivedAt']): Promise<Deck> {
     requiredId(id, 'Deck ID');
-    if (archivedAt === null) throw new AppError('validation', 'Archive date is required.');
+    if (archivedAt === null) throw new AppError('validation', 'Deletion date is required.');
     instant(archivedAt);
     const deck = this.decks.get(id);
     if (!deck) throw new AppError('not-found', 'Deck not found.');
-    if (deck.archivedAt) throw new AppError('conflict', 'Deck is already archived.');
+    if (deck.archivedAt) throw new AppError('conflict', 'Deck is already deleted.');
     if (archivedAt < deck.updatedAt)
-      throw new AppError('conflict', 'Archive date is older than the last edit.');
+      throw new AppError('conflict', 'Deletion date is older than the last edit.');
     const archived = validateDeck({ ...deck, updatedAt: archivedAt, archivedAt });
     this.decks.set(id, archived);
     return { ...archived };

@@ -8,18 +8,18 @@ test('confirmation exposes a named question and distinct actions', () => {
   const confirm = jest.fn();
   const { unmount } = render(
     <ConfirmationPanel
-      title="Archive this card?"
+      title="Delete this card?"
       description="The card will leave the active deck."
       cancelLabel="Keep card"
-      confirmLabel="Confirm archive"
+      confirmLabel="Confirm delete"
       onCancel={cancel}
       onConfirm={confirm}
     />,
   );
-  expect(screen.getByRole('header', { name: 'Archive this card?' })).toBeTruthy();
+  expect(screen.getByRole('header', { name: 'Delete this card?' })).toBeTruthy();
   expect(screen.getByText('The card will leave the active deck.')).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Keep card' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Confirm delete' }));
   expect(cancel).toHaveBeenCalledTimes(1);
   expect(confirm).toHaveBeenCalledTimes(1);
   unmount();

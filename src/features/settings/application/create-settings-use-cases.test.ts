@@ -30,7 +30,7 @@ test('documented defaults are valid and observable without a duplicate store', a
   const unsubscribe = settings.subscribe(listener);
   await repository.update(defaultSettings());
   expect(settings.snapshot()).toMatchObject({
-    theme: 'system',
+    theme: 'light',
     hapticsEnabled: true,
     dailyReminderEnabled: false,
     dailyReminderTime: '09:00',
@@ -67,8 +67,8 @@ test('theme, haptics and speech writes update the repository and dependent servi
     async () => (await settings.get())!.hapticsEnabled,
     perform,
   );
-  await settings.setTheme('oled');
-  expect(settings.snapshot()?.theme).toBe('oled');
+  await settings.setTheme('dark');
+  expect(settings.snapshot()?.theme).toBe('dark');
   await settings.setHaptics(false);
   await haptics.cardReveal();
   expect(perform).not.toHaveBeenCalled();

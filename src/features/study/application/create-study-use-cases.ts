@@ -30,6 +30,7 @@ import {
 export type { CurrentStudyItem, StudyProgress } from '../domain/study-session-workflow';
 
 interface StudyDependencies {
+  readonly assertStudyAllowed?: () => Promise<void>;
   readonly reviewEngine: ReviewEngine;
   readonly repositories: Repositories;
   readonly clock: AppClock;
@@ -57,15 +58,20 @@ export function createStudyUseCases({
   prepareReview,
   persistence,
   reviewEngine,
+  assertStudyAllowed = async () => {},
 }: StudyDependencies) {
   const { decks, cards, reviews, sessions } = repositories;
   const submitting = new Set<string>();
 
-  async function getStudyQueue(input: {
-    readonly scope: StudyScope;
-    readonly targetDate: CalendarDate;
-  }): Promise<StudyQueueItem[]> {
+  async function getStudyQueue(
+    input: {
+      readonly scope: StudyScope;
+      readonly targetDate: CalendarDate;
+    },
+    authorize = true,
+  ): Promise<StudyQueueItem[]> {
     const scope = validateStudyScope(input.scope);
+    if (authorize) await assertStudyAllowed();
     const targetDate = calendarDate(input.targetDate);
     const activeDecks =
       scope.kind === 'specific-deck'
@@ -126,23 +132,25 @@ export function createStudyUseCases({
   }
 
   return {
-    getStudyQueue,
+    getStudyQueue: (input: Parameters<typeof getStudyQueue>[0]) => getStudyQueue(input),
     async getActiveStudySession(): Promise<StudySession | null> {
       return persistence(() => sessions.getActive());
     },
     async startStudySession(scope: StudyScope): Promise<StudySession> {
       validateStudyScope(scope);
+      await assertStudyAllowed();
       if (await persistence(() => sessions.getActive()))
         throw new AppError('conflict', 'Finish or cancel your current study session first.');
       const startedAt = now(clock);
       const targetDate = calendarDateAtInstant(startedAt, clock.timeZone());
-      const queue = await getStudyQueue({ scope, targetDate });
+      const queue = await getStudyQueue({ scope, targetDate }, false);
       return persistence(() =>
         sessions.create(createSession(ids.create(), scope, queue, startedAt)),
       );
     },
     getStudySession,
     async reviewMissedCards(sessionId: string): Promise<StudySession> {
+      await assertStudyAllowed();
       const previous = await getStudySession(sessionId);
       if (previous.status !== 'completed' || previous.sourceSessionId)
         throw new AppError(
@@ -171,6 +179,7 @@ export function createStudyUseCases({
       );
     },
     async getStudySnapshot(sessionId: string) {
+      await assertStudyAllowed();
       const session = await getStudySession(sessionId);
       return {
         session,
@@ -179,12 +188,14 @@ export function createStudyUseCases({
       };
     },
     async getCurrentStudyItem(sessionId: string) {
+      await assertStudyAllowed();
       return getCurrentStudyItem(await getStudySession(sessionId));
     },
     async getStudyProgress(sessionId: string) {
       return getStudyProgress(await getStudySession(sessionId));
     },
     async submitStudyAnswer(input: SubmitStudyAnswerInput) {
+      await assertStudyAllowed();
       requiredId(input.sessionId, 'Study session ID');
       requiredId(input.cardId, 'Card ID');
       requiredId(input.presentationId, 'Presentation ID');

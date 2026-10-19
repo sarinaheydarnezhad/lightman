@@ -1,5 +1,13 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { randomUUID } from 'expo-crypto';
+import { validateEntitlements, validatePlanCatalog, validateSubscription } from './subscription';
+import {
+  validateBackupMetadata,
+  validateServerBackup,
+  type BackupOverview,
+  type ServerBackup,
+} from './server-backup';
 import {
   LogoutJournal,
   logoutBarrierKey,
@@ -62,7 +70,10 @@ export class CloudClient {
   private readonly requests = new Set<AbortController>();
   private readonly logoutJournal = new LogoutJournal();
   private credentialWrites: Promise<void> = Promise.resolve();
-  constructor(private readonly onSessionLost: () => void = () => {}) {}
+  constructor(
+    private readonly onSessionLost: () => void = () => {},
+    private readonly onAccessDenied: (message: string) => Promise<void> = async () => {},
+  ) {}
 
   private async clearTokens(): Promise<void> {
     this.invalidateSession();
@@ -415,6 +426,114 @@ export class CloudClient {
     return (await this.logoutJournal.read()).result;
   }
 
+  async planCatalog() {
+    const response = await this.fetchWithTimeout('/plans', { method: 'GET' });
+    if (!response.ok) throw new CloudError(response.status);
+    return validatePlanCatalog(await response.json());
+  }
+
+  async subscription() {
+    return validateSubscription(await this.request('/me/subscription', { method: 'GET' }));
+  }
+
+  async entitlements() {
+    return validateEntitlements(await this.request('/me/entitlements', { method: 'GET' }));
+  }
+
+  async authorizeStudy() {
+    return validateEntitlements(await this.request('/me/study/authorize', { method: 'POST' }));
+  }
+
+  async backupStatus(): Promise<BackupOverview> {
+    const epoch = this.sessionEpoch;
+    const [status, page] = await Promise.all([
+      this.request<{ latestCompleted: unknown }>('/backups/status', { method: 'GET' }),
+      this.request<{ items: unknown[] }>('/backups/?page=1&limit=1', { method: 'GET' }),
+    ]);
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    if (!status || !page || !Array.isArray(page.items) || page.items.length > 1)
+      throw new Error('Invalid server backup status. Refresh or try again later.');
+    const lastSuccessful =
+      status.latestCompleted === null ? null : validateBackupMetadata(status.latestCompleted);
+    if (lastSuccessful && lastSuccessful.status !== 'Completed')
+      throw new Error('Invalid latest completed backup. Refresh or try again later.');
+    return {
+      lastSuccessful,
+      latest: page.items.length ? validateBackupMetadata(page.items[0]) : null,
+    };
+  }
+
+  async createBackup(expectedSyncVersion: number): Promise<ServerBackup> {
+    const epoch = this.sessionEpoch;
+    const tokens = await this.readTokens();
+    if (!tokens?.userId || !Number.isSafeInteger(expectedSyncVersion) || expectedSyncVersion < 0)
+      throw new Error('A verified account and sync version are required for backup.');
+    const key = `lerona.cloud.backup-request.v1.${tokens.userId}`;
+    const raw = await SecureStore.getItemAsync(key);
+    const previous = raw ? (JSON.parse(raw) as { requestId: string; version: number }) : null;
+    if (
+      previous &&
+      (typeof previous.requestId !== 'string' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          previous.requestId,
+        ) ||
+        !Number.isSafeInteger(previous.version) ||
+        previous.version < 0)
+    )
+      throw new Error('The saved backup retry reference is invalid. Account data was preserved.');
+    const attempt =
+      previous?.version === expectedSyncVersion
+        ? previous
+        : { requestId: randomUUID(), version: expectedSyncVersion };
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    await SecureStore.setItemAsync(key, JSON.stringify(attempt));
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    let created: ServerBackup;
+    try {
+      created = validateServerBackup(
+        await this.request('/backups/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requestId: attempt.requestId,
+            formatVersion: 1,
+            expectedSyncVersion,
+          }),
+        }),
+        expectedSyncVersion,
+      );
+    } catch (error) {
+      if (error instanceof CloudError && error.status === 410)
+        await SecureStore.deleteItemAsync(key);
+      if (error instanceof CloudError && error.status !== 401)
+        throw new CloudError(
+          error.status,
+          error.conflict,
+          `Server backup was not confirmed (HTTP ${error.status}). Retry, or explicitly log out without backup.`,
+          error.code,
+        );
+      throw error;
+    }
+    const verified = validateServerBackup(
+      await this.request(`/backups/${encodeURIComponent(created.id)}`, { method: 'GET' }),
+      expectedSyncVersion,
+    );
+    if (
+      verified.id !== created.id ||
+      verified.completedAtUtc !== created.completedAtUtc ||
+      verified.expiresAtUtc !== created.expiresAtUtc ||
+      verified.syncVersion !== created.syncVersion ||
+      verified.sizeBytes !== created.sizeBytes
+    )
+      throw new Error(
+        'The stored backup could not be verified. Retry with the existing backup request.',
+      );
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    await SecureStore.deleteItemAsync(key);
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    return verified;
+  }
+
   async retryPendingRevocations(): Promise<void> {
     const tokens = await this.readTokens();
     if (!tokens?.userId) return;
@@ -434,6 +553,7 @@ export class CloudClient {
   async signOut(
     synchronized = false,
     localCompleted: (result: LogoutResult) => void = () => {},
+    backup?: ServerBackup,
   ): Promise<LogoutResult> {
     const original = SecureStore.getItemAsync(tokenKey);
     this.invalidateSession();
@@ -473,7 +593,13 @@ export class CloudClient {
       );
     await this.logoutJournal
       .update((journal) => {
-        journal.result = { synchronized, serverRevoked: false, credentialsCleared, retryAvailable };
+        journal.result = {
+          synchronized,
+          serverRevoked: false,
+          credentialsCleared,
+          retryAvailable,
+          ...(backup ? { backup } : {}),
+        };
       })
       .catch(() => {});
     localCompleted({ synchronized, serverRevoked: false, credentialsCleared, retryAvailable });
@@ -496,7 +622,13 @@ export class CloudClient {
       } catch {}
     }
     if (serverRevoked && receipt) await this.logoutJournal.remove(receipt).catch(() => {});
-    const result = { synchronized, serverRevoked, credentialsCleared, retryAvailable };
+    const result = {
+      synchronized,
+      serverRevoked,
+      credentialsCleared,
+      retryAvailable,
+      ...(backup ? { backup } : {}),
+    };
     await this.logoutJournal
       .update((journal) => {
         journal.result = result;
@@ -575,11 +707,16 @@ export class CloudClient {
       if (response.status === 401 && !overrideToken) await this.clearTokens();
       if (response.status === 403) {
         const body = (await response.json().catch(() => ({}))) as { error?: string; code?: string };
+        if (epoch !== this.sessionEpoch) throw new CloudError(401);
+        if (body.code?.startsWith('free_tier_'))
+          await this.onAccessDenied(
+            body.error ?? 'Access restricted. Refresh your subscription online.',
+          );
         throw new CloudError(403, undefined, body.error, body.code);
       }
       if (response.status === 409) {
-        const body = (await response.json()) as { conflict?: SyncConflict };
-        throw new CloudError(409, body.conflict);
+        const body = (await response.json()) as { conflict?: SyncConflict; code?: string };
+        throw new CloudError(409, body.conflict, undefined, body.code);
       }
       throw new CloudError(response.status);
     }

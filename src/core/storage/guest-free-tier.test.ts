@@ -203,7 +203,10 @@ test('atomic SQLite guards stop concurrent deck creation and count cards across 
   await database!.execute('UPDATE sync_account SET applying_remote = 1');
   await repositories.decks.create(makeDeck({ id: 'legacy-other-deck' }));
   await database!.execute('UPDATE sync_account SET applying_remote = 0');
+  await expect(addCard(repositories, 1)).rejects.toMatchObject({ code: 'free-tier-limit' });
+  await database!.execute('UPDATE sync_account SET applying_remote = 1');
   for (let index = 1; index <= 50; index++) await addCard(repositories, index);
+  await database!.execute('UPDATE sync_account SET applying_remote = 0');
   await expect(addCard(repositories, 51, 'legacy-other-deck')).rejects.toMatchObject({
     code: 'free-tier-limit',
   });

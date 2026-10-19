@@ -120,7 +120,7 @@ beforeEach(() => {
   jest.mocked(useReducedMotion).mockReturnValue(false);
 });
 
-afterEach(async () => setTestTheme('system'));
+afterEach(async () => setTestTheme('light'));
 
 test.each([
   [1, 'success', 'failure'],
@@ -181,7 +181,7 @@ test('returning to the front hides any lingering swipe lighting', () => {
   expect(lightingStyle('failure').opacity).toBe(0);
 });
 
-test.each(['light', 'dark', 'oled'] as const)(
+test.each(['light', 'dark'] as const)(
   '%s theme uses matching semantic borders and directional light gradients',
   async (theme) => {
     await setTestTheme(theme);

@@ -112,7 +112,7 @@ export function CloudSyncScreen() {
                       }
                     />
                     {conflict.archived ? (
-                      <Text>{t('sync.archived')}</Text>
+                      <Text>{t('sync.deleted')}</Text>
                     ) : (
                       <Button
                         label={t('sync.keepLocal')}

@@ -22,7 +22,12 @@ async function setup(ids: readonly string[], decks: readonly string[] = ['deck-1
     await repos.cards.create(makeCard({ id, deckId }));
     await repos.reviews.saveState(makeState({ cardId: id }));
   }
-  return { repos, app: createApplication(repos, fixedClock, sequenceIds()) };
+  return {
+    repos,
+    app: createApplication(repos, fixedClock, sequenceIds(), undefined, undefined, {
+      assertAllowed: async () => {},
+    }),
+  };
 }
 
 async function answer(
@@ -547,14 +552,12 @@ test('legacy completed sessions derive their missed list from saved failures aft
   await answer(app, session.id, 'failure');
   await answer(app, session.id, 'success');
   const previous = await app.getStudySession(session.id);
-  jest
-    .spyOn(repos.sessions, 'getById')
-    .mockResolvedValueOnce({
-      ...previous,
-      missedQueue: undefined,
-      sourceSessionId: undefined,
-      initialFailures: undefined,
-    });
+  jest.spyOn(repos.sessions, 'getById').mockResolvedValueOnce({
+    ...previous,
+    missedQueue: undefined,
+    sourceSessionId: undefined,
+    initialFailures: undefined,
+  });
   const retry = await app.reviewMissedCards(session.id);
   expect(retry.initialQueue.map((item) => item.cardId)).toEqual(['A']);
 });

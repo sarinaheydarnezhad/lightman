@@ -13,20 +13,23 @@ import type { DeckRepository } from '../domain/deck-repository';
 
 function mapDeck(source: ReturnType<typeof row>): Deck | null {
   if (!source) return null;
-  return validateDeck({
-    id: text(source, 'id'),
-    name: text(source, 'name'),
-    description: text(source, 'description'),
-    language: text(source, 'language') as Deck['language'],
-    textAlignment: text(source, 'text_alignment') as Deck['textAlignment'],
-    typographySize: text(source, 'typography_size') as Deck['typographySize'],
-    reviewSystem: (nullableText(source, 'review_system') || 'leitner') as Deck['reviewSystem'],
-    createdAt: instant(text(source, 'created_at')),
-    updatedAt: instant(text(source, 'updated_at')),
-    archivedAt: nullableText(source, 'archived_at')
-      ? instant(nullableText(source, 'archived_at')!)
-      : null,
-  }, true);
+  return validateDeck(
+    {
+      id: text(source, 'id'),
+      name: text(source, 'name'),
+      description: text(source, 'description'),
+      language: text(source, 'language') as Deck['language'],
+      textAlignment: text(source, 'text_alignment') as Deck['textAlignment'],
+      typographySize: text(source, 'typography_size') as Deck['typographySize'],
+      reviewSystem: (nullableText(source, 'review_system') || 'leitner') as Deck['reviewSystem'],
+      createdAt: instant(text(source, 'created_at')),
+      updatedAt: instant(text(source, 'updated_at')),
+      archivedAt: nullableText(source, 'archived_at')
+        ? instant(nullableText(source, 'archived_at')!)
+        : null,
+    },
+    true,
+  );
 }
 
 export class SQLiteDeckRepository implements DeckRepository {
@@ -63,7 +66,7 @@ export class SQLiteDeckRepository implements DeckRepository {
     return databaseOperation(async () => {
       const valid = validateDeck(deck);
       if (valid.archivedAt !== null)
-        throw new AppError('validation', 'Cannot create an archived deck.');
+        throw new AppError('validation', 'Cannot create a deleted deck.');
       await this.database.execute(
         `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, review_system, created_at, updated_at, archived_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -90,7 +93,7 @@ export class SQLiteDeckRepository implements DeckRepository {
       const existing = await this.getById(valid.id);
       if (!existing) throw new AppError('not-found', 'Deck not found.');
       if (valid.language !== existing.language) validateDeck(valid);
-      if (existing.archivedAt) throw new AppError('conflict', 'Archived decks cannot be edited.');
+      if (existing.archivedAt) throw new AppError('conflict', 'Deleted decks cannot be edited.');
       if (
         valid.createdAt !== existing.createdAt ||
         valid.archivedAt !== null ||
@@ -120,21 +123,21 @@ export class SQLiteDeckRepository implements DeckRepository {
   archive(id: string, archivedAt: Deck['archivedAt']): Promise<Deck> {
     return databaseOperation(async () => {
       requiredId(id, 'Deck ID');
-      if (archivedAt === null) throw new AppError('validation', 'Archive date is required.');
+      if (archivedAt === null) throw new AppError('validation', 'Deletion date is required.');
       instant(archivedAt);
       const existing = await this.getById(id);
       if (!existing) throw new AppError('not-found', 'Deck not found.');
-      if (existing.archivedAt) throw new AppError('conflict', 'Deck is already archived.');
+      if (existing.archivedAt) throw new AppError('conflict', 'Deck is already deleted.');
       if (archivedAt < existing.updatedAt)
-        throw new AppError('conflict', 'Archive date is older than the last edit.');
+        throw new AppError('conflict', 'Deletion date is older than the last edit.');
       const archived = validateDeck({ ...existing, updatedAt: archivedAt, archivedAt }, true);
       const result = await this.database.execute(
         'UPDATE decks SET updated_at = ?, archived_at = ? WHERE id = ? AND archived_at IS NULL',
         [archived.updatedAt, archived.archivedAt, id],
       );
       if (result.rowsAffected !== 1)
-        throw new AppError('conflict', 'Deck changed during archiving.');
+        throw new AppError('conflict', 'Deck changed during deletion.');
       return archived;
-    }, 'Unable to archive the deck.');
+    }, 'Unable to delete the deck.');
   }
 }

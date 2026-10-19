@@ -93,7 +93,7 @@ test('unavailable voice reports an accessible message and card change stops spee
   expect(screen.getByRole('button', { name: 'Pronounce next' })).toBeTruthy();
 });
 
-test.each(['light', 'dark', 'oled'] as const)(
+test.each(['light', 'dark'] as const)(
   '%s theme keeps the audio button accessible without loading voices',
   async (mode) => {
     await setTestTheme(mode);
@@ -112,13 +112,13 @@ test.each(['light', 'dark', 'oled'] as const)(
       expect(screen.getByRole('button', { name: 'Pronounce hello' })).toBeTruthy();
       expect(speech.getAvailableVoices).not.toHaveBeenCalled();
     } finally {
-      await act(async () => setTestTheme('system'));
+      await act(async () => setTestTheme('light'));
     }
   },
 );
 
 test('next pronunciation reads the latest saved English accent through the speech service', async () => {
-  await setTestTheme('system');
+  await setTestTheme('light');
   await application.settings.setSpeechLanguage(languageTag('en'));
   await application.settings.setSpeechAccent('uk');
   render(

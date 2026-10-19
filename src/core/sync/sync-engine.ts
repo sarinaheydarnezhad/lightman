@@ -5,6 +5,7 @@ import { CloudError } from './cloud-client';
 import type { SyncStore } from './sync-store';
 import type { OtpPurpose, PhoneRegistration } from './phone-auth';
 import type { LogoutResult } from './logout-journal';
+import type { ServerBackup } from './server-backup';
 
 export interface LocalScopeLifecycle {
   isAccount(): boolean;
@@ -62,6 +63,60 @@ export class SyncEngine {
     return this.cloud.accountProfile();
   }
 
+  backupStatus() {
+    return this.readAccount((cloud) => cloud.backupStatus());
+  }
+
+  planCatalog() {
+    return this.cloud.planCatalog();
+  }
+
+  subscription() {
+    return this.readAccount((cloud) => cloud.subscription());
+  }
+
+  entitlements() {
+    return this.readAccount((cloud) => cloud.entitlements());
+  }
+
+  private async readAccount<Result>(
+    read: (cloud: CloudClient) => Promise<Result>,
+  ): Promise<Result> {
+    const epoch = this.operationEpoch;
+    const assertSession = () => {
+      if (
+        epoch !== this.operationEpoch ||
+        this.scopeChanging ||
+        (this.scopes && !this.scopes.isAccount())
+      )
+        throw new Error('An authenticated account is required.');
+    };
+    assertSession();
+    if (!this.cloud.available || !(await this.cloud.hasSession())) throw new CloudError(401);
+    assertSession();
+    const result = await read(this.cloud);
+    assertSession();
+    return result;
+  }
+
+  createBackup(): Promise<ServerBackup> {
+    return this.withAccount((store, cloud, synchronize) =>
+      this.backupSynchronizedAccount(store, cloud, synchronize),
+    );
+  }
+
+  private async backupSynchronizedAccount(
+    store: SyncStore,
+    cloud: CloudClient,
+    synchronize: () => Promise<void>,
+  ): Promise<ServerBackup> {
+    await synchronize();
+    await store.verifySynchronized(cloud);
+    const backup = await cloud.createBackup((await store.account()).cursor);
+    await store.verifySynchronized(cloud);
+    return backup;
+  }
+
   async signIn(email: string, password: string, displayName?: string): Promise<void> {
     await this.authenticate((bind) => this.cloud.signIn(email, password, bind, displayName));
   }
@@ -70,9 +125,8 @@ export class SyncEngine {
     if (this.logoutInFlight) return this.logoutInFlight;
     const action = synchronize
       ? this.withAccount(async (store, cloud, sync) => {
-          await sync();
-          await store.verifySynchronized(cloud);
-          return this.finishSignOut(true);
+          const backup = await this.backupSynchronizedAccount(store, cloud, sync);
+          return this.finishSignOut(true, backup);
         })
       : this.finishSignOut(false);
     this.logoutInFlight = action.finally(() => {
@@ -81,7 +135,7 @@ export class SyncEngine {
     return this.logoutInFlight;
   }
 
-  private async finishSignOut(synchronized: boolean): Promise<LogoutResult> {
+  private async finishSignOut(synchronized: boolean, backup?: ServerBackup): Promise<LogoutResult> {
     this.scopeChanging = true;
     this.operationEpoch++;
     this.scopes?.lockAccount?.();
@@ -94,7 +148,11 @@ export class SyncEngine {
       (error: unknown) => error,
     );
     try {
-      const result = await this.cloud.signOut(synchronized, (local) => this.setLogoutResult(local));
+      const result = await this.cloud.signOut(
+        synchronized,
+        (local) => this.setLogoutResult(backup ? { ...local, backup } : local),
+        backup,
+      );
       this.setLogoutResult(result);
       if (!result.serverRevoked) this.signOutError = 'Server revocation could not be confirmed.';
       return result;
@@ -104,6 +162,7 @@ export class SyncEngine {
         serverRevoked: false,
         credentialsCleared: false,
         retryAvailable: false,
+        ...(backup ? { backup } : {}),
       });
       this.signOutError =
         error instanceof Error ? error.message : 'Server sign-out could not be confirmed.';

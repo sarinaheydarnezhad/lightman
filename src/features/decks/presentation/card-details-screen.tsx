@@ -21,10 +21,10 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
   const { t, language } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { data, loading, error, refresh } = useCardDetailsViewModel(cardId, deckId);
-  const { archive: archiveCard } = useCardActions();
+  const { remove: deleteCard } = useCardActions();
   const [actionError, setActionError] = useState<string | null>(null);
-  const [confirmArchive, setConfirmArchive] = useState(false);
-  const [archiving, setArchiving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const submitting = useRef(false);
   const mounted = useRef(true);
 
@@ -35,13 +35,13 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
     [],
   );
 
-  async function archive() {
+  async function remove() {
     if (submitting.current) return;
     submitting.current = true;
-    setArchiving(true);
+    setDeleting(true);
     setActionError(null);
     try {
-      await archiveCard(cardId);
+      await deleteCard(cardId);
       if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.dismissTo({ pathname: '/decks/[deckId]/cards', params: { deckId } });
@@ -50,12 +50,12 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
         setActionError(
           language === 'en' && cause instanceof AppError
             ? cause.message
-            : t('details.cardArchiveError'),
+            : t('details.cardDeleteError'),
         );
       }
       void haptics.actionRejected();
       submitting.current = false;
-      if (mounted.current) setArchiving(false);
+      if (mounted.current) setDeleting(false);
     }
   }
 
@@ -94,9 +94,9 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
       <View className="gap-2xl pb-3xl">
         <View
           className="gap-2xl"
-          pointerEvents={confirmArchive ? 'none' : 'auto'}
-          accessibilityElementsHidden={confirmArchive}
-          importantForAccessibility={confirmArchive ? 'no-hide-descendants' : 'auto'}
+          pointerEvents={confirmDelete ? 'none' : 'auto'}
+          accessibilityElementsHidden={confirmDelete}
+          importantForAccessibility={confirmDelete ? 'no-hide-descendants' : 'auto'}
         >
           <ScreenHeader
             title={data.card.frontText}
@@ -116,24 +116,24 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
             }
           />
           <Button
-            label={t('details.archiveCard')}
-            variant="tertiary"
-            onPress={() => setConfirmArchive(true)}
+            label={t('details.deleteCard')}
+            variant="destructive"
+            onPress={() => setConfirmDelete(true)}
           />
         </View>
-        {confirmArchive ? (
+        {confirmDelete ? (
           <ConfirmationPanel
-            title={t('details.archiveCardTitle')}
-            description={t('details.archiveCardHint')}
+            title={t('details.deleteCardTitle')}
+            description={t('details.deleteCardHint')}
             cancelLabel={t('details.keepCard')}
-            confirmLabel={t('details.confirmArchive')}
-            busy={archiving}
+            confirmLabel={t('details.confirmDelete')}
+            busy={deleting}
             error={actionError}
             onCancel={() => {
-              setConfirmArchive(false);
+              setConfirmDelete(false);
               setActionError(null);
             }}
-            onConfirm={() => void archive()}
+            onConfirm={() => void remove()}
           />
         ) : null}
       </View>

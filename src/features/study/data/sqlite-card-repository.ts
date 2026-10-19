@@ -108,7 +108,7 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
     return databaseOperation(async () => {
       const valid = validateCard(card);
       if (valid.archivedAt !== null)
-        throw new AppError('validation', 'Cannot create an archived card.');
+        throw new AppError('validation', 'Cannot create a deleted card.');
       await this.insert(this.database, valid);
       return valid;
     }, 'Unable to save the card.');
@@ -119,7 +119,7 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
       const valid = validateCard(card);
       const existing = await this.getById(valid.id);
       if (!existing) throw new AppError('not-found', 'Card not found.');
-      if (existing.archivedAt) throw new AppError('conflict', 'Archived cards cannot be edited.');
+      if (existing.archivedAt) throw new AppError('conflict', 'Deleted cards cannot be edited.');
       if (
         existing.deckId !== valid.deckId ||
         existing.createdAt !== valid.createdAt ||
@@ -149,22 +149,22 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
   archive(id: string, archivedAt: Card['archivedAt']): Promise<Card> {
     return databaseOperation(async () => {
       requiredId(id, 'Card ID');
-      if (archivedAt === null) throw new AppError('validation', 'Archive date is required.');
+      if (archivedAt === null) throw new AppError('validation', 'Deletion date is required.');
       instant(archivedAt);
       const existing = await this.getById(id);
       if (!existing) throw new AppError('not-found', 'Card not found.');
-      if (existing.archivedAt) throw new AppError('conflict', 'Card is already archived.');
+      if (existing.archivedAt) throw new AppError('conflict', 'Card is already deleted.');
       if (archivedAt < existing.updatedAt)
-        throw new AppError('conflict', 'Archive date is older than the last edit.');
+        throw new AppError('conflict', 'Deletion date is older than the last edit.');
       const archived = validateCard({ ...existing, updatedAt: archivedAt, archivedAt });
       const result = await this.database.execute(
         'UPDATE cards SET updated_at = ?, archived_at = ? WHERE id = ? AND archived_at IS NULL',
         [archived.updatedAt, archived.archivedAt, id],
       );
       if (result.rowsAffected !== 1)
-        throw new AppError('conflict', 'Card changed during archiving.');
+        throw new AppError('conflict', 'Card changed during deletion.');
       return archived;
-    }, 'Unable to archive the card.');
+    }, 'Unable to delete the card.');
   }
 
   createWithInitialReviewState(card: Card, state: CardReviewState): Promise<Card> {
@@ -174,7 +174,7 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
         const validCard = validateCard(card);
         const validState = validateReviewState(state);
         if (validCard.archivedAt !== null)
-          throw new AppError('validation', 'Cannot create an archived card.');
+          throw new AppError('validation', 'Cannot create a deleted card.');
         if (validState.cardId !== validCard.id)
           throw new AppError('validation', 'Card and review state IDs must match.');
         await this.insert(transaction, validCard);

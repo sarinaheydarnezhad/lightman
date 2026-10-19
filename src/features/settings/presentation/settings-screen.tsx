@@ -37,7 +37,7 @@ function SettingsSection({ title, children }: { title: string; children: ReactNo
       <Text variant="headingSmall" accessibilityRole="header">
         {title}
       </Text>
-      <View>{children}</View>
+      <Card className="py-xs">{children}</Card>
     </View>
   );
 }
@@ -177,7 +177,7 @@ export function SettingsScreen() {
     ? t(permissionLabels[vm.reminderPermission])
     : t('settings.permission.checking');
   const appearance = t(
-    `settings.theme.${appearanceChoices.find((choice) => choice.value === settings?.theme)?.value ?? 'system'}`,
+    `settings.theme.${appearanceChoices.find((choice) => choice.value === settings?.theme)?.value ?? 'light'}`,
   );
 
   function pickTime() {

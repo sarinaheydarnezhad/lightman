@@ -2,7 +2,10 @@ import { calendarDateAtInstant, now, requiredId } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
+import type { LearningAccess } from '@/core/ports/learning-access';
+import { LearningAccessController, localLearningUsage } from '@/core/access/learning-access';
 import type { NotificationService } from '@/core/ports/notification';
+import { createStudyReminderPlan } from './create-study-reminder-plan';
 import { createSettingsUseCases } from '@/features/settings/application/create-settings-use-cases';
 import { validateDeck, type Deck } from '@/features/decks/domain/deck';
 import { validateCard, type Card } from '@/features/study/domain/card';
@@ -55,9 +58,19 @@ export function createApplication(
     consumeLastReminderTap: () => false,
   },
   reviewEngine: ReviewEngine = createReviewEngine(),
+  access: LearningAccess = new LearningAccessController({
+    userId: null,
+    usage: localLearningUsage(repositories),
+  }),
 ) {
   const { decks, cards, reviews, settings } = repositories;
-  const settingsUseCases = createSettingsUseCases(settings, notificationService);
+  const settingsUseCases = createSettingsUseCases(settings, {
+    ...notificationService,
+    scheduleDailyReminder: async (time, language) => {
+      const plan = await createStudyReminderPlan(repositories, clock, time);
+      await notificationService.scheduleDailyReminder(time, language, plan);
+    },
+  });
 
   async function persistence<T>(operation: () => Promise<T>): Promise<T> {
     try {
@@ -83,7 +96,11 @@ export function createApplication(
     return card;
   }
 
-  async function prepareReview(input: ReviewCardInput): Promise<ReviewCardOutput> {
+  async function prepareReview(
+    input: ReviewCardInput,
+    authorize = true,
+  ): Promise<ReviewCardOutput> {
+    if (authorize) await access.assertAllowed('study');
     requiredId(input.cardId, 'Card ID');
     requiredId(input.deckId, 'Deck ID');
     reviewResult(input.result);
@@ -128,13 +145,18 @@ export function createApplication(
     ids,
     getDeck,
     reviewCard,
-    prepareReview,
+    prepareReview: (input) => prepareReview(input, false),
     persistence,
     reviewEngine,
+    assertStudyAllowed: () => access.assertAllowed('study'),
   });
   const analytics = createAnalyticsUseCases(repositories, clock, persistence, reviewEngine);
 
   return {
+    assertLearningAccess: (
+      operation: Parameters<LearningAccess['assertAllowed']>[0],
+      amount?: number,
+    ) => access.assertAllowed(operation, amount),
     ...study,
     ...analytics,
     listSchedulers() {
@@ -162,6 +184,7 @@ export function createApplication(
       return reviewEngine.getReviewStatus(state, deck.reviewSystem);
     },
     async createDeck(input: CreateDeckInput): Promise<Deck> {
+      await access.assertAllowed('deck');
       reviewEngine.getScheduler(input.reviewSystem);
       const time = now(clock);
       const deck = validateDeck({
@@ -196,6 +219,7 @@ export function createApplication(
       return persistence(() => decks.archive(id, now(clock)));
     },
     async createCard(input: CreateCardInput): Promise<Card> {
+      await access.assertAllowed('card');
       const deck = await getDeck(input.deckId);
       const time = now(clock);
       const card = validateCard({

@@ -25,7 +25,7 @@ import { Screen } from '@/shared/ui/screen';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
 
-const preferences: ThemePreference[] = ['system', 'light', 'dark', 'oled'];
+const preferences: ThemePreference[] = ['light', 'dark'];
 const variants: TypographyVariant[] = [
   'display',
   'headingLarge',
@@ -43,7 +43,7 @@ const colorNames = Object.keys(palette.light) as SemanticColor[];
 export default function DesignSystemDemo() {
   const preference =
     useSyncExternalStore(application.settings.subscribe, application.settings.snapshot)?.theme ??
-    'system';
+    'light';
   const setPreference = (value: typeof preference) => {
     void application.settings.setTheme(value);
   };
@@ -68,7 +68,7 @@ export default function DesignSystemDemo() {
             {preferences.map((option) => (
               <Chip
                 key={option}
-                label={option === 'oled' ? 'OLED' : option}
+                label={option}
                 selected={preference === option}
                 onPress={() => setPreference(option)}
               />

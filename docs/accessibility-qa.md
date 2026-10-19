@@ -1,6 +1,6 @@
 # Accessibility device checklist
 
-Run this checklist on a small phone and a larger phone or tablet in light, dark, and OLED themes. Use a real device: automated tests cannot confirm operating-system focus, speech output, or text layout at the largest display settings.
+Run this checklist on a small phone and a larger phone or tablet in light and dark themes. Use a real device: automated tests cannot confirm operating-system focus, speech output, or text layout at the largest display settings.
 
 ## iOS — VoiceOver
 
@@ -22,4 +22,4 @@ Run this checklist on a small phone and a larger phone or tablet in light, dark,
 - On a revealed study card, drag right for green Success lighting and left for red Failure lighting. Check that lighting strengthens with distance, disappears when a cancelled swipe returns to center, and never appears on the front. Confirm text stays readable in all themes, arrows and labels still distinguish outcomes without color, and lighting does not flash with reduced motion enabled.
 - Verify a reminder permission denial and a dictionary failure are readable, with clear next actions. Confirm search-empty and no-cards-due states are spoken.
 - Check long English and Persian text and a deck with RTL alignment. Labels and confirmation actions should follow logical reading order; the physical swipe direction still uses its existing meaning.
-- Verify focus and contrast in all themes on physical screens. Token calculations against the surface give a minimum ratio of 5.9:1 for primary/secondary/tertiary and semantic status text in light, dark, and OLED; native disabled opacity and translucent overlays need visual inspection.
+- Verify focus and contrast in both themes on physical screens. Token tests require at least 4.5:1 for text and semantic foreground/background pairs; native disabled opacity and translucent overlays need visual inspection.

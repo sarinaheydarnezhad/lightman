@@ -1,12 +1,23 @@
 import type { LocalTime } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
 
+export const reminderPlanningDays = 30;
+
+export interface StudyReminder {
+  readonly scheduledForUtc: string;
+  readonly dueCount: number;
+}
+
 /** Owns only the app's daily study reminder; other scheduled alerts are untouched. */
 export interface NotificationService {
   getPermissionStatus(): Promise<NotificationPermissionState>;
   requestPermission(): Promise<NotificationPermissionState>;
   getScheduledReminder(): Promise<{ readonly time: LocalTime } | null>;
-  scheduleDailyReminder(time: LocalTime, language?: string): Promise<void>;
+  scheduleDailyReminder(
+    time: LocalTime,
+    language?: string,
+    reminders?: readonly StudyReminder[],
+  ): Promise<void>;
   cancelDailyReminder(): Promise<void>;
   openSystemSettings(): Promise<void>;
   subscribeToReminderTaps(listener: () => void): () => void;

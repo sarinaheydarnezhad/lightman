@@ -23,26 +23,41 @@ import { Linking, Platform } from 'react-native';
 
 import { localTime, type LocalTime } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
-import { resolveUiLanguage, translate } from '@/shared/localization/localization';
+import { formatNumber, resolveUiLanguage, translate } from '@/shared/localization/localization';
 import {
   NotificationPermissionDenied,
   ReminderRecoveryFailed,
+  reminderPlanningDays,
   type NotificationPermissionState,
   type NotificationService,
+  type StudyReminder,
 } from '@/core/ports/notification';
 
 const reminderKey = 'lerona.daily-study-reminder';
 const channelId = 'study-reminder';
 let lastHandledResponse: string | null = null;
+let reminderWork: Promise<void> = Promise.resolve();
+
+function serializeReminder(action: () => Promise<void>): Promise<void> {
+  const result = reminderWork.then(action, action);
+  reminderWork = result.catch(() => {});
+  return result;
+}
 
 setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    // Expo suppresses the Android heads-up banner when this is false; the channel itself is silent.
-    shouldPlaySound: Platform.OS === 'android',
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request?.content?.data;
+    const show =
+      data?.reminderKey !== reminderKey ||
+      (Number.isSafeInteger(data.dueCount) && Number(data.dueCount) > 0);
+    return {
+      shouldShowBanner: show,
+      shouldShowList: show,
+      // Expo suppresses the Android heads-up banner when this is false; the channel itself is silent.
+      shouldPlaySound: show && Platform.OS === 'android',
+      shouldSetBadge: false,
+    };
+  },
 });
 
 function permissionState(status: NotificationPermissionsStatus): NotificationPermissionState {
@@ -74,6 +89,14 @@ async function reminderRequests(): Promise<NotificationRequest[]> {
 }
 
 function scheduledTime(request: NotificationRequest): LocalTime | null {
+  const savedTime = request.content.data?.localTime;
+  if (typeof savedTime === 'string') {
+    try {
+      return localTime(savedTime);
+    } catch {
+      return null;
+    }
+  }
   const trigger = request.trigger;
   if (!trigger || !('hour' in trigger) || !('minute' in trigger)) return null;
   if (!Number.isInteger(trigger.hour) || !Number.isInteger(trigger.minute)) return null;
@@ -86,20 +109,26 @@ function scheduledTime(request: NotificationRequest): LocalTime | null {
   }
 }
 
-async function createReminder(time: LocalTime, language: string): Promise<void> {
-  const [hour, minute] = time.split(':').map(Number);
-  await scheduleNotificationAsync({
+async function createReminder(
+  time: LocalTime,
+  language: string,
+  reminder: StudyReminder,
+): Promise<string> {
+  return scheduleNotificationAsync({
     content: {
       title: translate(language, 'notification.title'),
-      body: translate(language, 'notification.body'),
-      data: { reminderKey, uiLanguage: resolveUiLanguage(language) },
+      body: translate(
+        language,
+        reminder.dueCount === 1 ? 'notification.singleBody' : 'notification.body',
+        { count: formatNumber(reminder.dueCount, resolveUiLanguage(language)) },
+      ),
+      data: { reminderKey, uiLanguage: resolveUiLanguage(language), localTime: time, ...reminder },
       sound: false,
       ...(Platform.OS === 'ios' ? { interruptionLevel: 'passive' as const } : {}),
     },
     trigger: {
-      type: SchedulableTriggerInputTypes.DAILY,
-      hour: hour!,
-      minute: minute!,
+      type: SchedulableTriggerInputTypes.DATE,
+      date: new Date(reminder.scheduledForUtc),
       ...(Platform.OS === 'android' ? { channelId } : {}),
     },
   });
@@ -158,62 +187,86 @@ export const expoNotificationService: NotificationService = {
     }
     return null;
   },
-  async scheduleDailyReminder(time, language = 'en') {
-    localTime(time);
-    if (Platform.OS === 'web') throw new AppError('unavailable', 'Local reminders unavailable.');
-    if (Platform.OS === 'android') {
-      await setNotificationChannelAsync(channelId, {
-        name: 'Study reminders',
-        importance: AndroidImportance.DEFAULT,
-        sound: null,
+  scheduleDailyReminder(time, language = 'en', reminders = []) {
+    return serializeReminder(async () => {
+      localTime(time);
+      const plan = reminders.filter((reminder) => {
+        if (
+          !Number.isSafeInteger(reminder.dueCount) ||
+          reminder.dueCount < 0 ||
+          !Number.isFinite(Date.parse(reminder.scheduledForUtc))
+        )
+          throw new AppError('validation', 'Invalid study reminder.');
+        return reminder.dueCount > 0 && Date.parse(reminder.scheduledForUtc) > Date.now();
       });
-    }
-    const permission = await this.getPermissionStatus();
-    if (permission !== 'authorized' && permission !== 'provisional')
-      throw new NotificationPermissionDenied();
-
-    const previous = await reminderRequests();
-    if (
-      previous.length === 1 &&
-      scheduledTime(previous[0]!) === time &&
-      previous[0]!.content.title === translate(language, 'notification.title') &&
-      previous[0]!.content.body === translate(language, 'notification.body')
-    )
-      return;
-    const oldTime = previous.map(scheduledTime).find((value) => value !== null) ?? null;
-    const oldLanguage =
-      typeof previous[0]?.content.data?.uiLanguage === 'string'
-        ? previous[0].content.data.uiLanguage
-        : 'en';
-    try {
-      for (const request of previous) await cancelScheduledNotificationAsync(request.identifier);
-    } catch (error) {
-      // A native cancellation can fail after removing one of several stale reminders.
-      // Restore the previous time only when no study reminder survived.
-      try {
-        if (oldTime && !(await reminderRequests()).length)
-          await createReminder(oldTime, oldLanguage);
-      } catch (restoreError) {
-        throw new ReminderRecoveryFailed(restoreError);
+      if (
+        plan.length > reminderPlanningDays ||
+        new Set(plan.map((item) => item.scheduledForUtc)).size !== plan.length
+      )
+        throw new AppError('validation', 'Invalid study reminder plan.');
+      if (Platform.OS === 'web') throw new AppError('unavailable', 'Local reminders unavailable.');
+      if (Platform.OS === 'android') {
+        await setNotificationChannelAsync(channelId, {
+          name: 'Study reminders',
+          importance: AndroidImportance.DEFAULT,
+          sound: null,
+        });
       }
-      throw error;
-    }
-    try {
-      await createReminder(time, language);
-    } catch (error) {
-      if (oldTime) {
+      const permission = await this.getPermissionStatus();
+      if (permission !== 'authorized' && permission !== 'provisional')
+        throw new NotificationPermissionDenied();
+
+      const previous = await reminderRequests();
+      if (
+        previous.length === plan.length &&
+        plan.every((item) =>
+          previous.some(
+            (request) =>
+              scheduledTime(request) === time &&
+              request.content.data?.scheduledForUtc === item.scheduledForUtc &&
+              request.content.data?.dueCount === item.dueCount &&
+              request.content.data?.uiLanguage === resolveUiLanguage(language),
+          ),
+        )
+      )
+        return;
+      const created: string[] = [];
+      try {
+        for (const request of previous) await cancelScheduledNotificationAsync(request.identifier);
+        for (const item of plan) created.push(await createReminder(time, language, item));
+      } catch (error) {
         try {
-          await createReminder(oldTime, oldLanguage);
+          for (const identifier of created) await cancelScheduledNotificationAsync(identifier);
+          const remaining = await reminderRequests();
+          for (const request of previous) {
+            if (remaining.some((item) => item.identifier === request.identifier)) continue;
+            const oldTime = scheduledTime(request);
+            const data = request.content.data;
+            if (
+              oldTime &&
+              typeof data?.scheduledForUtc === 'string' &&
+              Date.parse(data.scheduledForUtc) > Date.now() &&
+              Number.isSafeInteger(data.dueCount) &&
+              Number(data.dueCount) > 0
+            )
+              await createReminder(
+                oldTime,
+                typeof data.uiLanguage === 'string' ? data.uiLanguage : 'en',
+                { scheduledForUtc: data.scheduledForUtc, dueCount: Number(data.dueCount) },
+              );
+          }
         } catch (restoreError) {
           throw new ReminderRecoveryFailed(restoreError);
         }
+        throw error;
       }
-      throw error;
-    }
+    });
   },
-  async cancelDailyReminder() {
-    for (const request of await reminderRequests())
-      await cancelScheduledNotificationAsync(request.identifier);
+  cancelDailyReminder() {
+    return serializeReminder(async () => {
+      for (const request of await reminderRequests())
+        await cancelScheduledNotificationAsync(request.identifier);
+    });
   },
   openSystemSettings: () => Linking.openSettings(),
   subscribeToReminderTaps(listener) {

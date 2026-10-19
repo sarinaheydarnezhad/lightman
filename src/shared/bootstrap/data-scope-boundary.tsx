@@ -7,7 +7,6 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { ErrorState } from '@/shared/ui/error-state';
 import { Screen } from '@/shared/ui/screen';
-import { Text } from '@/shared/ui/text';
 import { LogoutNotice } from '@/features/auth/presentation/logout-notice';
 
 export function DataScopeBoundary({ children }: PropsWithChildren) {
@@ -39,9 +38,6 @@ export function DataScopeBoundary({ children }: PropsWithChildren) {
     );
   return (
     <View key={state.revision} className="flex-1">
-      <Text variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
-        {t(state.mode === 'guest' ? 'guest.mode' : 'guest.accountMode')}
-      </Text>
       {state.mode === 'guest' ? <LogoutNotice /> : null}
       {children}
     </View>

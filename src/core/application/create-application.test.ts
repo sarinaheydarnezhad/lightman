@@ -62,7 +62,14 @@ test('the complete create, load, update, archive and reload flow uses only repos
 });
 
 test('separate decks may share a name without overwriting either ID', async () => {
-  const app = createApplication(makeRepositories(), fixedClock, sequenceIds());
+  const app = createApplication(
+    makeRepositories(),
+    fixedClock,
+    sequenceIds(),
+    undefined,
+    undefined,
+    { assertAllowed: async () => {} },
+  );
   const input = {
     name: 'Practice',
     description: '',
@@ -92,7 +99,14 @@ test('use cases reject missing parents and translate unexpected adapter failures
   await expect(app.updateSettings({ theme: 'dark' })).rejects.toMatchObject({ code: 'not-found' });
   await repositories.decks.create(makeDeck());
   const duplicateIds = { create: () => 'same-id' };
-  const duplicateApp = createApplication(repositories, fixedClock, duplicateIds);
+  const duplicateApp = createApplication(
+    repositories,
+    fixedClock,
+    duplicateIds,
+    undefined,
+    undefined,
+    { assertAllowed: async () => {} },
+  );
   const input = {
     name: 'First',
     description: '',
@@ -125,11 +139,11 @@ test('settings update through use case validates partial changes', async () => {
   const repositories = makeRepositories();
   await repositories.settings.update(makeSettings());
   const app = createApplication(repositories, fixedClock, sequenceIds());
-  expect((await app.updateSettings({ theme: 'oled' })).theme).toBe('oled');
+  expect((await app.updateSettings({ theme: 'dark' })).theme).toBe('dark');
   await expect(
     app.updateSettings({ dailyReminderEnabled: true, dailyReminderTime: null }),
   ).rejects.toBeInstanceOf(AppError);
-  expect((await app.getSettings())?.theme).toBe('oled');
+  expect((await app.getSettings())?.theme).toBe('dark');
 });
 
 test('development seeding is explicit, small and idempotent', async () => {
@@ -158,7 +172,7 @@ test('development seeding is explicit, small and idempotent', async () => {
       totalReviews: 0,
     });
   }
-  expect((await repositories.settings.get())?.theme).toBe('system');
+  expect((await repositories.settings.get())?.theme).toBe('light');
 });
 
 test('development seed fills only missing review events when partially seeded', async () => {

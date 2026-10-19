@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { guestTransfer } from '@/core/composition/guest-transfer';
+import { syncEngine } from '@/core/composition/sync';
 import type { TransferPreview } from '@/core/sync/guest-transfer';
 import { GuestDataScreen } from './guest-data-screen';
 
@@ -9,6 +10,9 @@ jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, Stack: { Scree
 jest.mock('@/core/composition/application', () => ({ application: {} }));
 jest.mock('@/core/composition/guest-transfer', () => ({
   guestTransfer: { preview: jest.fn(), transfer: jest.fn() },
+}));
+jest.mock('@/core/composition/sync', () => ({
+  syncEngine: { available: true, createBackup: jest.fn() },
 }));
 
 const service = guestTransfer!;
@@ -28,6 +32,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(service.preview).mockReset().mockResolvedValue(preview);
   jest.mocked(service.transfer).mockReset().mockResolvedValue();
+  jest.mocked(syncEngine!.createBackup).mockReset();
 });
 
 function mount() {
@@ -47,11 +52,84 @@ test('guest-only preview requires explicit confirmation and cancellation never c
   mount();
   await screen.findByText('Words · 2 cards');
   expect(service.transfer).not.toHaveBeenCalled();
+  expect(syncEngine!.createBackup).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: 'Add guest decks as separate copies' }));
   fireEvent.press(screen.getByRole('button', { name: 'Cancel without copying' }));
   expect(service.transfer).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: 'Keep datasets separate' }));
   expect(router.replace).toHaveBeenCalledWith('/');
+});
+
+test('optional account backup must verify before copying; failure blocks transfer until explicit retry', async () => {
+  jest.mocked(service.preview).mockResolvedValue({
+    ...preview,
+    scenario: 'both',
+    account: [{ id: 'account', name: 'Account', cards: 1 }],
+  });
+  jest
+    .mocked(syncEngine!.createBackup)
+    .mockRejectedValueOnce(new Error('Server backup could not be verified'));
+  mount();
+  fireEvent.press(
+    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
+  await screen.findByText('Server backup could not be verified');
+  expect(service.transfer).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
+  let complete!: () => void;
+  jest.mocked(syncEngine!.createBackup).mockImplementationOnce(async () => {
+    await new Promise<void>((resolve) => {
+      complete = resolve;
+    });
+    return {} as Awaited<ReturnType<NonNullable<typeof syncEngine>['createBackup']>>;
+  });
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
+  await screen.findByText(/Synchronizing account data, creating and verifying/);
+  expect(syncEngine!.createBackup).toHaveBeenCalledTimes(2);
+  expect(service.transfer).not.toHaveBeenCalled();
+  await act(async () => complete());
+  await waitFor(() => expect(service.transfer).toHaveBeenCalledTimes(1));
+  expect(service.transfer).toHaveBeenCalledWith(
+    expect.objectContaining({ scenario: 'both' }),
+    expect.any(Function),
+  );
+});
+
+test('cancelling after backup failure changes neither dataset and does not retry automatically', async () => {
+  jest.mocked(service.preview).mockResolvedValue({
+    ...preview,
+    scenario: 'both',
+    account: [{ id: 'account', name: 'Account', cards: 1 }],
+  });
+  jest.mocked(syncEngine!.createBackup).mockRejectedValueOnce(new Error('Backup offline'));
+  mount();
+  fireEvent.press(
+    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
+  await screen.findByText('Backup offline');
+  fireEvent.press(screen.getByRole('button', { name: 'Cancel without copying' }));
+  expect(service.transfer).not.toHaveBeenCalled();
+  expect(syncEngine!.createBackup).toHaveBeenCalledTimes(1);
+});
+
+test('an explicitly confirmed additive transfer does not require a backup or enable replacement', async () => {
+  jest.mocked(service.preview).mockResolvedValue({
+    ...preview,
+    scenario: 'both',
+    account: [{ id: 'account', name: 'Account', cards: 1 }],
+    sameNames: ['Words'],
+  });
+  mount();
+  fireEvent.press(
+    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
+  );
+  expect(screen.getByText(/Replacement and destructive merging are not supported/)).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account' }));
+  await waitFor(() => expect(service.transfer).toHaveBeenCalledTimes(1));
+  expect(syncEngine!.createBackup).not.toHaveBeenCalled();
 });
 
 test('both datasets preview same-name decks as different contents and quota blocker offers separation only', async () => {

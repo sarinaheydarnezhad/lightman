@@ -35,7 +35,9 @@ export function validateDeck(deck: Deck, allowLegacyLanguage = false): Deck {
   const name = validateDeckTitle(deck.name);
   const description = deck.description.trim();
   if (description.length > 1000) throw new AppError('validation', 'Description is too long.');
-  const language = allowLegacyLanguage ? languageTag(deck.language) : supportedLanguageTag(deck.language);
+  const language = allowLegacyLanguage
+    ? languageTag(deck.language)
+    : supportedLanguageTag(deck.language);
   if (!(['ltr', 'rtl', 'center'] as const).includes(deck.textAlignment)) {
     throw new AppError('validation', 'Invalid deck text alignment.');
   }
@@ -49,7 +51,7 @@ export function validateDeck(deck: Deck, allowLegacyLanguage = false): Deck {
   if (deck.archivedAt !== null) {
     instant(deck.archivedAt);
     if (deck.archivedAt < deck.createdAt)
-      throw new AppError('validation', 'Archive date is out of order.');
+      throw new AppError('validation', 'Deletion date is out of order.');
   }
   const reviewSystem = requiredId(deck.reviewSystem ?? 'leitner', 'Review system');
   return { ...deck, name, description, language, reviewSystem };

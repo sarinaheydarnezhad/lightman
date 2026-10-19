@@ -632,7 +632,7 @@ export class SyncStore {
         await transaction.execute('UPDATE sync_account SET applying_remote = 0 WHERE id = 1');
       } else {
         if ((JSON.parse(serverJson) as { archivedAtUtc?: string } | null)?.archivedAtUtc)
-          throw new Error('Archived cards and decks cannot be edited again.');
+          throw new Error('Deleted cards and decks cannot be edited again.');
         await transaction.execute(
           `INSERT INTO sync_operations (operation_id, entity_type, entity_id, operation, payload_json, expected_version, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,

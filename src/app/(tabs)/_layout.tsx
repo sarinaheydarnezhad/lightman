@@ -1,13 +1,16 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarChart3, BookOpen, House, Settings2, SquareStack } from 'lucide-react-native';
 
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { heights, spacing, typography } from '@/shared/theme/tokens';
+import { fontFamilyForWeight } from '@/shared/theme/font';
 
 export default function TabsLayout() {
   const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const { t } = useLocalization();
   return (
     <Tabs
@@ -17,13 +20,20 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.secondaryText,
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          borderTopWidth: 0,
+          elevation: 0,
+          boxShadow: 'none',
+          paddingTop: spacing.sm,
+          height: heights.tab + spacing.xl + (Platform.OS === 'web' ? 0 : insets.bottom),
+          paddingBottom: Platform.OS === 'web' ? spacing.sm : Math.max(insets.bottom, spacing.sm),
           direction: 'ltr',
-          ...(Platform.OS === 'web'
-            ? { height: heights.tab + spacing.lg, paddingBottom: spacing.sm }
-            : {}),
         },
-        tabBarLabelStyle: { fontSize: Number(typography.caption[0]) },
+        tabBarLabelStyle: {
+          fontSize: Number(typography.caption[0]),
+          fontFamily: fontFamilyForWeight('medium'),
+          lineHeight: 18,
+          marginTop: 2,
+        },
         tabBarHideOnKeyboard: true,
         lazy: true,
         sceneStyle: { backgroundColor: colors.background },
@@ -34,7 +44,9 @@ export default function TabsLayout() {
         options={{
           title: t('nav.home'),
           tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.home') }),
-          tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) => (
+            <House color={color} size={size} fill={focused ? color : 'none'} />
+          ),
         }}
       />
       <Tabs.Screen

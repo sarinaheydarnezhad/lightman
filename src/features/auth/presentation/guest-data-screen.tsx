@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { BackHandler, View } from 'react-native';
 import { guestTransfer } from '@/core/composition/guest-transfer';
+import { syncEngine } from '@/core/composition/sync';
 import type { TransferPreview, TransferProgress } from '@/core/sync/guest-transfer';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
@@ -15,6 +16,7 @@ export function GuestDataScreen() {
   const { t } = useLocalization();
   const [preview, setPreview] = useState<TransferPreview | null>(null);
   const [busy, setBusy] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [progress, setProgress] = useState<TransferProgress | null>(null);
   const [success, setSuccess] = useState(false);
@@ -55,12 +57,19 @@ export function GuestDataScreen() {
     };
   }, [load]);
 
-  const transfer = async () => {
+  const transfer = async (backup = false) => {
     if (submitting.current || !preview || !guestTransfer) return;
     submitting.current = true;
     setBusy(true);
+    setBackingUp(backup);
     setError('');
     try {
+      if (backup) {
+        if (!syncEngine?.available) throw new Error(t('backup.unavailable'));
+        await syncEngine.createBackup();
+        if (mounted.current) setBackingUp(false);
+      }
+      if (!mounted.current) return;
       await guestTransfer.transfer(preview, (value) => {
         if (mounted.current) setProgress(value);
       });
@@ -84,7 +93,13 @@ export function GuestDataScreen() {
         <ScreenHeader title={t('migration.title')} description={t('migration.preserve')} />
         {busy ? (
           <LoadingState
-            label={progress ? t('migration.progress', { ...progress }) : t('migration.checking')}
+            label={
+              backingUp
+                ? t('backup.progress')
+                : progress
+                  ? t('migration.progress', { ...progress })
+                  : t('migration.checking')
+            }
           />
         ) : null}
         {error ? (
@@ -139,6 +154,7 @@ export function GuestDataScreen() {
               </Card>
             ) : null}
             <Text tone="secondary">{t('migration.supported')}</Text>
+            <Text tone="secondary">{t('migration.backupSafety')}</Text>
             {preview.blockers.map((blocker) => (
               <Text tone="error" key={blocker}>
                 {blocker}
@@ -150,6 +166,13 @@ export function GuestDataScreen() {
               confirming ? (
                 <Card className="gap-md">
                   <Text>{t('migration.confirm')}</Text>
+                  {preview.account.length ? (
+                    <Button
+                      label={t('migration.backupAndCopy')}
+                      disabled={busy || !syncEngine?.available}
+                      onPress={() => void transfer(true)}
+                    />
+                  ) : null}
                   <Button
                     label={t('migration.confirmAdd')}
                     loading={busy}

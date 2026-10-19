@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { validateServerBackup, type ServerBackup } from './server-backup';
 
 export const logoutBarrierKey = 'lerona.cloud.signed-out.v1';
 const journalKey = 'lerona.cloud.revocations.v1';
@@ -9,6 +10,7 @@ export interface LogoutResult {
   readonly serverRevoked: boolean;
   readonly credentialsCleared: boolean;
   readonly retryAvailable: boolean;
+  readonly backup?: ServerBackup;
 }
 
 export interface RevocationReceipt {
@@ -76,6 +78,9 @@ export class LogoutJournal {
           )))
     )
       throw new Error('Logout status storage is invalid. Server revocation remains unconfirmed.');
+    if (parsed.result?.backup) {
+      validateServerBackup(parsed.result.backup, 0, true);
+    }
     return parsed;
   }
 

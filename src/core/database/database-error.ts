@@ -6,6 +6,12 @@ export function mapDatabaseError(
 ): AppError {
   if (error instanceof AppError) return error;
   const text = error instanceof Error ? error.message.toLowerCase() : '';
+  if (text.includes('free_tier_dataset_limit'))
+    return new AppError(
+      'free-tier-limit',
+      'Study and creation require Plus when data exceeds 1 active deck or 50 active cards. Existing data is preserved; viewing, editing and export remain available.',
+      error,
+    );
   if (text.includes('free_tier_deck_limit'))
     return new AppError(
       'free-tier-limit',

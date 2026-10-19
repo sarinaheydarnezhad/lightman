@@ -59,7 +59,7 @@ export class InMemoryCardRepository implements CardRepository {
     const valid = validateCard(card);
     if (this.cards.has(valid.id)) throw new AppError('conflict', 'Card already exists.');
     if (valid.archivedAt !== null)
-      throw new AppError('validation', 'Cannot create an archived card.');
+      throw new AppError('validation', 'Cannot create a deleted card.');
     const copy = { ...valid, examples: valid.examples.map((example) => ({ ...example })) };
     this.cards.set(copy.id, copy);
     return { ...copy, examples: copy.examples.map((example) => ({ ...example })) };
@@ -69,7 +69,7 @@ export class InMemoryCardRepository implements CardRepository {
     const valid = validateCard(card);
     const existing = this.cards.get(valid.id);
     if (!existing) throw new AppError('not-found', 'Card not found.');
-    if (existing.archivedAt) throw new AppError('conflict', 'Archived cards cannot be edited.');
+    if (existing.archivedAt) throw new AppError('conflict', 'Deleted cards cannot be edited.');
     if (
       existing.deckId !== valid.deckId ||
       existing.createdAt !== valid.createdAt ||
@@ -85,13 +85,13 @@ export class InMemoryCardRepository implements CardRepository {
 
   async archive(id: string, archivedAt: Card['archivedAt']): Promise<Card> {
     requiredId(id, 'Card ID');
-    if (archivedAt === null) throw new AppError('validation', 'Archive date is required.');
+    if (archivedAt === null) throw new AppError('validation', 'Deletion date is required.');
     instant(archivedAt);
     const card = this.cards.get(id);
     if (!card) throw new AppError('not-found', 'Card not found.');
-    if (card.archivedAt) throw new AppError('conflict', 'Card is already archived.');
+    if (card.archivedAt) throw new AppError('conflict', 'Card is already deleted.');
     if (archivedAt < card.updatedAt)
-      throw new AppError('conflict', 'Archive date is older than the last edit.');
+      throw new AppError('conflict', 'Deletion date is older than the last edit.');
     const archived = validateCard({ ...card, updatedAt: archivedAt, archivedAt });
     this.cards.set(id, archived);
     return { ...archived, examples: archived.examples.map((example) => ({ ...example })) };

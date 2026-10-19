@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 
 import type { CreateDeckInput } from '@/core/application/create-application';
+import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
+import { FreePlanLimit } from '@/shared/access/free-plan-limit';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { DeckForm } from './deck-form';
@@ -17,7 +19,11 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
   const { t, language } = useLocalization();
   const { get, create, update } = useDeckActions();
   const resource = useFocusedResource(
-    useCallback(() => (deckId ? get(deckId) : Promise.resolve(null)), [deckId, get]),
+    useCallback(async () => {
+      if (deckId) return get(deckId);
+      await application.assertLearningAccess('deck');
+      return null;
+    }, [deckId, get]),
   );
   const mounted = useRef(true);
 
@@ -42,13 +48,14 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
     }
   }
 
-  if (deckId && resource.loading && !resource.data)
+  if (resource.loading && !resource.data)
     return (
       <Screen edges={stackScreenEdges}>
         <LoadingState label={t('details.deckLoading')} />
       </Screen>
     );
-  if (deckId && !resource.data)
+  if (resource.errorCode === 'free-tier-limit') return <FreePlanLimit operation="deck" />;
+  if (resource.error || (deckId && !resource.data))
     return (
       <FeaturePlaceholder
         title={t('details.deckUnavailable')}

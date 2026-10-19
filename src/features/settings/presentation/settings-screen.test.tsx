@@ -53,10 +53,18 @@ function expectControls(language: UiLanguage, enabled: boolean) {
     screen.getByRole('header', { name: translate(language, 'settings.account') }),
     screen.getByRole('header', { name: translate(language, 'settings.appearance') }),
   ]);
-  expect(screen.getByRole('button', { name: translate(language, 'sync.signIn') })).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: translate(language, 'account.loginSignup') }),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: translate(language, 'access.plans') })).toBeTruthy();
   const buttons = screen
     .getAllByRole('button')
-    .filter((button) => button.props.accessibilityLabel !== translate(language, 'sync.signIn'));
+    .filter(
+      (button) =>
+        ![translate(language, 'account.loginSignup'), translate(language, 'access.plans')].includes(
+          button.props.accessibilityLabel,
+        ),
+    );
   expect(buttons).toHaveLength(enabled ? 6 : 5);
   for (const button of buttons) {
     const classes = button.props.className.split(' ');

@@ -61,7 +61,7 @@ export function AnalyticsScreen() {
             {data.hasHistory ? (
               <>
                 <View
-                  className="gap-xs border-b border-border pb-xl"
+                  className="gap-xs rounded-lg border border-surface bg-surface p-xl"
                   accessible
                   accessibilityLabel={t('analytics.streakA11y', {
                     current: t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
@@ -90,7 +90,7 @@ export function AnalyticsScreen() {
                 </View>
                 <View className={stackMetrics ? 'gap-xl' : 'flex-row gap-xl'}>
                   <View
-                    className="min-w-0 flex-1 gap-xs"
+                    className="min-w-0 flex-1 gap-xs rounded-lg bg-surface p-lg"
                     accessible
                     accessibilityLabel={t('analytics.cardsTodayA11y', {
                       count: number(data.cardsReviewedToday),
@@ -102,7 +102,7 @@ export function AnalyticsScreen() {
                     <Text variant="headingMedium">{number(data.cardsReviewedToday)}</Text>
                   </View>
                   <View
-                    className="min-w-0 flex-1 gap-xs"
+                    className="min-w-0 flex-1 gap-xs rounded-lg bg-surface p-lg"
                     accessible
                     accessibilityLabel={t('analytics.retentionA11y', {
                       value:

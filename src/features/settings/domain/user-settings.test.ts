@@ -4,12 +4,23 @@ import { makeSettings } from '@/../test/fixtures';
 import { validateUserSettings } from './user-settings';
 
 test('settings accept all themes and a valid optional reminder', () => {
-  for (const theme of ['system', 'light', 'dark', 'oled'] as const) {
+  for (const theme of ['light', 'dark'] as const) {
     expect(validateUserSettings(makeSettings({ theme, dailyReminderEnabled: true })).theme).toBe(
       theme,
     );
   }
 });
+
+test.each([
+  ['system', 'light'],
+  ['oled', 'dark'],
+] as const)(
+  'legacy saved theme %s loads as %s without breaking other preferences',
+  (legacy, expected) => {
+    const settings = makeSettings({ theme: legacy as never, hapticsEnabled: false });
+    expect(validateUserSettings(settings)).toEqual({ ...settings, theme: expected });
+  },
+);
 
 test('settings reject invalid theme, language and local time', () => {
   expect(() => validateUserSettings(makeSettings({ hapticsEnabled: 'yes' as never }))).toThrow(

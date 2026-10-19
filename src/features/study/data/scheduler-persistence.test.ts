@@ -135,7 +135,9 @@ integrationTest(
       await runMigrations(database);
       const engine = createReviewEngine([LeitnerScheduler, testScheduler]);
       const repos = createSqliteRepositories(database);
-      const app = createApplication(repos, fixedClock, sequenceIds(), undefined, engine);
+      const app = createApplication(repos, fixedClock, sequenceIds(), undefined, engine, {
+        assertAllowed: async () => {},
+      });
       await repos.decks.create(makeDeck());
       await repos.decks.create(makeDeck({ id: 'custom' }));
       await app.updateDeck('custom', { reviewSystem: testScheduler.id });

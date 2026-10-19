@@ -51,6 +51,21 @@ import { setTestTheme } from '@/../test/set-test-theme';
 import { formatNumber, translate } from '@/shared/localization/localization';
 import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
 
+jest.mock('@/core/composition/learning-access', () => {
+  const state = { entitlements: null, provisional: false, message: null };
+  const permittedNavigationAccess = {
+    isAccount: false,
+    assertAllowed: async () => {},
+    refresh: async () => {},
+    snapshot: () => state,
+    subscribe: () => () => {},
+  };
+  return {
+    learningAccess: () => permittedNavigationAccess,
+    invalidateLearningAccess: async () => {},
+  };
+});
+
 jest.mock('@/core/infrastructure/expo-local-notifications', () => ({
   AndroidImportance: { DEFAULT: 3 },
   DEFAULT_ACTION_IDENTIFIER: 'default',
@@ -118,7 +133,7 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-  await setTestTheme('system');
+  await setTestTheme('light');
   jest.restoreAllMocks();
 });
 
@@ -147,7 +162,7 @@ test('authentication route resolves within the existing navigation stack', async
 
 test('settings has a direct sign-in entry even when cloud authentication is unavailable', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/settings' });
-  fireEvent.press(await screen.findByRole('button', { name: 'Sign in' }));
+  fireEvent.press(await screen.findByRole('button', { name: 'Log In / Sign Up' }));
   expect(await screen.findByRole('header', { name: 'Sign in to Lerona' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/auth');
 });
@@ -300,7 +315,7 @@ test('analytics allows retry after a repository error and refreshes when navigat
   expect(load).toHaveBeenCalledTimes(callsBeforeRefocus + 1);
 });
 
-test.each(['light', 'dark', 'oled'] as const)(
+test.each(['light', 'dark'] as const)(
   '%s analytics theme remains accessible',
   async (themePreference) => {
     await act(async () => setTestTheme(themePreference));
@@ -478,14 +493,14 @@ test('editing a card can remove a usage example without adding placeholder conte
   expect((await application.getCard('root-port')).examples).toEqual([]);
 });
 
-test('appearance selection uses the existing session preference', async () => {
+test('appearance selection saves the chosen light or dark preference', async () => {
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByRole('header', { name: 'Settings' });
-  fireEvent.press(screen.getByRole('button', { name: /Theme, Current: System/ }));
+  fireEvent.press(screen.getByRole('button', { name: /Theme, Current: Light/ }));
   expect(await screen.findByRole('header', { name: 'Appearance' })).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'OLED' }));
-  expect(await screen.findByRole('button', { name: 'OLED', selected: true })).toBeTruthy();
-  expect((await application.getSettings())?.theme).toBe('oled');
+  fireEvent.press(screen.getByRole('button', { name: 'Dark' }));
+  expect(await screen.findByRole('button', { name: 'Dark', selected: true })).toBeTruthy();
+  expect((await application.getSettings())?.theme).toBe('dark');
 });
 
 test('settings hides Interaction without changing the saved haptics preference', async () => {
@@ -720,7 +735,7 @@ test('route errors hide implementation details and allow retry', () => {
   }
 });
 
-test('UI creates and edits a deck, archives its card, and deletes the deck', async () => {
+test('UI creates and edits a deck, deletes its card, and deletes the deck', async () => {
   let nextId = 0;
   const idMock = jest.spyOn(idGenerator, 'create').mockImplementation(() => `flow-${++nextId}`);
   try {
@@ -758,14 +773,16 @@ test('UI creates and edits a deck, archives its card, and deletes the deck', asy
     fireEvent.changeText(screen.getByLabelText('Meaning'), 'Updated meaning');
     fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
-    expect(screen.getByRole('header', { name: 'Archive this card?' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Delete card' }));
+    expect(screen.getByRole('header', { name: 'Delete this card?' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit card' })).toBeNull();
-    expect(screen.getByText('It will be removed from the active cards in this deck.')).toBeTruthy();
+    expect(
+      screen.getByText('This card will be removed from this deck. This action cannot be undone.'),
+    ).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Keep card' }));
     expect(screen.getByRole('header', { name: 'Flow word' })).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Archive card' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Confirm archive' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Delete card' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm delete' }));
     expect(await screen.findByRole('header', { name: 'No cards yet' })).toBeTruthy();
     expect(screen.getByText('0 of 0 cards')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'View deck' }));

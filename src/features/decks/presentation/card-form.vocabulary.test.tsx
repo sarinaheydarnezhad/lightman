@@ -1,4 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { ScrollView, TextInput } from 'react-native';
+import { Check } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import type { CreateCardInput } from '@/core/application/create-application';
@@ -7,6 +9,7 @@ import { vocabularyHelper } from '@/core/composition/vocabulary';
 import { languageTag } from '@/core/domain/values';
 import type { DictionaryLookupResult } from '@/features/vocabulary/domain/dictionary';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
 import { setTestTheme } from '@/../test/set-test-theme';
 import { CardForm } from './card-form';
 import { AppError } from '@/core/errors/app-error';
@@ -45,7 +48,7 @@ test('card quota errors explain the limit and preserve unsaved card fields', asy
   fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
   expect(
     await screen.findByText(
-      'The free plan allows 50 active cards in total. Existing data is preserved.',
+      'On the free plan, you can add a maximum of 50 active cards in total across all decks. Your existing data is preserved.',
     ),
   ).toBeTruthy();
   expect(screen.getByLabelText('Front text').props.value).toBe('Fifty first card');
@@ -79,6 +82,47 @@ function showForm({
 
 beforeEach(() => {
   jest.mocked(vocabularyHelper.lookup).mockReset().mockResolvedValue(found);
+});
+
+test.each([false, true])('front and back precede optional fields when editing is %s', (editing) => {
+  showForm({ existing: editing ? makeCard() : undefined });
+  expect(
+    screen
+      .UNSAFE_getAllByType(TextInput)
+      .map((input) => input.props.accessibilityLabel)
+      .slice(0, 4),
+  ).toEqual(['Front text', 'Meaning', 'Phonetic (optional)', 'Category (optional)']);
+  expect(screen.getByRole('header', { name: 'Optional details' })).toBeTruthy();
+  const label = editing ? 'Save card' : 'Create card';
+  expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+  expect(
+    within(screen.UNSAFE_getByType(ScrollView)).queryByRole('button', { name: label }),
+  ).toBeNull();
+});
+
+test('the top check submits required fields without optional data and blocks repeat submissions', async () => {
+  let finish: () => void = () => {};
+  const submit = showForm({
+    onSubmit: () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  });
+  fireEvent.changeText(screen.getByLabelText('Front text'), 'Front');
+  fireEvent.changeText(screen.getByLabelText('Meaning'), 'Back');
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(
+    screen.getByRole('button', { name: 'Create card', busy: true, disabled: true }),
+  ).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+  expect(submit).toHaveBeenCalledTimes(1);
+  expect(submit).toHaveBeenCalledWith(
+    expect.objectContaining({ frontText: 'Front', meaning: 'Back' }),
+  );
+  await act(async () => finish());
+  expect(screen.getByLabelText('Front text').props.value).toBe('');
+  expect(screen.getByLabelText('Meaning').props.value).toBe('');
+  expect(screen.getByRole('button', { name: 'Create card', disabled: false })).toBeTruthy();
 });
 
 test('create form hides vocabulary help and clears fields after successful manual saves', async () => {
@@ -230,7 +274,7 @@ test('offline lookup allows retry once, hiding results, and manual card saving',
 });
 
 test('unsupported RTL decks never query an English provider; all themes keep manual entry available', async () => {
-  for (const themePreference of ['light', 'dark', 'oled'] as const) {
+  for (const themePreference of ['light', 'dark'] as const) {
     await act(async () => setTestTheme(themePreference));
     const { unmount } = render(
       <ThemeProvider>
@@ -243,9 +287,10 @@ test('unsupported RTL decks never query an English provider; all themes keep man
     expect(screen.queryByText("Dictionary help isn't available for this language yet.")).toBeNull();
     expect(screen.queryByRole('header', { name: 'Vocabulary helper' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Create card' })).toBeTruthy();
+    expect(screen.UNSAFE_getByType(Check).props.color).toBe(palette[themePreference].success);
     expect(screen.queryByRole('button', { name: 'Find suggestions' })).toBeNull();
     unmount();
   }
-  await act(async () => setTestTheme('system'));
+  await act(async () => setTestTheme('light'));
   expect(vocabularyHelper.lookup).not.toHaveBeenCalled();
 });

@@ -24,7 +24,7 @@ jest.mock('./expo-local-notifications', () => ({
     PROVISIONAL: 3,
     EPHEMERAL: 4,
   },
-  SchedulableTriggerInputTypes: { DAILY: 'daily' },
+  SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date' },
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
   getPermissionsAsync: jest.fn(),
@@ -46,16 +46,29 @@ const lastResponse = jest.mocked(getLastNotificationResponse);
 const tapListener = jest.mocked(addNotificationResponseReceivedListener);
 const foregroundHandler = jest.mocked(setNotificationHandler).mock.calls[0]![0];
 
-function reminder(id: string, time = '09:00', owned = true) {
+function plan(time = '09:00', dueCount = 3) {
   const [hour, minute] = time.split(':').map(Number);
+  return [{ scheduledForUtc: new Date(2099, 0, 1, hour, minute).toISOString(), dueCount }];
+}
+
+function scheduleReminder(time: ReturnType<typeof localTime>, language = 'en') {
+  return expoNotificationService.scheduleDailyReminder(time, language, plan(time));
+}
+
+function reminder(id: string, time = '09:00', owned = true) {
   return {
     identifier: id,
     content: {
       title: 'Time to study',
-      body: 'You have cards waiting for review.',
-      data: { reminderKey: owned ? 'lerona.daily-study-reminder' : 'other', uiLanguage: 'en' },
+      body: 'You have 3 cards to study.',
+      data: {
+        reminderKey: owned ? 'lerona.daily-study-reminder' : 'other',
+        uiLanguage: 'en',
+        localTime: time,
+        ...plan(time)[0],
+      },
     },
-    trigger: { type: 'daily', hour, minute },
+    trigger: { type: 'date', date: new Date(plan(time)[0]!.scheduledForUtc) },
   } as never;
 }
 
@@ -102,15 +115,18 @@ test('requests only an undetermined permission and accepts provisional approval'
 });
 
 test('schedules one silent local daily reminder and reads its local time', async () => {
-  await expoNotificationService.scheduleDailyReminder(localTime('07:25'));
+  await scheduleReminder(localTime('07:25'));
   expect(schedule).toHaveBeenCalledWith(
     expect.objectContaining({
       content: expect.objectContaining({
         title: 'Time to study',
-        body: 'You have cards waiting for review.',
+        body: 'You have 3 cards to study.',
         sound: false,
       }),
-      trigger: expect.objectContaining({ type: 'daily', hour: 7, minute: 25 }),
+      trigger: expect.objectContaining({
+        type: 'date',
+        date: new Date(plan('07:25')[0]!.scheduledForUtc),
+      }),
     }),
   );
   existing.mockResolvedValueOnce([
@@ -121,7 +137,7 @@ test('schedules one silent local daily reminder and reads its local time', async
 });
 
 test('localizes reminder content from app language and replaces old-language native schedule', async () => {
-  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'fa');
+  await scheduleReminder(localTime('09:00'), 'fa');
   expect(schedule).toHaveBeenCalledWith(
     expect.objectContaining({
       content: expect.objectContaining({
@@ -131,7 +147,7 @@ test('localizes reminder content from app language and replaces old-language nat
     }),
   );
   existing.mockResolvedValueOnce([reminder('old-english', '09:00')]);
-  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'fa');
+  await scheduleReminder(localTime('09:00'), 'fa');
   expect(cancel).toHaveBeenCalledWith('old-english');
   expect(schedule).toHaveBeenLastCalledWith(
     expect.objectContaining({
@@ -145,18 +161,18 @@ test('localizes reminder content from app language and replaces old-language nat
 
 test('replaces old reminder before scheduling, preserves unrelated alerts, and avoids duplicates', async () => {
   existing.mockResolvedValueOnce([reminder('old'), reminder('unrelated', '12:00', false)]);
-  await expoNotificationService.scheduleDailyReminder(localTime('18:45'));
+  await scheduleReminder(localTime('18:45'));
   expect(cancel).toHaveBeenCalledWith('old');
   expect(cancel).not.toHaveBeenCalledWith('unrelated');
   expect(cancel.mock.invocationCallOrder[0]).toBeLessThan(schedule.mock.invocationCallOrder[0]!);
   existing.mockResolvedValueOnce([reminder('new-reminder', '18:45')]);
-  await expoNotificationService.scheduleDailyReminder(localTime('18:45'));
+  await scheduleReminder(localTime('18:45'));
   expect(schedule).toHaveBeenCalledTimes(1);
   existing.mockResolvedValueOnce([
     reminder('duplicate-1', '18:45'),
     reminder('duplicate-2', '18:45'),
   ]);
-  await expoNotificationService.scheduleDailyReminder(localTime('18:45'));
+  await scheduleReminder(localTime('18:45'));
   expect(cancel).toHaveBeenCalledWith('duplicate-1');
   expect(cancel).toHaveBeenCalledWith('duplicate-2');
   expect(schedule).toHaveBeenCalledTimes(2);
@@ -164,42 +180,38 @@ test('replaces old reminder before scheduling, preserves unrelated alerts, and a
 
 test('denial, invalid time, and native errors never create a new reminder', async () => {
   permissions.mockResolvedValueOnce({ granted: false, status: 'denied' } as never);
-  await expect(
-    expoNotificationService.scheduleDailyReminder(localTime('09:00')),
-  ).rejects.toBeInstanceOf(NotificationPermissionDenied);
-  await expect(
-    expoNotificationService.scheduleDailyReminder('24:00' as never),
-  ).rejects.toMatchObject({ code: 'validation' });
+  await expect(scheduleReminder(localTime('09:00'))).rejects.toBeInstanceOf(
+    NotificationPermissionDenied,
+  );
+  await expect(scheduleReminder('24:00' as never)).rejects.toMatchObject({ code: 'validation' });
   expect(schedule).not.toHaveBeenCalled();
 });
 
 test('failed replacement restores old schedule, or reports lost schedule if restoration fails', async () => {
   existing.mockResolvedValueOnce([reminder('old')]);
   schedule.mockRejectedValueOnce(new Error('native failed'));
-  await expect(expoNotificationService.scheduleDailyReminder(localTime('20:00'))).rejects.toThrow(
-    'native failed',
-  );
+  await expect(scheduleReminder(localTime('20:00'))).rejects.toThrow('native failed');
   expect(schedule).toHaveBeenLastCalledWith(
-    expect.objectContaining({ trigger: expect.objectContaining({ hour: 9 }) }),
+    expect.objectContaining({
+      content: expect.objectContaining({ data: expect.objectContaining({ localTime: '09:00' }) }),
+    }),
   );
   existing.mockResolvedValueOnce([reminder('old')]);
   schedule
     .mockRejectedValueOnce(new Error('new failed'))
     .mockRejectedValueOnce(new Error('restore failed'));
-  await expect(
-    expoNotificationService.scheduleDailyReminder(localTime('20:00')),
-  ).rejects.toBeInstanceOf(ReminderRecoveryFailed);
+  await expect(scheduleReminder(localTime('20:00'))).rejects.toBeInstanceOf(ReminderRecoveryFailed);
 });
 
 test('partial cancellation failure restores the old time when no reminder survives', async () => {
   existing.mockResolvedValueOnce([reminder('old-1'), reminder('old-2')]);
   cancel.mockRejectedValueOnce(new Error('native cancellation failed'));
   existing.mockResolvedValueOnce([]);
-  await expect(expoNotificationService.scheduleDailyReminder(localTime('20:00'))).rejects.toThrow(
-    'native cancellation failed',
-  );
+  await expect(scheduleReminder(localTime('20:00'))).rejects.toThrow('native cancellation failed');
   expect(schedule).toHaveBeenCalledWith(
-    expect.objectContaining({ trigger: expect.objectContaining({ hour: 9 }) }),
+    expect.objectContaining({
+      content: expect.objectContaining({ data: expect.objectContaining({ localTime: '09:00' }) }),
+    }),
   );
 });
 
@@ -207,9 +219,9 @@ test('permission lookup failure returns unavailable without requesting permissio
   permissions.mockRejectedValueOnce(new Error('native lookup failed'));
   expect(await expoNotificationService.getPermissionStatus()).toBe('unavailable');
   permissions.mockRejectedValueOnce(new Error('native lookup failed'));
-  await expect(
-    expoNotificationService.scheduleDailyReminder(localTime('09:00')),
-  ).rejects.toBeInstanceOf(NotificationPermissionDenied);
+  await expect(scheduleReminder(localTime('09:00'))).rejects.toBeInstanceOf(
+    NotificationPermissionDenied,
+  );
   expect(request).not.toHaveBeenCalled();
   expect(schedule).not.toHaveBeenCalled();
 });
@@ -259,4 +271,78 @@ test('the foreground handler shows the reminder without a badge', async () => {
     shouldShowList: true,
     shouldSetBadge: false,
   });
+});
+
+test('empty and zero-card plans cancel study reminders without scheduling alerts', async () => {
+  existing.mockResolvedValueOnce([reminder('old')]);
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', []);
+  expect(cancel).toHaveBeenCalledWith('old');
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', plan('09:00', 0));
+  expect(schedule).not.toHaveBeenCalled();
+});
+
+test('uses a singular count and updates the scheduled count when it changes', async () => {
+  existing.mockResolvedValueOnce([reminder('old')]);
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', plan('09:00', 1));
+  expect(cancel).toHaveBeenCalledWith('old');
+  expect(schedule).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      content: expect.objectContaining({ body: 'You have 1 card to study.' }),
+    }),
+  );
+});
+
+test('owned reminders without a positive count are suppressed in the foreground', async () => {
+  for (const dueCount of [0, undefined, -1]) {
+    const behavior = await foregroundHandler!.handleNotification({
+      request: { content: { data: { reminderKey: 'lerona.daily-study-reminder', dueCount } } },
+    } as never);
+    expect(behavior.shouldShowBanner).toBe(false);
+  }
+});
+
+test('invalid plans cannot replace an existing reminder', async () => {
+  await expect(
+    expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', plan('09:00', -1)),
+  ).rejects.toMatchObject({ code: 'validation' });
+  expect(cancel).not.toHaveBeenCalled();
+  expect(schedule).not.toHaveBeenCalled();
+});
+
+test('schedules distinct dates with their own exact counts and Persian numerals', async () => {
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'fa', [
+    ...plan('09:00', 1),
+    { scheduledForUtc: new Date(2099, 0, 2, 9).toISOString(), dueCount: 12 },
+  ]);
+  expect(schedule).toHaveBeenNthCalledWith(
+    1,
+    expect.objectContaining({
+      content: expect.objectContaining({ body: '\u2068۱\u2069 کارت برای مطالعه دارید.' }),
+    }),
+  );
+  expect(schedule).toHaveBeenNthCalledWith(
+    2,
+    expect.objectContaining({
+      content: expect.objectContaining({ body: '\u2068۱۲\u2069 کارت برای مطالعه دارید.' }),
+    }),
+  );
+});
+
+test('partial plan failure removes newly created alerts before restoring the previous plan', async () => {
+  existing.mockResolvedValueOnce([reminder('old')]);
+  schedule.mockResolvedValueOnce('partial').mockRejectedValueOnce(new Error('storage full'));
+  await expect(
+    expoNotificationService.scheduleDailyReminder(localTime('10:00'), 'en', [
+      ...plan('10:00'),
+      { scheduledForUtc: new Date(2099, 0, 2, 10).toISOString(), dueCount: 4 },
+    ]),
+  ).rejects.toThrow('storage full');
+  expect(cancel).toHaveBeenCalledWith('partial');
+  expect(schedule).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      content: expect.objectContaining({
+        data: expect.objectContaining({ localTime: '09:00', dueCount: 3 }),
+      }),
+    }),
+  );
 });

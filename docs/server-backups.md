@@ -1,0 +1,43 @@
+# Retained server backups
+
+Back Up and Log Out now uses the existing account SyncEngine first, then authenticated `POST /api/v1/backups/` and owned `GET /api/v1/backups/{id}`. It does not upload SQLite files or replace sync. A completion claim requires valid format-v1 Completed metadata, positive stored size, a sufficient sync version and an unexpired UTC deadline; the follow-up GET must confirm the same artifact. Local synchronization is checked again before credentials are cleared.
+
+The backend must have its new migration applied and `Backups__KeyRingPath` configured to a durable absolute path with protected access. Its policy defaults are 30 days, 10 MiB of plaintext JSON and 20 stored artifacts per owner, all configurable server-side. This app never supplies an owner ID, retention policy or payload. The API origin still comes from the existing `EXPO_PUBLIC_API_URL`; this task does not configure it.
+
+An account-scoped SecureStore key `lerona.cloud.backup-request.v1.<verified-user-id>` holds only the request UUID and sync cursor. Retry after network interruption, lost response or client restart reuses that reference. A changed cursor creates a new request. An expired request is cleared after the server returns 410, allowing the next explicit attempt to use a new UUID. Successful create-plus-GET verification clears the pending reference, so a later explicit manual backup or Back Up and Log Out creates a new artifact even if the sync cursor is unchanged. Failed metadata verification does not log out and does not silently fall back to sync-only backup claims. Older backends without the route fail closed. Logout without backing up remains available and never calls backup creation.
+
+The existing logout result journal stores only confirmed backup metadata, not contents or credentials. The signed-out notice displays the ID, configured days and actual UTC expiry, or an expired notice after restart. Historical sync-only receipts remain sync-only. Guest storage, account databases and pending queues keep their existing isolation rules; only explicit guest migration can copy guest content to an account.
+
+Included server data: decks/cards including archived rows, immutable review history, supported Leitner state/counters/due dates, settings, IDs/relationships and timestamps. Local study-session records/queues and other scheduler metadata are not included. Server payloads are encrypted in SQL; the mobile app cannot download them. Restore is not implemented and is explicitly disclosed. Expiration is enforced in metadata; physical deletion requires an operator-configured cleanup job and is not automatically scheduled.
+
+## Settings and manual backup
+
+Authenticated Settings includes a server-backup card. On each screen focus it reads `GET /api/v1/backups/status` and `GET /api/v1/backups/?page=1&limit=1` through the existing JWT/refresh client. The former supplies the latest non-expired completed artifact; the latter distinguishes no records, Pending, Failed and expired latest records. These independent reads are not an atomic server status snapshot. There is no polling or persistent metadata cache: overlapping focus reads share one pending status promise, and a local minute timer updates remaining retention without network requests. An explicit Refresh backup status action is available after a failure. Reopening Settings fetches again.
+
+Dates use the device's local time zone and current UI language. Remaining retention is rounded up to hours and expiration is checked against the device clock; the actual expiration timestamp remains visible. Pending is supported if returned by the API, but the current backend creates synchronously inside a transaction and normally does not expose durable Pending jobs. While mobile synchronization/creation/verification is running, the card displays local progress, not a claim that a background backup exists.
+
+Back Up Now is non-destructive and does not need a second confirmation dialog. It uses the same SyncEngine account-operation lock and synchronized-account backup method as logout: drain/pull, verify supported account data, POST `{ requestId, formatVersion: 1, expectedSyncVersion }`, verify owned GET metadata, then verify local synchronization again. The result is shown only after these checks; status is refreshed afterward. A status-refresh failure does not erase an already verified artifact or claim that creation failed. Duplicate taps are blocked. Network/authentication/rate/capacity/size/configuration failures have English/Persian actionable messages, with no mock success or fallback to local-only backup.
+
+The card is mounted only for a ready account scope and keyed by its user ID. Logout, storage locking or account switching unmounts the previous card, discards its metadata/errors and ignores late responses. Requests continue using the existing session epoch and credential-clearing behavior; no account metadata is persisted into guest storage. Expired authentication follows the existing guest-isolation flow.
+
+## Guest transfer integration
+
+The inspected transfer service supports only additive, separate-ID copies and never replaces account records or merges matching titles/text. There is no supported destructive migration operation to guard or test. Replacement/destructive merging remains unavailable, regardless of whether a backup exists; implementing it would need a separately reviewed backend conflict/version/history design.
+
+The preview explains that additive transfers do not require a backup. When account decks are present and the existing transfer rules allow confirmation/resumption, an optional Back Up Account and Confirm Copy action is offered alongside the normal explicit copy confirmation. It uses the same verified account backup operation before calling the existing transfer service. Failure performs no guest staging or transfer and leaves retry/cancellation available. Backup success never bypasses preview-token revalidation, owner checks, quota/conflict blockers, journal verification, or explicit copy confirmation. Guest-only copies do not call backup creation; blocked transfers remain blocked. No migration/data model or backend route was changed.
+
+## Mobile integration files changed
+
+- `src/core/sync/server-backup.ts`, `src/core/sync/server-backup.test.ts`: validate completed receipts, historical expiry, and status/list metadata.
+- `src/core/sync/cloud-client.ts`, `src/core/sync/cloud-client.test.ts`: durable pending request IDs, fresh requests after verified completion, authenticated status/list reads, session-epoch rejection, and retained machine error codes.
+- `src/core/sync/sync-engine.ts`: share synchronized-account creation between manual backup, optional pre-transfer backup and logout; guard account-scoped status reads.
+- `src/features/settings/presentation/settings-backup-card.tsx`: status, local dates/retention, manual backup/progress, refresh/retry and error UI.
+- `src/features/settings/presentation/settings-account-card.tsx`, `src/features/settings/presentation/settings-account-card.test.tsx`: account-keyed mounting, status/manual failure/success/isolation tests.
+- `src/features/auth/presentation/guest-data-screen.tsx`, `src/features/auth/presentation/guest-data-screen.test.tsx`: optional verified backup before confirmed additive copy; cancellation, duplicate submission and failure gating tests.
+- `src/core/sync/secure-logout.test.ts`: server failure, interrupted response/client restart, duplicate prevention, verification failure and retained metadata alongside existing guest/account isolation tests.
+- `src/shared/localization/messages.ts`: English/Persian coverage, retention and expired/completed messages.
+- This document and `docs/mobile-backup-integration-verification.md`: current behavior and actual checks.
+
+The prior server-backup implementation already added optional receipts in `src/core/sync/logout-journal.ts`, logout retention notices in `src/features/auth/presentation/logout-notice.tsx`, `src/features/settings/presentation/logout-screen.test.tsx`, and links/coverage in README and secure-logout documentation. Those supporting files and existing backend changes were preserved, not rewritten by this integration task. Historical verification reports remain dated records of their original checks.
+
+Backend API/format/retention/key protection and prior implementation checks are documented in `LeronaBackend/Backend/BACKUPS.md` and `LeronaBackend/Backend/BACKUP-VERIFICATION.md` in the workspace. Mobile integration commands/results are in `docs/mobile-backup-integration-verification.md`. Backend implementation files were not changed by this mobile integration task.
