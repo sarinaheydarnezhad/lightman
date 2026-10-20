@@ -135,19 +135,19 @@ test.each(['en', 'fa'] as const)(
   'server prices, accessible selection and local usage render in %s',
   async (locale) => {
     language(locale);
+    const amount = (value: number) =>
+      locale === 'fa' ? `\u2066${formatNumber(value, locale)}\u2069` : formatNumber(value, locale);
     render(<SubscriptionScreen />);
     const first = await screen.findByTestId('plus-plan-1');
     expect(first.props.accessibilityState.selected).toBe(true);
     expect(
-      screen.getByText(
-        translate(locale, 'paywall.monthPrice', { amount: formatNumber(49000, locale) }),
-      ),
+      screen.getByText(translate(locale, 'paywall.monthPrice', { amount: amount(49000) })),
     ).toBeTruthy();
     expect(
       screen.getByText(
         translate(locale, 'access.price', {
           months: formatNumber(6, locale),
-          amount: formatNumber(279000, locale),
+          amount: amount(279000),
         }),
       ),
     ).toBeTruthy();
@@ -155,7 +155,7 @@ test.each(['en', 'fa'] as const)(
       screen.getByText(
         translate(locale, 'access.price', {
           months: formatNumber(12, locale),
-          amount: formatNumber(499000, locale),
+          amount: amount(499000),
         }),
       ),
     ).toBeTruthy();
@@ -177,6 +177,56 @@ test.each(['en', 'fa'] as const)(
     await waitFor(() =>
       expect(screen.getByText(translate(locale, 'paywall.withinLimits'))).toBeTruthy(),
     );
+    expect(engine.subscription).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['fa', 'en'] as const)(
+  '%s plan amounts preserve grouping with LTR isolation only in Persian',
+  async (locale) => {
+    const prices = [
+      { durationMonths: 1, priceToman: 49000 },
+      { durationMonths: 3, priceToman: 99000 },
+      { durationMonths: 6, priceToman: 100000 },
+      { durationMonths: 12, priceToman: 1234567 },
+    ];
+    const formatted =
+      locale === 'fa'
+        ? ['۴۹٬۰۰۰', '۹۹٬۰۰۰', '۱۰۰٬۰۰۰', '۱٬۲۳۴٬۵۶۷']
+        : ['49,000', '99,000', '100,000', '1,234,567'];
+    language(locale);
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      plans: [{ ...catalog.plans[0]!, prices }],
+    });
+    render(<SubscriptionScreen />);
+    await screen.findByTestId('plus-plan-12');
+
+    for (const [index, price] of prices.entries()) {
+      const button = screen.getByTestId(`plus-plan-${price.durationMonths}`);
+      const label = button.props.accessibilityLabel;
+      if (locale === 'fa') {
+        expect(label).toContain(`\u2068\u2066${formatted[index]}\u2069\u2069 تومان`);
+      } else {
+        expect(label).toBe(
+          `${price.durationMonths} ${price.durationMonths === 1 ? 'month' : 'months'}: ${formatted[index]} toman`,
+        );
+      }
+      expect(screen.getByText(label)).toHaveStyle({ writingDirection: resolveDirection(locale) });
+      fireEvent.press(button);
+      expect(button.props.accessibilityState.selected).toBe(true);
+      expect(screen.getByTestId('selected-plan').props.children).toBe(
+        translate(locale, price.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
+          months: formatNumber(price.durationMonths, locale),
+          amount: formatNumber(price.priceToman, locale),
+        }),
+      );
+    }
+
+    expect(
+      screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
+    ).toBeDisabled();
+    expect(engine.planCatalog).toHaveBeenCalledTimes(1);
     expect(engine.subscription).not.toHaveBeenCalled();
   },
 );

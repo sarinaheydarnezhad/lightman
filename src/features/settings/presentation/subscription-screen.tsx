@@ -127,7 +127,10 @@ export function SubscriptionScreen() {
                 testID={`plus-plan-${price.durationMonths}`}
                 label={t(price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price', {
                   months: number(price.durationMonths),
-                  amount: number(price.priceToman),
+                  amount:
+                    language === 'fa'
+                      ? `\u2066${number(price.priceToman)}\u2069`
+                      : number(price.priceToman),
                 })}
                 variant={
                   selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
