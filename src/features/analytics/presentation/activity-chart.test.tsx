@@ -1,6 +1,12 @@
 import { ActivityChart, chartBarHeights } from './activity-chart';
 import { calendarDate } from '@/core/domain/values';
 import { render, screen } from '@testing-library/react-native';
+import { Rect } from 'react-native-svg';
+import { setTestTheme } from '@/../test/set-test-theme';
+import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
+
+afterEach(async () => setTestTheme('light'));
 
 const day = (reviewCount: number) => ({
   date: calendarDate('2026-09-25'),
@@ -29,4 +35,14 @@ test('the accessible chart scales to its parent and keeps its date axis chronolo
     writingDirection: 'ltr',
   });
   expect(screen.getByText('2026-09-25')).toBeTruthy();
+});
+
+test.each(['light', 'dark'] as const)('%s activity uses the secondary accent', async (theme) => {
+  await setTestTheme(theme);
+  render(
+    <ThemeProvider>
+      <ActivityChart activity={[day(3)]} window={7} totalReviews={3} activeDays={1} />
+    </ThemeProvider>,
+  );
+  expect(screen.UNSAFE_getByType(Rect).props.fill).toBe(palette[theme].secondaryAccent);
 });

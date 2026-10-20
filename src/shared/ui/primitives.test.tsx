@@ -6,6 +6,7 @@ import { Button } from './button';
 import { Card } from './card';
 import { IconButton } from './icon-button';
 import { Input } from './input';
+import { Progress } from './progress';
 import { Screen } from './screen';
 import { Tab } from './tab';
 import { Text } from './text';
@@ -93,6 +94,19 @@ test('tabs expose selected and disabled semantics', () => {
   expect(screen.getByRole('tab', { name: 'Examples', selected: false })).toBeTruthy();
   expect(screen.getByRole('tab', { name: 'Unavailable', disabled: true })).toBeTruthy();
   expect(screen.getByText('Meaning').props.numberOfLines).toBeUndefined();
+});
+
+test('progress uses the secondary accent on a neutral elevated track', () => {
+  render(<Progress value={0.4} label="Study progress" />);
+  const progress = screen.getByRole('progressbar', { name: 'Study progress' });
+  expect(progress.props.className).toContain('bg-surfaceElevated');
+  expect(progress.children[0]).toMatchObject({
+    props: {
+      className: 'h-full rounded-full bg-secondaryAccent',
+      style: { width: '40%' },
+    },
+  });
+  expect(progress.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 40 });
 });
 
 test('screen renders content inside a safe area in both layouts', () => {

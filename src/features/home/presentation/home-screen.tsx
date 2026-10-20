@@ -123,7 +123,7 @@ export function HomeScreen() {
             <Card style={{ padding: 18 }}>
               <View className="gap-lg" style={{ flexDirection: spaciousText ? 'column' : 'row' }}>
                 <View className="min-w-0 flex-1 flex-row items-center gap-md">
-                  <Layers3 color={colors.primary} size={27} />
+                  <Layers3 color={colors.decorativeIcon} size={27} />
                   <View className="min-w-0 flex-1 gap-xs">
                     <Text variant="headingSmall">{number(home.reviewedToday)}</Text>
                     <Text variant="bodySmall" tone="secondary">
@@ -139,7 +139,7 @@ export function HomeScreen() {
                   }}
                 />
                 <View className="min-w-0 flex-1 flex-row items-center gap-md">
-                  <Clock3 color={colors.primary} size={27} />
+                  <Clock3 color={colors.achievement} size={27} />
                   <View className="min-w-0 flex-1 gap-xs">
                     <Text variant="headingSmall">
                       {t(home.streak === 1 ? 'common.day' : 'common.days', {

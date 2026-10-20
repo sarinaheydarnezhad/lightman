@@ -50,7 +50,7 @@ export const DeckListItem = memo(function DeckListItem({
         style={{ width: 54, height: 54 }}
         importantForAccessibility="no-hide-descendants"
       >
-        <Text tone="accent" variant="headingMedium" align="center">
+        <Text tone="decorativeIcon" variant="headingMedium" align="center">
           {deck.language.toLowerCase().startsWith('fa') ? 'آ' : 'Aa'}
         </Text>
       </View>

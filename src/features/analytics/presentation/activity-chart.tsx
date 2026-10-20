@@ -66,7 +66,7 @@ export function ActivityChart({
                 width={step * 0.6}
                 height={height}
                 rx={Math.min(2, step * 0.15)}
-                fill={colors.primary}
+                fill={colors.secondaryAccent}
               />
             ) : null,
           )}

@@ -64,6 +64,11 @@
       "expo-secure-store",
       "expo-sharing"
     ],
-    "experiments": { "typedRoutes": true }
+     "experiments": { "typedRoutes": true },
+    "splash": {
+      "image": "./assets/icon.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#161321"
+    }
   }
 }

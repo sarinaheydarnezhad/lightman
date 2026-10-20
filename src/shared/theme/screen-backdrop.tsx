@@ -1,10 +1,11 @@
 import { useId } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { useThemeColors } from './theme-provider';
+import { useThemeColors, useThemeMode } from './theme-provider';
 
 export function ScreenBackdrop() {
   const colors = useThemeColors();
+  const mode = useThemeMode();
   const gradient = `screen-${useId().replace(/:/g, '')}`;
   return (
     <View
@@ -16,7 +17,11 @@ export function ScreenBackdrop() {
       <Svg width="100%" height="100%" viewBox="0 0 390 844" preserveAspectRatio="none">
         <Defs>
           <LinearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={colors.primarySoft} stopOpacity={0.85} />
+            <Stop
+              offset="0"
+              stopColor={mode === 'light' ? colors.primarySoft : colors.background}
+              stopOpacity={0.85}
+            />
             <Stop offset="0.55" stopColor={colors.background} />
             <Stop offset="1" stopColor={colors.background} />
           </LinearGradient>

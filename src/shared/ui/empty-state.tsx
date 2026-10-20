@@ -18,7 +18,7 @@ export function EmptyState({
   return (
     <View className="items-center gap-md py-2xl">
       <View className="h-iconButton w-iconButton items-center justify-center rounded-md bg-primarySoft">
-        <Icon color={colors.primary} size={icons.medium} />
+        <Icon color={colors.decorativeIcon} size={icons.medium} />
       </View>
       <View className="items-center gap-xs">
         <Text variant="headingSmall" align="center" accessibilityRole="header">

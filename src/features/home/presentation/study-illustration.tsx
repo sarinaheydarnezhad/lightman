@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { Platform } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
 
 export function StudyIllustration() {
   const colors = useThemeColors();
@@ -57,6 +57,7 @@ export function StudyIllustration() {
 
 export function StudyEmblem() {
   const colors = useThemeColors();
+  const mode = useThemeMode();
   const gradient = `flame-${useId().replace(/:/g, '')}`;
   return (
     <Svg
@@ -67,8 +68,8 @@ export function StudyEmblem() {
     >
       <Defs>
         <LinearGradient id={gradient} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#FF8C28" />
-          <Stop offset="1" stopColor="#FFC74E" />
+          <Stop offset="0" stopColor={mode === 'light' ? '#FF8C28' : colors.achievement} />
+          <Stop offset="1" stopColor={mode === 'light' ? '#FFC74E' : colors.achievement} />
         </LinearGradient>
       </Defs>
       <Circle cx="56" cy="56" r="47" fill="none" stroke={colors.primarySoft} strokeWidth="10" />
@@ -77,7 +78,7 @@ export function StudyEmblem() {
         cy="56"
         r="47"
         fill="none"
-        stroke={colors.primary}
+        stroke={colors.achievement}
         strokeOpacity={0.65}
         strokeWidth="10"
         strokeLinecap="round"

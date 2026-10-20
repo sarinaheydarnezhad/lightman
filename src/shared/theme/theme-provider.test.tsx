@@ -8,9 +8,12 @@ function ThemeReading() {
   const mode = useThemeMode();
   const colors = useThemeColors();
   return (
-    <Text>
-      {mode}: {colors.background}
-    </Text>
+    <>
+      <Text>
+        {mode}: {colors.background}
+      </Text>
+      <Text>{JSON.stringify(colors)}</Text>
+    </>
   );
 }
 
@@ -24,10 +27,13 @@ test('switches appearance from UserSettings and updates semantic values', async 
     </ThemeProvider>,
   );
   expect(screen.getByText(`light: ${palette.light.background}`)).toBeTruthy();
+  expect(screen.getByText(JSON.stringify(palette.light))).toBeTruthy();
 
   await act(async () => setTestTheme('dark'));
   expect(screen.getByText(`dark: ${palette.dark.background}`)).toBeTruthy();
+  expect(screen.getByText(JSON.stringify(palette.dark))).toBeTruthy();
 
   await act(async () => setTestTheme('light'));
   expect(screen.getByText(`light: ${palette.light.background}`)).toBeTruthy();
+  expect(screen.getByText(JSON.stringify(palette.light))).toBeTruthy();
 });

@@ -10,7 +10,10 @@ export function Progress({ value, label }: { value: number; label: string }) {
       accessibilityValue={{ min: 0, max: 100, now: Math.round(fraction * 100) }}
       className="h-sm overflow-hidden rounded-full bg-surfaceElevated"
     >
-      <View className="h-full rounded-full bg-primary" style={{ width: `${fraction * 100}%` }} />
+      <View
+        className="h-full rounded-full bg-secondaryAccent"
+        style={{ width: `${fraction * 100}%` }}
+      />
     </View>
   );
 }

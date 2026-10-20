@@ -41,6 +41,9 @@ const toneClass = {
   primaryPressed: 'text-primaryPressed',
   primarySoft: 'text-primarySoft',
   primaryForeground: 'text-primaryForeground',
+  secondaryAccent: 'text-secondaryAccent',
+  achievement: 'text-achievement',
+  decorativeIcon: 'text-decorativeIcon',
   successForeground: 'text-successForeground',
   errorForeground: 'text-errorForeground',
   errorPressed: 'text-errorPressed',
@@ -69,10 +72,14 @@ const weightClass = {
 };
 
 function contentText(children: ReactNode): string {
-  return Children.toArray(children).map((child) => {
-    if (typeof child === 'string' || typeof child === 'number') return String(child);
-    return isValidElement<{ children?: ReactNode }>(child) ? contentText(child.props.children) : '';
-  }).join('');
+  return Children.toArray(children)
+    .map((child) => {
+      if (typeof child === 'string' || typeof child === 'number') return String(child);
+      return isValidElement<{ children?: ReactNode }>(child)
+        ? contentText(child.props.children)
+        : '';
+    })
+    .join('');
 }
 
 export function Text({

@@ -1,10 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Clock3, Layers3 } from 'lucide-react-native';
+import { Circle, Stop } from 'react-native-svg';
 import { makeDeck } from '@/../test/fixtures';
 import { formatNumber, resolveDirection, translate } from '@/shared/localization/localization';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
 import { HomeScreen } from './home-screen';
 
 let mockPreference: 'light' | 'dark' = 'light';
@@ -61,6 +64,21 @@ test.each([
   );
   expect(screen.getByRole('header', { name: translate(language, 'home.welcome') })).toBeTruthy();
   expect(screen.getByText(formatNumber(48, language))).toBeTruthy();
+  expect(screen.UNSAFE_getByType(Layers3).props.color).toBe(palette[theme].decorativeIcon);
+  expect(screen.UNSAFE_getByType(Clock3).props.color).toBe(palette[theme].achievement);
+  expect(
+    screen.UNSAFE_getAllByType(Circle).find((circle) => circle.props.strokeDasharray)?.props.stroke,
+  ).toBe(palette[theme].achievement);
+  expect(
+    screen
+      .UNSAFE_getAllByType(Stop)
+      .slice(-2)
+      .map((stop) => stop.props.stopColor),
+  ).toEqual(
+    theme === 'light'
+      ? ['#FF8C28', '#FFC74E']
+      : [palette.dark.achievement, palette.dark.achievement],
+  );
   fireEvent.press(screen.getByRole('button', { name: translate(language, 'study.start') }));
   expect(mockStart).toHaveBeenCalledWith({ kind: 'all-decks' });
   fireEvent.press(
