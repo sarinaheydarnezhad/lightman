@@ -1,13 +1,4 @@
-import { useId } from 'react';
-import {
-  ActivityIndicator,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-  type PressableProps,
-} from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { Text } from './text';
@@ -38,7 +29,6 @@ export function Button({
   ...props
 }: ButtonProps) {
   const colors = useThemeColors();
-  const gradient = `button-${useId().replace(/:/g, '')}`;
   const unavailable = disabled || loading;
   const foreground = disabled
     ? colors.disabled
@@ -60,23 +50,6 @@ export function Button({
       ]}
       disabled={unavailable}
     >
-      {variant === 'primary' && !disabled ? (
-        <Svg
-          pointerEvents="none"
-          accessible={Platform.OS === 'web' ? undefined : false}
-          style={StyleSheet.absoluteFill}
-          width="100%"
-          height="100%"
-        >
-          <Defs>
-            <LinearGradient id={gradient} x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={colors.primary} />
-              <Stop offset="1" stopColor={colors.primaryPressed} />
-            </LinearGradient>
-          </Defs>
-          <Rect width="100%" height="100%" fill={`url(#${gradient})`} />
-        </Svg>
-      ) : null}
       {loading ? <ActivityIndicator size="small" color={foreground} /> : null}
       {accessibilityState?.selected ? (
         <Text variant="labelLarge" style={{ color: foreground }} accessible={false}>
