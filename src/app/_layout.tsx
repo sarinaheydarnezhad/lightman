@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { LocaleProvider, Stack, router, type ErrorBoundaryProps } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -17,7 +17,7 @@ import { DataScopeBoundary } from '@/shared/bootstrap/data-scope-boundary';
 import { LearningAccessNotice } from '@/shared/access/learning-access-notice';
 import { LocalizationProvider, useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors, useThemeMode, ThemeProvider } from '@/shared/theme/theme-provider';
-import { fontAssets } from '@/shared/theme/font';
+import { fontAssets, fontFamilyForWeight } from '@/shared/theme/font';
 import { ErrorState } from '@/shared/ui/error-state';
 import { Screen } from '@/shared/ui/screen';
 
@@ -85,6 +85,10 @@ function Navigation() {
           contentStyle: { backgroundColor: colors.background },
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primaryText,
+          headerTitleStyle: {
+            fontFamily: fontFamilyForWeight(Platform.OS === 'ios' ? 'semibold' : 'medium'),
+          },
+          headerBackTitleStyle: { fontFamily: fontFamilyForWeight('regular') },
           headerShadowVisible: false,
         }}
       >

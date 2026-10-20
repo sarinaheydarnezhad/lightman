@@ -1,6 +1,7 @@
 import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
+import { DefaultTheme } from 'expo-router/react-navigation';
 import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import {
@@ -352,6 +353,43 @@ test('a deck opens its typed secondary route', async () => {
   expect(await screen.findByRole('header', { name: 'Everyday phrases' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/decks/everyday-phrases');
 });
+
+test.each(['en', 'fa'] as const)(
+  'stack headers share app fonts in %s without changing screen typography',
+  async (language) => {
+    await application.settings.setLanguage(languageTag(language));
+    try {
+      renderRouter(routes, { initialUrl: '/decks/fresh-collection' });
+      const heading = await screen.findByRole('header', { name: 'Fresh collection' });
+      const header = screen
+        .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+        .find((config) => config.props.title === translate(language, 'nav.deckDetails'))!;
+      expect(header.props.titleFontFamily).toBe(
+        Platform.OS === 'ios' ? 'Vazirmatn-SemiBold' : 'Vazirmatn-Medium',
+      );
+      expect(header.props.backTitleFontFamily).toBe('Vazirmatn');
+      expect(header.props.titleFontWeight).toBe(
+        Platform.OS === 'ios'
+          ? DefaultTheme.fonts.bold.fontWeight
+          : DefaultTheme.fonts.medium.fontWeight,
+      );
+      expect(header.props.titleFontSize).toBeUndefined();
+      expect(header.props.backTitleFontSize).toBeUndefined();
+      expect(heading).toHaveStyle({ fontFamily: 'Vazirmatn-Bold' });
+      expect(screen.getByText('A space to add your first cards.')).toHaveStyle({
+        fontFamily: 'Vazirmatn',
+      });
+      const exportButton = screen.getByRole('button', {
+        name: translate(language, 'transfer.export'),
+      });
+      expect(within(exportButton).getByText(translate(language, 'transfer.export'))).toHaveStyle({
+        fontFamily: 'Vazirmatn-SemiBold',
+      });
+    } finally {
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+);
 
 test('create deck opens its secondary route', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/decks' });
@@ -847,6 +885,10 @@ test.each([
         .UNSAFE_getAllByType(ScreenStackHeaderConfig)
         .find((config) => config.props.title === translate(language, 'nav.createCard'))!;
       expect(header).toBeDefined();
+      expect(header.props.titleFontFamily).toBe(
+        platform === 'ios' ? 'Vazirmatn-SemiBold' : 'Vazirmatn-Medium',
+      );
+      expect(header.props.backTitleFontFamily).toBe('Vazirmatn');
       expect(header.props.direction).toBe('ltr');
       expect(header.props.hideBackButton).toBe(language === 'fa');
       const label = translate(language, 'form.createCardAction');
