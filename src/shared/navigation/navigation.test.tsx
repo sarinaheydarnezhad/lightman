@@ -1,8 +1,15 @@
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
 import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import {
+  ScreenStackHeaderConfig,
+  ScreenStackHeaderLeftView,
+  ScreenStackHeaderRightView,
+  ScreenStackItem,
+} from 'react-native-screens';
+import { ArrowRight, ChevronRight } from 'lucide-react-native';
 import {
   addNotificationResponseReceivedListener,
   getLastNotificationResponse,
@@ -41,7 +48,8 @@ import { speech } from '@/core/composition/speech';
 import { expoNotificationService } from '@/core/infrastructure/expo-notification-service';
 import { AppError } from '@/core/errors/app-error';
 import { calendarDate, instant, languageTag, localTime } from '@/core/domain/values';
-import { makeEvent, makeState } from '@/../test/fixtures';
+import { makeCard, makeEvent, makeState } from '@/../test/fixtures';
+import { CardForm } from '@/features/decks/presentation/card-form';
 import {
   analyticsWindow,
   getStudySummary,
@@ -770,6 +778,13 @@ test('UI creates and edits a deck, deletes its card, and deletes the deck', asyn
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
     await screen.findByRole('header', { name: 'Edit card' });
+    expect(
+      within(screen.UNSAFE_getByType(CardForm)).getByRole('button', { name: 'Save card' }),
+    ).toBeTruthy();
+    const editHeader = screen
+      .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+      .find((config) => config.props.title === 'Edit card')!;
+    expect(within(editHeader).queryByRole('button', { name: 'Save card' })).toBeNull();
     fireEvent.changeText(screen.getByLabelText('Meaning'), 'Updated meaning');
     fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
@@ -812,6 +827,163 @@ test('UI creates and edits a deck, deletes its card, and deletes the deck', asyn
     idMock.mockRestore();
   }
 }, 120_000);
+
+test.each([
+  ['ios', 'en'],
+  ['ios', 'fa'],
+  ['android', 'en'],
+  ['android', 'fa'],
+] as const)(
+  'create-card navigation header uses explicit slots and back behavior on %s in %s',
+  async (platform, language) => {
+    const nativePlatform = jest.replaceProperty(Platform, 'OS', platform);
+    await application.settings.setLanguage(languageTag(language));
+    try {
+      const rendered = renderRouter(routes, { initialUrl: '/decks/fresh-collection' });
+      await screen.findByRole('header', { name: 'Fresh collection' });
+      act(() => router.push('/decks/fresh-collection/cards/create'));
+      await screen.findByRole('header', { name: translate(language, 'form.createCard') });
+      const header = screen
+        .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+        .find((config) => config.props.title === translate(language, 'nav.createCard'))!;
+      expect(header).toBeDefined();
+      expect(header.props.direction).toBe('ltr');
+      expect(header.props.hideBackButton).toBe(language === 'fa');
+      const label = translate(language, 'form.createCardAction');
+      const slot = within(header).UNSAFE_getByType(ScreenStackHeaderRightView);
+      expect(within(slot).getByRole('button', { name: label })).toBeTruthy();
+      expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+      expect(
+        within(screen.UNSAFE_getByType(CardForm)).queryByRole('button', { name: label }),
+      ).toBeNull();
+      if (language === 'fa') {
+        const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
+        expect(
+          within(back).UNSAFE_getByType(platform === 'ios' ? ChevronRight : ArrowRight),
+        ).toBeTruthy();
+        fireEvent.press(
+          within(back).getByRole('button', { name: translate(language, 'common.cancel') }),
+        );
+      } else {
+        const item = screen
+          .UNSAFE_getAllByType(ScreenStackItem)
+          .find(
+            (screenItem) =>
+              screenItem.props.headerConfig?.title === translate(language, 'nav.createCard'),
+          )!;
+        fireEvent(item, 'headerBackButtonClicked');
+      }
+      await waitFor(() => expect(rendered.getPathname()).toBe('/decks/fresh-collection'));
+      expect(screen.queryByRole('button', { name: label })).toBeNull();
+    } finally {
+      nativePlatform.restore();
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+);
+
+test('create-card navigation header follows live language, form, loading, error and success state', async () => {
+  let rejectSave: (reason: Error) => void = () => {};
+  const create = jest
+    .spyOn(application, 'createCard')
+    .mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectSave = reject;
+        }),
+    )
+    .mockResolvedValueOnce(makeCard());
+  try {
+    const rendered = renderRouter(routes, { initialUrl: '/decks/fresh-collection/cards/create' });
+    await screen.findByRole('header', { name: 'Create a card' });
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    expect(screen.getByText('Enter a term.')).toBeTruthy();
+    expect(create).not.toHaveBeenCalled();
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'Latest term');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Latest meaning');
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    expect(
+      screen.getByRole('button', { name: 'Create card', busy: true, disabled: true }),
+    ).toBeTruthy();
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    await act(async () => application.settings.setLanguage(languageTag('fa')));
+    const label = translate('fa', 'form.createCardAction');
+    const header = screen
+      .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+      .find((config) => config.props.title === translate('fa', 'nav.createCard'))!;
+    expect(
+      within(within(header).UNSAFE_getByType(ScreenStackHeaderRightView)).getByRole('button', {
+        name: label,
+        busy: true,
+        disabled: true,
+      }),
+    ).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+    await act(async () => rejectSave(new Error('Save failed')));
+    expect(await screen.findByText(translate('en', 'form.cardSaveError'))).toBeTruthy();
+    expect(screen.getByLabelText(translate('fa', 'form.frontText')).props.value).toBe(
+      'Latest term',
+    );
+    fireEvent.changeText(screen.getByLabelText(translate('fa', 'form.meaning')), 'Revised meaning');
+    fireEvent.press(screen.getByRole('button', { name: label, busy: false, disabled: false }));
+    await screen.findByText(translate('fa', 'form.cardCreated'));
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        deckId: 'fresh-collection',
+        frontText: 'Latest term',
+        meaning: 'Revised meaning',
+      }),
+    );
+    expect(screen.getByLabelText(translate('fa', 'form.frontText')).props.value).toBe('');
+    expect(screen.queryByText(translate('en', 'form.cardSaveError'))).toBeNull();
+    expect(rendered.getPathname()).toBe('/decks/fresh-collection/cards/create');
+    await act(async () => application.settings.setLanguage(languageTag('en')));
+    const englishHeader = screen
+      .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+      .find((config) => config.props.title === 'Create card')!;
+    expect(
+      within(within(englishHeader).UNSAFE_getByType(ScreenStackHeaderRightView)).getByRole(
+        'button',
+        { name: 'Create card', busy: false, disabled: false },
+      ),
+    ).toBeTruthy();
+    expect(englishHeader.props.hideBackButton).toBe(false);
+    expect(screen.getAllByRole('button', { name: 'Create card' })).toHaveLength(1);
+  } finally {
+    create.mockRestore();
+    await act(async () => application.settings.setLanguage(languageTag('en')));
+  }
+});
+
+test('create-card navigation header replaces the save action when the form instance changes', async () => {
+  const create = jest.spyOn(application, 'createCard').mockResolvedValue(makeCard());
+  try {
+    renderRouter(routes, { initialUrl: '/decks/fresh-collection/cards/create' });
+    await screen.findByRole('header', { name: 'Create a card' });
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'Discarded term');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Discarded meaning');
+    act(() => router.replace('/decks/word-roots/cards/create'));
+    await screen.findByText('Add a term and its meaning to Word roots.');
+    expect(screen.getByLabelText('Front text').props.value).toBe('');
+    expect(screen.getAllByRole('button', { name: 'Create card' })).toHaveLength(1);
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'New instance');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'New meaning');
+    fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
+    await screen.findByText('Card added successfully. You can add another card.');
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deckId: 'word-roots',
+        frontText: 'New instance',
+        meaning: 'New meaning',
+      }),
+    );
+  } finally {
+    create.mockRestore();
+  }
+});
 
 test('rapid save taps create one card', async () => {
   const ids = jest.spyOn(idGenerator, 'create').mockReturnValue('rapid-card-id');

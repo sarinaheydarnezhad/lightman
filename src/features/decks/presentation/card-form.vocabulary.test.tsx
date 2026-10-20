@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
-import { ScrollView, TextInput } from 'react-native';
+import { Keyboard, ScrollView, TextInput, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -73,7 +73,12 @@ function showForm({
       }}
     >
       <ThemeProvider>
-        <CardForm deck={deck} existing={existing} onSubmit={submit} />
+        <CardForm
+          deck={deck}
+          existing={existing}
+          onSubmit={submit}
+          renderSaveAction={(action) => <View testID="navigation-save-action">{action}</View>}
+        />
       </ThemeProvider>
     </SafeAreaProvider>,
   );
@@ -95,9 +100,44 @@ test.each([false, true])('front and back precede optional fields when editing is
   expect(screen.getByRole('header', { name: 'Optional details' })).toBeTruthy();
   const label = editing ? 'Save card' : 'Create card';
   expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+  if (editing) {
+    expect(screen.queryByTestId('navigation-save-action')).toBeNull();
+  } else {
+    expect(
+      within(screen.getByTestId('navigation-save-action')).getByRole('button', { name: label }),
+    ).toBeTruthy();
+  }
   expect(
     within(screen.UNSAFE_getByType(ScrollView)).queryByRole('button', { name: label }),
   ).toBeNull();
+});
+
+test('the relocated action retains validation and keyboard dismissal', async () => {
+  const dismiss = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => {});
+  try {
+    const submit = showForm();
+    const save = () =>
+      within(screen.getByTestId('navigation-save-action')).getByRole('button', {
+        name: 'Create card',
+      });
+    fireEvent.press(save());
+    expect(screen.getByText('Enter a term.')).toBeTruthy();
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'Current term');
+    fireEvent.press(save());
+    expect(screen.getByText('Enter a meaning.')).toBeTruthy();
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Current meaning');
+    fireEvent.press(save());
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ frontText: 'Current term', meaning: 'Current meaning' }),
+    );
+    expect(dismiss).toHaveBeenCalledTimes(1);
+    await screen.findByText('Card added successfully. You can add another card.');
+  } finally {
+    dismiss.mockRestore();
+  }
 });
 
 test('the top check submits required fields without optional data and blocks repeat submissions', async () => {

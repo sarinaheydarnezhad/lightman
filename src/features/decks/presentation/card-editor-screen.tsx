@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { router } from 'expo-router';
 
 import type { CreateCardInput } from '@/core/application/create-application';
@@ -13,7 +13,15 @@ import { Screen } from '@/shared/ui/screen';
 import { CardForm } from './card-form';
 import { useCardActions, useCardEditorViewModel } from './use-cards-view-model';
 
-export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: string }) {
+export function CardEditorScreen({
+  deckId,
+  cardId,
+  renderSaveAction,
+}: {
+  deckId: string;
+  cardId?: string;
+  renderSaveAction?: (action: ReactNode) => ReactNode;
+}) {
   const { t, language } = useLocalization();
   const { create, update } = useCardActions();
   const resource = useCardEditorViewModel(deckId, cardId);
@@ -73,6 +81,7 @@ export function CardEditorScreen({ deckId, cardId }: { deckId: string; cardId?: 
       deck={resource.data.deck}
       existing={resource.data.card ?? undefined}
       onSubmit={save}
+      renderSaveAction={renderSaveAction}
     />
   );
 }

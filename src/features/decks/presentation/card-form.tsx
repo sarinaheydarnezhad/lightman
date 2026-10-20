@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Keyboard, TextInput, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 
@@ -34,10 +34,12 @@ export function CardForm({
   deck,
   existing,
   onSubmit,
+  renderSaveAction,
 }: {
   deck: Deck;
   existing?: Card;
   onSubmit: (content: Omit<CreateCardInput, 'deckId'>) => Promise<void>;
+  renderSaveAction?: (action: ReactNode) => ReactNode;
 }) {
   const { t, number, language } = useLocalization();
   const [frontText, setFrontText] = useState(existing?.frontText ?? '');
@@ -176,6 +178,18 @@ export function CardForm({
     }
   }
 
+  const saveButton = (
+    <IconButton
+      icon={Check}
+      label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
+      variant="ghost"
+      tone="success"
+      loading={saving}
+      onPress={() => void save()}
+    />
+  );
+  const renderHeaderAction = existing ? undefined : renderSaveAction;
+
   return (
     <Screen
       scroll
@@ -183,6 +197,7 @@ export function CardForm({
       edges={stackScreenEdges}
       header={
         <View className="gap-md">
+          {renderHeaderAction?.(saveButton)}
           <View style={{ flexDirection: 'row', direction: 'ltr', alignItems: 'flex-start' }}>
             <View className="flex-1">
               <ScreenHeader
@@ -190,14 +205,7 @@ export function CardForm({
                 description={t('form.cardHint', { name: deck.name })}
               />
             </View>
-            <IconButton
-              icon={Check}
-              label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
-              variant="ghost"
-              tone="success"
-              loading={saving}
-              onPress={() => void save()}
-            />
+            {renderHeaderAction ? null : saveButton}
           </View>
           {created ? (
             <Text tone="success" accessibilityLiveRegion="polite">
