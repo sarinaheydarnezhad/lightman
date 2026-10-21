@@ -125,7 +125,7 @@ function Navigation() {
         <Stack.Screen name="settings/speech" options={{ title: t('nav.pronunciation') }} />
         <Stack.Screen name="settings/cloud" options={{ title: t('sync.title') }} />
         <Stack.Screen name="settings/logout" options={{ title: t('logout.title') }} />
-        <Stack.Screen name="settings/subscription" options={{ title: t('access.plans') }} />
+        <Stack.Screen name="settings/subscription" options={{ title: t('paywall.title') }} />
         <Stack.Screen name="auth/index" options={{ title: t('auth.title') }} />
         <Stack.Screen name="auth/guest-data" options={{ title: t('migration.title') }} />
         <Stack.Screen name="settings/transfer" options={{ title: t('transfer.title') }} />

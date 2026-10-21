@@ -39,6 +39,7 @@ import LanguageSettings from '@/app/settings/language';
 import CloudSync from '@/app/settings/cloud';
 import Authentication from '@/app/auth';
 import Transfer from '@/app/settings/transfer';
+import Subscription from '@/app/settings/subscription';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
@@ -134,6 +135,7 @@ const routes = {
   'settings/cloud': CloudSync,
   'auth/index': Authentication,
   'settings/transfer': Transfer,
+  'settings/subscription': Subscription,
   'design-system': DesignSystem,
 };
 
@@ -162,6 +164,30 @@ test('settings opens the local import/export route', async () => {
   expect(await screen.findByRole('button', { name: 'Select file' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/settings/transfer');
 });
+
+test.each(['en', 'fa'] as const)(
+  'Settings opens Plus with the upgrade stack title in %s',
+  async (language) => {
+    await application.settings.setLanguage(languageTag(language));
+    try {
+      const rendered = renderRouter(routes, { initialUrl: '/settings' });
+      fireEvent.press(
+        await screen.findByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+      );
+      const title = translate(language, 'paywall.title');
+      expect(await screen.findByRole('header', { name: title })).toBeTruthy();
+      expect(rendered.getPathname()).toBe('/settings/subscription');
+      expect(
+        screen
+          .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+          .some((header) => header.props.title === title),
+      ).toBe(true);
+    } finally {
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+  20_000,
+);
 
 test('authentication route resolves within the existing navigation stack', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/auth' });

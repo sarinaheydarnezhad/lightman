@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { LearningAccessController, serverEntitlementCache } from '@/core/access/learning-access';
@@ -12,6 +12,9 @@ import {
   type UiLanguage,
 } from '@/shared/localization/localization';
 import { SubscriptionScreen } from './subscription-screen';
+import { FreePlanLimit } from '@/shared/access/free-plan-limit';
+import * as theme from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
 
 let mockAccess: LearningAccessController;
 let mockUsage = { decks: 1, cards: 50 };
@@ -129,6 +132,96 @@ beforeEach(() => {
   jest.mocked(engine.planCatalog).mockReset().mockResolvedValue(catalog);
   jest.mocked(engine.subscription).mockReset();
   language('en');
+});
+
+afterEach(() => jest.restoreAllMocks());
+
+test.each([
+  ['en', 'light'],
+  ['fa', 'light'],
+  ['en', 'dark'],
+  ['fa', 'dark'],
+] as const)('verified plan cards adapt to %s and %s mode', async (locale, mode) => {
+  language(locale);
+  jest.spyOn(theme, 'useThemeColors').mockReturnValue(palette[mode]);
+  render(<SubscriptionScreen />);
+  await screen.findByTestId('plus-plan-1');
+  const title = locale === 'fa' ? 'ارتقا به لرونا پلاس' : 'Upgrade to Lerona Plus';
+  expect(screen.getByRole('header', { name: title }).props.allowFontScaling).toBe(true);
+  expect(screen.getByText(translate(locale, 'paywall.introTitle'))).toBeTruthy();
+  const freePlan = screen.getByTestId('free-plan');
+  const plusPlan = screen.getByTestId('plus-plan');
+  expect(freePlan).toHaveStyle({ backgroundColor: palette[mode].surface });
+  expect(plusPlan).toHaveStyle({
+    backgroundColor: palette[mode].surface,
+    borderColor: palette[mode].primary,
+  });
+  expect(
+    within(freePlan).getByRole('header', { name: translate(locale, 'account.freePlan') }),
+  ).toBeTruthy();
+  expect(
+    within(plusPlan).getByRole('header', { name: translate(locale, 'paywall.plusPlan') }),
+  ).toBeTruthy();
+  for (const [key, count] of [
+    ['paywall.freeDecks', 1],
+    ['paywall.freeCards', 50],
+  ] as const) {
+    expect(
+      within(freePlan).getByText(translate(locale, key, { count: formatNumber(count, locale) })),
+    ).toBeTruthy();
+  }
+  const freeStudy = within(freePlan).getByText(translate(locale, 'paywall.freeStudy'));
+  expect(freeStudy).toHaveStyle({ writingDirection: resolveDirection(locale) });
+  let featureRow = freeStudy.parent;
+  while (featureRow && !featureRow.props.className?.includes('items-start'))
+    featureRow = featureRow.parent;
+  expect(featureRow?.props.className.split(' ')).toContain(
+    locale === 'fa' ? 'flex-row-reverse' : 'flex-row',
+  );
+  for (const key of ['paywall.plusDecks', 'paywall.plusCards', 'paywall.study'] as const) {
+    expect(within(plusPlan).getByText(translate(locale, key))).toBeTruthy();
+  }
+  expect(within(plusPlan).queryByText(translate(locale, 'paywall.cloud'))).toBeNull();
+  expect(
+    screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
+  ).toBeDisabled();
+  fireEvent.press(screen.getByRole('button', { name: translate(locale, 'sync.signIn') }));
+  expect(router.push).toHaveBeenCalledWith('/auth');
+  expect(engine.planCatalog).toHaveBeenCalledTimes(1);
+});
+
+test.each(['en', 'fa'] as const)(
+  'catalog and account loading stay visible in %s',
+  async (locale) => {
+    language(locale);
+    account();
+    jest.mocked(engine.planCatalog).mockReturnValue(new Promise(() => {}));
+    jest.mocked(engine.subscription).mockReturnValue(new Promise(() => {}));
+    render(<SubscriptionScreen />);
+    expect(
+      screen.getByRole('progressbar', { name: translate(locale, 'paywall.loading') }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('progressbar', { name: translate(locale, 'access.refresh') }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: translate(locale, 'access.refresh') }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
+    ).toBeDisabled();
+    await waitFor(() => expect(engine.subscription).toHaveBeenCalledTimes(1));
+  },
+);
+
+test.each(['en', 'fa'] as const)('free-limit actions keep View plans in %s', (locale) => {
+  language(locale);
+  render(<FreePlanLimit operation="deck" />);
+  fireEvent.press(screen.getByRole('button', { name: translate(locale, 'access.plans') }));
+  expect(router.push).toHaveBeenCalledWith('/settings/subscription');
+  expect(
+    screen.queryByRole('button', { name: translate(locale, 'settings.upgradePlus') }),
+  ).toBeNull();
 });
 
 test.each(['en', 'fa'] as const)(
@@ -337,6 +430,28 @@ test('failed and empty catalogs have actionable retry and never invented prices;
   await screen.findByTestId('plus-plan-1');
   expect(engine.planCatalog).toHaveBeenCalledTimes(3);
 });
+
+test.each(['en', 'fa'] as const)(
+  'empty Plus durations retain recovery and disabled purchasing in %s',
+  async (locale) => {
+    language(locale);
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      plans: [{ ...catalog.plans[0]!, prices: [] }],
+    });
+    render(<SubscriptionScreen />);
+    expect(await screen.findByText(translate(locale, 'paywall.empty'))).toBeTruthy();
+    expect(screen.queryByTestId('selected-plan')).toBeNull();
+    expect(
+      screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
+    ).toBeDisabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: translate(locale, 'access.refresh') }),
+      ).toBeEnabled(),
+    );
+  },
+);
 
 test('offline/native-unavailable catalog has no hardcoded prices or cloud availability claim', async () => {
   Object.defineProperty(engine, 'available', { value: false });

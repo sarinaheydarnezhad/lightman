@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { syncEngine } from '@/core/composition/sync';
 import type { StorageState } from '@/core/storage/local-storage-scopes';
@@ -16,6 +16,8 @@ import { StyleSheet } from 'react-native';
 import { SettingsAccountCard } from './settings-account-card';
 import { LearningAccessController, serverEntitlementCache } from '@/core/access/learning-access';
 import type { Entitlements, CurrentSubscription } from '@/core/sync/subscription';
+import * as theme from '@/shared/theme/theme-provider';
+import { palette } from '@/shared/theme/tokens';
 
 let mockAccess: LearningAccessController;
 jest.mock('@/core/composition/learning-access', () => ({ learningAccess: () => mockAccess }));
@@ -115,21 +117,29 @@ beforeEach(() => {
   setAccess();
 });
 
-test.each(['guest', 'account'] as const)(
-  'Settings opens the same Plus Paywall for %s',
-  async (mode) => {
-    mockState = {
-      phase: 'ready',
-      mode,
-      userId: mode === 'account' ? account.id : null,
-      revision: 1,
-    };
-    render(<SettingsAccountCard />);
-    if (mode === 'account') await screen.findByText(account.displayName);
-    fireEvent.press(screen.getByRole('button', { name: 'View plans' }));
-    expect(router.push).toHaveBeenCalledWith('/settings/subscription');
-  },
-);
+afterEach(() => jest.restoreAllMocks());
+
+test.each([
+  ['guest', 'en'],
+  ['guest', 'fa'],
+  ['account', 'en'],
+  ['account', 'fa'],
+] as const)('Settings opens the same Plus Paywall for %s in %s', async (mode, language) => {
+  setLanguage(language);
+  mockState = {
+    phase: 'ready',
+    mode,
+    userId: mode === 'account' ? account.id : null,
+    revision: 1,
+  };
+  render(<SettingsAccountCard />);
+  if (mode === 'account') await screen.findByText(account.displayName);
+  fireEvent.press(
+    screen.getByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+  );
+  expect(screen.queryByRole('button', { name: translate(language, 'access.plans') })).toBeNull();
+  expect(router.push).toHaveBeenCalledWith('/settings/subscription');
+});
 
 test.each(['en', 'fa'] as const)(
   'guest sign-in remains visible with cloud unavailable in %s',
@@ -283,6 +293,137 @@ function subscriptionState(active: boolean, overLimit = false): CurrentSubscript
   };
 }
 
+test.each([
+  ['en', 'light', false],
+  ['fa', 'light', false],
+  ['en', 'dark', false],
+  ['fa', 'dark', false],
+  ['en', 'light', true],
+  ['fa', 'light', true],
+  ['en', 'dark', true],
+  ['fa', 'dark', true],
+] as const)(
+  'inline status and benefits respect %s / %s with active Plus %s',
+  async (language, mode, active) => {
+    setLanguage(language);
+    jest.spyOn(theme, 'useThemeColors').mockReturnValue(palette[mode]);
+    const current = active ? subscriptionState(true) : { subscription: null, entitlements: free() };
+    setAccess(current.entitlements);
+    jest.mocked(engine.subscription).mockResolvedValue(current);
+    authenticated();
+    const currentAccess = translate(language, 'access.current', {
+      plan: translate(language, active ? 'paywall.plusPlan' : 'account.freePlan'),
+    });
+    await screen.findByLabelText(currentAccess);
+    const card = within(screen.getByTestId('settings-subscription-card'));
+    const heading = card.getByRole('header', {
+      name: translate(language, 'settings.subscription.title'),
+    });
+    expect(heading).toHaveStyle({ writingDirection: resolveDirection(language) });
+    expect(heading.props.allowFontScaling).toBe(true);
+    expect(screen.getByTestId('settings-subscription-card')).toHaveStyle({
+      backgroundColor: palette[mode].surface,
+    });
+    expect(screen.getByTestId('settings-subscription-benefits')).toHaveStyle({
+      backgroundColor: palette[mode].primarySoft,
+    });
+    for (const [key, count] of [
+      ['paywall.freeDecks', 1],
+      ['paywall.freeCards', 50],
+    ] as const) {
+      const label = translate(language, key, { count: formatNumber(count, language) });
+      if (active) expect(card.queryByText(label)).toBeNull();
+      else expect(card.getByText(label)).toBeTruthy();
+    }
+    if (!active) {
+      expect(card.queryByText(/Subscription start|شروع اشتراک/)).toBeNull();
+      expect(card.queryByText(/Subscription expiration|انقضای اشتراک/)).toBeNull();
+    }
+    for (const key of [
+      'settings.subscription.plusSubtitle',
+      'paywall.unlimited',
+      'paywall.study',
+      'settings.subscription.purchaseUnavailable',
+      'settings.subscription.purchaseNotice',
+    ] as const) {
+      expect(card.getByText(translate(language, key))).toBeTruthy();
+    }
+    const benefit = card.getByText(translate(language, 'paywall.unlimited'));
+    expect(benefit).toHaveStyle({ writingDirection: resolveDirection(language) });
+    let row = benefit.parent;
+    while (row && !row.props.className?.includes('items-start')) row = row.parent;
+    expect(row?.props.className.split(' ')).toContain(
+      language === 'fa' ? 'flex-row-reverse' : 'flex-row',
+    );
+    expect(card.getAllByRole('button')).toHaveLength(1);
+    fireEvent.press(
+      card.getByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+    );
+    expect(router.push).toHaveBeenCalledWith('/settings/subscription');
+    expect(engine.subscription).toHaveBeenCalledTimes(1);
+  },
+);
+
+test('inline loading never confirms Free or Plus and preserves upgrade navigation', async () => {
+  jest.mocked(engine.subscription).mockReturnValue(new Promise(() => {}));
+  authenticated();
+  await waitFor(() => expect(engine.subscription).toHaveBeenCalledTimes(1));
+  const card = within(screen.getByTestId('settings-subscription-card'));
+  expect(card.getByRole('progressbar', { name: translate('en', 'access.refresh') })).toBeTruthy();
+  expect(card.getByText('Subscription status: Unconfirmed')).toBeTruthy();
+  for (const plan of ['account.freePlan', 'paywall.plusPlan'] as const) {
+    expect(
+      card.queryByLabelText(translate('en', 'access.current', { plan: translate('en', plan) })),
+    ).toBeNull();
+  }
+  expect(card.queryByRole('button', { name: translate('en', 'access.refresh') })).toBeNull();
+  fireEvent.press(card.getByRole('button', { name: translate('en', 'settings.upgradePlus') }));
+  expect(router.push).toHaveBeenCalledWith('/settings/subscription');
+});
+
+test.each(['Cancelled', 'Scheduled', 'Unavailable'] as const)(
+  'inline status preserves %s metadata without implying active Plus',
+  async (status) => {
+    const previous = subscriptionState(false);
+    const now = Date.now();
+    const startsAtUtc = new Date(
+      now + (status === 'Scheduled' ? 86400000 : -86400000),
+    ).toISOString();
+    const expiresAtUtc = new Date(now + 2 * 86400000).toISOString();
+    const current: CurrentSubscription = {
+      entitlements: { ...previous.entitlements, startsAtUtc, expiresAtUtc },
+      subscription: {
+        ...previous.subscription!,
+        plan: status === 'Unavailable' ? 'Full' : 'Plus',
+        storedStatus: status === 'Cancelled' ? 'Cancelled' : 'Active',
+        status,
+        startsAtUtc,
+        expiresAtUtc,
+      },
+    };
+    setAccess(current.entitlements);
+    jest.mocked(engine.subscription).mockResolvedValue(current);
+    authenticated();
+    await screen.findByText(
+      translate('en', 'paywall.status', { status: translate('en', `paywall.status.${status}`) }),
+    );
+    expect(
+      screen.getByLabelText(
+        translate('en', 'access.current', { plan: translate('en', 'account.freePlan') }),
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(translate('en', 'account.activePurchaseBlocked'))).toBeNull();
+    expect(screen.queryByText(translate('en', 'paywall.expired'))).toBeNull();
+    expect(
+      screen.getByText(
+        translate('en', 'access.expires', {
+          time: new Date(expiresAtUtc).toLocaleString('en-US'),
+        }),
+      ),
+    ).toBeTruthy();
+  },
+);
+
 test.each(['en', 'fa'] as const)(
   'guest explanation, exact limits and account isolation in %s',
   (language) => {
@@ -337,7 +478,9 @@ test.each(['en', 'fa'] as const)(
       ),
     ).toBeTruthy();
     expect(
-      StyleSheet.flatten(screen.getByText(translate(language, 'account.subscription')).props.style),
+      StyleSheet.flatten(
+        screen.getByText(translate(language, 'settings.subscription.title')).props.style,
+      ),
     ).toMatchObject({ writingDirection: resolveDirection(language) });
     expect(engine.subscription).toHaveBeenCalledTimes(1);
   },
@@ -353,7 +496,9 @@ test.each([false, true])(
     await screen.findByText('Subscription status: Expired');
     expect(screen.getByText(translate('en', 'paywall.expired'))).toBeTruthy();
     expect(
-      screen.getByText(translate('en', overLimit ? 'access.restricted' : 'access.free')),
+      screen.getByText(
+        translate('en', overLimit ? 'access.restricted' : 'settings.subscription.freeAccess'),
+      ),
     ).toBeTruthy();
     expect(engine.createBackup).not.toHaveBeenCalled();
   },
@@ -362,6 +507,7 @@ test.each([false, true])(
 test('a subscription failure leaves profile and backup available and never exposes internal errors or cached active state', async () => {
   const current = subscriptionState(true);
   setAccess(current.entitlements);
+  const refresh = jest.spyOn(mockAccess, 'refresh');
   jest.mocked(engine.subscription).mockRejectedValue(new Error('secret connection details'));
   jest.mocked(engine.backupStatus).mockResolvedValue({ latest: backup, lastSuccessful: backup });
   authenticated();
@@ -371,10 +517,24 @@ test('a subscription failure leaves profile and backup available and never expos
   expect(screen.getByText('Backup completed')).toBeTruthy();
   expect(screen.queryByText('Subscription status: Plus active')).toBeNull();
   expect(screen.queryByText('secret connection details')).toBeNull();
-  jest.mocked(engine.subscription).mockResolvedValue(current);
+  expect(refresh).toHaveBeenCalledTimes(1);
+  let finish!: (value: CurrentSubscription) => void;
+  jest.mocked(engine.subscription).mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
   fireEvent.press(screen.getByRole('button', { name: 'Refresh access' }));
+  await waitFor(() => expect(engine.subscription).toHaveBeenCalledTimes(2));
+  const card = within(screen.getByTestId('settings-subscription-card'));
+  expect(refresh).toHaveBeenCalledTimes(2);
+  expect(card.getByRole('progressbar', { name: 'Refresh access' })).toBeTruthy();
+  expect(card.queryByRole('button', { name: 'Refresh access' })).toBeNull();
+  expect(card.getByText('Subscription status: Unconfirmed')).toBeTruthy();
+  await act(async () => finish(current));
   await screen.findByText('Subscription status: Plus active');
   expect(engine.backupStatus).toHaveBeenCalledTimes(1);
+  expect(engine.accountProfile).toHaveBeenCalledTimes(1);
 });
 
 test('backup failure is independent of subscription and profile; account failure has its own retry', async () => {
@@ -407,6 +567,13 @@ test('an offline cached Plus entitlement is not shown as a confirmed subscriptio
   await screen.findByText(translate('en', 'account.subscriptionUnknown'));
   expect(screen.queryByText('Subscription status: Plus active')).toBeNull();
   expect(screen.getByText('Subscription status: Unconfirmed')).toBeTruthy();
+  const card = within(screen.getByTestId('settings-subscription-card'));
+  for (const plan of ['account.freePlan', 'paywall.plusPlan'] as const) {
+    expect(
+      card.queryByLabelText(translate('en', 'access.current', { plan: translate('en', plan) })),
+    ).toBeNull();
+  }
+  expect(card.queryByText(/Subscription start|Subscription expiration/)).toBeNull();
 });
 
 test('current entitlement invalidation immediately hides subscription details without affecting backups', async () => {

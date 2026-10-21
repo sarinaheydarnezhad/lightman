@@ -56,14 +56,17 @@ function expectControls(language: UiLanguage, enabled: boolean) {
   expect(
     screen.getByRole('button', { name: translate(language, 'account.loginSignup') }),
   ).toBeTruthy();
-  expect(screen.getByRole('button', { name: translate(language, 'access.plans') })).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+  ).toBeTruthy();
   const buttons = screen
     .getAllByRole('button')
     .filter(
       (button) =>
-        ![translate(language, 'account.loginSignup'), translate(language, 'access.plans')].includes(
-          button.props.accessibilityLabel,
-        ),
+        ![
+          translate(language, 'account.loginSignup'),
+          translate(language, 'settings.upgradePlus'),
+        ].includes(button.props.accessibilityLabel),
     );
   expect(buttons).toHaveLength(enabled ? 6 : 5);
   for (const button of buttons) {

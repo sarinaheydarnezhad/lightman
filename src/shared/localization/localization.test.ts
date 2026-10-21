@@ -8,6 +8,18 @@ import {
 } from './localization';
 import { en, fa } from './messages';
 
+test.each([
+  ['en', 'Upgrade to Lerona Plus', 'View plans'],
+  ['fa', 'ارتقا به لرونا پلاس', 'مشاهده طرح‌ها'],
+] as const)(
+  'Plus upgrade labels do not rename other plan actions in %s',
+  (language, title, plans) => {
+    expect(translate(language, 'settings.upgradePlus')).toBe(title);
+    expect(translate(language, 'paywall.title')).toBe(title);
+    expect(translate(language, 'access.plans')).toBe(plans);
+  },
+);
+
 test.each(['en', 'fa'] as const)('deletion terminology is consistent in %s', (language) => {
   expect(translate(language, 'details.deleteCard')).toBe(
     language === 'en' ? 'Delete card' : 'حذف کارت',

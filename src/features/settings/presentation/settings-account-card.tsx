@@ -97,7 +97,7 @@ export function SettingsAccountCard() {
           </Text>
           <Button label={t('account.loginSignup')} onPress={() => router.push('/auth')} />
           <Button
-            label={t('access.plans')}
+            label={t('settings.upgradePlus')}
             variant="secondary"
             onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
           />

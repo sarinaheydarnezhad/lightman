@@ -19,7 +19,25 @@ export const en = {
     'Another purchase is unavailable while your current Plus subscription is active.',
   'account.subscriptionUnknown':
     'Subscription status is unavailable or not server-confirmed. Reconnect and refresh; this does not confirm activation or expiration.',
-  'paywall.title': 'Lerona Plus',
+  'settings.upgradePlus': 'Upgrade to Lerona Plus',
+  'settings.subscription.title': 'Subscription status',
+  'settings.subscription.freeAccess':
+    'Study and review within these limits. Your data, viewing, editing and export remain available.',
+  'settings.subscription.plusSubtitle': 'More room to learn',
+  'settings.subscription.purchaseUnavailable': 'Subscription purchases are not available yet',
+  'settings.subscription.purchaseNotice':
+    'You cannot purchase a subscription right now. You can still view the plan details.',
+  'paywall.title': 'Upgrade to Lerona Plus',
+  'paywall.introTitle': 'Learning, without limits',
+  'paywall.introDescription': 'Make room for more decks, more flashcards, and continued practice.',
+  'paywall.freeDecks': 'Up to {count} active deck',
+  'paywall.freeCards': 'Up to {count} active flashcards in total',
+  'paywall.freeStudy': 'Study and review within the free-tier limits',
+  'paywall.plusPlan': 'Lerona Plus',
+  'paywall.plusDecks': 'Unlimited active decks under the current access rules',
+  'paywall.plusCards': 'Unlimited active flashcards under the current access rules',
+  'paywall.dataPreserved':
+    'Your existing data is preserved. Viewing, editing, and export remain available.',
   'paywall.status': 'Subscription status: {status}',
   'paywall.active': 'Plus active',
   'paywall.activeProvisional': 'Last known Plus — provisional, not server-confirmed',
@@ -684,7 +702,25 @@ export const fa: Dictionary = {
     'تا زمانی که اشتراک فعلی پلاس فعال است، خرید دیگری در دسترس نیست.',
   'account.subscriptionUnknown':
     'وضعیت اشتراک در دسترس نیست یا توسط سرور تأیید نشده است. اتصال را بررسی و تازه‌سازی کنید؛ این وضعیت تأیید فعال‌سازی یا انقضا نیست.',
-  'paywall.title': 'لرونا پلاس',
+  'settings.upgradePlus': 'ارتقا به لرونا پلاس',
+  'settings.subscription.title': 'وضعیت اشتراک',
+  'settings.subscription.freeAccess':
+    'مطالعه و مرور در این محدوده ممکن است. داده‌ها، مشاهده، ویرایش و خروجی گرفتن همچنان در دسترس‌اند.',
+  'settings.subscription.plusSubtitle': 'فضای بیشتر برای یادگیری',
+  'settings.subscription.purchaseUnavailable': 'خرید اشتراک هنوز فعال نیست',
+  'settings.subscription.purchaseNotice':
+    'در حال حاضر امکان خرید اشتراک وجود ندارد. جزئیات پلن‌ها همچنان قابل مشاهده است.',
+  'paywall.title': 'ارتقا به لرونا پلاس',
+  'paywall.introTitle': 'یادگیری، بدون محدودیت',
+  'paywall.introDescription': 'برای دسته‌ها و فلش‌کارت‌های بیشتر و تمرین پیوسته، جا باز کنید.',
+  'paywall.freeDecks': 'تا {count} دسته فعال',
+  'paywall.freeCards': 'تا {count} فلش‌کارت فعال در مجموع',
+  'paywall.freeStudy': 'مطالعه و مرور در محدوده رایگان',
+  'paywall.plusPlan': 'لرونا پلاس',
+  'paywall.plusDecks': 'دسته‌های فعال نامحدود طبق قوانین فعلی دسترسی',
+  'paywall.plusCards': 'فلش‌کارت‌های فعال نامحدود طبق قوانین فعلی دسترسی',
+  'paywall.dataPreserved':
+    'داده‌های فعلی شما حفظ می‌شوند. مشاهده، ویرایش و خروجی گرفتن همچنان ممکن است.',
   'paywall.status': 'وضعیت اشتراک: {status}',
   'paywall.active': 'پلاس فعال',
   'paywall.activeProvisional': 'آخرین وضعیت پلاس — موقتی و تأییدنشده توسط سرور',
