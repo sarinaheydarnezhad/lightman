@@ -184,8 +184,34 @@ test.each([
   ['/settings', 'Settings'],
 ])('primary route %s resolves to %s', async (path, heading) => {
   const rendered = renderRouter(routes, { initialUrl: path });
-  expect(await screen.findByRole('header', { name: heading })).toBeTruthy();
+  expect(await screen.findByRole('header', { name: heading })).toHaveStyle({
+    fontFamily: 'Vazirmatn-Bold',
+    fontWeight: 'normal',
+  });
   expect(rendered.getPathname()).toBe(path);
+});
+
+test.each([
+  ['/decks/create', 'Create a deck'],
+  ['/decks/fresh-collection', 'Fresh collection'],
+  ['/decks/fresh-collection/edit', 'Edit Fresh collection'],
+  ['/decks/everyday-phrases/cards', 'Everyday phrases'],
+  ['/decks/everyday-phrases/cards/create', 'Create a card'],
+  ['/decks/everyday-phrases/cards/phrase-hello', 'Hello'],
+  ['/decks/everyday-phrases/cards/phrase-hello/edit', 'Edit card'],
+  ['/settings/appearance', 'Appearance'],
+  ['/settings/language', 'App language'],
+  ['/settings/speech', 'Pronunciation'],
+  ['/settings/cloud', 'Cloud sync'],
+  ['/settings/transfer', 'Import / Export'],
+  ['/auth', 'Sign in to Lerona'],
+  ['/design-system', 'Design system'],
+])('content page title on %s uses the shared font configuration', async (path, heading) => {
+  renderRouter(routes, { initialUrl: path });
+  expect(await screen.findByRole('header', { name: heading })).toHaveStyle({
+    fontFamily: 'Vazirmatn-Bold',
+    fontWeight: 'normal',
+  });
 });
 
 test('app language switches visible navigation and RTL labels without changing deck language', async () => {
@@ -375,7 +401,7 @@ test.each(['en', 'fa'] as const)(
       );
       expect(header.props.titleFontSize).toBeUndefined();
       expect(header.props.backTitleFontSize).toBeUndefined();
-      expect(heading).toHaveStyle({ fontFamily: 'Vazirmatn-Bold' });
+      expect(heading).toHaveStyle({ fontFamily: 'Vazirmatn-Bold', fontWeight: 'normal' });
       expect(screen.getByText('A space to add your first cards.')).toHaveStyle({
         fontFamily: 'Vazirmatn',
       });
@@ -1223,7 +1249,10 @@ test('Study tab starts an all-deck session, reveals answers and lets users leave
   const rendered = renderRouter(routes, { initialUrl: '/study' });
   await screen.findByRole('header', { name: 'Study' });
   fireEvent.press(screen.getByRole('button', { name: 'Start study' }));
-  expect(await screen.findByRole('header', { name: 'Study session' })).toBeTruthy();
+  expect(await screen.findByRole('header', { name: 'Study session' })).toHaveStyle({
+    fontFamily: 'Vazirmatn-Bold',
+    fontWeight: 'normal',
+  });
   const active = await application.getActiveStudySession();
   expect(active?.scope).toEqual({ kind: 'all-decks' });
   expect(rendered.getPathname()).toBe(`/study/${active!.id}`);

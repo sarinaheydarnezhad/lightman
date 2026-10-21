@@ -53,6 +53,10 @@ function mount(content = <LogoutScreen />) {
 
 test('logout confirmation presents explicit choices and cancellation changes no data', () => {
   mount();
+  expect(screen.getByRole('header', { name: 'Log out?' })).toHaveStyle({
+    fontFamily: 'Vazirmatn-Bold',
+    fontWeight: 'normal',
+  });
   expect(screen.getByRole('button', { name: 'Back Up and Log Out' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Log Out Without Backing Up' })).toBeTruthy();
   expect(screen.getByText(/server-configured retention/)).toBeTruthy();

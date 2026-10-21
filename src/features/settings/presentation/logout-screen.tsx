@@ -5,6 +5,7 @@ import { storageScopes } from '@/core/composition/repositories';
 import { syncEngine } from '@/core/composition/sync';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
+import { PageTitle } from '@/shared/ui/screen-header';
 import { Card } from '@/shared/ui/card';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
@@ -58,9 +59,7 @@ export function LogoutScreen() {
       <Modal visible transparent animationType="fade" onRequestClose={cancel}>
         <Screen scroll testID="logout-confirmation">
           <Card className="gap-md">
-            <Text variant="headingSmall" accessibilityRole="header">
-              {t('logout.title')}
-            </Text>
+            <PageTitle variant="headingSmall">{t('logout.title')}</PageTitle>
             <Text>{t('logout.confirm')}</Text>
             <Text tone="secondary">{t('logout.coverage')}</Text>
             <Text tone="secondary">{t('logout.retention')}</Text>

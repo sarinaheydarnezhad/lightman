@@ -5,6 +5,7 @@ import { syncEngine } from '@/core/composition/sync';
 import { storageScopes } from '@/core/composition/repositories';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
+import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 
@@ -48,7 +49,7 @@ export function CloudSyncScreen() {
   return (
     <Screen scroll keyboardAware>
       <View className="gap-lg">
-        <Text variant="headingLarge">{t('sync.title')}</Text>
+        <PageTitle>{t('sync.title')}</PageTitle>
         <Text tone="secondary">{t('sync.description')}</Text>
         {storageScopes.snapshot().mode === 'guest' && (
           <Text tone="secondary">{t('guest.explanation')}</Text>

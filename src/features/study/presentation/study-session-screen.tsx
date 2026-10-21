@@ -13,6 +13,7 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { IconButton } from '@/shared/ui/icon-button';
 import { Progress } from '@/shared/ui/progress';
 import { Screen } from '@/shared/ui/screen';
+import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
@@ -177,9 +178,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               <Text tone="secondary" variant="labelMedium" numberOfLines={1}>
                 {deck.name}
               </Text>
-              <Text variant="headingSmall" accessibilityRole="header">
-                {t('study.session')}
-              </Text>
+              <PageTitle variant="headingSmall">{t('study.session')}</PageTitle>
               <Text
                 testID="study-correct-answers"
                 variant="labelMedium"

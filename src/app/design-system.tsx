@@ -22,6 +22,7 @@ import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Progress } from '@/shared/ui/progress';
 import { Screen } from '@/shared/ui/screen';
+import { PageTitle } from '@/shared/ui/screen-header';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
 
@@ -58,7 +59,7 @@ export default function DesignSystemDemo() {
     <Screen scroll keyboardAware edges={stackScreenEdges} testID="design-system-demo">
       <View className="gap-2xl">
         <View className="gap-sm">
-          <Text variant="headingLarge">Design system</Text>
+          <PageTitle>Design system</PageTitle>
           <Text tone="secondary">Explore the foundation in {mode} appearance.</Text>
         </View>
 

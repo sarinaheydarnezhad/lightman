@@ -171,6 +171,8 @@ test.each(['en', 'fa'] as const)(
     expect(
       StyleSheet.flatten(screen.getByText(translate(locale, 'paywall.title')).props.style),
     ).toMatchObject({
+      fontFamily: 'Vazirmatn-Bold',
+      fontWeight: 'normal',
       writingDirection: resolveDirection(locale),
       textAlign: locale === 'fa' ? 'right' : 'left',
     });

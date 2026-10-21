@@ -7,6 +7,7 @@ import { freeLearningLimits, localLearningUsage } from '@/core/access/learning-a
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
+import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -71,9 +72,7 @@ export function SubscriptionScreen() {
   return (
     <Screen edges={stackScreenEdges} scroll testID="plus-paywall">
       <Card className="gap-md">
-        <Text variant="headingLarge" accessibilityRole="header">
-          {t('paywall.title')}
-        </Text>
+        <PageTitle>{t('paywall.title')}</PageTitle>
         <Text>{t(access.isAccount ? 'guest.accountMode' : 'guest.mode')}</Text>
         <Text accessibilityLiveRegion="polite">{t('paywall.status', { status })}</Text>
         {expires ? (
