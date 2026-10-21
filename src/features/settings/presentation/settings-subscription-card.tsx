@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { View } from 'react-native';
 import {
-  BookOpen,
+  Check,
   Crown,
   Layers,
   RectangleHorizontal,
@@ -17,19 +17,31 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Text } from '@/shared/ui/text';
-import { LoadingState } from '@/shared/ui/loading-state';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { icons, spacing } from '@/shared/theme/tokens';
 
-function SubscriptionDetail({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+function SubscriptionDetail({
+  icon: Icon,
+  label,
+  accent = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  accent?: boolean;
+}) {
   const { direction } = useLocalization();
   const colors = useThemeColors();
   return (
     <View className={`items-start gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}>
-      <View accessible={false} importantForAccessibility="no-hide-descendants">
-        <Icon size={icons.medium} color={colors.primary} />
+      <View
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        className="shrink-0"
+      >
+        <Icon size={icons.medium} color={accent ? colors.primary : colors.secondaryText} />
       </View>
-      <Text variant="bodySmall" tone="secondary" className="min-w-0 flex-1">
+      <Text variant="bodySmall" className="min-w-0 flex-1">
         {label}
       </Text>
     </View>
@@ -81,35 +93,47 @@ export function SettingsSubscriptionCard() {
     >
       <View className="gap-md">
         <View
-          className={`items-start gap-md ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+          className={`items-center gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
         >
           <View
-            accessible={false}
+            pointerEvents="none"
+            accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            className="h-2xl w-2xl shrink-0 items-center justify-center rounded-sm bg-primarySoft"
+            className="shrink-0"
           >
             <Shield size={icons.medium} color={colors.primary} />
           </View>
-          <View className="min-w-0 flex-1 gap-xs">
-            <Text variant="labelLarge" accessibilityRole="header">
-              {t('settings.subscription.title')}
+          <Text variant="labelLarge" className="min-w-0 flex-1" accessibilityRole="header">
+            {t('settings.subscription.title')}
+          </Text>
+        </View>
+        <View className="gap-xs">
+          {entitlements ? (
+            <Text
+              variant="headingMedium"
+              tone={entitlements.isActive ? 'accent' : 'primary'}
+              accessibilityLabel={t('access.current', {
+                plan: t(entitlements.isActive ? 'paywall.plusPlan' : 'account.freePlan'),
+              })}
+            >
+              {t(entitlements.isActive ? 'paywall.plusPlan' : 'account.freePlan')}
             </Text>
-            {entitlements ? (
-              <Text
-                variant="headingSmall"
-                accessibilityLabel={t('access.current', {
-                  plan: t(entitlements.isActive ? 'paywall.plusPlan' : 'account.freePlan'),
-                })}
-              >
-                {t(entitlements.isActive ? 'paywall.plusPlan' : 'account.freePlan')}
-              </Text>
-            ) : null}
-            <Text variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+          ) : null}
+          <View
+            accessible={metadata.loading}
+            accessibilityRole={metadata.loading ? 'progressbar' : undefined}
+            accessibilityLabel={metadata.loading ? t('access.refresh') : undefined}
+            accessibilityState={{ busy: metadata.loading }}
+          >
+            <Text
+              variant="caption"
+              tone={expired ? 'warning' : 'secondary'}
+              accessibilityLiveRegion="polite"
+            >
               {t('paywall.status', { status })}
             </Text>
           </View>
         </View>
-        {metadata.loading ? <LoadingState label={t('access.refresh')} /> : null}
         {entitlements ? (
           <View className="gap-sm">
             {!entitlements.isActive ? (
@@ -123,7 +147,7 @@ export function SettingsSubscriptionCard() {
                   label={t('paywall.freeCards', { count: number(freeLearningLimits.cards) })}
                 />
                 <Text
-                  variant="bodySmall"
+                  variant="caption"
                   tone={entitlements.withinFreeTierLimits ? 'secondary' : 'warning'}
                 >
                   {t(
@@ -164,18 +188,23 @@ export function SettingsSubscriptionCard() {
       </View>
 
       <View
-        className="gap-md rounded-md border border-primary/25 bg-primarySoft p-md"
+        className="gap-md rounded-md p-lg"
         style={{ backgroundColor: colors.primarySoft }}
         testID="settings-subscription-benefits"
       >
         <View
           className={`items-start gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
         >
-          <View accessible={false} importantForAccessibility="no-hide-descendants">
+          <View
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            className="shrink-0"
+          >
             <Crown size={icons.medium} color={colors.primary} />
           </View>
           <View className="min-w-0 flex-1 gap-xs">
-            <Text variant="labelLarge" accessibilityRole="header">
+            <Text variant="labelLarge" tone="accent" accessibilityRole="header">
               {t('paywall.plusPlan')}
             </Text>
             <Text variant="bodySmall" tone="secondary">
@@ -184,10 +213,10 @@ export function SettingsSubscriptionCard() {
           </View>
         </View>
         <View className="gap-sm">
-          <SubscriptionDetail icon={Layers} label={t('paywall.unlimited')} />
-          <SubscriptionDetail icon={BookOpen} label={t('paywall.study')} />
+          <SubscriptionDetail icon={Check} label={t('settings.subscription.unlimited')} accent />
+          <SubscriptionDetail icon={Check} label={t('settings.subscription.study')} accent />
         </View>
-        <View className="gap-xs border-t border-primary/25 pt-md">
+        <View className="gap-xs border-t border-border pt-md">
           <Text variant="caption" weight="medium" tone="secondary">
             {t('settings.subscription.purchaseUnavailable')}
           </Text>
@@ -197,14 +226,17 @@ export function SettingsSubscriptionCard() {
         </View>
       </View>
 
-      <View className="gap-sm">
+      <View className="gap-sm border-t border-border pt-lg">
         <Button
           label={t('settings.upgradePlus')}
           onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
         />
-        {!metadata.loading && !confirmed ? (
-          <Button label={t('access.refresh')} variant="secondary" onPress={metadata.refresh} />
-        ) : null}
+        <Button
+          label={t('access.refresh')}
+          variant="secondary"
+          loading={metadata.loading}
+          onPress={metadata.refresh}
+        />
       </View>
     </Card>
   );

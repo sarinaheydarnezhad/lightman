@@ -1,10 +1,13 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { View } from 'react-native';
+import { UserRound } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { storageScopes } from '@/core/composition/repositories';
 import { syncEngine } from '@/core/composition/sync';
-import { freeLearningLimits } from '@/core/access/learning-access';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
+import { useThemeColors } from '@/shared/theme/theme-provider';
+import { icons, spacing } from '@/shared/theme/tokens';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { LoadingState } from '@/shared/ui/loading-state';
@@ -73,35 +76,49 @@ function AccountDetails({ userId }: { userId: string }) {
 }
 
 export function SettingsAccountCard() {
-  const { t, number } = useLocalization();
+  const { t, direction } = useLocalization();
+  const colors = useThemeColors();
   const scope = useSyncExternalStore(storageScopes.subscribe, storageScopes.snapshot);
   const userId = scope.phase === 'ready' && scope.mode === 'account' ? scope.userId : null;
   return (
-    <Card className="gap-md" testID="settings-account-card">
-      <Text variant="headingSmall" accessibilityRole="header">
-        {t('settings.account')}
-      </Text>
+    <Card
+      variant="outlined"
+      className="gap-md"
+      style={{ backgroundColor: colors.surface, padding: spacing.lg }}
+      testID="settings-account-card"
+    >
+      <View
+        className={`items-center gap-md ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+      >
+        <View
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <UserRound size={icons.medium} color={colors.secondaryText} />
+        </View>
+        <View className="min-w-0 flex-1 gap-xs">
+          <Text variant="headingSmall" accessibilityRole="header">
+            {t('settings.account')}
+          </Text>
+          <Text variant="bodySmall" tone="secondary">
+            {t('settings.accountSubtitle')}
+          </Text>
+        </View>
+      </View>
       {scope.phase !== 'ready' ? (
         <LoadingState label={t('guest.switching')} />
       ) : userId ? (
         <AccountDetails key={`${userId}:${scope.revision}`} userId={userId} />
       ) : (
-        <>
-          <Text variant="labelLarge">{t('guest.mode')}</Text>
-          <Text tone="secondary">{t('account.guestLocal')}</Text>
-          <Text>
-            {t('account.guestLimits', {
-              decks: number(freeLearningLimits.decks),
-              cards: number(freeLearningLimits.cards),
-            })}
-          </Text>
+        <View className="gap-sm">
           <Button label={t('account.loginSignup')} onPress={() => router.push('/auth')} />
           <Button
             label={t('settings.upgradePlus')}
             variant="secondary"
             onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
           />
-        </>
+        </View>
       )}
     </Card>
   );
