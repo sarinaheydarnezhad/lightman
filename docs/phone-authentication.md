@@ -8,6 +8,10 @@ The backend needs its .NET 10 runtime/SDK, SQL Server connection, stable `Auth__
 
 ## Contracts
 
+[Continue with Google](google-authentication.md) is also available for sign-in and first-time account creation without a phone number or SMS OTP.
+
+Phone sign-in uses the mobile number and password only, without requesting or verifying an OTP. The app does not offer OTP login. New accounts still verify phone ownership with an OTP before setting their password; existing email accounts retain their password login. The backend OTP login contract remains available for older clients.
+
 ### API address changes in installed Android release builds
 
 `EXPO_PUBLIC_API_URL` is embedded in the JavaScript bundle at build time; an installed release APK does not reread the project's `.env`. Restarting Metro or reopening the installed app cannot update that address. An incremental native build can reuse an older JavaScript bundle after only `.env` changes.

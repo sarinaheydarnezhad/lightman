@@ -407,6 +407,15 @@ export class CloudClient {
     return this.completeSignIn(tokens, bindUser, epoch);
   }
 
+  async signInGoogle(
+    idToken: string,
+    bindUser: (userId: string) => Promise<void>,
+  ): Promise<string> {
+    const epoch = this.sessionEpoch;
+    const tokens = validateTokens(await this.authPost('/auth/google', { idToken }));
+    return this.completeSignIn(tokens, bindUser, epoch);
+  }
+
   async signInPhone(
     phoneNumber: string,
     password: string,

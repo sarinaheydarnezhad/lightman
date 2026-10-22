@@ -339,6 +339,52 @@ test('logout revokes the session and removes secure credentials', async () => {
   expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
 });
 
+test('Google exchanges only its ID token, binds the account and stores only app credentials', async () => {
+  const bind = jest.fn(async () => {});
+  globalThis.fetch = jest
+    .fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => rotated })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'google-user' }) });
+  await expect(new CloudClient().signInGoogle('google-id-token', bind)).resolves.toBe(
+    'google-user',
+  );
+  expect(globalThis.fetch).toHaveBeenNthCalledWith(
+    1,
+    'https://api.example.test/api/v1/auth/google',
+    expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ idToken: 'google-id-token' }),
+    }),
+  );
+  expect(bind).toHaveBeenCalledWith('google-user');
+  expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+    expect.any(String),
+    JSON.stringify({ ...rotated, userId: 'google-user' }),
+  );
+  expect(
+    jest
+      .mocked(SecureStore.setItemAsync)
+      .mock.calls.some(([, value]) => value.includes('google-id-token')),
+  ).toBe(false);
+  expect(bind.mock.invocationCallOrder[0]).toBeLessThan(
+    jest.mocked(SecureStore.setItemAsync).mock.invocationCallOrder[0]!,
+  );
+});
+
+test('a rejected Google token cannot bind an account or store credentials', async () => {
+  const bind = jest.fn(async () => {});
+  globalThis.fetch = jest.fn().mockResolvedValue({
+    ok: false,
+    status: 401,
+    json: async () => ({ code: 'invalid_google_token' }),
+  });
+  await expect(new CloudClient().signInGoogle('rejected-token', bind)).rejects.toMatchObject({
+    code: 'invalid_google_token',
+  });
+  expect(bind).not.toHaveBeenCalled();
+  expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+});
+
 test('phone password login matches the backend contract and binds before storing tokens', async () => {
   const bind = jest.fn(async () => {});
   globalThis.fetch = jest

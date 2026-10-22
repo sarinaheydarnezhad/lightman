@@ -210,6 +210,40 @@ test('verified authentication requests the guest preview only after isolated acc
   expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
 });
 
+test('Google authentication uses the same isolated storage and guest preview lifecycle', async () => {
+  const events: string[] = [];
+  const cloud = {
+    signInGoogle: jest.fn(async (_token: string, bind: (id: string) => Promise<void>) => {
+      await bind('google-owner');
+      events.push('credentials');
+      return 'google-owner';
+    }),
+  };
+  const engine = new SyncEngine(
+    {
+      bind: async () => {
+        events.push('bind');
+      },
+    } as unknown as SyncStore,
+    cloud as unknown as CloudClient,
+    undefined,
+    undefined,
+    {
+      isAccount: () => true,
+      enterAccount: async () => {
+        events.push('account');
+      },
+      enterGuest: async () => {},
+    },
+    () => {
+      events.push('preview');
+    },
+  );
+  await engine.signInGoogle('google-id-token');
+  expect(cloud.signInGoogle).toHaveBeenCalledWith('google-id-token', expect.any(Function));
+  expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
+});
+
 test('duplicate acknowledgements still clear the pending operation', async () => {
   const { engine, cloud, store } = setup();
   cloud.push.mockResolvedValueOnce({

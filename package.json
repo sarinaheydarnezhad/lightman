@@ -21,6 +21,7 @@
   "dependencies": {
     "@op-engineering/op-sqlite": "18.2.5",
     "@react-native-community/datetimepicker": "9.1.0",
+    "@react-native-google-signin/google-signin": "16.1.5",
     "@sqlite.org/sqlite-wasm": "3.51.2-build8",
     "expo": "~57.0.9",
     "expo-build-properties": "~57.0.21",

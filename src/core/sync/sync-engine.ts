@@ -271,6 +271,10 @@ export class SyncEngine {
     await this.authenticate((bind) => this.cloud.signInPhone(phoneNumber, password, bind));
   }
 
+  async signInGoogle(idToken: string): Promise<void> {
+    await this.authenticate((bind) => this.cloud.signInGoogle(idToken, bind));
+  }
+
   async loginWithOtp(challengeId: string, code: string): Promise<void> {
     await this.authenticate((bind) => this.cloud.loginWithOtp(challengeId, code, bind));
   }

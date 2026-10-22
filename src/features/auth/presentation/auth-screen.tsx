@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
 import { CloudError } from '@/core/sync/cloud-client';
+import { GoogleSignInError, requestGoogleIdToken } from '@/core/sync/google-sign-in';
 import {
   normalizeLocalPhoneNumber,
   type OtpChallenge,
@@ -16,13 +17,24 @@ import { Input } from '@/shared/ui/input';
 import { Button } from '@/shared/ui/button';
 import { Text } from '@/shared/ui/text';
 
-type Mode = 'password' | 'login' | 'register' | 'email';
+type Mode = 'password' | 'register' | 'email';
 type Step = 'phone' | 'otp' | 'details' | 'success';
 
 function errorKey(error: unknown): MessageKey {
   if (error instanceof Error && error.message === 'invalid_phone') return 'auth.invalidPhone';
+  if (error instanceof GoogleSignInError) {
+    if (error.code === 'google_unavailable') return 'auth.googleUnavailable';
+    if (error.code === 'google_play_services') return 'auth.googlePlayServices';
+    return 'auth.googleFailed';
+  }
   if (error instanceof CloudError) {
     switch (error.code) {
+      case 'google_unavailable':
+        return 'auth.googleUnavailable';
+      case 'invalid_google_token':
+        return 'auth.googleFailed';
+      case 'google_account_conflict':
+        return 'auth.googleConflict';
       case 'invalid_phone':
         return 'auth.invalidPhone';
       case 'invalid_otp':
@@ -107,10 +119,7 @@ export function AuthScreen() {
 
   async function requestCode() {
     const phoneNumber = normalizeLocalPhoneNumber(phone);
-    const result = await syncEngine!.requestOtp(
-      phoneNumber,
-      mode === 'register' ? 'register' : 'login',
-    );
+    const result = await syncEngine!.requestOtp(phoneNumber, 'register');
     if (!mounted.current) return;
     setPhone(phoneNumber);
     setChallenge(result);
@@ -132,16 +141,11 @@ export function AuthScreen() {
       setError(t('auth.invalidCode'));
       return;
     }
-    if (mode === 'register') {
-      const result = await syncEngine!.verifyRegistrationOtp(challenge.challengeId, normalizedCode);
-      if (!mounted.current) return;
-      setVerification(result);
-      setCode('');
-      setStep('details');
-    } else {
-      await syncEngine!.loginWithOtp(challenge.challengeId, normalizedCode);
-      signedIn();
-    }
+    const result = await syncEngine!.verifyRegistrationOtp(challenge.challengeId, normalizedCode);
+    if (!mounted.current) return;
+    setVerification(result);
+    setCode('');
+    setStep('details');
   }
 
   async function register() {
@@ -198,6 +202,13 @@ export function AuthScreen() {
     signedIn();
   }
 
+  async function googleLogin() {
+    const idToken = await requestGoogleIdToken();
+    if (!idToken || !mounted.current) return;
+    await syncEngine!.signInGoogle(idToken);
+    signedIn();
+  }
+
   const resendSeconds = challenge
     ? Math.max(0, Math.ceil((Date.parse(challenge.resendAtUtc) - now) / 1000))
     : 0;
@@ -224,18 +235,17 @@ export function AuthScreen() {
               <>
                 <View className="gap-sm">
                   <Button
+                    label={t('auth.googleContinue')}
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => void perform(googleLogin)}
+                  />
+                  <Button
                     label={t('auth.passwordLogin')}
                     variant="secondary"
                     disabled={busy}
                     accessibilityState={{ selected: mode === 'password' }}
                     onPress={() => reset('password')}
-                  />
-                  <Button
-                    label={t('auth.otpLogin')}
-                    variant="secondary"
-                    disabled={busy}
-                    accessibilityState={{ selected: mode === 'login' }}
-                    onPress={() => reset('login')}
                   />
                   <Button
                     label={t('auth.register')}

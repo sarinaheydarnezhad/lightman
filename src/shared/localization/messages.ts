@@ -227,6 +227,13 @@ export const en = {
   'guest.storageError': 'Unable to open local data',
   'guest.storageErrorHint': 'Your data has not been deleted. Retry opening guest storage.',
   'auth.title': 'Sign in to Lerona',
+  'auth.googleContinue': 'Continue with Google',
+  'auth.googleUnavailable':
+    'Google sign-in is not configured or is temporarily unavailable. Use another sign-in option.',
+  'auth.googleFailed': 'Google sign-in could not be completed. Please try again.',
+  'auth.googlePlayServices': 'Update or enable Google Play services, then try again.',
+  'auth.googleConflict':
+    'This email already belongs to an account. Sign in using its existing method; accounts are not linked automatically.',
   'auth.phone': 'Mobile number',
   'auth.phoneHint': 'Enter 11 digits starting with 0, for example 09121234567.',
   'auth.passwordLogin': 'Login with password',
@@ -921,6 +928,13 @@ export const fa: Dictionary = {
   'guest.storageError': 'داده‌های محلی باز نشدند',
   'guest.storageErrorHint': 'داده‌های شما حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کنید.',
   'auth.title': 'ورود به لرونا',
+  'auth.googleContinue': 'ادامه با گوگل',
+  'auth.googleUnavailable':
+    'ورود با گوگل تنظیم نشده یا موقتاً در دسترس نیست. از روش دیگری برای ورود استفاده کنید.',
+  'auth.googleFailed': 'ورود با گوگل انجام نشد. دوباره تلاش کنید.',
+  'auth.googlePlayServices': 'خدمات گوگل پلی را فعال یا به‌روز کنید و دوباره تلاش کنید.',
+  'auth.googleConflict':
+    'این ایمیل متعلق به یک حساب موجود است. با روش قبلی وارد شوید؛ حساب‌ها خودکار به هم متصل نمی‌شوند.',
   'auth.phone': 'شماره موبایل',
   'auth.phoneHint': 'شمارهٔ ۱۱ رقمی را با ۰ وارد کنید، مانند ۰۹۱۲۱۲۳۴۵۶۷.',
   'auth.passwordLogin': 'ورود با رمز عبور',

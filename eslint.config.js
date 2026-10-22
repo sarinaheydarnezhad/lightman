@@ -5,6 +5,15 @@ module.exports = defineConfig([
   expoConfig,
   { ignores: ['dist/**', 'android/**', 'ios/**', '.expo/**', 'coverage/**', '.tools/**'] },
   {
+    files: ['src/core/sync/google-sign-in.ts'],
+    rules: {
+      '@typescript-eslint/no-require-imports': [
+        'warn',
+        { allow: ['^@react-native-google-signin/google-signin$'] },
+      ],
+    },
+  },
+  {
     files: ['src/features/*/domain/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
