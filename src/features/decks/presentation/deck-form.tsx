@@ -23,9 +23,6 @@ import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { languageChoices } from './deck-presentation';
-
-type LanguageChoice = (typeof languageChoices)[number]['tag'];
 
 export function DeckForm({
   existing,
@@ -41,20 +38,12 @@ export function DeckForm({
   } as const;
   const [name, setName] = useState(existing?.name ?? '');
   const [description, setDescription] = useState(existing?.description ?? '');
-  const initialTag = existing?.language ?? 'en';
-  const initialChoice = languageChoices.find(
-    (choice) => initialTag.toLowerCase().split('-')[0] === choice.tag,
-  );
-  const [languageChoice, setLanguageChoice] = useState<LanguageChoice | null>(
-    initialChoice?.tag ?? null,
-  );
   const [alignment, setAlignment] = useState<DeckTextAlignment>(existing?.textAlignment ?? 'ltr');
   const [size, setSize] = useState<TypographySize>(existing?.typographySize ?? 'medium');
   const [reviewSystem, setReviewSystem] = useState(existing?.reviewSystem ?? 'leitner');
   const [reviewInfoVisible, setReviewInfoVisible] = useState(false);
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [languageError, setLanguageError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const submitting = useRef(false);
   const mounted = useRef(true);
@@ -70,7 +59,6 @@ export function DeckForm({
   async function save() {
     if (submitting.current) return;
     setNameError(null);
-    setLanguageError(null);
     setError(null);
     if (!name.trim()) {
       setNameError(t('form.deckNameRequired'));
@@ -78,22 +66,12 @@ export function DeckForm({
       return;
     }
     let validName: string;
-    let validLanguage: ReturnType<typeof supportedLanguageTag>;
     try {
       validName = validateDeckTitle(name);
     } catch (cause) {
       setNameError(
         language === 'en' && cause instanceof AppError ? cause.message : t('form.deckNameRequired'),
       );
-      void haptics.actionRejected();
-      return;
-    }
-    try {
-      validLanguage = supportedLanguageTag(
-        languageChoice === initialChoice?.tag ? initialTag : (languageChoice ?? initialTag),
-      );
-    } catch {
-      setLanguageError(t('form.languageInvalid'));
       void haptics.actionRejected();
       return;
     }
@@ -104,7 +82,7 @@ export function DeckForm({
       await onSubmit({
         name: validName,
         description: description.trim(),
-        language: validLanguage,
+        language: existing?.language ?? supportedLanguageTag('en'),
         textAlignment: alignment,
         typographySize: size,
         reviewSystem,
@@ -157,30 +135,6 @@ export function DeckForm({
             maxLength={1000}
             placeholder={t('form.descriptionPlaceholder')}
           />
-        </View>
-        <View className="gap-sm">
-          <Text variant="labelLarge">{t('form.language')}</Text>
-          <Text tone="secondary" variant="bodySmall">
-            {t('form.languageHint')}
-          </Text>
-          <View className="flex-row flex-wrap gap-sm" style={optionRowStyle}>
-            {languageChoices.map((choice) => (
-              <Chip
-                key={choice.tag}
-                label={t(`language.${choice.tag}`)}
-                selected={languageChoice === choice.tag}
-                onPress={() => {
-                  setLanguageChoice(choice.tag);
-                  setLanguageError(null);
-                }}
-              />
-            ))}
-          </View>
-          {languageError ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {languageError}
-            </Text>
-          ) : null}
         </View>
         <View className="gap-sm">
           <Text variant="labelLarge">{t('form.alignment')}</Text>

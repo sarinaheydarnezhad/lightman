@@ -1,7 +1,7 @@
 import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
-import { DefaultTheme } from 'expo-router/react-navigation';
+import { DefaultTheme, HeaderBackButton } from 'expo-router/react-navigation';
 import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import {
@@ -479,11 +479,9 @@ test('create form shows field errors and keeps the user on the form', async () =
   await screen.findByRole('header', { name: 'Create a deck' });
   fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
   expect(await screen.findByText('Enter a deck name.')).toBeTruthy();
-  fireEvent.changeText(screen.getByLabelText('Deck name'), 'A valid deck');
-  fireEvent.press(screen.getByRole('button', { name: 'Other' }));
-  fireEvent.changeText(screen.getByLabelText('Language tag'), 'invalid tag!');
+  fireEvent.changeText(screen.getByLabelText('Deck name'), '   ');
   fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
-  expect(await screen.findByText('Enter a valid language tag, such as es or fr-CA.')).toBeTruthy();
+  expect(await screen.findByText('Enter a deck name.')).toBeTruthy();
   expect(rendered.getPathname()).toBe('/decks/create');
 });
 
@@ -492,7 +490,9 @@ test('editing a deck retains its regional language and updates the detail screen
   await screen.findByRole('header', { name: 'Travel basics' });
   fireEvent.press(screen.getByRole('button', { name: 'Edit deck' }));
   await screen.findByRole('header', { name: 'Edit Travel basics' });
-  expect(screen.getByRole('button', { name: 'Persian', selected: true })).toBeTruthy();
+  expect(screen.queryByText('Language')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Persian' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'English' })).toBeNull();
   fireEvent.changeText(screen.getByLabelText('Description (optional)'), 'Updated for travel.');
   fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
   expect(await screen.findByText('Updated for travel.')).toBeTruthy();
@@ -927,6 +927,9 @@ test.each([
   'create-card navigation header uses explicit slots and back behavior on %s in %s',
   async (platform, language) => {
     const nativePlatform = jest.replaceProperty(Platform, 'OS', platform);
+    const ids = jest
+      .spyOn(idGenerator, 'create')
+      .mockReturnValue(`header-card-${platform}-${language}`);
     await application.settings.setLanguage(languageTag(language));
     try {
       const rendered = renderRouter(routes, { initialUrl: '/decks/fresh-collection' });
@@ -950,8 +953,18 @@ test.each([
       expect(
         within(screen.UNSAFE_getByType(CardForm)).queryByRole('button', { name: label }),
       ).toBeNull();
+      const cardCount = await application.countActiveCardsForDeck('fresh-collection');
+      fireEvent.changeText(screen.getByLabelText(translate(language, 'form.frontText')), 'Term');
+      fireEvent.changeText(screen.getByLabelText(translate(language, 'form.meaning')), 'Meaning');
+      fireEvent.press(within(slot).getByRole('button', { name: label }));
+      await screen.findByText(translate(language, 'form.cardCreated'));
+      expect(await application.countActiveCardsForDeck('fresh-collection')).toBe(cardCount + 1);
+      expect(rendered.getPathname()).toBe('/decks/fresh-collection/cards/create');
       if (language === 'fa') {
         const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
+        expect(within(back).UNSAFE_getByType(HeaderBackButton).props.style).toEqual({
+          marginRight: 'auto',
+        });
         expect(
           within(back).UNSAFE_getByType(platform === 'ios' ? ChevronRight : ArrowRight),
         ).toBeTruthy();
@@ -959,6 +972,7 @@ test.each([
           within(back).getByRole('button', { name: translate(language, 'common.cancel') }),
         );
       } else {
+        expect(within(header).UNSAFE_queryByType(HeaderBackButton)).toBeNull();
         const item = screen
           .UNSAFE_getAllByType(ScreenStackItem)
           .find(
@@ -970,6 +984,7 @@ test.each([
       await waitFor(() => expect(rendered.getPathname()).toBe('/decks/fresh-collection'));
       expect(screen.queryByRole('button', { name: label })).toBeNull();
     } finally {
+      ids.mockRestore();
       nativePlatform.restore();
       await act(async () => application.settings.setLanguage(languageTag('en')));
     }

@@ -227,7 +227,7 @@ export function CardForm({
           </Text>
           <Input
             label={t('form.frontText')}
-            style={deckContentStyle(frontText || deck.language, deck.textAlignment)}
+            style={deckContentStyle(frontText || language, deck.textAlignment)}
             value={frontText}
             onChangeText={(value) => {
               setFrontText(value);
@@ -249,7 +249,7 @@ export function CardForm({
           <Input
             ref={meaningRef}
             label={t('form.meaning')}
-            style={deckContentStyle(meaning || deck.language, deck.textAlignment)}
+            style={deckContentStyle(meaning || language, deck.textAlignment)}
             value={meaning}
             onChangeText={(value) => {
               setMeaning(value);

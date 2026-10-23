@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { Modal, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { makeDeck } from '@/../test/fixtures';
 import { application } from '@/core/composition/application';
+import { languageTag } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import {
   formatNumber,
@@ -44,7 +45,7 @@ function setLanguage(language: UiLanguage) {
   });
 }
 
-function form(existing?: ReturnType<typeof makeDeck>) {
+function form(existing?: ReturnType<typeof makeDeck>, onSubmit = jest.fn(async () => {})) {
   return (
     <SafeAreaProvider
       initialMetrics={{
@@ -52,7 +53,7 @@ function form(existing?: ReturnType<typeof makeDeck>) {
         insets: { top: 0, right: 0, bottom: 0, left: 0 },
       }}
     >
-      <DeckForm existing={existing} onSubmit={jest.fn(async () => {})} />
+      <DeckForm existing={existing} onSubmit={onSubmit} />
     </SafeAreaProvider>
   );
 }
@@ -63,7 +64,6 @@ function expectRows(language: UiLanguage) {
     .UNSAFE_getAllByType(View)
     .filter((view) => view.props.className === 'flex-row flex-wrap gap-sm');
   const expectedLabels = [
-    [translate(language, 'language.en'), translate(language, 'language.fa')],
     (['ltr', 'rtl', 'center'] as const).map((choice) =>
       translate(language, `form.alignment.${choice}`),
     ),
@@ -74,7 +74,7 @@ function expectRows(language: UiLanguage) {
       .listSchedulers()
       .map((scheduler) => scheduler.localizedLabels?.[language] ?? scheduler.label),
   ];
-  expect(rows).toHaveLength(4);
+  expect(rows).toHaveLength(3);
   rows.forEach((row, index) => {
     expect(StyleSheet.flatten(row.props.style)).toMatchObject({
       direction: 'ltr',
@@ -94,14 +94,7 @@ function expectRows(language: UiLanguage) {
     direction: 'ltr',
     flexDirection: direction === 'rtl' ? 'row-reverse' : 'row',
   });
-  for (const key of [
-    'form.language',
-    'form.languageHint',
-    'form.alignment',
-    'form.size',
-    'review.system',
-    'review.deckHint',
-  ] as const) {
+  for (const key of ['form.alignment', 'form.size', 'review.system', 'review.deckHint'] as const) {
     expect(screen.getByText(translate(language, key))).toHaveStyle({
       textAlign: direction === 'rtl' ? 'right' : 'left',
       writingDirection: direction,
@@ -110,7 +103,53 @@ function expectRows(language: UiLanguage) {
   expect(
     within(header!).getByRole('button', { name: translate(language, 'review.infoButton') }),
   ).toBeTruthy();
+  expect(screen.queryByText(translate(language, 'form.language'))).toBeNull();
+  expect(screen.queryByText(translate(language, 'form.languageHint'))).toBeNull();
+  for (const choice of ['en', 'fa'] as const) {
+    expect(
+      screen.queryByRole('button', { name: translate(language, `language.${choice}`) }),
+    ).toBeNull();
+  }
 }
+
+test.each(['en-US', 'fa-IR', 'es'])(
+  'editing preserves stored %s language and category data when app language changes',
+  async (tag) => {
+    const existing = makeDeck({ language: languageTag(tag) });
+    const submit = jest.fn(async () => {});
+    setLanguage('fa');
+    const { rerender } = render(form(existing, submit));
+    setLanguage('en');
+    rerender(form(existing, submit));
+    fireEvent.press(screen.getByRole('button', { name: 'Save deck' }));
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(submit).toHaveBeenCalledWith({
+      name: existing.name,
+      description: existing.description,
+      language: existing.language,
+      textAlignment: existing.textAlignment,
+      typographySize: existing.typographySize,
+      reviewSystem: existing.reviewSystem,
+    });
+  },
+);
+
+test.each(['en', 'fa'] as const)(
+  'creation keeps the existing default language in %s',
+  async (language) => {
+    const submit = jest.fn(async () => {});
+    setLanguage(language);
+    render(form(undefined, submit));
+    fireEvent.changeText(screen.getByLabelText(translate(language, 'form.deckName')), 'New deck');
+    fireEvent.press(
+      screen.getByRole('button', { name: translate(language, 'form.createDeckAction') }),
+    );
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'New deck', language: 'en' }),
+    );
+  },
+);
 
 test.each(['en', 'fa'] as const)(
   'deck quota errors are explicit in %s and retain entered data',

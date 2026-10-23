@@ -39,6 +39,7 @@ function CreateCardHeader({ saveAction }: { saveAction: ReactNode }) {
               canGoBack ? (
                 <HeaderBackButton
                   displayMode="minimal"
+                  style={{ marginRight: 'auto' }}
                   accessibilityLabel={t('common.cancel')}
                   tintColor={tintColor}
                   backImage={({ tintColor: color }) => (
