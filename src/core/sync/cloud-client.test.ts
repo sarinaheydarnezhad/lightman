@@ -20,6 +20,44 @@ const rotated = {
   accessExpiresAtUtc: '2099-01-01T00:00:00.000Z',
 };
 
+test('backup metadata is shared across screens, expires after 15 seconds and can be explicitly refreshed', async () => {
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(100_000);
+  try {
+    jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+    globalThis.fetch = jest.fn().mockImplementation(async (url) => ({
+      ok: true,
+      json: async () =>
+        String(url).endsWith('/backups/status') ? { latestCompleted: null } : { items: [] },
+    }));
+    const cloud = new CloudClient();
+    await Promise.all(Array.from({ length: 20 }, () => cloud.backupStatus()));
+    expect(fetch).toHaveBeenCalledTimes(2);
+    await cloud.backupStatus();
+    expect(fetch).toHaveBeenCalledTimes(2);
+    clock.mockReturnValue(115_000);
+    await cloud.backupStatus();
+    expect(fetch).toHaveBeenCalledTimes(4);
+    await cloud.backupStatus(true);
+    expect(fetch).toHaveBeenCalledTimes(6);
+    await cloud.forgetLocalSession();
+    await expect(cloud.backupStatus()).rejects.toMatchObject({ status: 401 });
+    expect(fetch).toHaveBeenCalledTimes(6);
+  } finally {
+    clock.mockRestore();
+  }
+});
+
+test('authenticated overload responses expose Retry-After to sync backoff', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest
+    .fn()
+    .mockResolvedValue({ ok: false, status: 429, headers: new Headers({ 'Retry-After': '120' }) });
+  await expect(new CloudClient().pull(0)).rejects.toMatchObject({
+    status: 429,
+    retryAfterMs: 120_000,
+  });
+});
+
 test('backup status uses authenticated metadata APIs with no owner or payload supplied by the client', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
   globalThis.fetch = jest.fn().mockImplementation(async (url) => ({
@@ -406,6 +444,74 @@ test('phone password login matches the backend contract and binds before storing
     JSON.stringify({ ...rotated, userId: 'phone-user' }),
   );
 });
+
+test('password registration sends only normalized phone and matching passwords through existing storage', async () => {
+  const registration = {
+    phoneNumber: '۰۹۱۲۱۲۳۴۵۶۷',
+    password: 'Maple7xy',
+    confirmPassword: 'Maple7xy',
+  };
+  const bind = jest.fn(async () => {
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+  });
+  globalThis.fetch = jest
+    .fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => rotated })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'phone-user' }) });
+  await expect(new CloudClient().registerPhoneWithPassword(registration, bind)).resolves.toBe(
+    'phone-user',
+  );
+  expect(globalThis.fetch).toHaveBeenNthCalledWith(
+    1,
+    'https://api.example.test/api/v1/auth/phone/register-password',
+    expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ ...registration, phoneNumber: '+989121234567' }),
+    }),
+  );
+  expect(globalThis.fetch).toHaveBeenNthCalledWith(
+    2,
+    'https://api.example.test/api/v1/me/',
+    expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer new-access' }),
+    }),
+  );
+  expect(bind).toHaveBeenCalledWith('phone-user');
+  expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
+    expect.any(String),
+    JSON.stringify({ ...rotated, userId: 'phone-user' }),
+  );
+});
+
+test.each([
+  [400, 'invalid_password'],
+  [400, 'password_mismatch'],
+  [409, 'duplicate_phone'],
+  [429, 'rate_limit'],
+])(
+  'password registration error %s/%s never binds an account or stores credentials',
+  async (status, code) => {
+    const bind = jest.fn(async () => {});
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status,
+      json: async () => ({ error: 'Registration rejected', code }),
+    });
+    await expect(
+      new CloudClient().registerPhoneWithPassword(
+        {
+          phoneNumber: '09121234567',
+          password: 'Maple7xy',
+          confirmPassword: 'Maple7xy',
+        },
+        bind,
+      ),
+    ).rejects.toMatchObject({ status, code });
+    expect(bind).not.toHaveBeenCalled();
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  },
+);
 
 test('OTP request and registration verification never persist OTPs or registration proofs', async () => {
   const challenge = {

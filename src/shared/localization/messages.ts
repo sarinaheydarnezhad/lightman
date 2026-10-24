@@ -29,13 +29,17 @@ export const en = {
   'settings.subscription.purchaseUnavailable': 'Subscription purchases are not available yet',
   'settings.subscription.purchaseNotice':
     'Subscriptions cannot be purchased right now. You can view plans once purchases are enabled.',
-  'paywall.title': 'Upgrade to Lerona Plus',
+  'paywall.title': 'Lerona plans',
   'paywall.introTitle': 'Learning, without limits',
   'paywall.introDescription': 'Make room for more decks, more flashcards, and continued practice.',
   'paywall.freeDecks': 'Up to {count} active deck',
   'paywall.freeCards': 'Up to {count} active flashcards in total',
   'paywall.freeStudy': 'Study and review within the free-tier limits',
   'paywall.plusPlan': 'Lerona Plus',
+  'paywall.premiumPlan': 'Lerona Premium',
+  'paywall.premiumStatus': 'Not available yet',
+  'paywall.perMonth': '{amount} toman/month',
+  'paywall.discount': '{percent}% off',
   'paywall.plusContent': 'Create and manage unlimited decks and flashcards',
   'paywall.plusFreedom': 'More freedom to build and manage your learning collections',
   'paywall.plusStudy': 'Study and review without free-plan quantity limits',
@@ -98,7 +102,7 @@ export const en = {
   'access.free':
     'Free access: 1 active deck and 50 active cards in total. Excess data is preserved; viewing, editing and exporting remain available.',
   'access.plus': 'Active Plus removes deck/card limits and enables study.',
-  'access.fullUnavailable': 'Full is not available.',
+  'access.premiumUnavailable': 'Premium is not available to all users right now.',
   'access.price': '{months} months: {amount} toman',
   'access.purchaseUnavailable':
     'Purchases are not available yet. This screen only displays the server plan catalog.',
@@ -142,7 +146,7 @@ export const en = {
   'migration.backupAndCopy': 'Back Up Account and Confirm Copy',
   'logout.title': 'Log out?',
   'logout.confirm':
-    'Account decks, cards and progress will no longer be accessible while signed out. Your separate guest data and server data are not deleted.',
+    'Logging out opens an empty guest space and permanently removes guest learning data on this device. Account data stays private and is available when you sign in again; server data is not deleted.',
   'logout.withBackup': 'Back Up and Log Out',
   'logout.withoutBackup': 'Log Out Without Backing Up',
   'logout.coverage':
@@ -152,14 +156,14 @@ export const en = {
   'logout.backupCompleted':
     'Server backup {id} was completed and verified. Retention: {days} days; expires {expires} (UTC). Restore is not yet available.',
   'logout.backupExpired':
-    'Server backup {id} expired at {expires} (UTC) and is no longer available. Account and guest data were not deleted.',
+    'Server backup {id} expired at {expires} (UTC) and is no longer available. Account data was not deleted.',
   'logout.unavailable':
     'Verified server sync is unavailable in this environment. You may cancel or log out without backing up.',
   'logout.syncing': 'Synchronizing and verifying account data before logout…',
   'logout.signingOut': 'Securing this device and requesting session revocation…',
   'logout.backupFailed':
     'Logout was not completed. No backup is claimed. Retry, cancel, or explicitly log out without backing up.',
-  'logout.success': 'Signed out on this device. Only guest data is accessible.',
+  'logout.success': 'Signed out. Your learning space is empty; account data is private.',
   'logout.synced':
     'Supported account data was synchronized and verified before logout. No separate retained backup was created.',
   'logout.skipped':
@@ -174,7 +178,7 @@ export const en = {
   'logout.retryClear': 'Retry secure credential removal',
   'migration.title': 'Guest data transfer',
   'migration.preserve':
-    'Guest and account data stay separate until you confirm. Nothing is deleted.',
+    'Account data is synchronized now. Add guest data to your account, or permanently discard it. Existing account data is never replaced.',
   'migration.checking': 'Checking account data and guest storage…',
   'migration.incomplete':
     'Account data exists but could not be fully loaded from sync. Transfer is blocked; review the dependency below.',
@@ -194,22 +198,73 @@ export const en = {
     'Copies active Leitner decks, active cards, and review progress reproducible from complete history. Settings, deleted data, other schedulers, and study sessions are not copied. Original creation timestamps are not retained by the server.',
   'migration.confirm':
     'Add separate copies to this account? Titles and identical card text are never used to combine data. Your guest originals will remain on this device.',
-  'migration.add': 'Add guest decks as separate copies',
+  'migration.add': 'Transfer my data to account',
+  'migration.addHint':
+    'Add active guest decks, cards and supported review progress without replacing account data. Guest storage is cleared only after the copy is verified. Deleted data and local study sessions are not transferred.',
+  'migration.discard': 'Discard guest data',
+  'migration.discardTitle': 'Permanently delete guest data?',
+  'migration.discardHint':
+    'All guest decks, cards, review history and study sessions on this device will be deleted forever. This cannot be undone. Your account data will not be changed.',
+  'migration.discardConfirm': 'Delete forever and open account',
   'migration.confirmAdd': 'Confirm copy to account',
+  'migration.confirmAddHint':
+    'Start copying now, without making a separate server backup of the existing account data. Nothing is replaced or deleted.',
+  'migration.backupAndCopyHint':
+    'First sync and create a server backup of the current account data, then copy the guest decks. This extra backup is optional; it does not back up guest data.',
   'migration.cancel': 'Cancel without copying',
-  'migration.separate': 'Keep datasets separate',
-  'migration.continue': 'Continue to account',
+  'migration.separate': 'Open account without transferring',
+  'migration.separateHint':
+    'Do not add any guest data. Open this account with only the data it already has.',
+  'migration.continue': 'Open account',
   'migration.later': 'Continue later · originals preserved',
+  'migration.laterHint':
+    'Leave this page without waiting for verification. Some copies may already exist, and previously confirmed sync may continue. Guest originals are preserved.',
   'migration.retry': 'Refresh preview / check connection',
-  'migration.resume': 'Resume the previously confirmed transfer',
+  'migration.resume': 'Continue transfer to account',
+  'migration.resumeHint':
+    'Continue the same previously approved copy, not a new duplicate. Guest changes made after that copy started are not included.',
+  'migration.blocked':
+    'These guest decks cannot be copied safely yet. Refresh and retry, or explicitly discard guest data. Nothing has been deleted.',
+  'migration.reason.scheduler':
+    'Only Leitner decks and compatible Leitner progress can be copied. Other review systems remain in guest mode.',
+  'migration.reason.deckLanguage':
+    'A guest deck has an unsupported language setting. Edit the deck in guest mode before copying.',
+  'migration.reason.deckText':
+    'A guest deck name or description is too long. Shorten it in guest mode before copying.',
+  'migration.reason.cardPayload':
+    'A guest card is too large to sync. Shorten its text or examples in guest mode before copying.',
+  'migration.reason.cardText':
+    'A guest card has unsupported text or examples. Edit it in guest mode before copying.',
+  'migration.reason.reviewState':
+    'A guest card has missing review progress. The data is preserved, but needs repair before copying.',
+  'migration.reason.history':
+    'The review history is incomplete or unsupported, so progress cannot be safely copied. Guest data remains unchanged.',
+  'migration.reason.calendar':
+    'Guest review dates do not match the server review system. Copying is blocked to preserve your progress.',
+  'migration.reason.accountSync':
+    'Account decks or cards are missing from sync. Refresh the preview; if the issue remains, the server sync data needs repair.',
+  'migration.reason.accountProgress':
+    'Account review progress is not fully synchronized. Refresh the preview; server progress may need repair before copying.',
+  'migration.reason.permission':
+    'Account access could not be confirmed. Reconnect and refresh the preview before copying.',
+  'migration.reason.limits':
+    'Copying would exceed your current plan limits. Upgrade your plan before retrying, or explicitly discard guest data.',
+  'migration.reason.changed':
+    'The data changed after the preview. Refresh it and confirm the updated preview before copying.',
+  'migration.reason.conflict':
+    'A copied item has a sync conflict. Preserve both datasets and resolve it in cloud sync settings before retrying.',
+  'migration.reason.network':
+    'Unable to connect. Check your internet connection and refresh the preview.',
+  'migration.reason.service':
+    'The server is temporarily unavailable. Your data is preserved; try again later.',
   'migration.progress':
     'Verified acknowledgements: {acknowledged} / {total}. Checking server data…',
   'migration.pending':
     'A previously confirmed snapshot is pending. Retry resumes the same IDs; later guest edits are not included. Some data may already be on the server.',
   'migration.already':
-    'A guest snapshot was already copied to this account. Later guest edits are not automatically recopied.',
+    'A guest snapshot was already copied to this account. Later guest edits are not automatically recopied. Discarding guest data does not undo existing account copies.',
   'migration.success':
-    'The copied snapshot is acknowledged, synchronized, and verified in your account. Guest originals remain unchanged.',
+    'Guest data was synchronized and verified in your account. Guest storage is now empty.',
   'migration.failure':
     'Transfer completion is not confirmed. Both originals and recoverable account copies are preserved. Check your connection, retry the same transfer, or review cloud sync conflicts in Settings.',
   'migration.unavailable':
@@ -217,7 +272,7 @@ export const en = {
   'guest.mode': 'Guest mode · Local data only · Free plan',
   'guest.accountMode': 'Account mode · Offline data available · Free plan',
   'guest.explanation':
-    'Guest data stays on this device. Signing in opens separate account data and offers a confirmed, non-destructive guest copy.',
+    'Guest data stays on this device. At login, choose to add it to your account or permanently discard it. Logging out opens an empty learning space.',
   'guest.limitTitle': 'Free plan limit',
   'guest.deckLimit':
     'On the free plan, you can add a maximum of 1 active deck. Your existing data is preserved.',
@@ -252,13 +307,14 @@ export const en = {
   'auth.verified': 'Mobile number verified. Complete your account below.',
   'auth.username': 'Username',
   'auth.confirmPassword': 'Confirm password',
-  'auth.passwordHint': 'Use 12–128 characters.',
+  'auth.passwordHint': 'Use 8–128 characters with letters and numbers. Avoid common passwords.',
   'auth.complete': 'Complete registration',
   'auth.success': 'You are signed in.',
   'auth.done': 'Continue to cloud sync',
   'auth.invalidPhone': 'Enter an 11-digit mobile number starting with 0.',
   'auth.invalidCode': 'Enter the six digits from your SMS.',
-  'auth.invalidPassword': 'Use a password between 12 and 128 characters.',
+  'auth.invalidPassword':
+    'Use 8–128 characters with letters and numbers, and avoid common passwords.',
   'auth.passwordMismatch': 'The passwords do not match.',
   'auth.invalidUsername': 'Enter a username of 1–120 characters.',
   'auth.credentials': 'Invalid mobile number or password.',
@@ -270,7 +326,7 @@ export const en = {
   'auth.smsUnavailable':
     'SMS authentication is unavailable or not configured. Please try again later.',
   'auth.network':
-    'Network request failed. Check your connection and try again. If verification was interrupted, request a new code.',
+    'Network request failed. Check your connection and try again. If registration was interrupted, try signing in.',
   'auth.unexpected': 'Authentication could not be completed. Please try again.',
   'auth.passwordRequired': 'Enter your password.',
   'auth.sessionExpired': 'Your session expired. Please sign in again.',
@@ -451,6 +507,7 @@ export const en = {
   'study.answerSaved': '{result} answer saved.',
   'analytics.description': 'Review history and current card progress.',
   'analytics.window': 'Time window',
+  'analytics.windowLabel': '{days}D',
   'analytics.windowHint': 'Show the last {days} calendar days of study activity',
   'analytics.loading': 'Loading analytics',
   'analytics.noHistory': 'No study data yet',
@@ -689,6 +746,8 @@ export const en = {
   'vocab.useDefinition': 'Use this definition {index}',
   'vocab.definitionHint': 'Definition: {value}',
   'common.errorTitle': 'Something went wrong',
+  'common.noticeTitle': 'Notice',
+  'common.close': 'Close',
   'common.errorHint': "We couldn't show this screen. Please try again.",
   'common.notFound': 'Page not found',
   'common.notFoundHint': "The page you requested isn't here. You can return to your study space.",
@@ -733,13 +792,17 @@ export const fa: Dictionary = {
   'settings.subscription.purchaseUnavailable': 'خرید اشتراک هنوز فعال نیست',
   'settings.subscription.purchaseNotice':
     'در حال حاضر امکان خرید اشتراک وجود ندارد. پس از فعال‌شدن خرید، می‌توانی پلن‌ها را ببینی.',
-  'paywall.title': 'ارتقا به لرونا پلاس',
+  'paywall.title': 'طرح‌های لرونا',
   'paywall.introTitle': 'یادگیری، بدون محدودیت',
   'paywall.introDescription': 'برای دسته‌ها و فلش‌کارت‌های بیشتر و تمرین پیوسته، جا باز کنید.',
   'paywall.freeDecks': 'تا {count} دسته فعال',
   'paywall.freeCards': 'تا {count} فلش‌کارت فعال در مجموع',
   'paywall.freeStudy': 'مطالعه و مرور در محدوده رایگان',
   'paywall.plusPlan': 'لرونا پلاس',
+  'paywall.premiumPlan': 'لرونا پریمیوم',
+  'paywall.premiumStatus': 'هنوز در دسترس نیست',
+  'paywall.perMonth': 'ماهیانه {amount} تومان',
+  'paywall.discount': '{percent}٪ تخفیف',
   'paywall.plusContent': 'ساخت و مدیریت نامحدود دسته‌ها و فلش‌کارت‌ها',
   'paywall.plusFreedom': 'آزادی بیشتر در ساخت و مدیریت مجموعه‌های یادگیری',
   'paywall.plusStudy': 'مطالعه و مرور بدون محدودیت تعداد پلن رایگان',
@@ -802,7 +865,7 @@ export const fa: Dictionary = {
   'access.free':
     'دسترسی رایگان: یک دسته و در مجموع ۵۰ کارت فعال. داده‌های اضافی حفظ می‌شوند و مشاهده، ویرایش و خروجی گرفتن ممکن است.',
   'access.plus': 'اشتراک فعال پلاس محدودیت دسته و کارت را حذف و مطالعه را فعال می‌کند.',
-  'access.fullUnavailable': 'طرح کامل در دسترس نیست.',
+  'access.premiumUnavailable': 'پریمیوم در حال حاضر برای همه کاربران در دسترس نیست.',
   'access.price': '{months} ماه: {amount} تومان',
   'access.purchaseUnavailable':
     'خرید هنوز فعال نیست. این صفحه فقط فهرست طرح‌های سرور را نشان می‌دهد.',
@@ -846,7 +909,7 @@ export const fa: Dictionary = {
   'migration.backupAndCopy': 'پشتیبان‌گیری از حساب و تأیید کپی',
   'logout.title': 'از حساب خارج می‌شوید؟',
   'logout.confirm':
-    'پس از خروج، دسته‌ها، کارت‌ها و پیشرفت حساب در دسترس نیستند. داده‌های مستقل مهمان و داده‌های سرور حذف نمی‌شوند.',
+    'پس از خروج، فضای مهمان خالی می‌شود و داده‌های آموزشی مهمان روی این دستگاه برای همیشه حذف می‌شوند. داده‌های حساب خصوصی می‌مانند و با ورود دوباره در دسترس خواهند بود؛ داده‌های سرور حذف نمی‌شوند.',
   'logout.withBackup': 'پشتیبان‌گیری و خروج',
   'logout.withoutBackup': 'خروج بدون پشتیبان‌گیری',
   'logout.coverage':
@@ -856,14 +919,14 @@ export const fa: Dictionary = {
   'logout.backupCompleted':
     'نسخه پشتیبان سرور {id} ایجاد و تأیید شد. نگهداری: {days} روز؛ انقضا: {expires} (UTC). بازیابی هنوز در دسترس نیست.',
   'logout.backupExpired':
-    'نسخه پشتیبان سرور {id} در {expires} (UTC) منقضی شد و دیگر در دسترس نیست. داده‌های حساب و مهمان حذف نشده‌اند.',
+    'نسخه پشتیبان سرور {id} در {expires} (UTC) منقضی شد و دیگر در دسترس نیست. داده‌های حساب حذف نشده‌اند.',
   'logout.unavailable':
     'همگام‌سازی تأییدشده سرور در این محیط در دسترس نیست. می‌توانید لغو کنید یا بدون پشتیبان‌گیری خارج شوید.',
   'logout.syncing': 'در حال همگام‌سازی و تأیید داده‌های حساب پیش از خروج…',
   'logout.signingOut': 'در حال ایمن‌سازی دستگاه و درخواست لغو نشست…',
   'logout.backupFailed':
     'خروج کامل نشده و ایجاد پشتیبان تأیید نشده است. دوباره تلاش کنید، لغو کنید یا خروج بدون پشتیبان‌گیری را انتخاب کنید.',
-  'logout.success': 'از حساب در این دستگاه خارج شدید. فقط داده‌های مهمان در دسترس هستند.',
+  'logout.success': 'از حساب خارج شدید. فضای آموزشی خالی است و داده‌های حساب خصوصی هستند.',
   'logout.synced':
     'داده‌های پشتیبانی‌شده حساب پیش از خروج همگام و تأیید شدند. پشتیبان مستقل با نگهداری تضمین‌شده ایجاد نشده است.',
   'logout.skipped':
@@ -877,7 +940,8 @@ export const fa: Dictionary = {
     'دسترسی به حساب مسدود است، اما پاک‌کردن کامل اطلاعات ورود انجام نشد. برنامه را باز نگه دارید و پیش از راه‌اندازی مجدد دوباره تلاش کنید.',
   'logout.retryClear': 'تلاش مجدد برای پاک‌کردن اطلاعات ورود',
   'migration.title': 'انتقال داده‌های مهمان',
-  'migration.preserve': 'داده‌های مهمان و حساب تا تأیید شما جدا می‌مانند. هیچ داده‌ای حذف نمی‌شود.',
+  'migration.preserve':
+    'داده‌های حساب اکنون همگام می‌شوند. داده‌های مهمان را به حساب اضافه کنید یا برای همیشه حذف کنید. داده‌های قبلی حساب جایگزین نمی‌شوند.',
   'migration.checking': 'بررسی داده‌های حساب و مهمان…',
   'migration.incomplete':
     'داده‌های حساب وجود دارد اما از همگام‌سازی کامل بارگذاری نشد. انتقال متوقف است؛ وابستگی زیر را بررسی کنید.',
@@ -896,21 +960,70 @@ export const fa: Dictionary = {
     'دسته‌ها و کارت‌های فعال لایتنر و پیشرفت قابل بازسازی از تاریخچهٔ کامل کپی می‌شوند. تنظیمات، داده‌های حذف‌شده، زمان‌بندهای دیگر و جلسه‌های مطالعه منتقل نمی‌شوند. سرور زمان ایجاد اصلی را حفظ نمی‌کند.',
   'migration.confirm':
     'کپی جداگانه به حساب اضافه شود؟ نام دسته و متن یکسان کارت برای ادغام استفاده نمی‌شود. نسخه‌های مهمان روی دستگاه باقی می‌مانند.',
-  'migration.add': 'افزودن دسته‌های مهمان به‌صورت کپی جداگانه',
+  'migration.add': 'انتقال داده‌ها به حساب',
+  'migration.addHint':
+    'دسته‌ها و کارت‌های فعال و پیشرفت مرور پشتیبانی‌شده بدون جایگزینی داده‌های حساب اضافه می‌شوند. فضای مهمان فقط پس از تأیید کپی پاک می‌شود. داده‌های حذف‌شده و جلسه‌های محلی منتقل نمی‌شوند.',
+  'migration.discard': 'حذف داده‌های مهمان',
+  'migration.discardTitle': 'داده‌های مهمان برای همیشه حذف شوند؟',
+  'migration.discardHint':
+    'تمام دسته‌ها، کارت‌ها، تاریخچهٔ مرور و جلسه‌های مطالعهٔ مهمان روی این دستگاه برای همیشه حذف می‌شوند. این کار برگشت‌پذیر نیست. داده‌های حساب تغییری نمی‌کنند.',
+  'migration.discardConfirm': 'حذف برای همیشه و ورود به حساب',
   'migration.confirmAdd': 'تأیید کپی به حساب',
+  'migration.confirmAddHint':
+    'کپی همین حالا شروع می‌شود؛ از داده‌های فعلی حساب پشتیبان جداگانه‌ای در سرور ساخته نمی‌شود. هیچ داده‌ای جایگزین یا حذف نمی‌شود.',
+  'migration.backupAndCopyHint':
+    'ابتدا داده‌های فعلی حساب همگام و از آن‌ها در سرور پشتیبان ساخته می‌شود؛ سپس دسته‌های مهمان کپی می‌شوند. این پشتیبان اختیاری است و شامل داده‌های مهمان نیست.',
   'migration.cancel': 'لغو بدون کپی',
-  'migration.separate': 'جدا نگه داشتن داده‌ها',
-  'migration.continue': 'ادامه به حساب',
+  'migration.separate': 'ورود به حساب بدون انتقال',
+  'migration.separateHint':
+    'هیچ داده‌ای از مهمان اضافه نمی‌شود. حساب فقط با همان داده‌هایی که از قبل دارد باز می‌شود.',
+  'migration.continue': 'ورود به حساب',
   'migration.later': 'ادامه در آینده · نسخه‌های اصلی محفوظ‌اند',
+  'migration.laterHint':
+    'بدون انتظار برای تأیید نهایی از این صفحه خارج می‌شوید. ممکن است بخشی کپی شده باشد و همگام‌سازی قبلاً تأییدشده ادامه پیدا کند. نسخه‌های مهمان محفوظ‌اند.',
   'migration.retry': 'تازه‌سازی پیش‌نمایش / بررسی اتصال',
-  'migration.resume': 'ادامهٔ انتقال قبلاً تأییدشده',
+  'migration.resume': 'ادامهٔ انتقال به حساب',
+  'migration.resumeHint':
+    'همان کپی قبلاً تأییدشده ادامه می‌یابد و کپی تکراری جدید ساخته نمی‌شود. تغییرات مهمان پس از شروع آن کپی، منتقل نمی‌شوند.',
+  'migration.blocked':
+    'فعلاً کپی امن این دسته‌های مهمان ممکن نیست. پیش‌نمایش را تازه‌سازی و دوباره تلاش کنید یا با تأیید خودتان داده‌های مهمان را حذف کنید. هیچ داده‌ای حذف نشده است.',
+  'migration.reason.scheduler':
+    'فقط دسته‌ها و پیشرفت سازگار با لایتنر قابل کپی هستند. سایر روش‌های مرور در حالت مهمان باقی می‌مانند.',
+  'migration.reason.deckLanguage':
+    'زبان یکی از دسته‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن دسته را در حالت مهمان ویرایش کنید.',
+  'migration.reason.deckText':
+    'نام یا توضیح یکی از دسته‌های مهمان بیش از حد طولانی است. پیش از کپی، آن را در حالت مهمان کوتاه کنید.',
+  'migration.reason.cardPayload':
+    'حجم یکی از کارت‌های مهمان برای همگام‌سازی زیاد است. پیش از کپی، متن یا مثال‌های آن را در حالت مهمان کوتاه کنید.',
+  'migration.reason.cardText':
+    'متن یا مثال‌های یکی از کارت‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن را در حالت مهمان ویرایش کنید.',
+  'migration.reason.reviewState':
+    'اطلاعات پیشرفت مرور یکی از کارت‌های مهمان ناقص است. داده‌ها محفوظ‌اند اما پیش از کپی به ترمیم نیاز دارند.',
+  'migration.reason.history':
+    'تاریخچهٔ مرور ناقص یا ناسازگار است و پیشرفت را نمی‌توان با اطمینان کپی کرد. داده‌های مهمان بدون تغییر می‌مانند.',
+  'migration.reason.calendar':
+    'تاریخ‌های مرور مهمان با روش مرور سرور سازگار نیست. برای حفظ پیشرفت شما، کپی متوقف شده است.',
+  'migration.reason.accountSync':
+    'بعضی دسته‌ها یا کارت‌های حساب در همگام‌سازی موجود نیستند. پیش‌نمایش را تازه‌سازی کنید؛ اگر مشکل باقی ماند، داده‌های همگام‌سازی سرور به ترمیم نیاز دارند.',
+  'migration.reason.accountProgress':
+    'پیشرفت مرور حساب کاملاً همگام نشده است. پیش‌نمایش را تازه‌سازی کنید؛ ممکن است پیشرفت روی سرور پیش از کپی به ترمیم نیاز داشته باشد.',
+  'migration.reason.permission':
+    'دسترسی به حساب تأیید نشد. اتصال را برقرار و پیش‌نمایش را پیش از کپی تازه‌سازی کنید.',
+  'migration.reason.limits':
+    'با این انتقال از سقف طرح فعلی عبور می‌کنید. پیش از تلاش دوباره طرح را ارتقا دهید یا با تأیید خودتان داده‌های مهمان را حذف کنید.',
+  'migration.reason.changed':
+    'داده‌ها پس از نمایش پیش‌نمایش تغییر کرده‌اند. پیش‌نمایش را تازه‌سازی و نسخهٔ جدید را پیش از کپی تأیید کنید.',
+  'migration.reason.conflict':
+    'یکی از موارد کپی‌شده تعارض همگام‌سازی دارد. هر دو مجموعه را نگه دارید و پیش از تلاش دوباره، تعارض را در تنظیمات همگام‌سازی حل کنید.',
+  'migration.reason.network': 'اتصال برقرار نشد. اینترنت را بررسی و پیش‌نمایش را تازه‌سازی کنید.',
+  'migration.reason.service':
+    'سرور موقتاً در دسترس نیست. داده‌های شما محفوظ‌اند؛ بعداً دوباره تلاش کنید.',
   'migration.progress': 'تأییدهای دریافت‌شده: {acknowledged} از {total}. بررسی داده‌های سرور…',
   'migration.pending':
     'انتقال تصویر قبلاً تأییدشده ناتمام است. تلاش دوباره با همان شناسه‌ها ادامه می‌یابد؛ ویرایش‌های بعدی مهمان شامل نمی‌شود. ممکن است بخشی روی سرور باشد.',
   'migration.already':
-    'یک تصویر از داده‌های مهمان قبلاً به این حساب کپی شده است. ویرایش‌های بعدی به‌صورت خودکار کپی نمی‌شوند.',
-  'migration.success':
-    'کپی در حساب تأیید، همگام و بررسی شد. نسخه‌های مهمان بدون تغییر باقی مانده‌اند.',
+    'یک تصویر از داده‌های مهمان قبلاً به این حساب کپی شده است. ویرایش‌های بعدی به‌صورت خودکار کپی نمی‌شوند. حذف داده‌های مهمان، کپی‌های موجود حساب را حذف نمی‌کند.',
+  'migration.success': 'داده‌های مهمان در حساب همگام و تأیید شدند. فضای مهمان اکنون خالی است.',
   'migration.failure':
     'پایان انتقال تأیید نشده است. نسخه‌های اصلی و کپی‌های قابل بازیابی محفوظ‌اند. اتصال را بررسی کنید، همین انتقال را دوباره ادامه دهید یا تعارض‌ها را در تنظیمات همگام‌سازی بررسی کنید.',
   'migration.unavailable':
@@ -918,7 +1031,7 @@ export const fa: Dictionary = {
   'guest.mode': 'حالت مهمان · داده‌ها فقط روی دستگاه · طرح رایگان',
   'guest.accountMode': 'حالت حساب · داده‌ها در حالت آفلاین در دسترس‌اند · طرح رایگان',
   'guest.explanation':
-    'داده‌های مهمان روی دستگاه می‌مانند. ورود، فضای جداگانهٔ حساب را باز می‌کند و کپی امن داده‌های مهمان را با تأیید شما پیشنهاد می‌دهد.',
+    'داده‌های مهمان روی دستگاه می‌مانند. هنگام ورود، افزودن آن‌ها به حساب یا حذف همیشگی را انتخاب کنید. پس از خروج، فضای آموزشی خالی خواهد بود.',
   'guest.limitTitle': 'محدودیت طرح رایگان',
   'guest.deckLimit':
     'در طرح رایگان می‌توانید حداکثر ۱ دستهٔ فعال اضافه کنید. داده‌های موجود حفظ می‌شوند.',
@@ -953,13 +1066,13 @@ export const fa: Dictionary = {
   'auth.verified': 'شماره تأیید شد. اطلاعات حساب را تکمیل کنید.',
   'auth.username': 'نام کاربری',
   'auth.confirmPassword': 'تکرار رمز عبور',
-  'auth.passwordHint': 'از ۱۲ تا ۱۲۸ نویسه استفاده کنید.',
+  'auth.passwordHint': 'از ۸ تا ۱۲۸ نویسه شامل حروف و عدد استفاده کنید. رمز رایج انتخاب نکنید.',
   'auth.complete': 'تکمیل ثبت‌نام',
   'auth.success': 'وارد حساب شدید.',
   'auth.done': 'ادامه به همگام‌سازی',
   'auth.invalidPhone': 'شماره موبایل باید ۱۱ رقم باشد و با ۰ شروع شود.',
   'auth.invalidCode': 'شش رقم کد پیامک را وارد کنید.',
-  'auth.invalidPassword': 'رمز عبور باید بین ۱۲ تا ۱۲۸ نویسه باشد.',
+  'auth.invalidPassword': 'رمز عبور باید ۸ تا ۱۲۸ نویسه شامل حروف و عدد باشد و رایج نباشد.',
   'auth.passwordMismatch': 'رمزهای عبور یکسان نیستند.',
   'auth.invalidUsername': 'نام کاربری بین ۱ تا ۱۲۰ نویسه وارد کنید.',
   'auth.credentials': 'شماره موبایل یا رمز عبور نادرست است.',
@@ -970,7 +1083,7 @@ export const fa: Dictionary = {
   'auth.rateLimit': 'تعداد درخواست‌ها بیش از حد است. کمی صبر کنید.',
   'auth.smsUnavailable': 'سرویس پیامک در دسترس یا تنظیم‌شده نیست. بعداً تلاش کنید.',
   'auth.network':
-    'ارتباط برقرار نشد. اینترنت را بررسی کنید. اگر تأیید قطع شد کد جدید درخواست کنید.',
+    'ارتباط برقرار نشد. اینترنت را بررسی کنید. اگر ثبت‌نام قطع شد، ورود به حساب را امتحان کنید.',
   'auth.unexpected': 'ورود یا ثبت‌نام کامل نشد. دوباره تلاش کنید.',
   'auth.passwordRequired': 'رمز عبور را وارد کنید.',
   'auth.sessionExpired': 'نشست شما منقضی شد. دوباره وارد شوید.',
@@ -1150,6 +1263,7 @@ export const fa: Dictionary = {
   'study.answerSaved': 'پاسخ {result} ثبت شد.',
   'analytics.description': 'سابقهٔ مرور و پیشرفت کارت‌ها.',
   'analytics.window': 'بازهٔ زمانی',
+  'analytics.windowLabel': '{days} روز',
   'analytics.windowHint': 'نمایش فعالیت {days} روز اخیر',
   'analytics.loading': 'در حال بارگذاری آمار',
   'analytics.noHistory': 'هنوز سابقهٔ مطالعه ندارید',
@@ -1383,6 +1497,8 @@ export const fa: Dictionary = {
   'vocab.useDefinition': 'استفاده از تعریف {index}',
   'vocab.definitionHint': 'تعریف: {value}',
   'common.errorTitle': 'مشکلی پیش آمد',
+  'common.noticeTitle': 'اطلاع‌رسانی',
+  'common.close': 'بستن',
   'common.errorHint': 'نمایش این صفحه ممکن نشد. دوباره تلاش کنید.',
   'common.notFound': 'صفحه یافت نشد',
   'common.notFoundHint': 'صفحهٔ درخواستی اینجا نیست. به محیط مطالعه برگردید.',

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { Keyboard, Modal, TextInput, View } from 'react-native';
 import { Info } from 'lucide-react-native';
 
@@ -120,6 +121,7 @@ export function DeckForm({
               setNameError(null);
             }}
             error={nameError ?? undefined}
+            onDismissError={() => setNameError(null)}
             maxLength={121}
             returnKeyType="next"
             onSubmitEditing={() => descriptionRef.current?.focus()}
@@ -215,11 +217,7 @@ export function DeckForm({
             </Card>
           </View>
         </Modal>
-        {error ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {error}
-          </Text>
-        ) : null}
+        {error ? <FeedbackModal message={error} onDismiss={() => setError(null)} /> : null}
         <Button
           label={t(existing ? 'form.saveDeck' : 'form.createDeckAction')}
           loading={saving}

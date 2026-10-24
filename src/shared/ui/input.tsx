@@ -1,4 +1,5 @@
 import { forwardRef, useState } from 'react';
+import { FeedbackModal } from './feedback-modal';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
@@ -11,6 +12,7 @@ import { Text } from './text';
 type InputProps = TextInputProps & {
   label: string;
   error?: string;
+  onDismissError?: () => void;
   helperText?: string;
   disabled?: boolean;
 };
@@ -19,6 +21,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   {
     label,
     error,
+    onDismissError,
     helperText,
     disabled,
     editable = true,
@@ -81,9 +84,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         selectionColor={colors.primary}
       />
       {error ? (
-        <Text variant="bodySmall" tone="error" accessibilityLiveRegion="polite">
-          {error}
-        </Text>
+        <FeedbackModal message={error} onDismiss={onDismissError}>
+          <Text variant="labelMedium">{label}</Text>
+        </FeedbackModal>
       ) : helperText ? (
         <Text variant="bodySmall" tone="secondary">
           {helperText}

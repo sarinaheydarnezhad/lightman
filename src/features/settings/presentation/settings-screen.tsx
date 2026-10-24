@@ -1,4 +1,5 @@
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Platform, Pressable, View } from 'react-native';
@@ -281,11 +282,9 @@ export function SettingsScreen() {
                 </>
               ) : null}
               {vm.errors.reminder || vm.errors.time ? (
-                <Text tone="error" accessibilityLiveRegion="polite">
-                  {language === 'en'
+                <FeedbackModal message={language === 'en'
                     ? (vm.errors.reminder ?? vm.errors.time)
-                    : t('common.genericError')}
-                </Text>
+                    : t('common.genericError')} />
               ) : null}
               {vm.reminderPermission === 'denied' ? (
                 <Button
@@ -314,9 +313,7 @@ export function SettingsScreen() {
                   onChange={() => void vm.setHaptics(!settings.hapticsEnabled)}
                 />
                 {vm.errors.haptics ? (
-                  <Text tone="error" accessibilityLiveRegion="polite">
-                    {language === 'en' ? vm.errors.haptics : t('common.genericError')}
-                  </Text>
+                  <FeedbackModal message={language === 'en' ? vm.errors.haptics : t('common.genericError')} />
                 ) : null}
               </SettingsSection>
             </View>

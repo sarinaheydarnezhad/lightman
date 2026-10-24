@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 
 import { languageTag, supportedLanguages } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -53,9 +54,7 @@ export function LanguageScreen() {
           </View>
         ) : null}
         {vm.errors.language ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {language === 'en' ? vm.errors.language : t('common.genericError')}
-          </Text>
+          <FeedbackModal message={language === 'en' ? vm.errors.language : t('common.genericError')} />
         ) : null}
         <Text variant="bodySmall" tone="secondary">
           {t('settings.appLanguageHint')}

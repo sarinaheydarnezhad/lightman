@@ -33,9 +33,9 @@ const catalog: PlanCatalog = {
       limits: { decks: null, cards: null },
       features: { unlimitedDecks: true, unlimitedCards: true },
       prices: [
-        { durationMonths: 1, priceToman: 49000 },
-        { durationMonths: 6, priceToman: 279000 },
-        { durationMonths: 12, priceToman: 499000 },
+        { durationMonths: 1, priceToman: 70000 },
+        { durationMonths: 6, priceToman: 294000 },
+        { durationMonths: 12, priceToman: 420000 },
       ],
     },
     {
@@ -120,7 +120,7 @@ test.each([
   { ...catalog, plans: [{ ...catalog.plans[1], prices: [{ durationMonths: 1, priceToman: 1 }] }] },
   {
     ...catalog,
-    plans: [{ ...catalog.plans[0], prices: [{ durationMonths: 0, priceToman: 49000 }] }],
+    plans: [{ ...catalog.plans[0], prices: [{ durationMonths: 0, priceToman: 70000 }] }],
   },
 ])('unsupported or malformed purchase catalogs fail closed: %j', (value) => {
   expect(() => validatePlanCatalog(value)).toThrow();
@@ -175,6 +175,35 @@ test('missing or inconsistent subscription ownership-neutral metadata fails vali
   expect(() =>
     validateSubscription({ ...plus, subscription: { ...plus.subscription, plan: 'Full' } }),
   ).toThrow();
+});
+
+test('public catalogs share concurrent reads, cache for five minutes and allow explicit refresh', async () => {
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(100_000);
+  try {
+    globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => catalog });
+    const cloud = new CloudClient();
+    await Promise.all(Array.from({ length: 20 }, () => cloud.planCatalog()));
+    await cloud.planCatalog();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    clock.mockReturnValue(400_000);
+    await cloud.planCatalog();
+    await cloud.planCatalog(true);
+    expect(fetch).toHaveBeenCalledTimes(3);
+  } finally {
+    clock.mockRestore();
+  }
+});
+
+test('permissions coalesce only in flight and each subsequent authorization is fresh', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(credentials));
+  globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => free });
+  const cloud = new CloudClient();
+  await Promise.all(Array.from({ length: 20 }, () => cloud.entitlements()));
+  expect(fetch).toHaveBeenCalledTimes(1);
+  await cloud.entitlements();
+  await cloud.authorizeStudy();
+  await cloud.authorizeStudy();
+  expect(fetch).toHaveBeenCalledTimes(4);
 });
 
 test('public catalog read uses the actual versioned endpoint and does not require or send credentials', async () => {

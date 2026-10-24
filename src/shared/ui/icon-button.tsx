@@ -9,6 +9,7 @@ type IconButtonProps = Omit<PressableProps, 'children'> & {
   label: string;
   variant?: 'secondary' | 'ghost';
   tone?: 'default' | 'success';
+  strokeWidth?: number;
   loading?: boolean;
 };
 
@@ -17,6 +18,7 @@ export function IconButton({
   label,
   variant = 'secondary',
   tone = 'default',
+  strokeWidth = 2,
   loading = false,
   disabled,
   style,
@@ -48,7 +50,7 @@ export function IconButton({
       {loading ? (
         <ActivityIndicator color={color} size="small" />
       ) : (
-        <Icon color={color} size={icons.medium} />
+        <Icon color={color} size={icons.medium} strokeWidth={strokeWidth} />
       )}
     </Pressable>
   );

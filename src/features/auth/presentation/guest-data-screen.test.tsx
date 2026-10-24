@@ -2,18 +2,31 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { guestTransfer } from '@/core/composition/guest-transfer';
+import { storageScopes } from '@/core/composition/repositories';
 import { syncEngine } from '@/core/composition/sync';
 import type { TransferPreview } from '@/core/sync/guest-transfer';
+import { CloudError } from '@/core/sync/cloud-client';
+import { formatNumber, translate } from '@/shared/localization/localization';
 import { GuestDataScreen } from './guest-data-screen';
 
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, Stack: { Screen: () => null } }));
-jest.mock('@/core/composition/application', () => ({ application: {} }));
+let mockRouteParams: { language?: string } = {};
+let mockSettings = { language: 'en' };
+
+jest.mock('expo-router', () => ({
+  router: { replace: jest.fn() },
+  Stack: { Screen: () => null },
+  useLocalSearchParams: () => mockRouteParams,
+}));
+jest.mock('@/core/composition/application', () => ({
+  application: { settings: { subscribe: () => () => {}, snapshot: () => mockSettings } },
+}));
+jest.mock('@/core/composition/repositories', () => ({
+  storageScopes: { completeAccountEntry: jest.fn() },
+}));
 jest.mock('@/core/composition/guest-transfer', () => ({
-  guestTransfer: { preview: jest.fn(), transfer: jest.fn() },
+  guestTransfer: { preview: jest.fn(), transfer: jest.fn(), finish: jest.fn(), discard: jest.fn() },
 }));
-jest.mock('@/core/composition/sync', () => ({
-  syncEngine: { available: true, createBackup: jest.fn() },
-}));
+jest.mock('@/core/composition/sync', () => ({ syncEngine: { signOut: jest.fn(async () => {}) } }));
 
 const service = guestTransfer!;
 const preview: TransferPreview = {
@@ -30,9 +43,12 @@ const preview: TransferPreview = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRouteParams = {};
+  mockSettings = { language: 'en' };
   jest.mocked(service.preview).mockReset().mockResolvedValue(preview);
   jest.mocked(service.transfer).mockReset().mockResolvedValue();
-  jest.mocked(syncEngine!.createBackup).mockReset();
+  jest.mocked(service.finish).mockReset().mockResolvedValue();
+  jest.mocked(service.discard).mockReset().mockResolvedValue();
 });
 
 function mount() {
@@ -48,175 +64,263 @@ function mount() {
   );
 }
 
-test('guest-only preview requires explicit confirmation and cancellation never copies', async () => {
-  mount();
-  await screen.findByText('Words · 2 cards');
-  expect(service.transfer).not.toHaveBeenCalled();
-  expect(syncEngine!.createBackup).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByRole('button', { name: 'Add guest decks as separate copies' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Cancel without copying' }));
-  expect(service.transfer).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByRole('button', { name: 'Keep datasets separate' }));
-  expect(router.replace).toHaveBeenCalledWith('/');
-});
-
-test('optional account backup must verify before copying; failure blocks transfer until explicit retry', async () => {
-  jest.mocked(service.preview).mockResolvedValue({
-    ...preview,
-    scenario: 'both',
-    account: [{ id: 'account', name: 'Account', cards: 1 }],
-  });
-  jest
-    .mocked(syncEngine!.createBackup)
-    .mockRejectedValueOnce(new Error('Server backup could not be verified'));
-  mount();
-  fireEvent.press(
-    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
-  );
-  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
-  await screen.findByText('Server backup could not be verified');
-  expect(service.transfer).not.toHaveBeenCalled();
-  expect(router.replace).not.toHaveBeenCalled();
-  let complete!: () => void;
-  jest.mocked(syncEngine!.createBackup).mockImplementationOnce(async () => {
-    await new Promise<void>((resolve) => {
-      complete = resolve;
-    });
-    return {} as Awaited<ReturnType<NonNullable<typeof syncEngine>['createBackup']>>;
-  });
-  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
-  await screen.findByText(/Synchronizing account data, creating and verifying/);
-  expect(syncEngine!.createBackup).toHaveBeenCalledTimes(2);
-  expect(service.transfer).not.toHaveBeenCalled();
-  await act(async () => complete());
-  await waitFor(() => expect(service.transfer).toHaveBeenCalledTimes(1));
-  expect(service.transfer).toHaveBeenCalledWith(
-    expect.objectContaining({ scenario: 'both' }),
-    expect.any(Function),
-  );
-});
-
-test('cancelling after backup failure changes neither dataset and does not retry automatically', async () => {
-  jest.mocked(service.preview).mockResolvedValue({
-    ...preview,
-    scenario: 'both',
-    account: [{ id: 'account', name: 'Account', cards: 1 }],
-  });
-  jest.mocked(syncEngine!.createBackup).mockRejectedValueOnce(new Error('Backup offline'));
-  mount();
-  fireEvent.press(
-    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
-  );
-  fireEvent.press(screen.getByRole('button', { name: 'Back Up Account and Confirm Copy' }));
-  await screen.findByText('Backup offline');
-  fireEvent.press(screen.getByRole('button', { name: 'Cancel without copying' }));
-  expect(service.transfer).not.toHaveBeenCalled();
-  expect(syncEngine!.createBackup).toHaveBeenCalledTimes(1);
-});
-
-test('an explicitly confirmed additive transfer does not require a backup or enable replacement', async () => {
-  jest.mocked(service.preview).mockResolvedValue({
-    ...preview,
-    scenario: 'both',
-    account: [{ id: 'account', name: 'Account', cards: 1 }],
-    sameNames: ['Words'],
-  });
-  mount();
-  fireEvent.press(
-    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
-  );
-  expect(screen.getByText(/Replacement and destructive merging are not supported/)).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account' }));
-  await waitFor(() => expect(service.transfer).toHaveBeenCalledTimes(1));
-  expect(syncEngine!.createBackup).not.toHaveBeenCalled();
-});
-
-test('both datasets preview same-name decks as different contents and quota blocker offers separation only', async () => {
-  jest.mocked(service.preview).mockResolvedValue({
-    ...preview,
-    scenario: 'both',
-    account: [{ id: 'account', name: 'Words', cards: 5 }],
-    sameNames: ['Words'],
-    blockers: ['The free plan allows 1 active deck.'],
-  });
-  mount();
-  await screen.findByText('Words · 5 cards');
-  expect(screen.getByText(/Matching titles do not mean matching cards/)).toBeTruthy();
-  expect(screen.getByText('Words · 2 cards')).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Add guest decks as separate copies' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Keep datasets separate' }));
-  expect(service.transfer).not.toHaveBeenCalled();
-});
-
-test.each(['account-only', 'empty'] as const)(
-  '%s provides completion without initiating a guest copy',
-  async (scenario) => {
-    jest.mocked(service.preview).mockResolvedValue({
-      ...preview,
-      scenario,
-      guest: [],
-      account: scenario === 'account-only' ? [{ id: 'account', name: 'Account', cards: 1 }] : [],
-    });
+test.each(['en', 'fa'] as const)(
+  '%s requires a merge or permanent discard decision',
+  async (language) => {
+    mockRouteParams = { language };
     mount();
-    await screen.findByRole('button', { name: 'Continue to account' });
-    expect(screen.queryByRole('button', { name: 'Add guest decks as separate copies' })).toBeNull();
+    await screen.findByRole('button', { name: translate(language, 'migration.add') });
+    expect(
+      screen.getByRole('button', { name: translate(language, 'migration.discard') }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: translate(language, 'migration.continue') }),
+    ).toBeNull();
+    expect(screen.getByText(translate(language, 'migration.addHint'))).toBeTruthy();
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(service.discard).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['en', 'fa'] as const)(
+  '%s merges then clears verified guest data before opening the account',
+  async (language) => {
+    mockRouteParams = { language };
+    const both: TransferPreview = {
+      ...preview,
+      scenario: 'both',
+      account: [{ id: 'existing', name: 'Existing', cards: 4 }],
+    };
+    jest.mocked(service.preview).mockResolvedValue(both);
+    let finish!: () => void;
+    jest.mocked(service.finish).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    mount();
+    fireEvent.press(
+      await screen.findByRole('button', { name: translate(language, 'migration.add') }),
+    );
+    await waitFor(() => expect(service.finish).toHaveBeenCalledWith(both));
+    expect(service.transfer).toHaveBeenCalledWith(both, expect.any(Function));
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
+    await act(async () => finish());
+    expect(storageScopes.completeAccountEntry).toHaveBeenCalledTimes(1);
+    expect(router.replace).toHaveBeenCalledWith('/');
+    expect(service.discard).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['en', 'fa'] as const)(
+  '%s discard requires explicit irreversible confirmation',
+  async (language) => {
+    mockRouteParams = { language };
+    mount();
+    fireEvent.press(
+      await screen.findByRole('button', { name: translate(language, 'migration.discard') }),
+    );
+    await screen.findByText(translate(language, 'migration.discardTitle'));
+    expect(service.discard).not.toHaveBeenCalled();
+    expect(router.replace).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.cancel') }));
+    expect(service.discard).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'migration.discard') }));
+    fireEvent.press(
+      screen.getByRole('button', { name: translate(language, 'migration.discardConfirm') }),
+    );
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+    expect(service.discard).toHaveBeenCalledWith(preview);
     expect(service.transfer).not.toHaveBeenCalled();
   },
 );
 
-test('progress disables duplicate submissions and only verified completion displays success', async () => {
-  let finish: () => void = () => {};
-  jest.mocked(service.transfer).mockImplementation(async (_preview, progress) => {
+test('discard failure preserves the decision gate and does not open account screens', async () => {
+  jest.mocked(service.discard).mockRejectedValueOnce(new Error('Disk full'));
+  mount();
+  fireEvent.press(
+    await screen.findByRole('button', { name: translate('en', 'migration.discard') }),
+  );
+  fireEvent.press(
+    screen.getByRole('button', { name: translate('en', 'migration.discardConfirm') }),
+  );
+  await screen.findByText('Disk full');
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
+});
+
+test.each(['account-only', 'empty', 'complete'] as const)(
+  '%s automatically opens the synchronized account',
+  async (scenario) => {
+    const result: TransferPreview = {
+      ...preview,
+      scenario: scenario === 'complete' ? 'guest-only' : scenario,
+      guest: scenario === 'complete' ? preview.guest : [],
+      journal: scenario === 'complete' ? 'complete' : null,
+    };
+    jest.mocked(service.preview).mockResolvedValue(result);
+    mount();
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+    expect(service.transfer).not.toHaveBeenCalled();
+    if (scenario === 'complete') expect(service.finish).toHaveBeenCalledWith(result);
+    else expect(service.finish).not.toHaveBeenCalled();
+  },
+);
+
+test('archived-only guest data still requires explicit discard instead of automatic deletion', async () => {
+  jest.mocked(service.preview).mockResolvedValue({ ...preview, guest: [], hasGuestData: true });
+  mount();
+  await screen.findByRole('button', { name: translate('en', 'migration.discard') });
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(service.discard).not.toHaveBeenCalled();
+});
+
+test('Persian login language and counts survive English account settings', async () => {
+  mockRouteParams = { language: 'fa' };
+  mount();
+  await screen.findByRole('button', { name: translate('fa', 'migration.add') });
+  expect(screen.getByRole('header', { name: translate('fa', 'migration.title') })).toBeTruthy();
+  expect(
+    screen.getByText(
+      translate('fa', 'migration.deck', { name: 'Words', cards: formatNumber(2, 'fa') }),
+    ),
+  ).toBeTruthy();
+  expect(
+    screen.getByText(translate('fa', 'migration.reviews', { count: formatNumber(3, 'fa') })),
+  ).toBeTruthy();
+});
+
+test.each([undefined, 'invalid'])(
+  'uses account language when route language is %s',
+  async (language) => {
+    mockRouteParams = { language };
+    mockSettings = { language: 'fa' };
+    mount();
+    await screen.findByRole('button', { name: translate('fa', 'migration.add') });
+  },
+);
+
+test('quota blockers disable transfer and never implicitly discard guest data', async () => {
+  mockRouteParams = { language: 'fa' };
+  jest.mocked(service.preview).mockResolvedValue({
+    ...preview,
+    blockers: [
+      'Adding these decks would exceed the current free limits: 1 active deck and 50 active cards. Keep the datasets separate.',
+    ],
+  });
+  mount();
+  await screen.findByText(translate('fa', 'migration.reason.limits'));
+  fireEvent.press(
+    screen.getByRole('button', { name: translate('fa', 'migration.add'), disabled: true }),
+  );
+  expect(service.transfer).not.toHaveBeenCalled();
+  expect(service.discard).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+test('incomplete account sync never bypasses the gate as an empty account', async () => {
+  jest.mocked(service.preview).mockResolvedValue({
+    ...preview,
+    guest: [],
+    scenario: 'empty',
+    accountVerified: false,
+  });
+  mount();
+  await screen.findByText(translate('en', 'migration.incomplete'));
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+test('Persian network failures do not leak raw English errors or bypass the gate', async () => {
+  mockRouteParams = { language: 'fa' };
+  jest
+    .mocked(service.preview)
+    .mockRejectedValue(new CloudError(0, undefined, 'Failed to fetch', 'network_error'));
+  mount();
+  await screen.findByText(translate('fa', 'migration.reason.network'));
+  expect(screen.queryByText('Failed to fetch')).toBeNull();
+  expect(router.replace).not.toHaveBeenCalled();
+});
+
+test('busy progress prevents duplicate transfers and destructive choices', async () => {
+  let finish!: () => void;
+  jest.mocked(service.transfer).mockImplementationOnce(async (_preview, progress) => {
     progress?.({ acknowledged: 2, total: 5 });
     await new Promise<void>((resolve) => {
       finish = resolve;
     });
   });
   mount();
+  const transfer = await screen.findByRole('button', { name: translate('en', 'migration.add') });
+  fireEvent.press(transfer);
+  fireEvent.press(transfer);
+  await screen.findByText(translate('en', 'migration.progress', { acknowledged: '2', total: '5' }));
   fireEvent.press(
-    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
+    screen.getByRole('button', { name: translate('en', 'migration.discard'), disabled: true }),
   );
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account' }));
-  await screen.findByText('Verified acknowledgements: 2 / 5. Checking server data…');
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account', disabled: true }));
   expect(service.transfer).toHaveBeenCalledTimes(1);
-  expect(screen.queryByText(/The copied snapshot is acknowledged/)).toBeNull();
+  expect(service.discard).not.toHaveBeenCalled();
+  expect(router.replace).not.toHaveBeenCalled();
   await act(async () => finish());
-  await screen.findByText(/The copied snapshot is acknowledged, synchronized, and verified/);
+  await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1));
 });
 
-test('interrupted transfer shows actionable error and refresh exposes the same pending snapshot for retry', async () => {
+test('an interrupted transfer retries the same approved snapshot and cannot be discarded as if nothing uploaded', async () => {
   jest
     .mocked(service.transfer)
     .mockRejectedValueOnce(new Error('Network interrupted after server write'));
   mount();
-  fireEvent.press(
-    await screen.findByRole('button', { name: 'Add guest decks as separate copies' }),
-  );
-  jest.mocked(service.preview).mockResolvedValue({ ...preview, journal: 'pending' });
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account' }));
+  fireEvent.press(await screen.findByRole('button', { name: translate('en', 'migration.add') }));
   await screen.findByText('Network interrupted after server write');
-  expect(screen.queryByText(/The copied snapshot is acknowledged/)).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Refresh preview / check connection' }));
-  fireEvent.press(
-    await screen.findByRole('button', { name: 'Resume the previously confirmed transfer' }),
-  );
-  fireEvent.press(screen.getByRole('button', { name: 'Confirm copy to account' }));
-  await waitFor(() => expect(service.transfer).toHaveBeenCalledTimes(2));
-  await screen.findByText(/The copied snapshot is acknowledged/);
+  expect(router.replace).not.toHaveBeenCalled();
+  jest.mocked(service.preview).mockResolvedValue({ ...preview, journal: 'pending' });
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'migration.retry') }));
+  const resume = await screen.findByRole('button', { name: translate('en', 'migration.resume') });
+  expect(screen.queryByRole('button', { name: translate('en', 'migration.discard') })).toBeNull();
+  expect(screen.queryByRole('button', { name: translate('en', 'migration.continue') })).toBeNull();
+  fireEvent.press(resume);
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+  expect(service.transfer).toHaveBeenCalledTimes(2);
 });
 
-test('missing backend feed does not claim that account data was loaded', async () => {
-  jest.mocked(service.preview).mockResolvedValue({
-    ...preview,
-    scenario: 'both',
-    accountVerified: false,
-    account: [{ id: 'server', name: 'Missing feed deck', cards: 1 }],
-    blockers: ['Backend backfill required.'],
-  });
+test('cleanup failures after a completed transfer retry cleanup without starting another copy', async () => {
+  jest.mocked(service.preview).mockResolvedValue({ ...preview, journal: 'complete' });
+  jest.mocked(service.finish).mockRejectedValueOnce(new Error('Disk full'));
   mount();
-  await screen.findByText(/Account data exists but could not be fully loaded/);
-  expect(screen.queryByText(/Your account is empty/)).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Add guest decks as separate copies' })).toBeNull();
+  await screen.findByText('Disk full');
+  expect(router.replace).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'migration.retry') }));
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
+  expect(service.finish).toHaveBeenCalledTimes(2);
+  expect(service.transfer).not.toHaveBeenCalled();
+});
+
+test('a transfer finishing after unmount never navigates or opens a different account', async () => {
+  let finish!: () => void;
+  jest.mocked(service.transfer).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const view = mount();
+  fireEvent.press(await screen.findByRole('button', { name: translate('en', 'migration.add') }));
+  view.unmount();
+  await act(async () => finish());
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
+});
+
+test('failed initial sync still allows an explicitly confirmed logout without claiming a merge', async () => {
+  jest.mocked(service.preview).mockRejectedValueOnce(new Error('Offline'));
+  mount();
+  await screen.findByText('Offline');
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.close') }));
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'account.logout') }));
+  expect(syncEngine!.signOut).not.toHaveBeenCalled();
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'logout.withoutBackup') }));
+  await waitFor(() => expect(syncEngine!.signOut).toHaveBeenCalled());
+  expect(service.transfer).not.toHaveBeenCalled();
+  expect(service.discard).not.toHaveBeenCalled();
 });

@@ -2,8 +2,8 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 import { syncEngine } from '@/core/composition/sync';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
-import { Button } from '@/shared/ui/button';
-import { AppState, View } from 'react-native';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { AppState } from 'react-native';
 
 const emptySubscribe = () => () => {};
 const emptySnapshot = () => null;
@@ -33,10 +33,15 @@ export function LogoutNotice() {
   }, [expiry, now]);
   if (!result) return null;
   return (
-    <View className="gap-sm px-xl py-sm" accessibilityLiveRegion="polite">
-      <Text tone={result.credentialsCleared ? 'secondary' : 'error'}>
-        {t(result.credentialsCleared ? 'logout.success' : 'logout.clearFailed')}
-      </Text>
+    <FeedbackModal
+      message={t(result.credentialsCleared ? 'logout.success' : 'logout.clearFailed')}
+      tone={result.credentialsCleared ? 'info' : 'error'}
+      eventKey={result}
+      onRetry={
+        result.credentialsCleared ? undefined : () => void syncEngine?.signOut().catch(() => {})
+      }
+      retryLabel={t('logout.retryClear')}
+    >
       <Text tone="secondary">
         {result.backup
           ? t(expiry <= now ? 'logout.backupExpired' : 'logout.backupCompleted', {
@@ -55,12 +60,6 @@ export function LogoutNotice() {
               : 'logout.unconfirmed',
         )}
       </Text>
-      {!result.credentialsCleared ? (
-        <Button
-          label={t('logout.retryClear')}
-          onPress={() => void syncEngine?.signOut().catch(() => {})}
-        />
-      ) : null}
-    </View>
+    </FeedbackModal>
   );
 }

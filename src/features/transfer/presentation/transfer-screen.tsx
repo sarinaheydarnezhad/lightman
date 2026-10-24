@@ -24,6 +24,7 @@ import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { formatTransferLocation } from './format-transfer-location';
 
 const formatHelp = [
@@ -211,11 +212,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
                 />
               </Card>
             ))}
-            {preview.issues.slice(0, 20).map((issue, index) => (
-              <Text key={index} tone="error" variant="bodySmall">
-                {issue.location}: {issue.message}
-              </Text>
-            ))}
+            <FeedbackModal message={preview.issues.slice(0, 20).map((issue) => `${issue.location}: ${issue.message}`).join('\n\n')} eventKey={preview} />
             <Text tone="secondary">{t('transfer.confirmHint')}</Text>
             <Button
               label={t('common.cancel')}
@@ -241,20 +238,17 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
           </Card>
         ) : null}
         {summary ? (
-          <Card className="gap-sm">
-            <Text accessibilityLiveRegion="polite">
-              {t('transfer.summary', {
+          <FeedbackModal tone="info" eventKey={summary} message={t('transfer.summary', {
                 imported: summary.imported,
                 duplicates: summary.duplicatesSkipped,
                 invalid: summary.invalidSkipped,
-              })}
-            </Text>
+              })}>
             {summary.issues.slice(0, 20).map((issue, index) => (
               <Text key={index} variant="bodySmall" tone="error">
                 {issue.location}: {issue.message}
               </Text>
             ))}
-          </Card>
+          </FeedbackModal>
         ) : null}
         <Card className="gap-md">
           <Text variant="headingSmall">{t('transfer.export')}</Text>
@@ -311,12 +305,8 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
             }
           />
         </Card>
-        {result ? <Text accessibilityLiveRegion="polite">{result}</Text> : null}
-        {error ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {error}
-          </Text>
-        ) : null}
+        <FeedbackModal message={result} tone="success" onDismiss={() => setResult(null)} />
+        <FeedbackModal message={error} onDismiss={() => setError(null)} />
       </View>
     </Screen>
   );

@@ -18,7 +18,7 @@ Expo Go supports the app's local daily reminders. With Expo SDK 57 on Android, i
 
 ## Guest mode and free limits
 
-The app starts in guest mode without requiring a backend connection. Guest and account data use separate local SQLite scopes; signing in does not automatically upload or merge guest data. After login, a preview offers an explicitly confirmed, non-destructive copy of supported guest data through the existing sync queue. Creating data is limited to one active deck and 50 active cards per scope, with matching authenticated backend enforcement. Existing oversized data is retained and remains editable/studiable. Subscription entitlement infrastructure is not implemented, so all accounts currently receive the free limits; there is no client-side premium bypass. See `docs/guest-mode.md`, `docs/guest-data-migration.md` and `docs/guest-migration-verification.md` for supported transfer data, limits, isolation and actual checks.
+The app starts in guest mode without requiring a backend connection. Guest and account data use separate local SQLite scopes. Login immediately synchronizes the account and asks whether to add guest data or discard it permanently; discard requires a second confirmation. Verified additive transfers preserve existing account data and clear guest learning storage only after completion. With no guest learning data the account opens automatically. Logout opens an empty guest learning space while keeping account data private for its owner's next login. Guest/free creation limits are one active deck and 50 active cards; account growth uses trusted backend entitlements, never a client-side premium bypass. See `docs/guest-mode.md` and `docs/guest-data-migration.md` for transfer coverage, safe retries and isolation.
 
 ## Phone authentication
 
@@ -102,7 +102,7 @@ Card management uses `CardListScreen` with a deck-scoped virtualized list, categ
 
 ## Domain and persistence contracts
 
-Secure logout offers verified account synchronization or explicit logout without backup, preserves separate guest/account databases, and records only non-secret references for later owner-authenticated session revocation. See `docs/secure-logout.md` and `docs/secure-logout-verification.md` for supported behavior, deployment dependencies and actual checks; no retained backup service is claimed.
+Secure logout offers verified synchronization and server backup or explicit logout without backup. It clears guest learning data, isolates private account databases, and records only non-secret references for later owner-authenticated session revocation. See `docs/secure-logout.md` for reset/restart guarantees and `docs/server-backups.md` for backup deployment prerequisites and limitations.
 
 `Deck`, `Card`, `CardReviewState`, `ReviewEvent`, `StudySession`, and `UserSettings` live under feature `domain` folders. IDs are opaque strings. `Instant` is a validated UTC timestamp with milliseconds, `CalendarDate` is an ISO day without a time zone, and `LocalTime` is a 24-hour `HH:mm` wall-clock time. Language tags accept basic BCP 47 syntax such as `en` and `fa-IR`. The single `AppClock` source supplies current instants in use cases; reminder local times and due calendar days stay distinct from timestamps. SRS intervals and analytics streaks are calculated in separate domain modules.
 

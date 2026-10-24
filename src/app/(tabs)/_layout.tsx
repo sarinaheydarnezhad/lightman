@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BarChart3, BookOpen, House, Settings2, SquareStack } from 'lucide-react-native';
+import { BarChart3, House, Settings2, SquareStack } from 'lucide-react-native';
 
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -61,8 +61,7 @@ export default function TabsLayout() {
         name="study"
         options={{
           title: t('nav.study'),
-          tabBarAccessibilityLabel: t('nav.tab', { name: t('nav.study') }),
-          tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size} />,
+          href: null,
         }}
       />
       <Tabs.Screen

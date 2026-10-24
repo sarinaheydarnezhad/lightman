@@ -9,13 +9,13 @@ import {
 import { en, fa } from './messages';
 
 test.each([
-  ['en', 'Upgrade to Lerona Plus', 'View plans'],
-  ['fa', 'ارتقا به لرونا پلاس', 'مشاهده طرح‌ها'],
+  ['en', 'Upgrade to Lerona Plus', 'View plans', 'Lerona plans'],
+  ['fa', 'ارتقا به لرونا پلاس', 'مشاهده طرح‌ها', 'طرح‌های لرونا'],
 ] as const)(
   'Plus upgrade labels do not rename other plan actions in %s',
-  (language, title, plans) => {
+  (language, title, plans, pageTitle) => {
     expect(translate(language, 'settings.upgradePlus')).toBe(title);
-    expect(translate(language, 'paywall.title')).toBe(title);
+    expect(translate(language, 'paywall.title')).toBe(pageTitle);
     expect(translate(language, 'access.plans')).toBe(plans);
   },
 );

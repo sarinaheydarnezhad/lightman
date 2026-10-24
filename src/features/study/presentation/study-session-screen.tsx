@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router, useFocusEffect } from 'expo-router';
 import { AccessibilityInfo, View } from 'react-native';
 import { CircleCheck, X } from 'lucide-react-native';
@@ -120,9 +121,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           />
           <StudyResultSummary progress={progress} />
           {study.actionError ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {language === 'en' ? study.actionError : t('common.genericError')}
-            </Text>
+            <FeedbackModal message={language === 'en' ? study.actionError : t('common.genericError')} />
           ) : null}
           {progress.canReviewAgain ? (
             <Button
@@ -132,9 +131,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             />
           ) : null}
           {study.start.error ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {language === 'en' ? study.start.error : t('common.genericError')}
-            </Text>
+            <FeedbackModal message={language === 'en' ? study.start.error : t('common.genericError')} />
           ) : null}
           {study.start.activeSession ? (
             <Button
@@ -149,7 +146,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               }
             />
           ) : null}
-          <Button label={t('study.done')} onPress={() => router.replace('/study')} />
+          <Button label={t('study.done')} onPress={() => router.dismissTo('/analytics')} />
           <Button
             label={t('study.again')}
             variant="secondary"
@@ -235,9 +232,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             onSwipeAnswer={study.submitSwipe}
           />
           {study.actionError && !study.confirmExit ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {language === 'en' ? study.actionError : t('common.genericError')}
-            </Text>
+            <FeedbackModal message={language === 'en' ? study.actionError : t('common.genericError')} />
           ) : null}
           <StudyControls
             revealed={study.revealed}

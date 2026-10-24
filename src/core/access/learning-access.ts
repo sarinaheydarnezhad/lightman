@@ -80,6 +80,10 @@ export class LearningAccessController implements LearningAccess {
   private cache: EntitlementCache | null = null;
   private loaded = false;
   private refreshing: Promise<void> | null = null;
+  private refreshingOperation?: LearningOperation;
+  private refreshedAt: number | null = null;
+  private nextBackgroundAttempt = 0;
+  private backgroundFailures = 0;
   private generation = 0;
   private state: AccessState = { entitlements: null, provisional: true, message: null };
   private readonly listeners = new Set<() => void>();
@@ -108,6 +112,9 @@ export class LearningAccessController implements LearningAccess {
   async invalidate(message: string): Promise<void> {
     this.dependencies.assertCurrent?.();
     this.generation++;
+    this.refreshedAt = null;
+    this.nextBackgroundAttempt = 0;
+    this.backgroundFailures = 0;
     this.cache = null;
     this.loaded = true;
     await this.dependencies.writeCache?.(null);
@@ -115,11 +122,41 @@ export class LearningAccessController implements LearningAccess {
   }
 
   refresh(operation?: LearningOperation): Promise<void> {
-    if (!this.refreshing)
+    if (this.refreshing && operation === 'study' && this.refreshingOperation !== 'study')
+      return this.refreshing.then(() => this.refresh(operation));
+    if (!this.refreshing) {
+      this.refreshingOperation = operation;
       this.refreshing = this.load(operation).finally(() => {
         this.refreshing = null;
+        this.refreshingOperation = undefined;
       });
+    }
     return this.refreshing;
+  }
+
+  refreshIfStale(): Promise<void> {
+    this.dependencies.assertCurrent?.();
+    const now = this.now();
+    if (
+      !this.isAccount ||
+      now < this.nextBackgroundAttempt ||
+      (this.refreshedAt !== null &&
+        now >= this.refreshedAt &&
+        now - this.refreshedAt < 60_000 &&
+        !this.state.provisional &&
+        this.freshCache())
+    )
+      return Promise.resolve();
+    const generation = this.generation;
+    this.nextBackgroundAttempt = now + 30_000;
+    return this.refresh().finally(() => {
+      if (generation !== this.generation) return;
+      const confirmed = !this.state.provisional && !!this.freshCache();
+      this.backgroundFailures = confirmed ? 0 : Math.min(this.backgroundFailures + 1, 5);
+      this.nextBackgroundAttempt =
+        this.now() +
+        (confirmed ? 60_000 : Math.min(5 * 60_000, 30_000 * 2 ** (this.backgroundFailures - 1)));
+    });
   }
 
   private async load(operation?: LearningOperation): Promise<void> {
@@ -155,6 +192,7 @@ export class LearningAccessController implements LearningAccess {
       }
       this.cache = cache;
       const accepted = this.freshCache();
+      this.refreshedAt = accepted ? this.now() : null;
       this.publish({
         entitlements: accepted?.entitlements ?? null,
         provisional: !accepted,

@@ -28,6 +28,44 @@ export interface PhoneRegistration {
   readonly username: string;
 }
 
+export interface PhonePasswordRegistration {
+  readonly phoneNumber: string;
+  readonly password: string;
+  readonly confirmPassword: string;
+}
+
+const commonPasswords = new Set([
+  'password1',
+  'password12',
+  'password123',
+  'password1234',
+  'password12345',
+  'password123456',
+  'qwerty123',
+  'qwerty12345',
+  'qwerty123456',
+  'abc12345',
+  'abcd1234',
+  '1234abcd',
+  'letmein123',
+  'welcome1',
+  'welcome123',
+  'admin123',
+  'admin1234',
+  'iloveyou1',
+  'passw0rd',
+]);
+
+export function isValidRegistrationPassword(password: string): boolean {
+  return (
+    password.length >= 8 &&
+    password.length <= 128 &&
+    /\p{L}/u.test(password) &&
+    /\p{Nd}/u.test(password) &&
+    !commonPasswords.has(password.replace(/[^\p{L}\p{Nd}]/gu, '').toLowerCase())
+  );
+}
+
 function normalizePhoneDigits(value: string): string {
   return value
     .trim()

@@ -50,7 +50,7 @@ export function DecksScreen() {
             {totalCount > 0 ? (
               <Button
                 label={t('decks.create')}
-                variant="secondary"
+                variant="primary"
                 onPress={() => router.push('/decks/create')}
               />
             ) : null}
@@ -94,7 +94,7 @@ export function DecksScreen() {
               {totalCount === 0 ? (
                 <Button
                   label={t('decks.create')}
-                  variant="secondary"
+                  variant="primary"
                   onPress={() => router.push('/decks/create')}
                 />
               ) : null}

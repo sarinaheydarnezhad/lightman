@@ -1,6 +1,6 @@
 # Plus Paywall
 
-The existing `/settings/subscription` route now presents Plus duration selection using the existing design system and English/Persian localization. Selection is informational: **no payment provider or trusted purchase-verification endpoint exists**, so the purchase action is always disabled. No activation, checkout, pending payment, cancellation or payment-success state is simulated. Full is text-only and never selectable.
+The existing `/settings/subscription` route presents Plus duration selection and a separate Premium card using the existing design system and English/Persian localization. Selection is informational: **no payment provider or trusted purchase-verification endpoint exists**, so the purchase action is always disabled. No activation, checkout, pending payment, cancellation or payment-success state is simulated. Premium is visibly marked as not available to all users right now and is never selectable. The reserved internal/API `Full` identifier is retained for compatibility; its user-facing name is Premium.
 
 ## Entry points and status
 
@@ -17,13 +17,21 @@ The existing `/settings/subscription` route now presents Plus duration selection
 - `GET /api/v1/me/subscription`: subscription metadata/status only for the authenticated scope, through existing JWT refresh/session guards.
 - Local counts reuse `localLearningUsage`, including the existing archived-deck card counting rule. Cloud capability copy is conditional on existing native HTTPS availability; sync/backup still require sign-in and configuration and are not advertised as new Plus-only functionality. Guest data is not uploaded by opening/selecting plans.
 
-The backend catalog currently returns 1/6/12-month Plus offers of 49,000/279,000/499,000 toman. Prices in tests assert this contract; changing server prices changes the UI without maintaining another production catalog. An unavailable catalog shows an error or empty state, never invented prices.
+The backend catalog returns the following Plus offers, in toman:
+
+| Duration  |   Total | Monthly equivalent | Discount |
+| --------- | ------: | -----------------: | -------: |
+| 1 month   |  70,000 |             70,000 |        — |
+| 6 months  | 294,000 |             49,000 |      30% |
+| 12 months | 420,000 |             35,000 |      50% |
+
+Multi-month buttons show the total and the monthly equivalent beneath it, with the discount relative to the server's one-month price. The selected multi-month summary also shows its monthly equivalent. These are derived from the server catalog, not another production price list; no discount is invented if the one-month baseline is missing. An unavailable catalog shows an error or empty state, never invented prices.
 
 ## Payment follow-up
 
 Select/configure an authorized purchase provider, implement trusted server transaction verification and idempotency, and add checkout/pending/cancelled/failure/success states only with that integration. Before any future purchase, recheck effective subscription state on the server and reject active/overlapping subscriptions and Full purchases; refresh the existing entitlement controller only after verified activation. The present UI blocks all purchases, including for active Plus accounts, and cannot grant access.
 
-No backend files, migrations, dependencies, authentication behavior or live learning records are changed by this task. Existing excess data is never deleted or modified by selection, expiration messages or refresh.
+Pricing changes are made in the backend catalog and require no schema migration. Dependencies, authentication behavior and live learning records are unchanged. Existing excess data is never deleted or modified by selection, expiration messages or refresh.
 
 ## Files changed
 

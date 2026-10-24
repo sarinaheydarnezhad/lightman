@@ -2,7 +2,7 @@ import { useLayoutEffect, type ReactNode } from 'react';
 import { Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import { HeaderBackButton } from 'expo-router/react-navigation';
 import { Platform } from 'react-native';
-import { ArrowRight, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, ChevronLeft } from 'lucide-react-native';
 
 import { CardEditorScreen } from '@/features/decks/presentation/card-editor-screen';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -11,9 +11,8 @@ import { icons } from '@/shared/theme/tokens';
 
 function CreateCardHeader({ saveAction }: { saveAction: ReactNode }) {
   const navigation = useNavigation();
-  const { language, t } = useLocalization();
-  const rtl = language === 'fa';
-  const BackIcon = Platform.OS === 'ios' ? ChevronRight : ArrowRight;
+  const { t } = useLocalization();
+  const BackIcon = Platform.OS === 'ios' ? ChevronLeft : ArrowLeft;
 
   useLayoutEffect(
     () => () => {
@@ -33,22 +32,20 @@ function CreateCardHeader({ saveAction }: { saveAction: ReactNode }) {
       options={{
         headerTitleAlign: 'center',
         headerBackButtonDisplayMode: 'minimal',
-        headerBackVisible: !rtl,
-        headerLeft: rtl
-          ? ({ canGoBack, tintColor }) =>
-              canGoBack ? (
-                <HeaderBackButton
-                  displayMode="minimal"
-                  style={{ marginRight: 'auto' }}
-                  accessibilityLabel={t('common.cancel')}
-                  tintColor={tintColor}
-                  backImage={({ tintColor: color }) => (
-                    <BackIcon color={color} size={icons.medium} />
-                  )}
-                  onPress={() => navigation.goBack()}
-                />
-              ) : null
-          : undefined,
+        headerBackVisible: false,
+        headerLeft: ({ canGoBack, tintColor }) =>
+          canGoBack ? (
+            <HeaderBackButton
+              displayMode="minimal"
+              style={{ marginRight: 'auto' }}
+              accessibilityLabel={t('common.cancel')}
+              tintColor={tintColor}
+              backImage={({ tintColor: color }) => (
+                <BackIcon color={color} size={icons.medium} />
+              )}
+              onPress={() => navigation.goBack()}
+            />
+          ) : null,
         headerRight: () => saveAction,
       }}
     />

@@ -3,14 +3,16 @@ import * as Network from 'expo-network';
 import type { CloudClient } from './cloud-client';
 import { CloudError } from './cloud-client';
 import type { SyncStore } from './sync-store';
-import type { OtpPurpose, PhoneRegistration } from './phone-auth';
+import type { OtpPurpose, PhonePasswordRegistration, PhoneRegistration } from './phone-auth';
 import type { LogoutResult } from './logout-journal';
 import type { ServerBackup } from './server-backup';
+import { retryDelay } from './retry-policy';
 
 export interface LocalScopeLifecycle {
   isAccount(): boolean;
   enterAccount(userId: string): Promise<void>;
   enterGuest(): Promise<void>;
+  enterEmptyGuest?(): Promise<void>;
   lockAccount?(): void;
 }
 
@@ -18,6 +20,7 @@ export class SyncEngine {
   private running: Promise<void> | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pullFailures = 0;
+  private retryAt = 0;
   private active = false;
   private scopeChanging = false;
   private signOutError: string | null = null;
@@ -141,9 +144,15 @@ export class SyncEngine {
     this.scopes?.lockAccount?.();
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    this.retryAt = 0;
+    this.pullFailures = 0;
     this.signOutError = null;
     this.setLogoutResult(null);
-    const guest = (this.scopes?.enterGuest() ?? Promise.resolve()).then(
+    const guest = (
+      this.scopes?.enterEmptyGuest?.() ??
+      this.scopes?.enterGuest() ??
+      Promise.resolve()
+    ).then(
       () => null,
       (error: unknown) => error,
     );
@@ -181,7 +190,7 @@ export class SyncEngine {
     this.operationEpoch++;
     this.scopes.lockAccount?.();
     try {
-      await this.scopes.enterGuest();
+      await (this.scopes.enterEmptyGuest?.() ?? this.scopes.enterGuest());
     } finally {
       this.scopeChanging = false;
     }
@@ -265,6 +274,10 @@ export class SyncEngine {
 
   async registerPhone(registration: PhoneRegistration): Promise<void> {
     await this.authenticate((bind) => this.cloud.registerPhone(registration, bind));
+  }
+
+  async registerPhoneWithPassword(registration: PhonePasswordRegistration): Promise<void> {
+    await this.authenticate((bind) => this.cloud.registerPhoneWithPassword(registration, bind));
   }
 
   async signInPhone(phoneNumber: string, password: string): Promise<void> {
@@ -392,10 +405,14 @@ export class SyncEngine {
           return;
         }
         const retryable =
-          !(error instanceof CloudError) || error.status === 429 || error.status >= 500;
+          !(error instanceof CloudError) ||
+          error.status === 0 ||
+          error.status === 429 ||
+          error.status >= 500;
         await this.store.failed(operation, retryable);
         if (strict) throw error;
-        if (retryable && operation.retryCount < 5) this.retry(operation.retryCount);
+        if (retryable && operation.retryCount < 5)
+          this.retry(operation.retryCount, error instanceof CloudError ? error.retryAfterMs : 0);
         if (retryable) return;
       }
     }
@@ -423,24 +440,31 @@ export class SyncEngine {
     } catch (error) {
       if (error instanceof CloudError && error.status === 401 && !strict) return;
       this.pullFailures++;
-      if (!strict && this.pullFailures < 5) this.retry(this.pullFailures);
+      if (!strict && this.pullFailures < 5)
+        this.retry(this.pullFailures, error instanceof CloudError ? error.retryAfterMs : 0);
       throw error;
     }
   }
 
-  private retry(attempt: number): void {
+  private retry(attempt: number, minimumMs = 0): void {
     if (this.timer) clearTimeout(this.timer);
-    this.timer = setTimeout(
-      () => {
-        this.timer = null;
-        this.trigger();
-      },
-      Math.min(16_000, 1000 * 2 ** Math.max(0, attempt - 1)),
-    );
+    const delay = retryDelay(attempt, minimumMs);
+    this.retryAt = Date.now() + delay;
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      this.retryAt = 0;
+      this.trigger();
+    }, delay);
   }
 
   private trigger(): void {
-    if (this.active) void this.syncNow().catch(() => {});
+    if (
+      this.active &&
+      AppState.currentState !== 'background' &&
+      AppState.currentState !== 'inactive' &&
+      Date.now() >= this.retryAt
+    )
+      void this.syncNow().catch(() => {});
   }
 
   start(): () => void {
@@ -462,6 +486,7 @@ export class SyncEngine {
       foreground.remove();
       if (this.timer) clearTimeout(this.timer);
       this.timer = null;
+      this.retryAt = 0;
     };
   }
 }

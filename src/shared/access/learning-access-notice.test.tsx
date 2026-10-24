@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react-native';
 import * as Network from 'expo-network';
+import { AppState } from 'react-native';
 import { LearningAccessController } from '@/core/access/learning-access';
 import type { Entitlements } from '@/core/sync/subscription';
 import { LearningAccessNotice } from './learning-access-notice';
@@ -7,6 +8,7 @@ import { LearningAccessNotice } from './learning-access-notice';
 let mockAccess: LearningAccessController;
 jest.mock('@/core/composition/learning-access', () => ({ learningAccess: () => mockAccess }));
 jest.mock('expo-network', () => ({
+  NetworkStateType: { WIFI: 'WIFI' },
   addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
@@ -26,7 +28,61 @@ function free(): Entitlements {
   };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.mocked(AppState.addEventListener).mockReturnValue({ remove: jest.fn() });
+});
+
+test('polling pauses offline and in the background, resumes with jitter, and cleans up', async () => {
+  jest.useFakeTimers();
+  const originalPhase = Object.getOwnPropertyDescriptor(AppState, 'currentState')!;
+  const setPhase = (value: string) =>
+    Object.defineProperty(AppState, 'currentState', { configurable: true, writable: true, value });
+  setPhase('active');
+  const foreground = jest.mocked(AppState.addEventListener);
+  try {
+    mockAccess = new LearningAccessController({
+      userId: 'owner',
+      usage: async () => ({ decks: 0, cards: 0 }),
+    });
+    const refresh = jest.spyOn(mockAccess, 'refreshIfStale').mockResolvedValue(undefined);
+    const view = render(<LearningAccessNotice />);
+    const networkChange = jest.mocked(Network.addNetworkStateListener).mock.calls[0]![0];
+    const appChange = foreground.mock.calls[0]![1];
+    expect(refresh).toHaveBeenCalledTimes(1);
+    act(() =>
+      networkChange({
+        type: Network.NetworkStateType.WIFI,
+        isConnected: false,
+        isInternetReachable: false,
+      }),
+    );
+    await act(() => jest.advanceTimersByTimeAsync(10 * 60_000));
+    expect(refresh).toHaveBeenCalledTimes(1);
+    act(() =>
+      networkChange({
+        type: Network.NetworkStateType.WIFI,
+        isConnected: true,
+        isInternetReachable: true,
+      }),
+    );
+    expect(refresh).toHaveBeenCalledTimes(2);
+    setPhase('background');
+    act(() => appChange('background'));
+    await act(() => jest.advanceTimersByTimeAsync(10 * 60_000));
+    expect(refresh).toHaveBeenCalledTimes(2);
+    setPhase('active');
+    act(() => appChange('active'));
+    expect(refresh).toHaveBeenCalledTimes(3);
+    await act(() => jest.advanceTimersByTimeAsync(5 * 60_000));
+    expect(refresh).toHaveBeenCalledTimes(4);
+    view.unmount();
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    Object.defineProperty(AppState, 'currentState', originalPhase);
+    jest.useRealTimers();
+  }
+});
 
 test.each([
   ['deck', 1, 50],

@@ -36,53 +36,66 @@ test('a study session copies its queue and checks scope and bounded position', (
   ).toThrow();
 });
 
-test('failed initial card receives exactly one retry, even after a failed retry', () => {
+test('failed cards are saved for optional review without extending the session', () => {
   const start = startStudySession('session-1', scope, [item('card-a'), item('card-b')], timestamp);
   const first = getCurrentStudyItem(start)!;
   const afterFirst = advanceStudySession(start, first, 'failure', timestamp);
   expect(getCurrentStudyItem(afterFirst)).toMatchObject({ cardId: 'card-b', kind: 'initial' });
-  expect(afterFirst.retryQueue.map((card) => card.cardId)).toEqual(['card-a']);
-  const afterSecond = advanceStudySession(
+  expect(afterFirst.retryQueue).toEqual([]);
+  expect(afterFirst.missedQueue?.map((card) => card.cardId)).toEqual(['card-a']);
+  expect(getStudyProgress(afterFirst)).toMatchObject({ completed: 1, remaining: 1, failures: 1 });
+  const completed = advanceStudySession(
     afterFirst,
     getCurrentStudyItem(afterFirst)!,
     'success',
     timestamp,
   );
-  const retry = getCurrentStudyItem(afterSecond)!;
-  expect(retry).toMatchObject({ cardId: 'card-a', kind: 'retry', presentationId: 'session-1:2' });
-  const completed = advanceStudySession(afterSecond, retry, 'failure', timestamp);
-  expect(completed).toMatchObject({ status: 'completed', currentIndex: 3, completedAt: timestamp });
-  expect(completed.retryQueue).toHaveLength(1);
+  expect(completed).toMatchObject({ status: 'completed', currentIndex: 2, completedAt: timestamp });
+  expect(completed.retryQueue).toEqual([]);
   expect(getCurrentStudyItem(completed)).toBeNull();
   expect(getStudyProgress(completed)).toMatchObject({
-    completed: 3,
+    completed: 2,
     remaining: 0,
-    failures: 2,
-    retries: 1,
+    failures: 1,
+    retries: 0,
     successfulInitialAnswers: 1,
     failedInitialAnswers: 1,
     finalSuccessCount: 1,
+    missedCardCount: 1,
+    canReviewAgain: true,
   });
   expect(start.currentIndex).toBe(0);
   expect(start.retryQueue).toEqual([]);
 });
 
-test('presentation token distinguishes an initial failure from its later retry', () => {
+test('one failed card completes immediately and rejects repeated answers', () => {
   const start = startStudySession('session-1', scope, [item('card-a')], timestamp);
   const initial = getCurrentStudyItem(start)!;
   const afterFailure = advanceStudySession(start, initial, 'failure', timestamp);
-  expect(getCurrentStudyItem(afterFailure)?.cardId).toBe(initial.cardId);
+  expect(afterFailure.status).toBe('completed');
+  expect(getCurrentStudyItem(afterFailure)).toBeNull();
   expect(() =>
     assertCurrentStudyItem(afterFailure, initial.cardId, initial.presentationId),
   ).toThrow();
-  const retried = advanceStudySession(
-    afterFailure,
-    getCurrentStudyItem(afterFailure)!,
-    'failure',
-    timestamp,
-  );
-  expect(retried.status).toBe('completed');
-  expect(() => advanceStudySession(retried, initial, 'success', timestamp)).toThrow();
+  expect(() => advanceStudySession(afterFailure, initial, 'success', timestamp)).toThrow();
+});
+
+test('saved legacy retry queues remain valid and do not gain additional retries', () => {
+  const start = startStudySession('session-1', scope, [item('card-a')], timestamp);
+  const legacy = validateStudySession({
+    ...start,
+    currentIndex: 1,
+    retryQueue: [item('card-a')],
+    missedQueue: undefined,
+    initialFailures: undefined,
+  });
+  const retry = getCurrentStudyItem(legacy)!;
+  expect(retry).toMatchObject({ cardId: 'card-a', kind: 'retry', presentationId: 'session-1:1' });
+  const completed = advanceStudySession(legacy, retry, 'failure', timestamp);
+  expect(completed.status).toBe('completed');
+  expect(completed.retryQueue).toHaveLength(1);
+  expect(completed.missedQueue?.map((card) => card.cardId)).toEqual(['card-a']);
+  expect(getStudyProgress(completed)).toMatchObject({ completed: 2, failures: 2, retries: 1 });
 });
 
 test('empty study session completes normally and active sessions can be cancelled without fake progress', () => {

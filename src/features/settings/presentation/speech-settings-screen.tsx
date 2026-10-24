@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { languageTag, supportedLanguages } from '@/core/domain/values';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -97,9 +98,7 @@ export function SpeechSettingsScreen() {
           </>
         ) : null}
         {vm.errors.speech ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {uiLanguage === 'en' ? vm.errors.speech : t('common.genericError')}
-          </Text>
+          <FeedbackModal message={uiLanguage === 'en' ? vm.errors.speech : t('common.genericError')} />
         ) : null}
       </View>
     </Screen>

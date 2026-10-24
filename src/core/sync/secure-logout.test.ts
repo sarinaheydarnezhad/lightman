@@ -12,6 +12,7 @@ import { CloudClient } from './cloud-client';
 import { SyncEngine } from './sync-engine';
 import { SyncStore } from './sync-store';
 import type { ServerChange } from './contract';
+import { waitFor } from '@testing-library/react-native';
 
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
@@ -101,6 +102,7 @@ async function setup(withGuest = true) {
     isAccount: () => scopes.snapshot().phase === 'ready' && scopes.snapshot().mode === 'account',
     enterAccount: (id) => scopes.enterAccount(id),
     enterGuest: () => scopes.enterGuest(),
+    enterEmptyGuest: () => scopes.enterEmptyGuest(),
     lockAccount: () => scopes.lockAccount(),
   });
   const response = (body?: unknown, status = 200) => ({
@@ -339,7 +341,7 @@ async function setup(withGuest = true) {
   };
 }
 
-test('verified account sync completes before logout; guest data and account review history remain isolated', async () => {
+test('verified account sync completes before logout; guest data is cleared and account review history remains private', async () => {
   const fixture = await setup();
   await fixture.login();
   const app = await fixture.createPrivate();
@@ -365,9 +367,7 @@ test('verified account sync completes before logout; guest data and account revi
       canRestore: false,
     }),
   });
-  expect(await fixture.scopes.current().value.decks.list()).toEqual([
-    makeDeck({ name: 'Guest only' }),
-  ]);
+  expect(await fixture.scopes.current().value.decks.list()).toEqual([]);
   expect(await account.value.reviews.listEvents()).toHaveLength(1);
   expect(await account.value.reviews.getState(item!.cardId)).toMatchObject({
     totalReviews: 1,
@@ -399,7 +399,7 @@ test('server backup failure preserves the authenticated session and requires an 
   expect(fixture.backups.size).toBe(0);
   await fixture.engine.signOut(false);
   expect(fixture.scopes.snapshot().mode).toBe('guest');
-  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await fixture.scopes.current().value.decks.list()).toEqual([]);
 });
 
 test('interrupted backup retry reuses its durable ID across restart; a later explicit logout requests a new backup', async () => {
@@ -472,10 +472,11 @@ test('expired authentication during manual backup invokes the existing credentia
   const session = JSON.parse(secure.get(credentialKey)!) as { sessionId: string };
   fixture.revoked.add(session.sessionId);
   await expect(fixture.engine.createBackup()).rejects.toMatchObject({ status: 401 });
+  await waitFor(() => expect(fixture.scopes.snapshot().phase).toBe('ready'));
   expect(fixture.backups.size).toBe(0);
   expect(secure.has(credentialKey)).toBe(false);
   expect(fixture.scopes.snapshot().mode).toBe('guest');
-  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await fixture.scopes.current().value.decks.list()).toEqual([]);
 });
 
 test('backup metadata verification failure cannot log out or create a duplicate on retry', async () => {
@@ -493,7 +494,7 @@ test('backup metadata verification failure cannot log out or create a duplicate 
   expect(fixture.backups.size).toBe(1);
 });
 
-test('logout without sync preserves queued account writes, server data, and guest data', async () => {
+test('logout without sync preserves queued account writes and server data but clears guest data', async () => {
   const fixture = await setup();
   await fixture.login();
   await fixture.createPrivate();
@@ -514,7 +515,7 @@ test('logout without sync preserves queued account writes, server data, and gues
   expect(
     (await fixture.remote.get(accountA)!.database.execute('SELECT name FROM decks')).rows[0]!.name,
   ).toBe('Account A');
-  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await fixture.scopes.current().value.decks.list()).toEqual([]);
 });
 
 test('backup failure keeps the account signed in; an explicit later no-backup choice logs out safely', async () => {
@@ -545,7 +546,7 @@ test('remote progress mismatch blocks the backup success claim and leaves origin
   expect(fixture.revoked.size).toBe(0);
 });
 
-test('offline logout immediately locks account access and restart restores only preserved guest data', async () => {
+test('offline logout immediately locks account access and restart opens empty guest storage', async () => {
   const fixture = await setup();
   await fixture.login();
   await fixture.createPrivate();
@@ -563,7 +564,7 @@ test('offline logout immediately locks account access and restart restores only 
   });
   await reopened.initialize();
   expect(await new CloudClient().hasSession()).toBe(false);
-  expect((await reopened.current().value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await reopened.current().value.decks.list()).toEqual([]);
   await reopened.enterAccount(accountA);
   expect((await reopened.current().value.decks.list())[0]!.name).toBe('Account A');
 });
@@ -591,7 +592,7 @@ test('different-account login never reuses private queues and revocation retries
   await fixture.login(accountA);
   expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Account A');
   expect(fixture.revoked.has(original.sessionId)).toBe(true);
-  expect((await fixture.guest.value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await fixture.guest.value.decks.list()).toEqual([]);
 });
 
 test('guest access does not wait for network revocation; repeated logout shares one request', async () => {
@@ -613,8 +614,9 @@ test('guest access does not wait for network revocation; repeated logout shares 
   const first = fixture.engine.signOut();
   expect(fixture.engine.signOut()).toBe(first);
   await started;
+  await waitFor(() => expect(fixture.scopes.snapshot().phase).toBe('ready'));
   expect(fixture.scopes.snapshot().mode).toBe('guest');
-  expect((await fixture.scopes.current().value.decks.list())[0]!.name).toBe('Guest only');
+  expect(await fixture.scopes.current().value.decks.list()).toEqual([]);
   expect(secure.has(credentialKey)).toBe(false);
   finish();
   await first;
@@ -627,7 +629,6 @@ test('a late account push acknowledgement cannot mutate or upload the guest queu
   const fixture = await setup();
   await fixture.login();
   await fixture.createPrivate();
-  const guestBefore = await new SyncStore(fixture.guest.database!).pending();
   let finish!: () => void;
   let entered!: () => void;
   const started = new Promise<void>((resolve) => {
@@ -648,7 +649,7 @@ test('a late account push acknowledgement cannot mutate or upload the guest queu
   finish();
   await rejected;
   await fixture.engine.syncNow();
-  expect(await new SyncStore(fixture.guest.database!).pending()).toEqual(guestBefore);
+  expect(await new SyncStore(fixture.guest.database!).pending()).toEqual([]);
   await expect(fixture.engine.retryFailed()).rejects.toThrow('sign in');
 });
 

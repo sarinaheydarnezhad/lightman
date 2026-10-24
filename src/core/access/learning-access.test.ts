@@ -27,6 +27,79 @@ const owner = '11111111-1111-1111-1111-111111111111';
 const other = '22222222-2222-2222-2222-222222222222';
 const all = { kind: 'all-decks' as const };
 
+test('foreground and network event storms refresh once per minute, while explicit study remains fresh', async () => {
+  let now = Date.now();
+  const fetch = jest.fn(async () => response(now));
+  const access = new LearningAccessController({
+    userId: owner,
+    usage: async () => ({ decks: 0, cards: 0 }),
+    online: async () => true,
+    fetch,
+    now: () => now,
+  });
+  await Promise.all(Array.from({ length: 30 }, () => access.refreshIfStale()));
+  await access.refreshIfStale();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  await access.assertAllowed('study');
+  expect(fetch).toHaveBeenLastCalledWith('study');
+  expect(fetch).toHaveBeenCalledTimes(2);
+  now += 60_000;
+  await access.refreshIfStale();
+  expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+test('background failures back off and permission invalidation clears the cooldown', async () => {
+  let now = Date.now();
+  const fetch = jest.fn(async (): Promise<Entitlements> => {
+    throw new Error('unavailable');
+  });
+  const access = new LearningAccessController({
+    userId: owner,
+    usage: async () => ({ decks: 0, cards: 0 }),
+    online: async () => true,
+    fetch,
+    now: () => now,
+  });
+  await access.refreshIfStale();
+  now += 29_999;
+  await access.refreshIfStale();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  now++;
+  await access.refreshIfStale();
+  now += 30_000;
+  await access.refreshIfStale();
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await access.invalidate('permissions changed');
+  await access.refreshIfStale();
+  expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+test('study authorization does not piggyback on an in-flight metadata refresh', async () => {
+  let finish!: (value: Entitlements) => void;
+  const fetch = jest
+    .fn()
+    .mockImplementationOnce(
+      () =>
+        new Promise<Entitlements>((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockImplementation(async () => response(Date.now()));
+  const access = new LearningAccessController({
+    userId: owner,
+    usage: async () => ({ decks: 0, cards: 0 }),
+    online: async () => true,
+    fetch,
+  });
+  const background = access.refreshIfStale();
+  await Promise.resolve();
+  await Promise.resolve();
+  const study = access.assertAllowed('study');
+  finish(response(Date.now()));
+  await Promise.all([background, study]);
+  expect(fetch.mock.calls.map(([operation]) => operation)).toEqual([undefined, 'study']);
+});
+
 function response(time: number, plus = false, decks = 1, cards = 50): Entitlements {
   return {
     currentPlan: plus ? 'Plus' : 'Free',

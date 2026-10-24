@@ -10,6 +10,7 @@ import { Card } from '@/shared/ui/card';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { Text } from '@/shared/ui/text';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import type { SelectedDefinition } from '../application/merge-suggestion';
 
 const messages: Record<Exclude<DictionaryLookupResult['status'], 'found'>, MessageKey> = {
@@ -126,8 +127,7 @@ export function VocabularyHelper({
                   ))}
                 </View>
               ) : result ? (
-                <View className="gap-sm" accessibilityLiveRegion="polite">
-                  <Text tone="secondary">{t(messages[result.status])}</Text>
+                <FeedbackModal message={t(messages[result.status])} tone="info" eventKey={result}>
                   {!retried &&
                   ['offline', 'timeout', 'rate-limited', 'unavailable'].includes(result.status) ? (
                     <Button
@@ -136,7 +136,7 @@ export function VocabularyHelper({
                       onPress={() => void lookup(true)}
                     />
                   ) : null}
-                </View>
+                </FeedbackModal>
               ) : null}
             </>
           ) : null}

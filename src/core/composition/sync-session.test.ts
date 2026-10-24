@@ -16,6 +16,11 @@ jest.mock('./repositories', () => ({
   storageScopes: {
     legacyAccountId: jest.fn(() => '11111111-1111-1111-1111-111111111111'),
     enterAccount: jest.fn(),
+    guestScope: jest.fn(async () => ({
+      database: { execute: jest.fn(async () => ({ rows: [] })) },
+    })),
+    prepareAccountEntry: jest.fn(),
+    completeAccountEntry: jest.fn(),
   },
 }));
 jest.mock('./application', () => ({ application: {} }));
@@ -58,4 +63,17 @@ test('cleared credentials after logout cannot restore any account while verified
   await restoreLocalSession();
   expect(storageScopes.enterAccount).toHaveBeenCalledWith(identity);
   expect(cloud.accountProfile).not.toHaveBeenCalled();
+});
+
+test('restoring an interrupted login requires the guest decision again instead of exposing the account', async () => {
+  jest.mocked(storageScopes.guestScope).mockResolvedValueOnce({
+    database: {
+      execute: jest.fn(async () => ({ rows: [{ id: 'guest' }], rowsAffected: 0 })),
+      transaction: jest.fn(),
+    },
+    value: undefined as never,
+  });
+  await restoreLocalSession();
+  expect(storageScopes.prepareAccountEntry).toHaveBeenCalled();
+  expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
 });

@@ -1,4 +1,28 @@
-import { normalizeLocalPhoneNumber, normalizePhoneNumber, validateTokens } from './phone-auth';
+import {
+  isValidRegistrationPassword,
+  normalizeLocalPhoneNumber,
+  normalizePhoneNumber,
+  validateTokens,
+} from './phone-auth';
+
+test.each(['Maple7xy', 'Private passphrase 2026!', 'درختسبز۷', 'a'.repeat(127) + '1'])(
+  'registration password accepts letters and numbers within the size limit: %s',
+  (password) => expect(isValidRegistrationPassword(password)).toBe(true),
+);
+
+test.each([
+  '',
+  'Maple7x',
+  '12345678',
+  'onlyletters',
+  '........',
+  'Password123!',
+  'pAsSw0Rd!',
+  'Qwerty123',
+  'a'.repeat(128) + '1',
+])('registration password rejects weak or invalid values: %s', (password) => {
+  expect(isValidRegistrationPassword(password)).toBe(false);
+});
 
 test.each(['09121234567', '۰۹۱۲۱۲۳۴۵۶۷', '٠٩١٢١٢٣٤٥٦٧', ' 09121234567 '])(
   'local phone entry accepts exactly 11 digits starting with zero: %s',

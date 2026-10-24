@@ -4,8 +4,14 @@ import { SyncStore } from '@/core/sync/sync-store';
 import { SyncEngine } from '@/core/sync/sync-engine';
 import { application, refreshStudyReminder } from './application';
 import { logger } from '@/core/infrastructure/platform';
-import { router } from 'expo-router';
 import { invalidateLearningAccess, learningAccess } from './learning-access';
+import { createPostAuthenticationNavigation } from './post-authentication-navigation';
+
+const authenticationNavigation = createPostAuthenticationNavigation(
+  () => application.settings.snapshot()?.language,
+  (userId) => storageScopes.enterAccount(userId),
+  (route) => storageScopes.prepareAccountEntry(route.params.language),
+);
 
 const isAccount = () =>
   storageScopes.snapshot().phase === 'ready' && storageScopes.snapshot().mode === 'account';
@@ -23,19 +29,20 @@ export const syncEngine = database
       async () => {
         await application.settings.get();
         await refreshStudyReminder();
-        await learningAccess().refresh();
+        await learningAccess().refreshIfStale();
       },
       {
         isAccount,
-        enterAccount: (userId) => storageScopes.enterAccount(userId),
+        enterAccount: authenticationNavigation.enterAccount,
         enterGuest: () => storageScopes.enterGuest(),
+        enterEmptyGuest: () => storageScopes.enterEmptyGuest(),
         lockAccount: () => storageScopes.lockAccount(),
       },
       () => {
         void learningAccess()
           .refresh()
           .catch(() => {});
-        router.replace('/auth/guest-data' as import('expo-router').Href);
+        authenticationNavigation.afterAuthentication();
       },
     )
   : null;
@@ -52,6 +59,11 @@ export async function restoreLocalSession(): Promise<void> {
       return;
     }
   }
-  if (userId) await storageScopes.enterAccount(userId);
-  else await cloud.forgetLocalSession();
+  if (userId) {
+    await storageScopes.enterAccount(userId);
+    const guest = await storageScopes.guestScope();
+    const content = await guest.database!.execute('SELECT id FROM decks LIMIT 1');
+    if (content.rows.length) storageScopes.prepareAccountEntry();
+    else storageScopes.completeAccountEntry();
+  } else await cloud.forgetLocalSession();
 }

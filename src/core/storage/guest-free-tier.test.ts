@@ -8,8 +8,64 @@ import { fixedClock, sequenceIds, makeDeck, makeCard, makeSettings } from '@/../
 import type { Repositories } from '@/core/ports/repositories';
 import { SyncStore } from '@/core/sync/sync-store';
 
+jest.mock('expo-crypto', () => ({
+  randomUUID: () => jest.requireActual<typeof import('node:crypto')>('node:crypto').randomUUID(),
+}));
+
 const accountA = '11111111-1111-1111-1111-111111111111';
 const accountB = '22222222-2222-2222-2222-222222222222';
+
+test('empty guest activation removes all guest learning data and queues but preserves account data across restart', async () => {
+  const fixture = setup();
+  await fixture.scopes.initialize();
+  const guest = fixture.scopes.current();
+  await guest.value.decks.create(makeDeck());
+  await guest.value.cards.create(makeCard());
+  await guest.value.settings.update(makeSettings());
+  const device = (await new SyncStore(guest.database!).account()).deviceId;
+  await fixture.scopes.enterAccount(accountA);
+  const account = fixture.scopes.current();
+  await account.value.decks.create(makeDeck({ name: 'Private' }));
+  fixture.scopes.lockAccount();
+  await fixture.scopes.enterEmptyGuest();
+  expect(await guest.value.decks.list()).toEqual([]);
+  expect(await guest.value.cards.listByDeck('deck-1')).toEqual([]);
+  expect(await guest.value.reviews.listEvents()).toEqual([]);
+  expect(await guest.value.settings.get()).toEqual(makeSettings());
+  expect(await new SyncStore(guest.database!).pending()).toEqual([]);
+  expect((await new SyncStore(guest.database!).account()).deviceId).not.toBe(device);
+  expect(await account.value.decks.list()).toEqual([makeDeck({ name: 'Private' })]);
+  const restarted = setup(fixture.persist());
+  await restarted.scopes.initialize();
+  expect(await restarted.scopes.current().value.decks.list()).toEqual([]);
+  await restarted.scopes.enterAccount(accountA);
+  expect(await restarted.scopes.current().value.decks.list()).toEqual([
+    makeDeck({ name: 'Private' }),
+  ]);
+});
+
+test('failed guest reset stays locked and its durable intent completes before guest access after restart', async () => {
+  const fixture = setup();
+  await fixture.scopes.initialize();
+  const guest = fixture.scopes.current();
+  await guest.value.decks.create(makeDeck());
+  const database = guest.database as RealSqliteDatabase;
+  database.failStatement = 'DELETE FROM decks';
+  await expect(fixture.scopes.enterEmptyGuest()).rejects.toThrow('Disk full');
+  expect(() => fixture.scopes.current()).toThrow('unavailable');
+  expect((await database.execute('SELECT id FROM decks')).rows).toHaveLength(1);
+  expect(
+    (
+      await database.execute(
+        "SELECT name FROM sqlite_master WHERE name = 'review_events_no_delete'",
+      )
+    ).rows,
+  ).toHaveLength(1);
+  database.failStatement = null;
+  const restarted = setup(fixture.persist());
+  await restarted.scopes.initialize();
+  expect(await restarted.scopes.current().value.decks.list()).toEqual([]);
+});
 
 test('migration reads unowned guest storage without switching or rebinding the authenticated account', async () => {
   const { scopes } = setup();

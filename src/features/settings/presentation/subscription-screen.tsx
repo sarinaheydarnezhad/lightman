@@ -1,4 +1,5 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { View } from 'react-native';
 import { BookOpen, Crown, Layers, RectangleHorizontal, type LucideIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -62,6 +63,9 @@ export function SubscriptionScreen() {
   );
   const plus = catalog.data?.plans.find((plan) => plan.plan === 'Plus');
   const prices = plus?.prices ?? [];
+  const regularMonthlyPrice = prices.find((price) => price.durationMonths === 1)?.priceToman;
+  const amount = (value: number) =>
+    language === 'fa' ? `\u2066${number(value)}\u2069` : number(value);
   const selected = prices.find((price) => price.durationMonths === selectedMonths) ?? prices[0];
   const usage = details.data
     ? {
@@ -164,35 +168,46 @@ export function SubscriptionScreen() {
             {t('paywall.choose')}
           </Text>
           {catalog.loading ? <LoadingState label={t('paywall.loading')} /> : null}
-          {catalog.error ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {t('access.unavailable')}
-            </Text>
-          ) : null}
+          {catalog.error ? <FeedbackModal message={t('access.unavailable')} /> : null}
           {!catalog.loading && !catalog.error && !prices.length ? (
             <Text tone="secondary">{t('paywall.empty')}</Text>
           ) : null}
           {!catalog.loading && !catalog.error
-            ? prices.map((price) => (
-                <Button
-                  key={price.durationMonths}
-                  testID={`plus-plan-${price.durationMonths}`}
-                  label={t(price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price', {
+            ? prices.map((price) => {
+                const total = t(
+                  price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price',
+                  {
                     months: number(price.durationMonths),
-                    amount:
-                      language === 'fa'
-                        ? `\u2066${number(price.priceToman)}\u2069`
-                        : number(price.priceToman),
-                  })}
-                  variant={
-                    selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
-                  }
-                  accessibilityState={{
-                    selected: selected?.durationMonths === price.durationMonths,
-                  }}
-                  onPress={() => setSelectedMonths(price.durationMonths)}
-                />
-              ))
+                    amount: amount(price.priceToman),
+                  },
+                );
+                const monthly = t('paywall.perMonth', {
+                  amount: amount(price.priceToman / price.durationMonths),
+                });
+                const discount = regularMonthlyPrice
+                  ? Math.round(
+                      (1 - price.priceToman / (regularMonthlyPrice * price.durationMonths)) * 100,
+                    )
+                  : 0;
+                const savings =
+                  discount > 0 && discount < 100
+                    ? ` · ${t('paywall.discount', { percent: number(discount) })}`
+                    : '';
+                return (
+                  <Button
+                    key={price.durationMonths}
+                    testID={`plus-plan-${price.durationMonths}`}
+                    label={price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`}
+                    variant={
+                      selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
+                    }
+                    accessibilityState={{
+                      selected: selected?.durationMonths === price.durationMonths,
+                    }}
+                    onPress={() => setSelectedMonths(price.durationMonths)}
+                  />
+                );
+              })
             : null}
           {selected && !catalog.loading && !catalog.error ? (
             <Text variant="labelLarge" testID="selected-plan">
@@ -202,15 +217,36 @@ export function SubscriptionScreen() {
               })}
             </Text>
           ) : null}
+          {selected && selected.durationMonths > 1 && !catalog.loading && !catalog.error ? (
+            <Text variant="bodySmall" tone="secondary" testID="selected-plan-monthly">
+              {t('paywall.perMonth', {
+                amount: amount(selected.priceToman / selected.durationMonths),
+              })}
+            </Text>
+          ) : null}
           <Button label={t('paywall.purchaseUnavailable')} disabled />
           <View className="gap-sm rounded-md bg-primarySoft p-md">
             <Text variant="bodySmall" tone="secondary">
               {t(active ? 'paywall.alreadyActive' : 'paywall.providerMissing')}
             </Text>
-            <Text variant="caption" tone="secondary">
-              {t('access.fullUnavailable')}
-            </Text>
           </View>
+        </Card>
+
+        <Card
+          variant="outlined"
+          className="gap-md"
+          style={{ backgroundColor: colors.surface }}
+          testID="premium-plan"
+        >
+          <View
+            className={`flex-wrap items-center justify-between gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+          >
+            <Text variant="headingSmall" accessibilityRole="header" className="flex-shrink">
+              {t('paywall.premiumPlan')}
+            </Text>
+            <Badge label={t('paywall.premiumStatus')} />
+          </View>
+          <Text tone="secondary">{t('access.premiumUnavailable')}</Text>
         </Card>
 
         <Card variant="outlined" className="gap-md" style={{ backgroundColor: colors.surface }}>
@@ -256,11 +292,7 @@ export function SubscriptionScreen() {
             {t(syncEngine?.available ? 'paywall.cloud' : 'paywall.cloudUnavailable')}
           </Text>
           {details.loading ? <LoadingState label={t('access.refresh')} /> : null}
-          {details.error ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {t('paywall.statusError')}
-            </Text>
-          ) : null}
+          {details.error ? <FeedbackModal message={t('paywall.statusError')} /> : null}
         </Card>
         <Button
           label={t('access.refresh')}

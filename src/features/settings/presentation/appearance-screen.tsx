@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { CheckCircle2, Moon, Sun } from 'lucide-react-native';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -115,9 +116,7 @@ export function AppearanceScreen() {
           </View>
         ) : null}
         {vm.errors.theme ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {language === 'en' ? vm.errors.theme : t('common.genericError')}
-          </Text>
+          <FeedbackModal message={language === 'en' ? vm.errors.theme : t('common.genericError')} />
         ) : null}
         <Text variant="bodySmall" tone="secondary">
           {t('settings.themeLifetime')}

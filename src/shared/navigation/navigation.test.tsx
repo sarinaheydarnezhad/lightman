@@ -8,9 +8,8 @@ import {
   ScreenStackHeaderConfig,
   ScreenStackHeaderLeftView,
   ScreenStackHeaderRightView,
-  ScreenStackItem,
 } from 'react-native-screens';
-import { ArrowRight, ChevronRight } from 'lucide-react-native';
+import { ArrowLeft, Check, ChevronLeft } from 'lucide-react-native';
 import {
   addNotificationResponseReceivedListener,
   getLastNotificationResponse,
@@ -148,15 +147,39 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
-test('root layout renders the app and accessible tab navigation', async () => {
-  const rendered = renderRouter(routes, { initialUrl: '/' });
-  expect(await screen.findByRole('header', { name: 'Welcome back' })).toBeTruthy();
-  for (const label of ['Home', 'Decks', 'Study', 'Analytics', 'Settings']) {
-    expect(screen.getByRole('button', { name: `${label} tab` })).toBeTruthy();
-  }
-  expect(screen.getByRole('button', { name: 'Home tab', selected: true })).toBeTruthy();
-  expect(rendered.getPathname()).toBe('/');
-});
+test.each(['en', 'fa'] as const)(
+  'root layout renders accessible tab navigation without Study in %s',
+  async (language) => {
+    await application.settings.setLanguage(languageTag(language));
+    try {
+      const rendered = renderRouter(routes, { initialUrl: '/' });
+      expect(
+        await screen.findByRole('header', { name: translate(language, 'home.welcome') }),
+      ).toBeTruthy();
+      for (const tab of ['home', 'decks', 'analytics', 'settings'] as const) {
+        expect(
+          screen.getByRole('button', {
+            name: translate(language, 'nav.tab', { name: translate(language, `nav.${tab}`) }),
+          }),
+        ).toBeTruthy();
+      }
+      expect(
+        screen.queryByRole('button', {
+          name: translate(language, 'nav.tab', { name: translate(language, 'nav.study') }),
+        }),
+      ).toBeNull();
+      expect(
+        screen.getByRole('button', {
+          name: translate(language, 'nav.tab', { name: translate(language, 'nav.home') }),
+          selected: true,
+        }),
+      ).toBeTruthy();
+      expect(rendered.getPathname()).toBe('/');
+    } finally {
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+);
 
 test('settings opens the local import/export route', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/settings' });
@@ -352,6 +375,28 @@ test('analytics presents real metrics, boxes and 7/30/90-day accessible chart su
     await screen.findByLabelText('90-day review activity: 3 reviews across 2 active days.'),
   ).toBeTruthy();
   expect(load).toHaveBeenCalledWith(90);
+});
+
+test('Persian analytics window filters show days in Persian and keep selection working', async () => {
+  const load = jest
+    .spyOn(application, 'getAnalyticsWindow')
+    .mockImplementation(async (days = 30) => analyticsFixture(days, 3));
+  await application.settings.setLanguage(languageTag('fa'));
+  try {
+    renderRouter(routes, { initialUrl: '/analytics' });
+    await screen.findByRole('header', { name: translate('fa', 'nav.analytics') });
+    for (const days of [7, 30, 90]) {
+      const label = new RegExp(`${formatNumber(days, 'fa')}.* روز`);
+      expect(screen.getByRole('tab', { name: label })).toBeTruthy();
+      expect(screen.queryByRole('tab', { name: /D/ })).toBeNull();
+      fireEvent.press(screen.getByRole('tab', { name: label }));
+      await waitFor(() => expect(load).toHaveBeenLastCalledWith(days));
+      expect(screen.getByRole('tab', { name: label, selected: true })).toBeTruthy();
+    }
+  } finally {
+    load.mockRestore();
+    await act(async () => application.settings.setLanguage(languageTag('en')));
+  }
 });
 
 test('analytics allows retry after a repository error and refreshes when navigation refocuses', async () => {
@@ -945,10 +990,11 @@ test.each([
       );
       expect(header.props.backTitleFontFamily).toBe('Vazirmatn');
       expect(header.props.direction).toBe('ltr');
-      expect(header.props.hideBackButton).toBe(language === 'fa');
+      expect(header.props.hideBackButton).toBe(true);
       const label = translate(language, 'form.createCardAction');
       const slot = within(header).UNSAFE_getByType(ScreenStackHeaderRightView);
       expect(within(slot).getByRole('button', { name: label })).toBeTruthy();
+      expect(within(slot).UNSAFE_getByType(Check).props.strokeWidth).toBe(3);
       expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
       expect(
         within(screen.UNSAFE_getByType(CardForm)).queryByRole('button', { name: label }),
@@ -960,27 +1006,16 @@ test.each([
       await screen.findByText(translate(language, 'form.cardCreated'));
       expect(await application.countActiveCardsForDeck('fresh-collection')).toBe(cardCount + 1);
       expect(rendered.getPathname()).toBe('/decks/fresh-collection/cards/create');
-      if (language === 'fa') {
-        const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
-        expect(within(back).UNSAFE_getByType(HeaderBackButton).props.style).toEqual({
-          marginRight: 'auto',
-        });
-        expect(
-          within(back).UNSAFE_getByType(platform === 'ios' ? ChevronRight : ArrowRight),
-        ).toBeTruthy();
-        fireEvent.press(
-          within(back).getByRole('button', { name: translate(language, 'common.cancel') }),
-        );
-      } else {
-        expect(within(header).UNSAFE_queryByType(HeaderBackButton)).toBeNull();
-        const item = screen
-          .UNSAFE_getAllByType(ScreenStackItem)
-          .find(
-            (screenItem) =>
-              screenItem.props.headerConfig?.title === translate(language, 'nav.createCard'),
-          )!;
-        fireEvent(item, 'headerBackButtonClicked');
-      }
+      const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
+      expect(within(back).UNSAFE_getByType(HeaderBackButton).props.style).toEqual({
+        marginRight: 'auto',
+      });
+      expect(
+        within(back).UNSAFE_getByType(platform === 'ios' ? ChevronLeft : ArrowLeft),
+      ).toBeTruthy();
+      fireEvent.press(
+        within(back).getByRole('button', { name: translate(language, 'common.cancel') }),
+      );
       await waitFor(() => expect(rendered.getPathname()).toBe('/decks/fresh-collection'));
       expect(screen.queryByRole('button', { name: label })).toBeNull();
     } finally {
@@ -1058,7 +1093,7 @@ test('create-card navigation header follows live language, form, loading, error 
         { name: 'Create card', busy: false, disabled: false },
       ),
     ).toBeTruthy();
-    expect(englishHeader.props.hideBackButton).toBe(false);
+    expect(englishHeader.props.hideBackButton).toBe(true);
     expect(screen.getAllByRole('button', { name: 'Create card' })).toHaveLength(1);
   } finally {
     create.mockRestore();
@@ -1250,6 +1285,47 @@ afterEach(async () => {
   jest.restoreAllMocks();
 });
 
+test.each([
+  ['en', 'success'],
+  ['en', 'failure'],
+  ['fa', 'success'],
+  ['fa', 'failure'],
+] as const)(
+  'finishing study with %s %s shows results before Done opens and refreshes Analytics',
+  async (language, result) => {
+    const { deck, cards } = await studyFixture(1);
+    await application.settings.setLanguage(languageTag(language));
+    const analytics = jest.spyOn(application, 'getAnalyticsWindow');
+    try {
+      const rendered = renderRouter(routes, { initialUrl: '/analytics' });
+      await screen.findByRole('header', { name: translate(language, 'nav.analytics') });
+      await waitFor(() => expect(analytics).toHaveBeenCalled());
+      const session = await application.startStudySession({
+        kind: 'specific-deck',
+        deckId: deck.id,
+      });
+      act(() => router.push(`/study/${session.id}`));
+      await screen.findByRole('header', { name: cards[0]!.frontText });
+      analytics.mockClear();
+      fireEvent.press(screen.getByTestId('study-flip-card'));
+      fireEvent.press(screen.getByRole('button', { name: translate(language, `study.${result}`) }));
+      await screen.findByRole('header', { name: translate(language, 'study.complete') });
+      expect(rendered.getPathname()).toBe(`/study/${session.id}`);
+      expect(analytics).not.toHaveBeenCalled();
+      fireEvent.press(screen.getByRole('button', { name: translate(language, 'study.done') }));
+      await screen.findByRole('header', { name: translate(language, 'nav.analytics') });
+      expect(rendered.getPathname()).toBe('/analytics');
+      expect((await application.getStudySession(session.id)).status).toBe('completed');
+      expect(await application.getActiveStudySession()).toBeNull();
+      expect(await application.listReviewEvents({ cardId: cards[0]!.id })).toHaveLength(1);
+      await waitFor(() => expect(analytics).toHaveBeenCalled());
+    } finally {
+      analytics.mockRestore();
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+);
+
 test('study card taps flip both ways without recording reviews or showing a reveal button', async () => {
   const { deck, cards } = await studyFixture(1);
   const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
@@ -1285,7 +1361,7 @@ test('study card taps flip both ways without recording reviews or showing a reve
   expect(await application.listReviewEvents({ cardId: cards[0]!.id })).toHaveLength(1);
 });
 
-test('Study tab starts an all-deck session, reveals answers and lets users leave', async () => {
+test('Study route starts an all-deck session, reveals answers and lets users leave', async () => {
   jest.spyOn(idGenerator, 'create').mockImplementation(() => `study-ui-${++studyId}`);
   const rendered = renderRouter(routes, { initialUrl: '/study' });
   await screen.findByRole('header', { name: 'Study' });
@@ -1330,7 +1406,7 @@ test('advancing a study card and leaving study stop pronunciation without auto-p
   expect(stop.mock.calls.length).toBeGreaterThan(beforeLeaving);
 });
 
-test('deck-specific session reveals examples, retries one failure, completes, and can start again', async () => {
+test('deck-specific session shows results and opens Analytics after Done', async () => {
   const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility');
   const { deck } = await studyFixture(2);
   const rendered = renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
@@ -1364,26 +1440,22 @@ test('deck-specific session reveals examples, retries one failure, completes, an
   expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 0');
   fireEvent.press(screen.getByTestId('study-flip-card'));
   fireEvent.press(screen.getByRole('button', { name: 'Success' }));
-  expect(await screen.findByText('One more try')).toBeTruthy();
-  expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 1');
-  expect(screen.getByRole('header', { name: firstCard.frontText })).toBeTruthy();
-  fireEvent.press(screen.getByTestId('study-flip-card'));
-  fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
-  expect(announce).toHaveBeenCalledWith('Session complete. Every card is finished.');
+  expect(rendered.getPathname()).toBe(`/study/${session.id}`);
   expect(screen.getByText('Cards studied')).toBeTruthy();
-  expect(screen.getByText('2')).toBeTruthy();
-  expect(screen.getByText('Retries: 1')).toBeTruthy();
-  expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(2);
-  expect((await application.listReviewEvents({ cardId: first.cardId })).length).toBe(2);
-  fireEvent.press(screen.getByRole('button', { name: 'Study again' }));
-  expect(await screen.findByRole('header', { name: 'Study session' })).toBeTruthy();
-  expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 0');
-  expect((await application.getActiveStudySession())?.scope).toEqual({
-    kind: 'specific-deck',
-    deckId: deck.id,
-  });
-  expect(rendered.getPathname()).toContain('/study/');
+  expect(screen.getByText('Retries: 0')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Review again' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Study again' })).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+  expect(await screen.findByRole('header', { name: 'Analytics' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/analytics');
+  expect(screen.getByRole('button', { name: 'Analytics tab', selected: true })).toBeTruthy();
+  expect(screen.queryByText('One more try')).toBeNull();
+  expect(announce).toHaveBeenCalledWith('Session complete. Every card is finished.');
+  expect((await application.getStudySession(session.id)).status).toBe('completed');
+  expect(await application.getActiveStudySession()).toBeNull();
+  expect((await application.getReviewState(first.cardId))?.totalReviews).toBe(1);
+  expect((await application.listReviewEvents({ cardId: first.cardId })).length).toBe(1);
 });
 
 test.each(['en', 'fa'] as const)(
@@ -1427,7 +1499,7 @@ test.each(['en', 'fa'] as const)(
   },
 );
 
-test('correct-answer counter combines swipe and button successes, including retries', async () => {
+test('correct-answer counter combines swipe and button successes without automatic retries', async () => {
   const feedback = jest.spyOn(haptics, 'answerSuccess').mockResolvedValue();
   jest
     .spyOn(swipeSurface, 'SwipeableStudyCard')
@@ -1448,8 +1520,11 @@ test('correct-answer counter combines swipe and button successes, including retr
           : null}
       </View>
     ));
-  const { deck, cards } = await studyFixture(3);
+  const { deck } = await studyFixture(3);
   const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
+  const cards = await Promise.all(
+    session.initialQueue.map((item) => application.getCard(item.cardId)),
+  );
   renderRouter(routes, { initialUrl: `/study/${session.id}` });
   await screen.findByRole('header', { name: cards[0]!.frontText });
   expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 0');
@@ -1467,14 +1542,9 @@ test('correct-answer counter combines swipe and button successes, including retr
 
   fireEvent.press(screen.getByTestId('study-flip-card'));
   fireEvent.press(screen.getByRole('button', { name: 'Success' }));
-  await screen.findByText('One more try');
-  expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 2');
-  expect(feedback).toHaveBeenCalledTimes(2);
-  fireEvent.press(screen.getByTestId('study-flip-card'));
-  fireEvent.press(screen.getByRole('button', { name: 'Success' }));
   await screen.findByRole('header', { name: 'Session complete' });
-  expect((await application.getStudyProgress(session.id)).correctReviews).toBe(3);
-  expect(feedback).toHaveBeenCalledTimes(3);
+  expect((await application.getStudyProgress(session.id)).correctReviews).toBe(2);
+  expect(feedback).toHaveBeenCalledTimes(2);
 });
 
 test('deck settings persist the deck review system and deck details show scheduler-provided distribution', async () => {
@@ -1511,7 +1581,7 @@ test('new empty decks can select and persist SM-2 from the deck form', async () 
 test('summary Review again opens only missed cards without reviewing them, then records one actual retry and ends normally', async () => {
   const { deck, cards } = await studyFixture(2);
   const session = await application.startStudySession({ kind: 'specific-deck', deckId: deck.id });
-  for (const result of ['failure', 'success', 'success'] as const) {
+  for (const result of ['failure', 'success'] as const) {
     const item = (await application.getCurrentStudyItem(session.id))!;
     await application.submitStudyAnswer({
       sessionId: session.id,
@@ -1539,14 +1609,17 @@ test('summary Review again opens only missed cards without reviewing them, then 
   expect(await application.listReviewEvents({ deckId: deck.id })).toEqual(beforeEvents);
   fireEvent.press(screen.getByRole('button', { name: 'Failure' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe(`/study/${retry.id}`);
   expect(screen.getByLabelText('1 card reviewed')).toBeTruthy();
   expect(screen.getByText('0 correct')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Done' }));
+  expect(await screen.findByRole('header', { name: 'Analytics' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/analytics');
+  expect((await application.getStudySession(retry.id)).status).toBe('completed');
   expect(screen.queryByRole('button', { name: 'Review again' })).toBeNull();
   expect(await application.listReviewEvents({ deckId: deck.id })).toHaveLength(
     beforeEvents.length + 1,
   );
-  fireEvent.press(screen.getByRole('button', { name: 'Done' }));
-  expect(await screen.findByRole('header', { name: 'Study' })).toBeTruthy();
   expect(await application.getActiveStudySession()).toBeNull();
 }, 20_000);
 
@@ -1649,7 +1722,7 @@ test('answer failure keeps the current card available for a safe retry', async (
   }
 });
 
-test('a committed physical-left swipe uses the same review path as a Success button on retry', async () => {
+test('a committed physical-left swipe completes and a Success button works after optional Review again', async () => {
   const failureFeedback = jest.spyOn(haptics, 'answerFailure').mockResolvedValue();
   const successFeedback = jest.spyOn(haptics, 'answerSuccess').mockResolvedValue();
   // Jest cannot dispatch UI-thread worklets. The swipe surface itself is tested separately;
@@ -1689,8 +1762,10 @@ test('a committed physical-left swipe uses the same review path as a Success but
   expect((await application.listReviewEvents({ cardId: cards[0]!.id }))[0]?.result).toBe('failure');
   expect(failureFeedback).toHaveBeenCalledTimes(1);
   expect(successFeedback).not.toHaveBeenCalled();
-  expect((await application.getCurrentStudyItem(session.id))?.kind).toBe('retry');
-  await screen.findByText('One more try');
+  expect(await application.getCurrentStudyItem(session.id)).toBeNull();
+  await screen.findByRole('header', { name: 'Session complete' });
+  fireEvent.press(screen.getByRole('button', { name: 'Review again' }));
+  await screen.findByRole('header', { name: cards[0]!.frontText });
   fireEvent.press(screen.getByTestId('study-flip-card'));
   fireEvent.press(screen.getByRole('button', { name: 'Success' }));
   expect(await screen.findByRole('header', { name: 'Session complete' })).toBeTruthy();

@@ -1,6 +1,6 @@
 # Google authentication
 
-The **Continue with Google** button signs in an existing Google user or creates an account on first use. Phone/password login, verified phone registration, and legacy email/password login remain available. Google registration needs no phone number, SMS OTP, or app password.
+The **Continue with Google** button is temporarily hidden, along with email and OTP controls. The current UI offers only [phone/password registration and login](phone-authentication.md). The Google adapter, backend endpoint and configuration below are retained for later re-enablement; when enabled, Google can sign in or create an account without a phone number, SMS OTP, or app password.
 
 ## Configuration
 

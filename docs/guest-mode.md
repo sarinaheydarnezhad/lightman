@@ -9,13 +9,13 @@ The app is usable without signing in. Deck/card creation, editing, review schedu
 - An existing `lerona.db` with an empty `sync_account.user_id` remains guest storage. It is never assigned to an account.
 - If `lerona.db` already belongs to an account, only that exact account may reopen it. Guest data goes into `lerona-guest.db` instead.
 - Other accounts use `lerona-account-{verified-user-uuid}.db`.
-- Unknown/corrupt ownership fails closed. No scope switch copies, merges, deletes or overwrites another scope's records.
+- Unknown/corrupt ownership fails closed. Account data is never copied or overwritten by a scope switch. Explicit logout resets only unowned guest learning storage.
 
 Per-scope application services capture their own repositories. Stale reads/results are rejected after a switch, and navigation/settings subscriptions no longer expose the former scope. Existing import/export operations also capture their originating scope; a stale import preview cannot be applied to another account. The separately implemented [guest-data copy flow](guest-data-migration.md) reads unowned guest storage without rebinding it and requires explicit confirmation before creating account copies.
 
-The existing SecureStore token record retains the verified `/me/` account UUID to restore its scope offline. Legacy credentials without this metadata may reopen only a known legacy account database, never assume unowned guest records belong to that account. Logout/session loss opens guest storage; an unavailable server cannot block guest study. Offline logout clears local credentials but cannot confirm remote revocation, and the existing cloud screen reports that distinction.
+The existing SecureStore token record retains the verified `/me/` account UUID to restore its scope offline. Legacy credentials without this metadata require a verified identity, not a guess from database ownership. Logout/session loss locks account access and resets guest learning data before opening an empty guest space. Account data remains private for its owner's next login. Reset failures remain locked and a durable intent retries cleanup after restart. Offline logout clears local credentials but cannot confirm remote revocation.
 
-Guest sync returns before credential reads, outbox reads or network calls. Account binding is explicitly denied while in guest mode. Guest outbox records remain local even if credentials exist. Signing in opens separate account storage and a guest-data preview. The confirmed copy flow creates new, account-owned identities with durable retry receipts; it never uploads or binds the guest outbox and never combines decks by name.
+Guest sync returns before credential reads, outbox reads or network calls. Account binding is explicitly denied while in guest mode. Signing in immediately synchronizes separate account storage, then asks whether to add guest data or discard it permanently. Discard requires destructive confirmation. The additive transfer uses new account-owned identities and durable receipts; only verified completion permits guest cleanup. Pending transfers must resume, not be discarded as if no copies exist. Guest outbox records are never uploaded or bound directly, and decks are never combined by name. With no guest learning data, the synchronized account opens automatically.
 
 ## Limit policy
 

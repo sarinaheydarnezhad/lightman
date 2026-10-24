@@ -8,6 +8,10 @@ import { DataScopeBoundary } from './data-scope-boundary';
 
 let mockState: StorageState = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
 const mockListeners = new Set<() => void>();
+jest.mock('@/features/auth/presentation/guest-data-screen', () => {
+  const MockText = jest.requireActual<typeof import('react-native')>('react-native').Text;
+  return { GuestDataScreen: () => <MockText>Guest decision modal</MockText> };
+});
 jest.mock('expo-router', () => ({ router: { replace: jest.fn(), dismissAll: jest.fn() } }));
 jest.mock('@/core/composition/repositories', () => ({
   storageScopes: {
@@ -62,4 +66,27 @@ test('scope changes hide account screens while opening storage and discard cache
   expect(
     screen.getByText('Your data has not been deleted. Retry opening guest storage.'),
   ).toBeTruthy();
+});
+
+test('account entry stays gated until credentials are saved and the guest decision is resolved', () => {
+  mockState = {
+    phase: 'ready',
+    mode: 'account',
+    userId: 'account',
+    revision: 4,
+    accountEntry: 'authenticating',
+  };
+  render(
+    <DataScopeBoundary>
+      <ScopedScreen />
+    </DataScopeBoundary>,
+  );
+  expect(screen.queryByText('Private account deck')).toBeNull();
+  expect(screen.queryByText('Guest decision modal')).toBeNull();
+  update({ ...mockState, accountEntry: 'review' });
+  expect(screen.getByText('Guest decision modal')).toBeTruthy();
+  expect(screen.queryByText('Private account deck')).toBeNull();
+  update({ ...mockState, accountEntry: undefined });
+  expect(screen.queryByText('Guest decision modal')).toBeNull();
+  expect(screen.getByText('Private account deck')).toBeTruthy();
 });

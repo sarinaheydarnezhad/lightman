@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { View } from 'react-native';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
@@ -33,8 +34,7 @@ export function StudyScreen() {
           </Text>
         </Card>
         {study.error ? (
-          <View className="gap-sm" accessibilityLiveRegion="polite">
-            <Text tone="error">{language === 'en' ? study.error : t('common.genericError')}</Text>
+          <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
             {study.activeSession ? (
               <Button
                 label={t('study.resume')}
@@ -42,7 +42,7 @@ export function StudyScreen() {
                 onPress={() => openStudySession(study.activeSession!)}
               />
             ) : null}
-          </View>
+          </FeedbackModal>
         ) : null}
         <Button
           label={t('common.browseDecks')}

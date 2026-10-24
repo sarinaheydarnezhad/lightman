@@ -2,6 +2,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { validateEntitlements, validatePlanCatalog, validateSubscription } from './subscription';
+import { RequestCache } from './request-cache';
+import { retryAfterDelay } from './retry-policy';
 import {
   validateBackupMetadata,
   validateServerBackup,
@@ -22,6 +24,7 @@ import {
   type OtpChallenge,
   type OtpPurpose,
   type OtpVerification,
+  type PhonePasswordRegistration,
   type PhoneRegistration,
 } from './phone-auth';
 
@@ -51,6 +54,7 @@ export class CloudError extends Error {
     readonly conflict?: SyncConflict,
     message?: string,
     readonly code?: string,
+    readonly retryAfterMs?: number,
   ) {
     super(
       message ??
@@ -64,6 +68,7 @@ export class CloudError extends Error {
 }
 
 export class CloudClient {
+  private readonly reads = new RequestCache();
   private refreshInFlight: Promise<Tokens> | null = null;
   private sessionEpoch = 0;
   private locallySignedOut = false;
@@ -83,6 +88,7 @@ export class CloudClient {
   }
 
   private invalidateSession(): void {
+    this.reads.clear();
     this.locallySignedOut = true;
     this.sessionEpoch++;
     this.requests.forEach((controller) => controller.abort());
@@ -173,7 +179,11 @@ export class CloudClient {
     return !this.locallySignedOut;
   }
 
-  async accountProfile(): Promise<AccountProfile> {
+  accountProfile(): Promise<AccountProfile> {
+    return this.reads.get('profile', () => this.loadAccountProfile());
+  }
+
+  private async loadAccountProfile(): Promise<AccountProfile> {
     const account = await this.request<AccountProfile>('/me/', { method: 'GET' });
     if (!account || typeof account.id !== 'string' || !account.id)
       throw new Error('Invalid account response.');
@@ -314,6 +324,7 @@ export class CloudClient {
       }
       await SecureStore.deleteItemAsync(logoutBarrierKey);
       if (epoch !== this.sessionEpoch) throw new CloudError(401);
+      this.reads.clear();
       this.locallySignedOut = false;
       await this.logoutJournal
         .update((journal) => {
@@ -407,6 +418,20 @@ export class CloudClient {
     return this.completeSignIn(tokens, bindUser, epoch);
   }
 
+  async registerPhoneWithPassword(
+    registration: PhonePasswordRegistration,
+    bindUser: (userId: string) => Promise<void>,
+  ): Promise<string> {
+    const epoch = this.sessionEpoch;
+    const tokens = validateTokens(
+      await this.authPost('/auth/phone/register-password', {
+        ...registration,
+        phoneNumber: normalizePhoneNumber(registration.phoneNumber),
+      }),
+    );
+    return this.completeSignIn(tokens, bindUser, epoch);
+  }
+
   async signInGoogle(
     idToken: string,
     bindUser: (userId: string) => Promise<void>,
@@ -435,25 +460,44 @@ export class CloudClient {
     return (await this.logoutJournal.read()).result;
   }
 
-  async planCatalog() {
-    const response = await this.fetchWithTimeout('/plans', { method: 'GET' });
-    if (!response.ok) throw new CloudError(response.status);
-    return validatePlanCatalog(await response.json());
+  planCatalog(force = false) {
+    return this.reads.get(
+      'plans',
+      async () => {
+        const response = await this.fetchWithTimeout('/plans', { method: 'GET' });
+        if (!response.ok) throw new CloudError(response.status);
+        return validatePlanCatalog(await response.json());
+      },
+      5 * 60_000,
+      force,
+    );
   }
 
   async subscription() {
-    return validateSubscription(await this.request('/me/subscription', { method: 'GET' }));
+    return this.reads.get('subscription', async () =>
+      validateSubscription(await this.request('/me/subscription', { method: 'GET' })),
+    );
   }
 
   async entitlements() {
-    return validateEntitlements(await this.request('/me/entitlements', { method: 'GET' }));
+    return this.reads.get('entitlements', async () =>
+      validateEntitlements(await this.request('/me/entitlements', { method: 'GET' })),
+    );
   }
 
   async authorizeStudy() {
     return validateEntitlements(await this.request('/me/study/authorize', { method: 'POST' }));
   }
 
-  async backupStatus(): Promise<BackupOverview> {
+  async backupStatus(force = false): Promise<BackupOverview> {
+    const epoch = this.sessionEpoch;
+    if (!(await this.hasSession()) || epoch !== this.sessionEpoch) throw new CloudError(401);
+    const result = await this.reads.get('backups', () => this.loadBackupStatus(), 15_000, force);
+    if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
+    return result;
+  }
+
+  private async loadBackupStatus(): Promise<BackupOverview> {
     const epoch = this.sessionEpoch;
     const [status, page] = await Promise.all([
       this.request<{ latestCompleted: unknown }>('/backups/status', { method: 'GET' }),
@@ -473,6 +517,15 @@ export class CloudClient {
   }
 
   async createBackup(expectedSyncVersion: number): Promise<ServerBackup> {
+    this.reads.delete('backups');
+    try {
+      return await this.createBackupRequest(expectedSyncVersion);
+    } finally {
+      this.reads.delete('backups');
+    }
+  }
+
+  private async createBackupRequest(expectedSyncVersion: number): Promise<ServerBackup> {
     const epoch = this.sessionEpoch;
     const tokens = await this.readTokens();
     if (!tokens?.userId || !Number.isSafeInteger(expectedSyncVersion) || expectedSyncVersion < 0)
@@ -659,7 +712,13 @@ export class CloudClient {
       });
       if (!response.ok) {
         if (response.status === 401) await this.clearTokens();
-        throw new CloudError(response.status);
+        throw new CloudError(
+          response.status,
+          undefined,
+          undefined,
+          undefined,
+          retryAfterDelay(response.headers?.get('Retry-After')),
+        );
       }
       const tokens = validateTokens(await response.json());
       if (epoch !== this.sessionEpoch || this.locallySignedOut) throw new CloudError(401);
@@ -727,7 +786,13 @@ export class CloudClient {
         const body = (await response.json()) as { conflict?: SyncConflict; code?: string };
         throw new CloudError(409, body.conflict, undefined, body.code);
       }
-      throw new CloudError(response.status);
+      throw new CloudError(
+        response.status,
+        undefined,
+        undefined,
+        undefined,
+        retryAfterDelay(response.headers?.get('Retry-After')),
+      );
     }
     const result = response.status === 204 ? (undefined as T) : ((await response.json()) as T);
     if (epoch !== this.sessionEpoch) throw new CloudError(401);

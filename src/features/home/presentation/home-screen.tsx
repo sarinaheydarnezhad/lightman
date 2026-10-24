@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { ChevronLeft, ChevronRight, Clock3, Layers3 } from 'lucide-react-native';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
@@ -107,10 +108,7 @@ export function HomeScreen() {
               />
             </Card>
             {study.error ? (
-              <View className="gap-sm" accessibilityLiveRegion="polite">
-                <Text tone="error">
-                  {language === 'en' ? study.error : t('common.genericError')}
-                </Text>
+              <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
                 {study.activeSession ? (
                   <Button
                     label={t('study.resume')}
@@ -118,7 +116,7 @@ export function HomeScreen() {
                     onPress={() => study.activeSession && openStudySession(study.activeSession)}
                   />
                 ) : null}
-              </View>
+              </FeedbackModal>
             ) : null}
             <Card style={{ padding: 18 }}>
               <View className="gap-lg" style={{ flexDirection: spaciousText ? 'column' : 'row' }}>

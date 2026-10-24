@@ -40,6 +40,13 @@ The app does not offer an undo or restore action for deleted decks.
 
 ## Session results and Review again
 
+Saving the final answer of a study session shows the results summary, including
+when the final answer is a failure or the session is a Review again session.
+Pressing **Done** on the summary opens Analytics, which refreshes on focus to
+include the saved reviews. Failed saves and empty sessions do not trigger this
+navigation. Completed session routes also provide their saved summary when opened
+directly.
+
 Ending an active study session saves its cancellation and returns to Home without
 closing the app. Already recorded answers are kept. If cancellation cannot be saved,
 the session stays open with an error so the user can retry.
@@ -49,17 +56,18 @@ it. Its accessibility-gated content has a non-collapsible native wrapper so togg
 the confirmation cannot reparent retained views during Android stack transitions.
 
 During review, the header shows **Correct Answers** from the persisted session's
-`correctReviews` total. Every accepted Success, including an automatic retry,
-adds one; failures and failed saves do not. Resuming retains the total, while
+`correctReviews` total. Every accepted Success adds one; failures and failed saves
+do not. Resuming retains the total, while
 Study again and Review again start new sessions at zero. Accepted answers use
 the existing haptics service once, with a light impact on iOS and a native tick
 on Android for Success. The service checks the app's Haptics preference and uses
 system-controlled feedback without forcing vibration when unavailable or disabled.
 
-The existing original-session behavior is preserved: each initial failure receives
-at most one automatic retry. The summary shows unique cards studied, successful
-and failed first-pass recalls, retry count, and duration. First-pass outcomes are
-labelled separately because automatic retries create additional real review events.
+Each card is presented once per session. Failed cards are not appended to the end
+or automatically retried; users can choose **Review again** after completing the
+session. The summary shows unique cards studied, successful and failed first-pass
+recalls, retry count, and duration. Previously saved sessions retain their existing
+retry queues and history, but no new automatic retries are added.
 
 Every card failed at least once is saved in the session's unique `missedQueue`, in
 first-failure order. A completed original session with missed cards offers
@@ -69,7 +77,7 @@ are excluded. Opening the summary, creating the queue, revealing an answer, and
 pressing Review again never record a review or alter scheduling state.
 
 A review-again session presents each missed card once, records results only when
-answered, and shows the normal summary. Its `sourceSessionId` prevents recursive
+answered, and shows the results summary on completion. Its `sourceSessionId` prevents recursive
 retry sessions and automatic retry queues. The user can finish or cancel normally.
 Legacy completed sessions without workflow metadata derive missed cards from their
 existing saved failure/retry queue.

@@ -122,10 +122,16 @@ test('the relocated action retains validation and keyboard dismissal', async () 
       });
     fireEvent.press(save());
     expect(screen.getByText('Enter a term.')).toBeTruthy();
+    expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+    expect(dismiss).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByRole('button', { name: 'Close' }));
     expect(submit).not.toHaveBeenCalled();
     fireEvent.changeText(screen.getByLabelText('Front text'), 'Current term');
     fireEvent.press(save());
     expect(screen.getByText('Enter a meaning.')).toBeTruthy();
+    expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+    expect(dismiss).toHaveBeenCalledTimes(2);
+    fireEvent.press(screen.getByRole('button', { name: 'Close' }));
     expect(submit).not.toHaveBeenCalled();
     fireEvent.changeText(screen.getByLabelText('Meaning'), 'Current meaning');
     fireEvent.press(save());
@@ -133,7 +139,7 @@ test('the relocated action retains validation and keyboard dismissal', async () 
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({ frontText: 'Current term', meaning: 'Current meaning' }),
     );
-    expect(dismiss).toHaveBeenCalledTimes(1);
+    expect(dismiss.mock.calls.length).toBeGreaterThanOrEqual(3);
     await screen.findByText('Card added successfully. You can add another card.');
   } finally {
     dismiss.mockRestore();

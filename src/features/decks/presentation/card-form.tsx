@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { Keyboard, TextInput, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 
@@ -181,6 +182,7 @@ export function CardForm({
   const saveButton = (
     <IconButton
       icon={Check}
+      strokeWidth={3}
       label={t(existing ? 'form.saveCard' : 'form.createCardAction')}
       variant="ghost"
       tone="success"
@@ -208,14 +210,10 @@ export function CardForm({
             {renderHeaderAction ? null : saveButton}
           </View>
           {created ? (
-            <Text tone="success" accessibilityLiveRegion="polite">
-              {t('form.cardCreated')}
-            </Text>
+            <FeedbackModal message={t('form.cardCreated')} tone="success" onDismiss={() => setCreated(false)} />
           ) : null}
           {error ? (
-            <Text tone="error" accessibilityLiveRegion="polite">
-              {error}
-            </Text>
+            <FeedbackModal message={error} onDismiss={() => setError(null)} />
           ) : null}
         </View>
       }
@@ -236,6 +234,7 @@ export function CardForm({
               setImportMessage(null);
             }}
             error={frontError ?? undefined}
+            onDismissError={() => setFrontError(null)}
             placeholder={t('form.frontPlaceholder')}
             maxLength={MAX_CARD_TEXT_LENGTH}
             returnKeyType="next"
@@ -256,6 +255,7 @@ export function CardForm({
               setMeaningError(null);
             }}
             error={meaningError ?? undefined}
+            onDismissError={() => setMeaningError(null)}
             multiline
             numberOfLines={4}
             maxLength={MAX_CARD_TEXT_LENGTH}
@@ -345,9 +345,7 @@ export function CardForm({
             </Surface>
           ) : null}
           {importMessage ? (
-            <Text tone="secondary" accessibilityLiveRegion="polite">
-              {importMessage}
-            </Text>
+            <FeedbackModal message={importMessage} tone="info" onDismiss={() => setImportMessage(null)} />
           ) : null}
           <Input
             ref={phoneticRef}
@@ -381,6 +379,7 @@ export function CardForm({
                 value={example.sentence}
                 onChangeText={(value) => changeExample(index, { sentence: value })}
                 error={exampleError === index ? t('form.sentenceRequired') : undefined}
+                onDismissError={() => setExampleError(null)}
                 maxLength={MAX_CARD_TEXT_LENGTH}
                 multiline
                 numberOfLines={3}

@@ -12,7 +12,7 @@ export const guestTransfer = syncEngine
       return {
         guest: guest.database!,
         account: account.database,
-        assertCurrent: () => storageScopes.assertCurrent(account),
+        assertCurrent: () => storageScopes.assertCurrent(account, state.revision),
       };
     })
   : null;

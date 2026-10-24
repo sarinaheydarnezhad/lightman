@@ -166,7 +166,7 @@ test('unavailable sync is disclosed and logout without backup remains available'
 test('offline logout notice states uncertainty rather than claiming server revocation or backup', () => {
   mockResult = result;
   mount(<LogoutNotice />);
-  expect(screen.getByText(/Only guest data is accessible/)).toBeTruthy();
+  expect(screen.getByText(/Your learning space is empty/)).toBeTruthy();
   expect(screen.getByText(/without creating or verifying a backup/)).toBeTruthy();
   expect(screen.getByText(/Server revocation is unconfirmed/)).toBeTruthy();
   expect(screen.queryByText('The server confirmed session revocation.')).toBeNull();
@@ -179,4 +179,33 @@ test('guest deep-link exposes no authenticated actions and offers login', () => 
   fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
   expect(router.replace).toHaveBeenCalledWith('/auth');
   expect(engine.signOut).not.toHaveBeenCalled();
+});
+
+test('logout details are modal-only and stay dismissed on ordinary rerenders', () => {
+  mockResult = result;
+  const { rerender } = render(<LogoutNotice />);
+  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByText(/Only guest data is accessible/)).toBeNull();
+  expect(screen.queryByText(/Server revocation is unconfirmed/)).toBeNull();
+  rerender(<LogoutNotice />);
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+});
+
+test('credential removal failures keep the security retry inside the logout modal', async () => {
+  mockResult = { ...result, credentialsCleared: false };
+  render(<LogoutNotice />);
+  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+  fireEvent.press(screen.getByRole('button', { name: 'Retry secure credential removal' }));
+  await waitFor(() => expect(engine.signOut).toHaveBeenCalledTimes(1));
+});
+
+test('closing the logout failure hides details but preserves the security recovery action', async () => {
+  mockResult = { ...result, credentialsCleared: false };
+  render(<LogoutNotice />);
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  expect(screen.queryByText(/Server revocation is unconfirmed/)).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Retry secure credential removal' }));
+  await waitFor(() => expect(engine.signOut).toHaveBeenCalledTimes(1));
 });

@@ -83,10 +83,7 @@ export function advanceStudySession(
   instant(reviewedAt);
   if (session.startedAt === null || reviewedAt < session.startedAt)
     throw new AppError('validation', 'Review time precedes the study session.');
-  const retryQueue =
-    current.kind === 'initial' && result === 'failure' && !session.sourceSessionId
-      ? [...session.retryQueue, validateStudyQueueItem(current)]
-      : session.retryQueue;
+  const retryQueue = session.retryQueue;
   const missedQueue =
     result === 'failure' &&
     !(session.missedQueue ?? session.retryQueue).some((item) => item.cardId === current.cardId)

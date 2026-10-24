@@ -279,6 +279,102 @@ async function count(database: RealSqliteDatabase, table: string) {
   return (await database.execute(`SELECT COUNT(*) AS count FROM ${table}`)).rows[0]?.count;
 }
 
+test('explicit discard deletes guest history and outbox permanently without changing account or server data', async () => {
+  const fixture = await setup();
+  await guestData(fixture.guest, 2);
+  const preview = await fixture.transfer.preview();
+  const account = fixture.account.handle.export();
+  const server = fixture.server.handle.export();
+  await fixture.transfer.discard(preview);
+  for (const table of [
+    'decks',
+    'cards',
+    'card_review_state',
+    'review_events',
+    'study_sessions',
+    'sync_operations',
+  ])
+    expect(await count(fixture.guest, table)).toBe(0);
+  expect(fixture.account.handle.export()).toEqual(account);
+  expect(fixture.server.handle.export()).toEqual(server);
+  const newSource = await guestData(fixture.guest);
+  await expect(
+    fixture.guest.execute('DELETE FROM review_events WHERE card_id = ?', [newSource.cards[0]!]),
+  ).rejects.toThrow('immutable');
+});
+
+test('guest cleanup requires verified completion, preserves copies, and permits a fresh guest identity afterward', async () => {
+  const fixture = await setup();
+  await guestData(fixture.guest);
+  const preview = await fixture.transfer.preview();
+  await expect(fixture.transfer.finish(preview)).rejects.toThrow('not confirmed');
+  expect(await count(fixture.guest, 'decks')).toBe(1);
+  await fixture.transfer.transfer(preview);
+  await fixture.transfer.finish(preview);
+  expect(await count(fixture.guest, 'decks')).toBe(0);
+  expect(await count(fixture.account, 'cards')).toBe(1);
+  expect(await count(fixture.server, 'review_events')).toBe(3);
+  await guestData(fixture.guest);
+  expect((await fixture.transfer.preview()).journal).toBeNull();
+});
+
+test('changed guest data and partially uploaded transfers cannot be silently discarded', async () => {
+  const fixture = await setup();
+  const original = await guestData(fixture.guest);
+  const preview = await fixture.transfer.preview();
+  await fixture.guest.execute('UPDATE decks SET name = ? WHERE id = ?', [
+    'Edited',
+    original.deckId,
+  ]);
+  await expect(fixture.transfer.discard(preview)).rejects.toThrow('changed');
+  const updated = await fixture.transfer.preview();
+  fixture.loseReply(1);
+  await expect(fixture.transfer.transfer(updated)).rejects.toThrow();
+  fixture.reconnect();
+  await expect(fixture.transfer.discard(updated)).rejects.toThrow('already started');
+  expect(await count(fixture.guest, 'review_events')).toBe(3);
+});
+
+test('a failed reset rolls back guest history and its immutability trigger', async () => {
+  const fixture = await setup();
+  await guestData(fixture.guest);
+  const preview = await fixture.transfer.preview();
+  fixture.guest.failStatement = 'DELETE FROM cards';
+  await expect(fixture.transfer.discard(preview)).rejects.toThrow('Disk full');
+  fixture.guest.failStatement = null;
+  expect(await count(fixture.guest, 'review_events')).toBe(3);
+  await expect(fixture.guest.execute('DELETE FROM review_events')).rejects.toThrow('immutable');
+});
+
+test('completed transfer cleanup reverifies remote progress before removing the guest source', async () => {
+  const fixture = await setup();
+  await guestData(fixture.guest);
+  const preview = await fixture.transfer.preview();
+  await fixture.transfer.transfer(preview);
+  fixture.corruptState();
+  await expect(fixture.transfer.finish(preview)).rejects.toThrow();
+  expect(await count(fixture.guest, 'review_events')).toBe(3);
+  expect(await count(fixture.guest, 'decks')).toBe(1);
+});
+
+test('later guest edits after a legacy completed copy require consent and can be explicitly discarded without undoing account copies', async () => {
+  const fixture = await setup();
+  const original = await guestData(fixture.guest);
+  const preview = await fixture.transfer.preview();
+  await fixture.transfer.transfer(preview);
+  await fixture.guest.execute('UPDATE decks SET name = ? WHERE id = ?', [
+    'Later edit',
+    original.deckId,
+  ]);
+  const updated = await fixture.transfer.preview();
+  await expect(fixture.transfer.finish(updated)).rejects.toThrow('changed');
+  expect(await count(fixture.guest, 'decks')).toBe(1);
+  await fixture.transfer.discard(updated);
+  expect(await count(fixture.guest, 'decks')).toBe(0);
+  expect(await count(fixture.account, 'review_events')).toBe(3);
+  expect(await count(fixture.server, 'review_events')).toBe(3);
+});
+
 test('guest-only copy preserves relationships, history, duplicate-text cards and exact review progress, then verifies full pull', async () => {
   const fixture = await setup();
   const original = await guestData(fixture.guest, 2);

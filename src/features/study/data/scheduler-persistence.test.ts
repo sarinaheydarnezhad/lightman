@@ -181,15 +181,13 @@ integrationTest(
       const deck = (await app.listDecks())[0]!;
       const card = await app.createCard({ ...makeCard(), deckId: deck.id });
       const original = await app.startStudySession({ kind: 'specific-deck', deckId: deck.id });
-      for (const result of ['failure', 'success'] as const) {
-        const item = (await app.getCurrentStudyItem(original.id))!;
-        await app.submitStudyAnswer({
-          sessionId: original.id,
-          cardId: card.id,
-          presentationId: item.presentationId,
-          result,
-        });
-      }
+      const first = (await app.getCurrentStudyItem(original.id))!;
+      await app.submitStudyAnswer({
+        sessionId: original.id,
+        cardId: card.id,
+        presentationId: first.presentationId,
+        result: 'failure',
+      });
       app = createApplication(createSqliteRepositories(database), fixedClock, ids);
       expect(
         (await app.getStudySession(original.id)).missedQueue?.map((item) => item.cardId),
@@ -199,7 +197,7 @@ integrationTest(
       app = createApplication(createSqliteRepositories(database), fixedClock, ids);
       expect((await app.getActiveStudySession())?.sourceSessionId).toBe(original.id);
       expect(await app.getReviewState(card.id)).toEqual(state);
-      expect(await app.listReviewEvents()).toHaveLength(2);
+      expect(await app.listReviewEvents()).toHaveLength(1);
       const item = (await app.getCurrentStudyItem(retry.id))!;
       await app.submitStudyAnswer({
         sessionId: retry.id,
@@ -214,7 +212,7 @@ integrationTest(
         canReviewAgain: false,
         isComplete: true,
       });
-      expect(await app.listReviewEvents()).toHaveLength(3);
+      expect(await app.listReviewEvents()).toHaveLength(2);
     } finally {
       database.connection.close();
     }

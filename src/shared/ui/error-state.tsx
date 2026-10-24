@@ -1,9 +1,6 @@
 import { View } from 'react-native';
-import { CircleAlert } from 'lucide-react-native';
 
-import { useLocalization } from '@/shared/localization/localization-provider';
-import { Button } from './button';
-import { EmptyState } from './empty-state';
+import { FeedbackModal } from './feedback-modal';
 
 /** Retryable resource errors share the same message hierarchy and action. */
 export function ErrorState({
@@ -15,11 +12,9 @@ export function ErrorState({
   description: string;
   onRetry: () => void;
 }) {
-  const { t } = useLocalization();
   return (
-    <View className="gap-md" accessibilityLiveRegion="polite">
-      <EmptyState title={title} description={description} icon={CircleAlert} />
-      <Button label={t('common.tryAgain')} variant="secondary" onPress={onRetry} />
+    <View className="gap-md">
+      <FeedbackModal title={title} message={description} onRetry={onRetry} />
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
@@ -11,6 +12,54 @@ import { Button } from '@/shared/ui/button';
 
 type Status =
   NonNullable<typeof syncEngine> extends { status(): Promise<infer Result> } ? Result : never;
+
+function ConflictNotice({
+  conflict,
+  busy,
+  resolve,
+}: {
+  conflict: Status['conflicts'][number];
+  busy: boolean;
+  resolve: (choice: 'server' | 'local') => void;
+}) {
+  const { t } = useLocalization();
+  const [open, setOpen] = useState(true);
+  const message = t('sync.conflict', { type: conflict.entityType, id: conflict.entityId });
+  if (!open)
+    return (
+      <Button label={message} variant="secondary" disabled={busy} onPress={() => setOpen(true)} />
+    );
+  const choose = (choice: 'server' | 'local') => {
+    setOpen(false);
+    resolve(choice);
+  };
+  return (
+    <FeedbackModal message={message} tone="warning" onDismiss={() => setOpen(false)}>
+      {conflict.entityType === 'reviewState' || conflict.entityType === 'reviewEvent' ? (
+        <Text>{t('sync.reviewConflict')}</Text>
+      ) : (
+        <View className="gap-sm">
+          <Button
+            label={t('sync.keepServer')}
+            variant="secondary"
+            disabled={busy}
+            onPress={() => choose('server')}
+          />
+          {conflict.archived ? (
+            <Text>{t('sync.deleted')}</Text>
+          ) : (
+            <Button
+              label={t('sync.keepLocal')}
+              variant="secondary"
+              disabled={busy}
+              onPress={() => choose('local')}
+            />
+          )}
+        </View>
+      )}
+    </FeedbackModal>
+  );
+}
 
 export function CloudSyncScreen() {
   const { t, number } = useLocalization();
@@ -55,7 +104,7 @@ export function CloudSyncScreen() {
           <Text tone="secondary">{t('guest.explanation')}</Text>
         )}
         {!syncEngine?.available ? (
-          <Text>{t('sync.unavailable')}</Text>
+          <FeedbackModal message={t('sync.unavailable')} tone="info" />
         ) : (
           <>
             {status?.signedIn ? (
@@ -85,56 +134,26 @@ export function CloudSyncScreen() {
               </>
             )}
             {!!status?.failed && (
-              <View className="gap-sm">
-                <Text tone="warning">{t('sync.failed', { count: number(status.failed) })}</Text>
-                <Button
-                  label={t('sync.retry')}
-                  variant="secondary"
-                  disabled={busy}
-                  onPress={() => void perform(() => syncEngine!.retryFailed())}
-                />
-              </View>
+              <FeedbackModal
+                message={t('sync.failed', { count: number(status.failed) })}
+                tone="warning"
+                onRetry={() => void perform(() => syncEngine!.retryFailed())}
+                retryLabel={t('sync.retry')}
+              />
             )}
             {status?.conflicts.map((conflict) => (
-              <View className="gap-sm" key={conflict.operationId}>
-                <Text tone="warning">
-                  {t('sync.conflict', { type: conflict.entityType, id: conflict.entityId })}
-                </Text>
-                {conflict.entityType === 'reviewState' || conflict.entityType === 'reviewEvent' ? (
-                  <Text>{t('sync.reviewConflict')}</Text>
-                ) : (
-                  <View className="gap-sm">
-                    <Button
-                      label={t('sync.keepServer')}
-                      variant="secondary"
-                      disabled={busy}
-                      onPress={() =>
-                        void perform(() => syncEngine!.resolve(conflict.operationId, 'server'))
-                      }
-                    />
-                    {conflict.archived ? (
-                      <Text>{t('sync.deleted')}</Text>
-                    ) : (
-                      <Button
-                        label={t('sync.keepLocal')}
-                        variant="secondary"
-                        disabled={busy}
-                        onPress={() =>
-                          void perform(() => syncEngine!.resolve(conflict.operationId, 'local'))
-                        }
-                      />
-                    )}
-                  </View>
-                )}
-              </View>
+              <ConflictNotice
+                key={conflict.operationId}
+                conflict={conflict}
+                busy={busy}
+                resolve={(choice) =>
+                  void perform(() => syncEngine!.resolve(conflict.operationId, choice))
+                }
+              />
             ))}
           </>
         )}
-        {error ? (
-          <Text tone="error" accessibilityLiveRegion="polite">
-            {error}
-          </Text>
-        ) : null}
+        {error ? <FeedbackModal message={error} onDismiss={() => setError('')} /> : null}
       </View>
     </Screen>
   );

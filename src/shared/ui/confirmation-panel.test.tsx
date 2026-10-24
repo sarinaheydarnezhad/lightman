@@ -1,7 +1,30 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { BackHandler } from 'react-native';
+import { AccessibilityInfo, Modal, Platform } from 'react-native';
 
 import { ConfirmationPanel } from './confirmation-panel';
+
+test('web confirmation focus avoids unsupported native accessibility APIs', () => {
+  const platform = jest.replaceProperty(Platform, 'OS', 'web');
+  const nativeFocus = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus');
+  try {
+    render(
+      <ConfirmationPanel
+        title="Delete this card?"
+        description="The card will leave the active deck."
+        cancelLabel="Keep card"
+        confirmLabel="Confirm delete"
+        onCancel={jest.fn()}
+        onConfirm={jest.fn()}
+      />,
+    );
+    fireEvent(screen.UNSAFE_getByType(Modal), 'show');
+    expect(screen.getByRole('header', { name: 'Delete this card?' }).props.tabIndex).toBe(-1);
+    expect(nativeFocus).not.toHaveBeenCalled();
+  } finally {
+    platform.restore();
+    nativeFocus.mockRestore();
+  }
+});
 
 test('confirmation exposes a named question and distinct actions', () => {
   const cancel = jest.fn();
@@ -26,7 +49,6 @@ test('confirmation exposes a named question and distinct actions', () => {
 });
 
 test('Android back dismisses a confirmation but cannot interrupt an in-progress action', () => {
-  const addListener = jest.spyOn(BackHandler, 'addEventListener');
   const cancel = jest.fn();
   const props = {
     title: 'End this session?',
@@ -37,14 +59,31 @@ test('Android back dismisses a confirmation but cannot interrupt an in-progress 
     onConfirm: jest.fn(),
   };
   const { rerender, unmount } = render(<ConfirmationPanel {...props} />);
-  const onBack = addListener.mock.calls.at(-1)![1];
-  expect(onBack({} as never)).toBe(true);
+  expect(screen.UNSAFE_getByType(Modal).props.transparent).toBe(true);
+  fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
   expect(cancel).toHaveBeenCalledTimes(1);
   rerender(<ConfirmationPanel {...props} busy />);
   expect(screen.getByRole('button', { name: 'Keep studying', disabled: true })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'End session', busy: true })).toBeTruthy();
-  expect(onBack({} as never)).toBe(true);
+  fireEvent(screen.UNSAFE_getByType(Modal), 'requestClose');
   expect(cancel).toHaveBeenCalledTimes(1);
   unmount();
-  addListener.mockRestore();
+});
+
+test('action failures stay inside the confirmation modal', () => {
+  render(
+    <ConfirmationPanel
+      title="Delete this card?"
+      description="The card will leave the active deck."
+      cancelLabel="Keep card"
+      confirmLabel="Confirm delete"
+      error="Could not delete the card."
+      onCancel={jest.fn()}
+      onConfirm={jest.fn()}
+    />,
+  );
+  expect(
+    screen.UNSAFE_getByType(Modal).findByProps({ accessibilityViewIsModal: true }),
+  ).toBeTruthy();
+  expect(screen.getByText('Could not delete the card.')).toBeTruthy();
 });

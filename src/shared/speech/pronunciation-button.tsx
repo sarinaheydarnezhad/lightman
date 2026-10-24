@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { IconButton } from '@/shared/ui/icon-button';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { Text } from '@/shared/ui/text';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { usePronunciation } from './use-pronunciation';
 
 export function PronunciationButton({ text, language }: { text: string; language: string }) {
@@ -21,9 +21,7 @@ export function PronunciationButton({ text, language }: { text: string; language
         onPress={() => void pronunciation.press()}
       />
       {pronunciation.error ? (
-        <Text variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
-          {uiLanguage === 'en' ? pronunciation.error : t('common.genericError')}
-        </Text>
+        <FeedbackModal message={uiLanguage === 'en' ? pronunciation.error : t('common.genericError')} />
       ) : null}
     </View>
   );

@@ -2,6 +2,7 @@ import { SyncEngine } from './sync-engine';
 import { CloudError, type CloudClient } from './cloud-client';
 import type { SyncStore } from './sync-store';
 import type { PendingOperation, PullPage } from './contract';
+import * as Network from 'expo-network';
 
 jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
@@ -103,6 +104,39 @@ test('offline study queue never makes a network request', async () => {
   expect(cloud.push).not.toHaveBeenCalled();
 });
 
+test('reconnect storms respect Retry-After and stopping cancels the scheduled retry', async () => {
+  jest.useFakeTimers();
+  const random = jest.spyOn(Math, 'random').mockReturnValue(0);
+  const remove = jest.fn();
+  jest.mocked(Network.addNetworkStateListener).mockReturnValue({ remove });
+  try {
+    const { engine, cloud } = setup();
+    cloud.push.mockRejectedValue(new CloudError(429, undefined, undefined, undefined, 120_000));
+    const stop = engine.start();
+    await jest.advanceTimersByTimeAsync(0);
+    expect(cloud.push).toHaveBeenCalledTimes(1);
+    const reconnect = jest.mocked(Network.addNetworkStateListener).mock.calls.at(-1)![0];
+    for (let index = 0; index < 20; index++)
+      reconnect({
+        type: 'WIFI' as Network.NetworkStateType,
+        isConnected: true,
+        isInternetReachable: true,
+      });
+    await jest.advanceTimersByTimeAsync(119_999);
+    expect(cloud.push).toHaveBeenCalledTimes(1);
+    await jest.advanceTimersByTimeAsync(1);
+    expect(cloud.push).toHaveBeenCalledTimes(2);
+    stop();
+    expect(remove).toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
+    await jest.advanceTimersByTimeAsync(300_000);
+    expect(cloud.push).toHaveBeenCalledTimes(2);
+  } finally {
+    random.mockRestore();
+    jest.useRealTimers();
+  }
+});
+
 test('guest mode never reads credentials, uploads the guest outbox or pulls account data', async () => {
   const { cloud, store } = setup();
   const lifecycle = { isAccount: () => false, enterAccount: jest.fn(), enterGuest: jest.fn() };
@@ -174,6 +208,39 @@ test('a successful push acknowledges the original operation and pulls from the c
   expect(store.applyPage).toHaveBeenCalledTimes(1);
 });
 
+test('failed credential persistence restores guest data without invoking destructive logout cleanup', async () => {
+  const { store, cloud } = setup();
+  const lifecycle = {
+    isAccount: () => false,
+    enterAccount: jest.fn(async () => {}),
+    enterGuest: jest.fn(async () => {}),
+    enterEmptyGuest: jest.fn(async () => {}),
+  };
+  const credentials = {
+    ...cloud,
+    forgetLocalSession: jest.fn(async () => {}),
+    signInPhone: jest.fn(
+      async (_phone: string, _password: string, bind: (id: string) => Promise<void>) => {
+        await bind('11111111-1111-1111-1111-111111111111');
+        throw new Error('Secure storage unavailable');
+      },
+    ),
+  };
+  const engine = new SyncEngine(
+    { ...store, bind: jest.fn(async () => {}) } as unknown as SyncStore,
+    credentials as unknown as CloudClient,
+    undefined,
+    undefined,
+    lifecycle,
+  );
+  await expect(engine.signInPhone('+989121234567', 'Password')).rejects.toThrow(
+    'Secure storage unavailable',
+  );
+  expect(credentials.forgetLocalSession).toHaveBeenCalled();
+  expect(lifecycle.enterGuest).toHaveBeenCalledTimes(1);
+  expect(lifecycle.enterEmptyGuest).not.toHaveBeenCalled();
+});
+
 test('verified authentication requests the guest preview only after isolated account binding and credential storage', async () => {
   const events: string[] = [];
   const engine = new SyncEngine(
@@ -241,6 +308,47 @@ test('Google authentication uses the same isolated storage and guest preview lif
   );
   await engine.signInGoogle('google-id-token');
   expect(cloud.signInGoogle).toHaveBeenCalledWith('google-id-token', expect.any(Function));
+  expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
+});
+
+test('password registration preserves isolated storage, binding and guest preview order', async () => {
+  const events: string[] = [];
+  const registration = {
+    phoneNumber: '09121234567',
+    password: 'Maple7xy',
+    confirmPassword: 'Maple7xy',
+  };
+  const cloud = {
+    registerPhoneWithPassword: jest.fn(
+      async (_registration, bind: (id: string) => Promise<void>) => {
+        await bind('phone-owner');
+        events.push('credentials');
+        return 'phone-owner';
+      },
+    ),
+  };
+  const engine = new SyncEngine(
+    {
+      bind: async () => {
+        events.push('bind');
+      },
+    } as unknown as SyncStore,
+    cloud as unknown as CloudClient,
+    undefined,
+    undefined,
+    {
+      isAccount: () => true,
+      enterAccount: async () => {
+        events.push('account');
+      },
+      enterGuest: async () => {},
+    },
+    () => {
+      events.push('preview');
+    },
+  );
+  await engine.registerPhoneWithPassword(registration);
+  expect(cloud.registerPhoneWithPassword).toHaveBeenCalledWith(registration, expect.any(Function));
   expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
 });
 

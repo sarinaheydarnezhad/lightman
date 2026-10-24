@@ -6,6 +6,7 @@ import type { SyncStore } from './sync-store';
 import { serverEntitlementCache } from '@/core/access/learning-access';
 import { writeEntitlementCache } from '@/core/database/entitlement-cache';
 import { readGuest, text, unsupportedReasons, type GuestSnapshot } from './guest-transfer-snapshot';
+import { resetGuestData } from '@/core/storage/reset-guest-data';
 
 export interface TransferDeck {
   id: string;
@@ -26,6 +27,7 @@ export interface TransferPreview {
   token: string;
   journal: 'pending' | 'complete' | null;
   accountVerified: boolean;
+  hasGuestData?: boolean;
 }
 
 interface TransferPlan {
@@ -94,7 +96,10 @@ export class GuestTransfer {
         journal?.status === 'pending'
           ? (JSON.parse(text(journal, 'snapshot_json')) as TransferPlan).source
           : source;
-      return this.describe(context.account, frozen, cloud, store, journal);
+      const preview = await this.describe(context.account, frozen, cloud, store, journal);
+      const content = await context.guest.execute('SELECT id FROM decks LIMIT 1');
+      context.assertCurrent();
+      return { ...preview, hasGuestData: content.rows.length > 0 };
     });
   }
 
@@ -294,6 +299,48 @@ export class GuestTransfer {
         [text(journal, 'id'), userId],
       );
       await report();
+    });
+  }
+
+  async finish(preview: TransferPreview): Promise<void> {
+    return this.removeGuest(preview, false);
+  }
+
+  async discard(preview: TransferPreview): Promise<void> {
+    return this.removeGuest(preview, true);
+  }
+
+  private async removeGuest(preview: TransferPreview, discard: boolean): Promise<void> {
+    return this.exclusively(async (context, store, cloud) => {
+      const source = await readGuest(context.guest);
+      const expected = (JSON.parse(preview.token) as { source: GuestSnapshot }).source;
+      if (JSON.stringify(source) !== JSON.stringify(expected))
+        throw new Error('The guest data changed. Refresh the preview before continuing.');
+      const journal = (
+        await context.account.execute('SELECT * FROM guest_transfers WHERE source_device_id = ?', [
+          source.deviceId,
+        ])
+      ).rows[0];
+      if (journal && journal.user_id !== (await store.account()).userId)
+        throw new Error('Transfer ownership mismatch.');
+      if (discard && journal?.status === 'pending')
+        throw new Error('A transfer has already started. Resume it before removing guest data.');
+      if (!discard) {
+        if (!journal || journal.status !== 'complete')
+          throw new Error('Transfer completion is not confirmed. Guest data remains intact.');
+        const plan = JSON.parse(text(journal, 'snapshot_json')) as TransferPlan;
+        if (JSON.stringify(plan.source) !== JSON.stringify(source))
+          throw new Error('The guest data changed. Refresh the preview before continuing.');
+        await this.verify(
+          context.account,
+          store,
+          cloud,
+          plan,
+          JSON.parse(text(journal, 'operation_ids_json')) as string[],
+        );
+      }
+      context.assertCurrent();
+      await resetGuestData(context.guest, source, context.assertCurrent);
     });
   }
 

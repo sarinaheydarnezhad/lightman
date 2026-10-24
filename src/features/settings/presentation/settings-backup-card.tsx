@@ -9,6 +9,7 @@ import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Text } from '@/shared/ui/text';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 
 function failureMessage(error: unknown): MessageKey {
   if (error instanceof CloudError) {
@@ -154,14 +155,12 @@ export function SettingsBackupCard() {
         </>
       ) : null}
       {operation === 'completed' ? (
-        <Text accessibilityRole="alert">{t('backup.verified')}</Text>
+        <FeedbackModal message={t('backup.verified')} tone="success" onDismiss={() => setOperation(null)} />
       ) : null}
       {error ? (
-        <Text tone="error" accessibilityRole="alert">
-          {t(error)}
-        </Text>
+        <FeedbackModal message={t(error)} onRetry={() => void refresh()} retryLabel={t('backup.refresh')} />
       ) : null}
-      {latest?.status === 'Failed' && !error ? <Text tone="error">{t('backup.error')}</Text> : null}
+      {latest?.status === 'Failed' && !error ? <FeedbackModal message={t('backup.error')} eventKey={latest} /> : null}
       <Text tone="secondary">{t('backup.coverage')}</Text>
       <Button
         label={t('backup.now')}
@@ -169,14 +168,6 @@ export function SettingsBackupCard() {
         disabled={loading || !syncEngine?.available}
         onPress={() => void backUp()}
       />
-      {error ? (
-        <Button
-          label={t('backup.refresh')}
-          variant="secondary"
-          disabled={loading || busy}
-          onPress={() => void refresh()}
-        />
-      ) : null}
     </Card>
   );
 }

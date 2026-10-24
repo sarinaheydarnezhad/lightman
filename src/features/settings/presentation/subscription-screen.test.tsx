@@ -68,9 +68,9 @@ const catalog: PlanCatalog = {
       limits: { decks: null, cards: null },
       features: { unlimitedDecks: true, unlimitedCards: true },
       prices: [
-        { durationMonths: 1, priceToman: 49000 },
-        { durationMonths: 6, priceToman: 279000 },
-        { durationMonths: 12, priceToman: 499000 },
+        { durationMonths: 1, priceToman: 70000 },
+        { durationMonths: 6, priceToman: 294000 },
+        { durationMonths: 12, priceToman: 420000 },
       ],
     },
     {
@@ -146,11 +146,21 @@ test.each([
   jest.spyOn(theme, 'useThemeColors').mockReturnValue(palette[mode]);
   render(<SubscriptionScreen />);
   await screen.findByTestId('plus-plan-1');
-  const title = locale === 'fa' ? 'ارتقا به لرونا پلاس' : 'Upgrade to Lerona Plus';
+  const title = translate(locale, 'paywall.title');
   expect(screen.getByRole('header', { name: title }).props.allowFontScaling).toBe(true);
   expect(screen.getByText(translate(locale, 'paywall.introTitle'))).toBeTruthy();
   const freePlan = screen.getByTestId('free-plan');
   const plusPlan = screen.getByTestId('plus-plan');
+  const premiumPlan = screen.getByTestId('premium-plan');
+  expect(premiumPlan).toHaveStyle({ backgroundColor: palette[mode].surface });
+  expect(
+    within(premiumPlan).getByRole('header', { name: translate(locale, 'paywall.premiumPlan') }),
+  ).toBeTruthy();
+  expect(
+    within(premiumPlan).getByText(translate(locale, 'access.premiumUnavailable')),
+  ).toBeTruthy();
+  expect(within(premiumPlan).getByText(translate(locale, 'paywall.premiumStatus'))).toBeTruthy();
+  expect(within(premiumPlan).queryAllByRole('button')).toHaveLength(0);
   expect(freePlan).toHaveStyle({ backgroundColor: palette[mode].surface });
   expect(plusPlan).toHaveStyle({
     backgroundColor: palette[mode].surface,
@@ -234,32 +244,32 @@ test.each(['en', 'fa'] as const)(
     const first = await screen.findByTestId('plus-plan-1');
     expect(first.props.accessibilityState.selected).toBe(true);
     expect(
-      screen.getByText(translate(locale, 'paywall.monthPrice', { amount: amount(49000) })),
+      screen.getByText(translate(locale, 'paywall.monthPrice', { amount: amount(70000) })),
     ).toBeTruthy();
-    expect(
-      screen.getByText(
-        translate(locale, 'access.price', {
-          months: formatNumber(6, locale),
-          amount: amount(279000),
-        }),
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByText(
-        translate(locale, 'access.price', {
-          months: formatNumber(12, locale),
-          amount: amount(499000),
-        }),
-      ),
-    ).toBeTruthy();
+    expect(screen.queryByTestId('selected-plan-monthly')).toBeNull();
+    for (const [months, total, monthly, discount] of [
+      [6, 294000, 49000, 30],
+      [12, 420000, 35000, 50],
+    ] as const) {
+      const label = `${translate(locale, 'access.price', { months: formatNumber(months, locale), amount: amount(total) })}\n${translate(locale, 'paywall.perMonth', { amount: amount(monthly) })} · ${translate(locale, 'paywall.discount', { percent: formatNumber(discount, locale) })}`;
+      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    }
     fireEvent.press(screen.getByTestId('plus-plan-6'));
     expect(screen.getByTestId('plus-plan-6').props.accessibilityState.selected).toBe(true);
     expect(screen.getByTestId('plus-plan-1').props.accessibilityState.selected).toBe(false);
     expect(screen.getByTestId('selected-plan').props.children).toBe(
       translate(locale, 'paywall.total', {
         months: formatNumber(6, locale),
-        amount: formatNumber(279000, locale),
+        amount: formatNumber(294000, locale),
       }),
+    );
+    expect(screen.getByTestId('selected-plan-monthly').props.children).toBe(
+      translate(locale, 'paywall.perMonth', { amount: amount(49000) }),
+    );
+    fireEvent.press(screen.getByTestId('plus-plan-12'));
+    expect(screen.getByTestId('plus-plan-12').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('selected-plan-monthly').props.children).toBe(
+      translate(locale, 'paywall.perMonth', { amount: amount(35000) }),
     );
     expect(
       StyleSheet.flatten(screen.getByText(translate(locale, 'paywall.title')).props.style),
@@ -280,15 +290,15 @@ test.each(['fa', 'en'] as const)(
   '%s plan amounts preserve grouping with LTR isolation only in Persian',
   async (locale) => {
     const prices = [
-      { durationMonths: 1, priceToman: 49000 },
+      { durationMonths: 1, priceToman: 70000 },
       { durationMonths: 3, priceToman: 99000 },
       { durationMonths: 6, priceToman: 100000 },
       { durationMonths: 12, priceToman: 1234567 },
     ];
     const formatted =
       locale === 'fa'
-        ? ['۴۹٬۰۰۰', '۹۹٬۰۰۰', '۱۰۰٬۰۰۰', '۱٬۲۳۴٬۵۶۷']
-        : ['49,000', '99,000', '100,000', '1,234,567'];
+        ? ['۷۰٬۰۰۰', '۹۹٬۰۰۰', '۱۰۰٬۰۰۰', '۱٬۲۳۴٬۵۶۷']
+        : ['70,000', '99,000', '100,000', '1,234,567'];
     language(locale);
     jest.mocked(engine.planCatalog).mockResolvedValue({
       ...catalog,
@@ -303,7 +313,7 @@ test.each(['fa', 'en'] as const)(
       if (locale === 'fa') {
         expect(label).toContain(`\u2068\u2066${formatted[index]}\u2069\u2069 تومان`);
       } else {
-        expect(label).toBe(
+        expect(label).toContain(
           `${price.durationMonths} ${price.durationMonths === 1 ? 'month' : 'months'}: ${formatted[index]} toman`,
         );
       }
@@ -332,11 +342,34 @@ test('prices come from the response, not a second mobile price list', async () =
     plans: [{ ...catalog.plans[0]!, prices: [{ durationMonths: 3, priceToman: 123456 }] }],
   });
   render(<SubscriptionScreen />);
-  expect(await screen.findByText('3 months: 123,456 toman')).toBeTruthy();
+  const option = await screen.findByTestId('plus-plan-3');
+  expect(option.props.accessibilityLabel).toBe('3 months: 123,456 toman\n41,152 toman/month');
   expect(screen.queryByTestId('plus-plan-1')).toBeNull();
 });
 
-test('no provider means no purchase request, activation, simulated cancellation or success; Full is never selectable', async () => {
+test('monthly equivalents and discounts follow server prices rather than hardcoded offers', async () => {
+  jest.mocked(engine.planCatalog).mockResolvedValue({
+    ...catalog,
+    plans: [
+      {
+        ...catalog.plans[0]!,
+        prices: [
+          { durationMonths: 1, priceToman: 100000 },
+          { durationMonths: 6, priceToman: 450000 },
+        ],
+      },
+    ],
+  });
+  render(<SubscriptionScreen />);
+  const option = await screen.findByTestId('plus-plan-6');
+  expect(option.props.accessibilityLabel).toBe(
+    '6 months: 450,000 toman\n75,000 toman/month · 25% off',
+  );
+  fireEvent.press(option);
+  expect(screen.getByTestId('selected-plan-monthly').props.children).toBe('75,000 toman/month');
+});
+
+test('no provider means no purchase request, activation, simulated cancellation or success; Premium is never selectable', async () => {
   render(<SubscriptionScreen />);
   await screen.findByTestId('plus-plan-12');
   const purchase = screen.getByRole('button', { name: 'Purchase unavailable' });
@@ -345,8 +378,8 @@ test('no provider means no purchase request, activation, simulated cancellation 
   fireEvent.press(purchase);
   fireEvent.press(screen.getByTestId('plus-plan-12'));
   expect(screen.getByText(/does not charge you or activate Plus/)).toBeTruthy();
-  expect(screen.getByText('Full is not available.')).toBeTruthy();
-  expect(screen.queryByRole('button', { name: /Full/ })).toBeNull();
+  expect(screen.getByText('Premium is not available to all users right now.')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /Premium/ })).toBeNull();
   expect(engine.subscription).not.toHaveBeenCalled();
   expect(engine.planCatalog).toHaveBeenCalledTimes(1);
   expect(mockAccess.snapshot().entitlements).toBeNull();

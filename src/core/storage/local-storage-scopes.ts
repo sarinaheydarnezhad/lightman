@@ -1,5 +1,6 @@
 import type { Database } from '@/core/database/database';
 import { AppError } from '@/core/errors/app-error';
+import { resetGuestData } from './reset-guest-data';
 
 export interface LocalScope<Value> {
   readonly database: Database | null;
@@ -11,6 +12,8 @@ export interface StorageState {
   readonly mode: 'guest' | 'account';
   readonly userId: string | null;
   readonly revision: number;
+  readonly accountEntry?: 'authenticating' | 'review';
+  readonly entryLanguage?: 'en' | 'fa';
 }
 
 export class LocalStorageScopes<Value> {
@@ -98,6 +101,26 @@ export class LocalStorageScopes<Value> {
     return this.select(this.legacyOwner === '' ? 'lerona.db' : 'lerona-guest.db', 'guest', null);
   }
 
+  enterEmptyGuest(): Promise<void> {
+    return this.select(
+      this.legacyOwner === '' ? 'lerona.db' : 'lerona-guest.db',
+      'guest',
+      null,
+      true,
+    );
+  }
+
+  prepareAccountEntry(language?: 'en' | 'fa'): void {
+    if (this.state.phase === 'ready' && this.state.mode === 'account')
+      this.publish({ ...this.state, accountEntry: 'review', entryLanguage: language });
+  }
+
+  completeAccountEntry(): void {
+    if (this.state.phase !== 'ready' || this.state.mode !== 'account')
+      throw new AppError('unavailable', 'The account changed. Sign in again.');
+    this.publish({ ...this.state, accountEntry: undefined });
+  }
+
   enterAccount(userId: string): Promise<void> {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId))
       return Promise.reject(new AppError('validation', 'Invalid account identity.'));
@@ -111,7 +134,12 @@ export class LocalStorageScopes<Value> {
     );
   }
 
-  private select(name: string, mode: StorageState['mode'], userId: string | null): Promise<void> {
+  private select(
+    name: string,
+    mode: StorageState['mode'],
+    userId: string | null,
+    emptyGuest = false,
+  ): Promise<void> {
     const epoch = this.selectionEpoch;
     const operation = this.pending
       .catch(() => {})
@@ -120,6 +148,7 @@ export class LocalStorageScopes<Value> {
           throw new AppError('unavailable', 'The account selection was cancelled.');
         if (
           this.state.phase === 'ready' &&
+          !emptyGuest &&
           this.state.mode === mode &&
           this.state.userId === userId
         )
@@ -142,8 +171,36 @@ export class LocalStorageScopes<Value> {
             );
           if (epoch !== this.selectionEpoch)
             throw new AppError('unavailable', 'The account selection was cancelled.');
+          if (emptyGuest) {
+            await scope.database!.execute(
+              'CREATE TABLE IF NOT EXISTS guest_reset_intent (id INTEGER PRIMARY KEY CHECK (id = 1))',
+            );
+            await scope.database!.execute(
+              'INSERT OR IGNORE INTO guest_reset_intent (id) VALUES (1)',
+            );
+          }
+          const resetIntent =
+            mode === 'guest'
+              ? await scope.database!.execute(
+                  "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'guest_reset_intent'",
+                )
+              : null;
+          const resetPending = resetIntent?.rows.length
+            ? await scope.database!.execute('SELECT id FROM guest_reset_intent WHERE id = 1')
+            : null;
+          if (emptyGuest || resetPending?.rows.length)
+            await resetGuestData(scope.database!, undefined, () => {
+              if (epoch !== this.selectionEpoch)
+                throw new AppError('unavailable', 'The account selection was cancelled.');
+            });
           this.selected = scope;
-          this.publish({ phase: 'ready', mode, userId, revision: this.state.revision });
+          this.publish({
+            phase: 'ready',
+            mode,
+            userId,
+            revision: this.state.revision,
+            ...(mode === 'account' ? { accountEntry: 'authenticating' as const } : {}),
+          });
         } catch (error) {
           if (epoch === this.selectionEpoch) this.publish({ ...this.state, phase: 'error' });
           throw error;

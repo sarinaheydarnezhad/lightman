@@ -32,7 +32,7 @@ export function AnalyticsScreen() {
             {windows.map((days) => (
               <Tab
                 key={days}
-                label={`${number(days)}D`}
+                label={t('analytics.windowLabel', { days: number(days) })}
                 accessibilityHint={t('analytics.windowHint', { days: number(days) })}
                 active={analytics.window === days}
                 onPress={() => analytics.setWindow(days)}

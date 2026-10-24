@@ -33,13 +33,16 @@ const defaultLocalization: Localization = {
 };
 const LocalizationContext = createContext(defaultLocalization);
 
-export function LocalizationProvider({ children }: PropsWithChildren) {
+export function LocalizationProvider({
+  children,
+  language: languageOverride,
+}: PropsWithChildren<{ language?: UiLanguage }>) {
   const tag = useSyncExternalStore(
     application.settings.subscribe,
     application.settings.snapshot,
   )?.language;
-  const language = resolveUiLanguage(tag);
-  const direction = resolveDirection(tag);
+  const language = languageOverride ?? resolveUiLanguage(tag);
+  const direction = resolveDirection(language);
   const value = useMemo<Localization>(
     () => ({
       language,

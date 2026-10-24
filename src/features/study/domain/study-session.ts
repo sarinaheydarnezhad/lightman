@@ -128,7 +128,7 @@ export function validateStudySession(session: StudySession): StudySession {
     !Number.isSafeInteger(initialFailures) ||
     initialFailures < 0 ||
     initialFailures > Math.min(session.currentIndex, initialQueue.length) ||
-    (!session.sourceSessionId && initialFailures !== retryQueue.length)
+    initialFailures < retryQueue.length
   )
     throw new AppError('validation', 'Invalid initial failure count.');
   if (

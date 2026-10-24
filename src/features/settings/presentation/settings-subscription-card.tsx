@@ -17,6 +17,7 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Text } from '@/shared/ui/text';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { icons, spacing } from '@/shared/theme/tokens';
 
@@ -181,9 +182,7 @@ export function SettingsSubscriptionCard() {
           </View>
         ) : null}
         {!metadata.loading && !confirmed ? (
-          <Text variant="bodySmall" tone="warning" accessibilityRole="alert">
-            {t('account.subscriptionUnknown')}
-          </Text>
+          <FeedbackModal message={t('account.subscriptionUnknown')} tone="warning" onRetry={metadata.refresh} retryLabel={t('access.refresh')} />
         ) : null}
       </View>
 
@@ -231,12 +230,12 @@ export function SettingsSubscriptionCard() {
           label={t('settings.upgradePlus')}
           onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
         />
-        <Button
+        {metadata.loading || confirmed ? <Button
           label={t('access.refresh')}
           variant="secondary"
           loading={metadata.loading}
           onPress={metadata.refresh}
-        />
+        /> : null}
       </View>
     </Card>
   );

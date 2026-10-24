@@ -170,6 +170,19 @@ test('authenticated account shows its username and mobile instead of sign-in', a
   expect(router.push).toHaveBeenCalledWith('/settings/logout');
 });
 
+test.each(['en', 'fa'] as const)(
+  'account settings does not offer a manual guest-data transfer in %s',
+  async (language) => {
+    setLanguage(language);
+    mockState = { phase: 'ready', mode: 'account', userId: account.id, revision: 1 };
+    render(<SettingsAccountCard />);
+    await screen.findByText(account.displayName);
+    expect(screen.queryByRole('button', { name: translate(language, 'migration.title') })).toBeNull();
+    expect(screen.getByRole('button', { name: translate(language, 'sync.title') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: translate(language, 'account.logout') })).toBeTruthy();
+  },
+);
+
 test('legacy email accounts display their email address', async () => {
   mockState = { phase: 'ready', mode: 'account', userId: account.id, revision: 1 };
   jest
@@ -659,9 +672,11 @@ test('backup failure is independent of subscription and profile; account failure
   authenticated();
   await screen.findByText(translate('en', 'account.error'));
   await screen.findByText('Subscription status: Plus active');
-  expect(screen.getByText(translate('en', 'backup.unavailable'))).toBeTruthy();
+  expect(screen.queryByText(translate('en', 'backup.unavailable'))).toBeNull();
   expect(screen.queryByText('private server error')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Refresh account details' }));
+  expect(await screen.findByText(translate('en', 'backup.unavailable'))).toBeTruthy();
+  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
   await screen.findByText(account.displayName);
   expect(engine.subscription).toHaveBeenCalledTimes(1);
   expect(engine.backupStatus).toHaveBeenCalledTimes(1);
@@ -933,5 +948,8 @@ test('metadata refresh failure after a verified manual backup does not invent a 
   fireEvent.press(screen.getByRole('button', { name: 'Back Up Now' }));
   await screen.findByText('The server confirmed and verified the backup.');
   expect(screen.getByText('Backup completed')).toBeTruthy();
-  expect(screen.getByText(/The server cannot be reached/)).toBeTruthy();
+  expect(screen.queryByText(/The server cannot be reached/)).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  expect(await screen.findByText(/The server cannot be reached/)).toBeTruthy();
+  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
 });

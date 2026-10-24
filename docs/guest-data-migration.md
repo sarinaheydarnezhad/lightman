@@ -1,69 +1,51 @@
-# Guest-to-account copying and safe separation
+# Guest data at login and empty logout
 
-## Supported behavior
+## Login decision
 
-After verified password, OTP, email login or registration, the app opens `/auth/guest-data`. The authenticated Account card in Settings also opens this page, including after an interrupted transfer. A network connection is required to inspect and verify the account; guest study remains offline and independent.
+Guest data is handled at login; Settings has no separate guest-data transfer button.
 
-- **Guest only:** preview active guest decks/cards and supported review history; explicitly confirm separate copies into the empty account.
-- **Account only:** synchronize and show account inventory, preserving all guest storage (including archived data).
-- **Both:** show both deck lists and card counts. Warn about titles matched only by trimming, collapsing whitespace and lowercasing. Matching titles or card text never identify equivalent entities. The existing backend free limits currently prohibit adding another active deck; the UI explains this and offers keeping the datasets separate. It does not offer replacement or destructive merging.
-- **Neither:** show an empty-account completion message. Archived-only data remains untouched; it is not called an active transferable dataset.
+After verified password, OTP, Google or email authentication, account storage is selected before credentials are saved. The root boundary hides account screens until authentication finishes and a blocking guest-data modal completes. The navigator remains mounted behind the modal so finishing cannot race an unmounted root navigator.
 
-The user can cancel the confirmation or keep datasets separate before staging without creating an account copy or journal. Preview synchronizes already-owned account operations only; it never uploads the guest outbox. Loading errors are not interpreted as an empty account.
+The preview immediately performs strict account synchronization and checks owned inventory and review progress against the server. A loading/network error is never interpreted as an empty account.
 
-## Transfer coverage and limits
+- **No guest learning data:** open the synchronized account automatically.
+- **Guest data exists:** explicitly choose **Transfer my data to account** or **Discard guest data**. Existing account data is never replaced.
+- **Discard:** a second destructive confirmation explains that all guest decks, cards, history and study sessions will be deleted permanently. Cancel preserves them. Confirm removes guest learning data and its outbox, without changing account/server records.
+- **Transfer:** add separate account-owned copies, synchronize and verify them, then clear guest storage and open the account. Guest deletion cannot happen before verified completion.
+- **Archived-only guest data:** still requires an explicit discard decision; it is not silently deleted as an empty dataset.
+- **Pending transfer:** resume the same approved snapshot/IDs. Discard is refused because copies may already be uploaded. A completed transfer retries cleanup instead of staging another copy.
+- **Failures:** preserve recoverable source/copies, remain gated, and provide retry. A separately confirmed logout without backup remains available if initial sync cannot finish.
 
-Transfer copies **active Leitner decks, their active cards, complete immutable review history, and verified Leitner progress**. It preserves deck/card/event relationships, text, examples, box, due date, last review, consecutive successes, total reviews and total successes. Different source card IDs remain different target cards even if their text is identical. IDs are newly generated per account to avoid collisions with existing server-owned IDs, then frozen in a local journal.
+An interrupted login with guest data reopens the decision on restart. Existing account-only sessions retain offline restoration; login itself requires online synchronization. Login language is captured before switching account settings and remains fixed during preview, including English/Persian labels, counts and recovery messages.
 
-For reviewed cards, replay must reproduce the guest state under the existing backend UTC-day Leitner rules before copying. Incomplete/missing history, another scheduler, incompatible local-calendar due dates, oversized payloads, missing state, or backend-incompatible card contents block copying with a reason. Unreviewed cards transfer their initial due date through the existing review-state operation. Reviewed cards upload events, not a final-state seed, preventing double counting.
+## Transfer coverage
 
-**Not transferred:** archived decks/cards or their history, app settings, study-session records/queues/summaries, scheduler metadata outside Leitner, and original server creation timestamps. Event study-session associations are set to null because those sessions are not transferred. Originals remain recoverable in guest storage. Unsupported progress is not silently reset or reported as migrated.
+Transfer copies active Leitner decks, active cards, complete immutable review history and review progress reproducible under the backend UTC-day rules. Relationships, card text/examples, box, due date, last review, successes/streaks and review totals are verified. Distinct source IDs remain distinct even when names/text match.
 
-## Persistence, retry and verification
+Archived records, settings, study sessions, other scheduler metadata and original server creation timestamps are not transferred. The modal explains these limits before consent. Successful transfer clears guest learning storage, including archived data and sessions; device preferences remain. Unsupported active data or incomplete history blocks copying rather than silently resetting progress.
 
-The existing SyncEngine, SyncStore, sync feed, entity versions, cursors, conflict responses and server idempotency receipts are reused. There is no migration endpoint or second sync transport.
+## Safety and retry
 
-1. Validate the verified `/me` identity against the selected account database and read guest data in a consistent SQLite snapshot. Guest storage must still be unowned.
-2. Strictly synchronize the account, compare the preview again, and cross-check the authenticated deck/card read APIs and review-state API against pulled inventory and progress. Missing or different account review state is not silently replaced with a guessed initial state. Legacy data missing from the feed blocks copying rather than appearing to be an empty server or a fully loaded account.
-3. After explicit confirmation, one account SQLite transaction inserts the mapped copies, substitutes backend-compatible outbox operations for only the trigger rows generated in that transaction, and records the frozen snapshot, mapping and operation IDs in `guest_transfers` (local schema version 6). Normal quota triggers remain enabled. A disk/SQL failure rolls everything back.
-4. Existing sync pushes each queued operation atomically on the server. Exact retries retain device ID, operation ID, payload, creation time and expected version. Failed operation retries preserve their fingerprint; conflicts/discarded operations are never automatically rebased or resolved.
-5. Drain the existing queue and fully paginate pull. Completion requires every journal operation to be acknowledged, the local cursor to cover every acknowledged version, the copied owned decks to be server-visible, and mapped card/history relationships and review state to verify. The authenticated backend review-state read now exposes success/streak/last-review fields for authoritative comparison.
+The existing SyncEngine, SyncStore, owner-authenticated reads, sync feed, entity versions, conflict responses and server idempotency receipts are reused. No new migration endpoint or sync transport is added.
 
-The **whole transfer is not a single server transaction**: the existing single-operation push transport may leave an acknowledged partial copy after interruption. The page reports incomplete completion, acknowledgement progress, preserved originals and how to retry the same snapshot. No guest or server data is deleted. Automatic synchronization may continue a previously consented durable queue after reconnect/restart. Do not study/edit a partially transferred account copy until verification finishes: a concurrent change deliberately causes verification to stop rather than overwrite it.
+1. Compare the authenticated identity against the selected account database. Require unowned guest storage.
+2. Synchronize the account and cross-check pulled inventory/progress before consent.
+3. Stage mapped copies and frozen operation IDs in one account transaction using the existing local `guest_transfers` journal.
+4. Push/drain the queue and fully paginate pull. Verify acknowledgements, cursor coverage, owned copies and review progress.
+5. Reverify completed receipts and the unchanged guest snapshot before atomically deleting guest learning data. Rotate the guest device identity so later guest work cannot reuse a previous journal.
 
-One frozen snapshot is allowed per guest-device identity and account database. Retrying or revisiting a completed transfer does not recopy later guest edits. Additional incremental guest linking and per-deck replacement/recovery need separately designed consent and conflict handling. Manual conflict resolution that discards a migration receipt does not make this transfer complete; preserve both histories for inspection.
+The whole transfer is not a single server transaction. Interrupted uploads may leave partial copies. Retrying preserves the same IDs and receipts; conflicting/discarded operations are not automatically rebased. Guest cleanup is separate, transactional and retryable after completion. Changes to the source invalidate the preview rather than deleting new active data. Do not edit/study partial account copies until verification finishes.
 
-## Backend dependencies
+Current trusted plan limits apply to the combined account/guest inventory. No client-side entitlement bypass or automatic replacement/archive is used. Missing backend sync-feed data, unsupported progress or ownership mismatches fail closed.
 
-- All authenticated writes retain the existing 1-active-deck/50-active-card limits, ownership checks and sync-head lock. Adding guest decks to a nonempty account is unavailable until trusted entitlement support permits it; no premium override or automatic archive is introduced.
-- Rows created outside sync without feed entries require an authoritative backend backfill. This task detects that gap but does not invent cursors or bypass versions.
-- Only Leitner scheduling is represented on the backend. Other schedulers and arbitrary progress snapshots require a compatible scheduler/history contract before migration.
-- Deploy the additive review-state response fields before using final verification. No backend entities or EF migrations are added by this task. The local journal migration is necessary for restart-safe, stable-ID retry.
-- .NET 10 SDK, configured SQL Server, the existing schema/auth migrations, HTTPS API URL and existing JWT configuration remain prerequisites. No SMS or payment configuration is added here.
+## Logout
 
-## Files changed for this task
+Explicit logout immediately locks account access, clears guest learning data and opens an empty guest space, even offline. Private account databases and unsynced account queues remain isolated for their original owner's next verified login; server learning data is not deleted.
 
-Mobile (paths relative to `lm`):
+Guest reset validates ownership, removes learning/history/session/outbox/cache records in one SQLite transaction, restores the review-history immutability trigger, and keeps preferences. A durable reset intent ensures an interrupted/failed logout reset is retried before guest storage is exposed on restart. Storage errors remain locked instead of revealing old data. This is application-level deletion/isolation, not forensic secure erasure.
 
-- `src/core/storage/local-storage-scopes.ts` — read guest storage without changing account scope.
-- `src/core/storage/guest-free-tier.test.ts` — scope isolation test for the source reader.
-- `src/core/database/migrations.ts`, `src/core/database/database.test.ts` — durable local journal and schema tests.
-- `src/features/study/data/scheduler-persistence.test.ts` — update the existing upgrade expectation to schema version 6 without changing its review-history assertions.
-- `src/core/sync/guest-transfer-snapshot.ts` — snapshot, backend compatibility and progress preflight.
-- `src/core/sync/guest-transfer.ts`, `src/core/sync/guest-transfer.test.ts` — preview, consented staging, retry and verified completion.
-- `src/core/sync/sync-engine.ts`, `src/core/sync/sync-engine.test.ts` — exclusive account operation, strict full synchronization and post-authentication callback.
-- `src/core/sync/cloud-client.ts`, `src/core/sync/cloud-client.test.ts` — owned inventory/progress reads and compatible Leitner wire contract; non-Leitner writes fail closed.
-- `src/core/composition/guest-transfer.ts`, `src/core/composition/sync.ts` — existing infrastructure composition and post-authentication navigation.
-- `src/features/auth/presentation/guest-data-screen.tsx`, `src/features/auth/presentation/guest-data-screen.test.tsx` — preview, confirmation, cancellation, progress, errors and resume UI.
-- `src/app/auth/guest-data.tsx`, `src/app/_layout.tsx` — route and existing stack registration.
-- `src/features/settings/presentation/settings-account-card.tsx` — account-level transfer entry point.
-- `src/shared/localization/messages.ts` — English/Persian flow messages.
-- `README.md`, `docs/guest-mode.md`, `docs/phone-authentication.md`, `docs/SYNC.md`, this document and `docs/guest-migration-verification.md` — behavior and verification notes.
+The existing backup/revocation and signed-out credential-barrier guarantees remain unchanged; see [secure logout](secure-logout.md).
 
-Backend (paths relative to `LeronaBackend/Backend`):
+## Verification
 
-- `backend/Flashcards.Api/Endpoints/V1Endpoints.cs` — additive owned review-state verification fields.
-- `backend/Flashcards.Tests/SyncTests.cs` — historical copy/retry/progress/ownership and same-name/quota tests.
-- `README.md`, `GUEST-MIGRATION.md` — API compatibility, prerequisites and unverified checks.
-
-Pre-existing uncommitted authentication, guest mode, quotas, SMS and other changes were preserved. See [the verification record](guest-migration-verification.md) for actual checks, not device/live-service claims.
+Automated coverage includes additive copies and stable-ID retries, source-change/ownership checks, discard confirmation, quota/compatibility blockers, pending/completed transfer recovery, localized modal decisions, empty account auto-entry, failed cleanup rollback, immutable-trigger restoration, durable reset intent after restart, offline logout, account/server preservation and late-response isolation. Native-device and live-service checks are not implied.

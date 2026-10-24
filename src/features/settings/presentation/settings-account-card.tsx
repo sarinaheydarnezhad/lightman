@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { View } from 'react-native';
 import { UserRound } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -42,17 +43,7 @@ function AccountDetails({ userId }: { userId: string }) {
         </>
       ) : null}
       {profile.error ? (
-        <>
-          <Text tone="error" accessibilityRole="alert">
-            {t('account.error')}
-          </Text>
-          <Button
-            label={t('account.retry')}
-            variant="secondary"
-            loading={profile.loading}
-            onPress={profile.refresh}
-          />
-        </>
+        <FeedbackModal message={t('account.error')} onRetry={profile.refresh} retryLabel={t('account.retry')} />
       ) : null}
       <SettingsSubscriptionCard />
       <SettingsBackupCard />
@@ -60,11 +51,6 @@ function AccountDetails({ userId }: { userId: string }) {
         label={t('sync.title')}
         variant="secondary"
         onPress={() => router.push('/settings/cloud')}
-      />
-      <Button
-        label={t('migration.title')}
-        variant="secondary"
-        onPress={() => router.push('/auth/guest-data' as import('expo-router').Href)}
       />
       <Button
         label={t('account.logout')}

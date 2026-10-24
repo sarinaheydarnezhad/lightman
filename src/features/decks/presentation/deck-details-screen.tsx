@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 
@@ -155,10 +156,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           </View>
           <View className="gap-sm">
             {study.error ? (
-              <View className="gap-sm" accessibilityLiveRegion="polite">
-                <Text tone="error">
-                  {language === 'en' ? study.error : t('common.genericError')}
-                </Text>
+              <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
                 {study.activeSession ? (
                   <Button
                     label={t('study.resume')}
@@ -166,7 +164,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
                     onPress={() => study.activeSession && openStudySession(study.activeSession)}
                   />
                 ) : null}
-              </View>
+              </FeedbackModal>
             ) : null}
             <Button
               label={t('cards.add')}
