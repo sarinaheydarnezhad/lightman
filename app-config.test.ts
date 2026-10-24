@@ -33,7 +33,7 @@ describe('native release configuration', () => {
     expect(appConfig.expo.ios).not.toHaveProperty('infoPlist');
   });
 
-  it('pins Android release settings and blocks broad storage permissions', () => {
+  it('pins Android release settings, enables shrinking and blocks broad storage permissions', () => {
     expect(appConfig.expo.android).toMatchObject({
       package: 'com.example.lerona',
       versionCode: 1,
@@ -56,6 +56,8 @@ describe('native release configuration', () => {
           minSdkVersion: 24,
           compileSdkVersion: 36,
           targetSdkVersion: 36,
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
         },
       }),
     ]);
