@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { syncEngine } from '@/core/composition/sync';
 import { storageScopes } from '@/core/composition/repositories';
 import { learningAccess } from '@/core/composition/learning-access';
-import { freeLearningLimits, localLearningUsage } from '@/core/access/learning-access';
+import { freeLearningLimits } from '@/core/access/learning-access';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
@@ -53,12 +53,11 @@ export function SubscriptionScreen() {
       const scope = storageScopes.current();
       const revision = storageScopes.snapshot().revision;
       await access.refresh();
-      const usage = await localLearningUsage(scope.value)();
       const subscription = access.isAccount
         ? (await syncEngine!.subscription()).subscription
         : null;
       storageScopes.assertCurrent(scope, revision);
-      return { usage, subscription };
+      return { subscription };
     }, [access]),
   );
   const plus = catalog.data?.plans.find((plan) => plan.plan === 'Plus');
@@ -67,15 +66,6 @@ export function SubscriptionScreen() {
   const amount = (value: number) =>
     language === 'fa' ? `\u2066${number(value)}\u2069` : number(value);
   const selected = prices.find((price) => price.durationMonths === selectedMonths) ?? prices[0];
-  const usage = details.data
-    ? {
-        decks: Math.max(details.data.usage.decks, state.entitlements?.usage.decks ?? 0),
-        cards: Math.max(details.data.usage.cards, state.entitlements?.usage.cards ?? 0),
-      }
-    : null;
-  const withinLimits = usage
-    ? usage.decks <= freeLearningLimits.decks && usage.cards <= freeLearningLimits.cards
-    : null;
   const subscription = details.data?.subscription;
   const active = state.entitlements?.isActive === true;
   const restriction = active ? undefined : (trigger ?? state.restriction);
@@ -88,12 +78,17 @@ export function SubscriptionScreen() {
         : subscription
           ? t(`paywall.status.${subscription.status}`)
           : t('paywall.free');
-  const expires = state.entitlements?.expiresAtUtc ?? subscription?.expiresAtUtc;
-  const refresh = () => {
-    if (catalog.loading || details.loading) return;
-    catalog.refresh();
-    details.refresh();
-  };
+  const confirmed = !details.loading && !details.error && !state.provisional;
+  const starts = confirmed ? (state.entitlements?.startsAtUtc ?? subscription?.startsAtUtc) : null;
+  const expires = confirmed
+    ? (state.entitlements?.expiresAtUtc ?? subscription?.expiresAtUtc)
+    : null;
+  const localDate = (value: string) =>
+    new Date(value).toLocaleDateString(language === 'fa' ? 'fa-IR' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   return (
     <Screen edges={stackScreenEdges} scroll testID="plus-paywall">
       <View className="gap-lg">
@@ -156,6 +151,20 @@ export function SubscriptionScreen() {
             </Text>
             <Badge label={t('account.plusPlan')} variant="primary" />
           </View>
+          {access.isAccount ? (
+            <View className="gap-sm">
+              <Text accessibilityLiveRegion="polite">{t('paywall.status', { status })}</Text>
+              {starts && Number.isFinite(Date.parse(starts)) ? (
+                <Text>{t('subscription.startDate', { date: localDate(starts) })}</Text>
+              ) : null}
+              {expires && Number.isFinite(Date.parse(expires)) ? (
+                <Text>{t('subscription.endDate', { date: localDate(expires) })}</Text>
+              ) : null}
+              {state.provisional && active ? (
+                <Text tone="warning">{t('access.provisional')}</Text>
+              ) : null}
+            </View>
+          ) : null}
           <View className="gap-md">
             <PlanFeature icon={Layers} label={t('paywall.plusDecks')} />
             <PlanFeature icon={RectangleHorizontal} label={t('paywall.plusCards')} />
@@ -163,74 +172,85 @@ export function SubscriptionScreen() {
           </View>
         </Card>
 
-        <Card variant="outlined" className="gap-md" style={{ backgroundColor: colors.surface }}>
-          <Text variant="headingSmall" accessibilityRole="header">
-            {t('paywall.choose')}
-          </Text>
-          {catalog.loading ? <LoadingState label={t('paywall.loading')} /> : null}
-          {catalog.error ? <FeedbackModal message={t('access.unavailable')} /> : null}
-          {!catalog.loading && !catalog.error && !prices.length ? (
-            <Text tone="secondary">{t('paywall.empty')}</Text>
-          ) : null}
-          {!catalog.loading && !catalog.error
-            ? prices.map((price) => {
-                const total = t(
-                  price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price',
-                  {
-                    months: number(price.durationMonths),
-                    amount: amount(price.priceToman),
-                  },
-                );
-                const monthly = t('paywall.perMonth', {
-                  amount: amount(price.priceToman / price.durationMonths),
-                });
-                const discount = regularMonthlyPrice
-                  ? Math.round(
-                      (1 - price.priceToman / (regularMonthlyPrice * price.durationMonths)) * 100,
-                    )
-                  : 0;
-                const savings =
-                  discount > 0 && discount < 100
-                    ? ` · ${t('paywall.discount', { percent: number(discount) })}`
-                    : '';
-                return (
-                  <Button
-                    key={price.durationMonths}
-                    testID={`plus-plan-${price.durationMonths}`}
-                    label={price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`}
-                    variant={
-                      selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
-                    }
-                    accessibilityState={{
-                      selected: selected?.durationMonths === price.durationMonths,
-                    }}
-                    onPress={() => setSelectedMonths(price.durationMonths)}
-                  />
-                );
-              })
-            : null}
-          {selected && !catalog.loading && !catalog.error ? (
-            <Text variant="labelLarge" testID="selected-plan">
-              {t(selected.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
-                months: number(selected.durationMonths),
-                amount: number(selected.priceToman),
-              })}
+        {!active ? (
+          <Card variant="outlined" className="gap-md" style={{ backgroundColor: colors.surface }}>
+            <Text variant="headingSmall" accessibilityRole="header">
+              {t('paywall.choose')}
             </Text>
-          ) : null}
-          {selected && selected.durationMonths > 1 && !catalog.loading && !catalog.error ? (
-            <Text variant="bodySmall" tone="secondary" testID="selected-plan-monthly">
-              {t('paywall.perMonth', {
-                amount: amount(selected.priceToman / selected.durationMonths),
-              })}
-            </Text>
-          ) : null}
-          <Button label={t('paywall.purchaseUnavailable')} disabled />
-          <View className="gap-sm rounded-md bg-primarySoft p-md">
-            <Text variant="bodySmall" tone="secondary">
-              {t(active ? 'paywall.alreadyActive' : 'paywall.providerMissing')}
-            </Text>
-          </View>
-        </Card>
+            {catalog.loading ? <LoadingState label={t('paywall.loading')} /> : null}
+            {catalog.error ? (
+              <FeedbackModal message={t('access.unavailable')} onRetry={catalog.refresh} />
+            ) : null}
+            {!catalog.loading && !catalog.error && !prices.length ? (
+              <View className="gap-sm">
+                <Text tone="secondary">{t('paywall.empty')}</Text>
+                <Button
+                  label={t('common.tryAgain')}
+                  variant="secondary"
+                  onPress={catalog.refresh}
+                />
+              </View>
+            ) : null}
+            {!catalog.loading && !catalog.error
+              ? prices.map((price) => {
+                  const total = t(
+                    price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price',
+                    {
+                      months: number(price.durationMonths),
+                      amount: amount(price.priceToman),
+                    },
+                  );
+                  const monthly = t('paywall.perMonth', {
+                    amount: amount(price.priceToman / price.durationMonths),
+                  });
+                  const discount = regularMonthlyPrice
+                    ? Math.round(
+                        (1 - price.priceToman / (regularMonthlyPrice * price.durationMonths)) * 100,
+                      )
+                    : 0;
+                  const savings =
+                    discount > 0 && discount < 100
+                      ? ` · ${t('paywall.discount', { percent: number(discount) })}`
+                      : '';
+                  return (
+                    <Button
+                      key={price.durationMonths}
+                      testID={`plus-plan-${price.durationMonths}`}
+                      label={price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`}
+                      variant={
+                        selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
+                      }
+                      accessibilityState={{
+                        selected: selected?.durationMonths === price.durationMonths,
+                      }}
+                      onPress={() => setSelectedMonths(price.durationMonths)}
+                    />
+                  );
+                })
+              : null}
+            {selected && !catalog.loading && !catalog.error ? (
+              <Text variant="labelLarge" testID="selected-plan">
+                {t(selected.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
+                  months: number(selected.durationMonths),
+                  amount: number(selected.priceToman),
+                })}
+              </Text>
+            ) : null}
+            {selected && selected.durationMonths > 1 && !catalog.loading && !catalog.error ? (
+              <Text variant="bodySmall" tone="secondary" testID="selected-plan-monthly">
+                {t('paywall.perMonth', {
+                  amount: amount(selected.priceToman / selected.durationMonths),
+                })}
+              </Text>
+            ) : null}
+            <Button label={t('paywall.purchaseUnavailable')} disabled />
+            <View className="gap-sm rounded-md bg-primarySoft p-md">
+              <Text variant="bodySmall" tone="secondary">
+                {t('paywall.providerMissing')}
+              </Text>
+            </View>
+          </Card>
+        ) : null}
 
         <Card
           variant="outlined"
@@ -249,57 +269,26 @@ export function SubscriptionScreen() {
           <Text tone="secondary">{t('access.premiumUnavailable')}</Text>
         </Card>
 
-        <Card variant="outlined" className="gap-md" style={{ backgroundColor: colors.surface }}>
-          <Text variant="headingSmall" accessibilityRole="header">
-            {t('account.subscription')}
-          </Text>
-          <Text>{t(access.isAccount ? 'guest.accountMode' : 'guest.mode')}</Text>
-          <Text accessibilityLiveRegion="polite">{t('paywall.status', { status })}</Text>
-          {expires ? (
-            <Text>
-              {t('access.expires', {
-                time: new Date(expires).toLocaleString(language === 'fa' ? 'fa-IR' : 'en-US'),
-              })}
-            </Text>
-          ) : null}
-          {access.isAccount && state.provisional ? (
-            <Text tone="warning">{t('access.provisional')}</Text>
-          ) : null}
-          {usage ? (
-            <>
-              <Text>
-                {t('paywall.usage', { decks: number(usage.decks), cards: number(usage.cards) })}
-              </Text>
-              <Text>{t(withinLimits ? 'paywall.withinLimits' : 'paywall.overLimits')}</Text>
-            </>
-          ) : null}
-          {restriction ? (
-            <View
-              className="gap-sm rounded-md border border-border bg-background p-md"
-              testID="paywall-reason"
-            >
-              <Text variant="labelLarge">{t('paywall.reason')}</Text>
-              {restriction.operation === 'study' ? <Text>{t('paywall.studyReason')}</Text> : null}
-              {restriction.decks ? <Text>{t('paywall.deckReason')}</Text> : null}
-              {restriction.cards ? <Text>{t('paywall.cardReason')}</Text> : null}
-            </View>
-          ) : null}
-          {subscription?.status === 'Expired' ? <Text>{t('paywall.expired')}</Text> : null}
-          <Text variant="bodySmall" tone="secondary">
-            {t('paywall.dataPreserved')}
-          </Text>
-          <Text variant="bodySmall" tone="secondary">
-            {t(syncEngine?.available ? 'paywall.cloud' : 'paywall.cloudUnavailable')}
-          </Text>
-          {details.loading ? <LoadingState label={t('access.refresh')} /> : null}
-          {details.error ? <FeedbackModal message={t('paywall.statusError')} /> : null}
-        </Card>
-        <Button
-          label={t('access.refresh')}
-          variant="secondary"
-          loading={catalog.loading || details.loading}
-          onPress={refresh}
-        />
+        {restriction ? (
+          <FeedbackModal
+            title={t('paywall.reason')}
+            tone="warning"
+            message={[
+              restriction.operation === 'study' ? t('paywall.studyReason') : null,
+              restriction.decks ? t('paywall.deckReason') : null,
+              restriction.cards ? t('paywall.cardReason') : null,
+            ]
+              .filter(Boolean)
+              .join('\n')}
+          />
+        ) : null}
+        {subscription?.status === 'Expired' ? (
+          <FeedbackModal message={t('paywall.expired')} tone="info" />
+        ) : null}
+        {details.loading ? <LoadingState label={t('subscription.loading')} /> : null}
+        {details.error ? (
+          <FeedbackModal message={t('paywall.statusError')} onRetry={details.refresh} />
+        ) : null}
         {!access.isAccount ? (
           <Button
             label={t('sync.signIn')}

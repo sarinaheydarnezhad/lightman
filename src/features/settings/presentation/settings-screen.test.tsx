@@ -48,16 +48,15 @@ function settingsScreen() {
 
 function expectControls(language: UiLanguage, enabled: boolean) {
   const direction = resolveDirection(language);
-  expect(screen.getAllByRole('header').slice(0, 3)).toEqual([
+  expect(screen.getAllByRole('header').slice(0, 2)).toEqual([
     screen.getByRole('header', { name: translate(language, 'nav.settings') }),
-    screen.getByRole('header', { name: translate(language, 'settings.account') }),
     screen.getByRole('header', { name: translate(language, 'settings.appearance') }),
   ]);
   expect(
     screen.getByRole('button', { name: translate(language, 'account.loginSignup') }),
   ).toBeTruthy();
   expect(
-    screen.getByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+    screen.getByRole('button', { name: translate(language, 'subscription.title') }),
   ).toBeTruthy();
   const buttons = screen
     .getAllByRole('button')
@@ -65,7 +64,7 @@ function expectControls(language: UiLanguage, enabled: boolean) {
       (button) =>
         ![
           translate(language, 'account.loginSignup'),
-          translate(language, 'settings.upgradePlus'),
+          translate(language, 'subscription.title'),
         ].includes(button.props.accessibilityLabel),
     );
   expect(buttons).toHaveLength(enabled ? 6 : 5);

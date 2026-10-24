@@ -212,11 +212,9 @@ test.each(['en', 'fa'] as const)(
       screen.getByRole('progressbar', { name: translate(locale, 'paywall.loading') }),
     ).toBeTruthy();
     expect(
-      screen.getByRole('progressbar', { name: translate(locale, 'access.refresh') }),
+      screen.getByRole('progressbar', { name: translate(locale, 'subscription.loading') }),
     ).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: translate(locale, 'access.refresh') }),
-    ).toBeDisabled();
+    expect(screen.queryByRole('button', { name: translate(locale, 'access.refresh') })).toBeNull();
     expect(
       screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
     ).toBeDisabled();
@@ -235,7 +233,7 @@ test.each(['en', 'fa'] as const)('free-limit actions keep View plans in %s', (lo
 });
 
 test.each(['en', 'fa'] as const)(
-  'server prices, accessible selection and local usage render in %s',
+  'server prices and accessible selection render without usage diagnostics in %s',
   async (locale) => {
     language(locale);
     const amount = (value: number) =>
@@ -279,9 +277,7 @@ test.each(['en', 'fa'] as const)(
       writingDirection: resolveDirection(locale),
       textAlign: locale === 'fa' ? 'right' : 'left',
     });
-    await waitFor(() =>
-      expect(screen.getByText(translate(locale, 'paywall.withinLimits'))).toBeTruthy(),
-    );
+    expect(screen.queryByText(translate(locale, 'paywall.withinLimits'))).toBeNull();
     expect(engine.subscription).not.toHaveBeenCalled();
   },
 );
@@ -385,23 +381,41 @@ test('no provider means no purchase request, activation, simulated cancellation 
   expect(mockAccess.snapshot().entitlements).toBeNull();
 });
 
-test('active Plus displays server status and local expiration; a repeated purchase remains disabled', async () => {
-  const response = account(true);
-  render(<SubscriptionScreen />);
-  expect(await screen.findByText('Subscription status: Plus active')).toBeTruthy();
-  expect(screen.getByText(/Another purchase is not allowed/)).toBeTruthy();
-  expect(
-    screen.getByText(
-      translate('en', 'access.expires', {
-        time: new Date(response.expiresAtUtc!).toLocaleString('en-US'),
-      }),
-    ),
-  ).toBeTruthy();
-  const purchase = screen.getByRole('button', { name: 'Purchase unavailable' });
-  fireEvent.press(purchase);
-  expect(purchase.props.accessibilityState.disabled).toBe(true);
-  await waitFor(() => expect(engine.subscription).toHaveBeenCalledTimes(1));
-});
+test.each(['en', 'fa'] as const)(
+  'active Plus shows date-only details without purchase controls or access diagnostics in %s',
+  async (locale) => {
+    language(locale);
+    const response = account(true);
+    render(<SubscriptionScreen />);
+    await screen.findByText(
+      translate(locale, 'paywall.status', { status: translate(locale, 'paywall.active') }),
+    );
+    for (const [key, value] of [
+      ['subscription.startDate', response.startsAtUtc!],
+      ['subscription.endDate', response.expiresAtUtc!],
+    ] as const) {
+      const date = new Date(value).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      expect(screen.getByText(translate(locale, key, { date }))).toBeTruthy();
+    }
+    expect(screen.queryByText(translate(locale, 'account.subscription'))).toBeNull();
+    expect(screen.queryByText(translate(locale, 'paywall.alreadyActive'))).toBeNull();
+    expect(screen.queryByText(translate(locale, 'paywall.choose'))).toBeNull();
+    expect(screen.queryByTestId('plus-plan-1')).toBeNull();
+    expect(screen.queryByTestId('selected-plan')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: translate(locale, 'access.refresh') })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: translate(locale, 'settings.upgradePlus') }),
+    ).toBeNull();
+    expect(engine.subscription).toHaveBeenCalledTimes(1);
+  },
+);
 
 test.each([
   ['deck', 1, 50, 'paywall.deckReason'],
@@ -416,7 +430,7 @@ test.each([
     });
     render(<SubscriptionScreen />);
     await screen.findByTestId('plus-plan-1');
-    expect(screen.getByText(translate('en', reason))).toBeTruthy();
+    expect(screen.getByText(translate('en', reason), { exact: false })).toBeTruthy();
     expect(mockUsage).toEqual({ decks, cards });
   },
 );
@@ -456,10 +470,10 @@ test('failed and empty catalogs have actionable retry and never invented prices;
   render(<SubscriptionScreen />);
   await screen.findByText(translate('en', 'access.unavailable'));
   expect(screen.queryByTestId('selected-plan')).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Refresh access' }));
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
   expect(await screen.findByText(translate('en', 'paywall.empty'))).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Refresh access' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Refresh access' }));
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
   await screen.findByTestId('plus-plan-1');
   expect(engine.planCatalog).toHaveBeenCalledTimes(3);
 });
@@ -480,7 +494,7 @@ test.each(['en', 'fa'] as const)(
     ).toBeDisabled();
     await waitFor(() =>
       expect(
-        screen.getByRole('button', { name: translate(locale, 'access.refresh') }),
+        screen.getByRole('button', { name: translate(locale, 'common.tryAgain') }),
       ).toBeEnabled(),
     );
   },
@@ -490,7 +504,7 @@ test('offline/native-unavailable catalog has no hardcoded prices or cloud availa
   Object.defineProperty(engine, 'available', { value: false });
   render(<SubscriptionScreen />);
   expect(await screen.findByText(translate('en', 'access.unavailable'))).toBeTruthy();
-  expect(screen.getByText(translate('en', 'paywall.cloudUnavailable'))).toBeTruthy();
+  expect(screen.queryByText(translate('en', 'paywall.cloudUnavailable'))).toBeNull();
   expect(engine.planCatalog).not.toHaveBeenCalled();
   expect(screen.queryByTestId('selected-plan')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Sign in' }));
@@ -555,10 +569,43 @@ test('an unmounted account paywall ignores a late status response', async () => 
   await act(async () => {
     complete({ subscription: null, entitlements: entitlements() });
   });
-  expect(
-    await screen.findByText(
-      translate('en', 'paywall.status', { status: translate('en', 'guest.mode') }),
-    ),
-  ).toBeTruthy();
+  await screen.findByTestId('plus-plan-1');
+  expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy();
   expect(screen.queryByText('Subscription status: Plus active')).toBeNull();
+});
+
+test('invalid subscription dates are never rendered', async () => {
+  account();
+  jest.mocked(engine.subscription).mockResolvedValue({
+    subscription: {
+      id: 'invalid',
+      plan: 'Plus',
+      storedStatus: 'Active',
+      status: 'Expired',
+      startsAtUtc: 'invalid',
+      expiresAtUtc: 'invalid',
+      createdAtUtc: 'invalid',
+      updatedAtUtc: 'invalid',
+    },
+    entitlements: entitlements(),
+  });
+  render(<SubscriptionScreen />);
+  await screen.findByText('Subscription status: Expired');
+  expect(screen.queryByText(/Invalid Date|Start date:|End date:/)).toBeNull();
+});
+
+test('subscription failure offers a generic retry without an access refresh button', async () => {
+  const response = account(true);
+  jest
+    .mocked(engine.subscription)
+    .mockRejectedValueOnce(new Error('private database error'))
+    .mockResolvedValueOnce({ subscription: null, entitlements: response });
+  render(<SubscriptionScreen />);
+  await screen.findByText(translate('en', 'paywall.statusError'));
+  expect(screen.queryByText('private database error')).toBeNull();
+  expect(screen.queryByText(/Start date:|End date:/)).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Refresh access' })).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
+  await screen.findByText(/Start date:/);
+  expect(engine.subscription).toHaveBeenCalledTimes(2);
 });

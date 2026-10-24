@@ -4,18 +4,18 @@ The existing `/settings/subscription` route presents Plus duration selection and
 
 ## Entry points and status
 
-- Settings offers View plans in both guest and account sections.
+- Settings shows the account phone number (email for legacy accounts) and a Subscription button, labeled Subscription (Plus) only after current server confirmation. Guest Settings offers sign-in and Subscription. Logout remains available; backup details and controls live under Cloud sync, reachable from Settings > About.
 - Rejected deck/card editor entry shows a centered, localized free-plan limit with View plans and Browse decks actions, rather than an unavailable-feature message. The free plan allows at most 1 active deck and 50 active cards total across all decks. Save-time failures remain beside the form actions and preserve unsaved fields.
-- Access errors and subscription warnings never render a global top-of-screen banner. Background entitlement refresh remains active; Settings and the Paywall show subscription status. The Paywall preserves structured deck/card/operation reasons through its initial refresh, unless confirmed Plus now permits access. Free study remains allowed within the free limits after expiration.
-- The Paywall shows guest/account scope, current effective access, supported subscription metadata and expiration in local time, current usage and free-limit comparison. Offline cached Plus is explicitly provisional; unknown access does not become Plus. Scope boundaries remount the screen on account changes, and focused-resource cancellation plus existing API epochs ignore late responses.
-- Plan buttons expose selected and disabled accessibility states. Text/number formatting uses existing RTL/LTR-aware components and locale helpers. The screen has loading, empty, catalog-failure, status-failure and refresh states. Refresh/purchase controls cannot initiate duplicate purchases; there is no purchase request at all.
+- Access errors and subscription warnings never render a global top-of-screen banner. Background entitlement refresh remains active. The Paywall preserves structured deck/card/operation reasons in a modal through its initial refresh, unless confirmed Plus now permits access. Free study remains allowed within the free limits after expiration.
+- Subscription status and valid start/end dates appear inside the Plus plan card. Dates use the local English/Persian calendar without a time of day. The old Subscription and access diagnostic section, usage comparisons, active-purchase warning and Refresh access buttons are removed. Active Plus hides duration selection and purchase controls. Offline cached Plus remains explicitly provisional; unknown access does not become Plus. Scope boundaries remount the screen on account changes, and focused-resource cancellation plus existing API epochs ignore late responses.
+- Plan buttons expose selected and disabled accessibility states. Text/number formatting uses existing RTL/LTR-aware components and locale helpers. Focus/background refresh happens automatically; failures and empty catalogs offer a generic Try again action. There is no purchase request at all.
 
 ## Existing API integration
 
 - `GET /api/v1/plans`: public catalog, actual durations, prices, currency and disabled purchase flags; production mobile code has no fallback price list.
 - `GET /api/v1/me/entitlements`: refreshed through the existing owner-scoped learning-access controller; no second subscription authority or persistent state store.
 - `GET /api/v1/me/subscription`: subscription metadata/status only for the authenticated scope, through existing JWT refresh/session guards.
-- Local counts reuse `localLearningUsage`, including the existing archived-deck card counting rule. Cloud capability copy is conditional on existing native HTTPS availability; sync/backup still require sign-in and configuration and are not advertised as new Plus-only functionality. Guest data is not uploaded by opening/selecting plans.
+- The subscription page no longer queries local learning counts just to display diagnostics. Existing learning-access checks still enforce limits. Sync/backup still require sign-in and configuration, and guest data is not uploaded by opening/selecting plans.
 
 The backend catalog returns the following Plus offers, in toman:
 

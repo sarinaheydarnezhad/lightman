@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { syncEngine } from '@/core/composition/sync';
 import { CloudSyncScreen } from './cloud-sync-screen';
 
+const mockScope = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (effect: () => void) => {
@@ -12,7 +14,7 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@/core/composition/application', () => ({ application: {} }));
 jest.mock('@/core/composition/repositories', () => ({
-  storageScopes: { snapshot: () => ({ mode: 'account' }) },
+  storageScopes: { snapshot: () => mockScope, subscribe: () => () => {} },
 }));
 jest.mock('@/core/composition/sync', () => ({
   syncEngine: {
@@ -21,6 +23,8 @@ jest.mock('@/core/composition/sync', () => ({
     resolve: jest.fn(),
     retryFailed: jest.fn(),
     syncNow: jest.fn(),
+    backupStatus: jest.fn(),
+    createBackup: jest.fn(),
   },
 }));
 
@@ -49,6 +53,10 @@ beforeEach(() => {
   jest.mocked(engine.resolve).mockReset().mockResolvedValue(undefined);
   jest.mocked(engine.retryFailed).mockReset().mockResolvedValue(undefined);
   jest.mocked(engine.syncNow).mockReset().mockResolvedValue(undefined);
+  jest
+    .mocked(engine.backupStatus)
+    .mockReset()
+    .mockResolvedValue({ latest: null, lastSuccessful: null });
 });
 
 test('failed changes and conflict resolution are queued in modals, not shown inline', async () => {

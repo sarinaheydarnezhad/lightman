@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
@@ -9,6 +9,7 @@ import { Screen } from '@/shared/ui/screen';
 import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
+import { SettingsBackupCard } from './settings-backup-card';
 
 type Status =
   NonNullable<typeof syncEngine> extends { status(): Promise<infer Result> } ? Result : never;
@@ -63,6 +64,7 @@ function ConflictNotice({
 
 export function CloudSyncScreen() {
   const { t, number } = useLocalization();
+  const scope = useSyncExternalStore(storageScopes.subscribe, storageScopes.snapshot);
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -100,14 +102,12 @@ export function CloudSyncScreen() {
       <View className="gap-lg">
         <PageTitle>{t('sync.title')}</PageTitle>
         <Text tone="secondary">{t('sync.description')}</Text>
-        {storageScopes.snapshot().mode === 'guest' && (
-          <Text tone="secondary">{t('guest.explanation')}</Text>
-        )}
+        {scope.mode === 'guest' && <Text tone="secondary">{t('guest.explanation')}</Text>}
         {!syncEngine?.available ? (
           <FeedbackModal message={t('sync.unavailable')} tone="info" />
         ) : (
           <>
-            {status?.signedIn ? (
+            {scope.mode === 'account' && status?.signedIn && status.userId === scope.userId ? (
               <>
                 <Text>{t('sync.account', { id: status.userId })}</Text>
                 <Text>
@@ -153,6 +153,9 @@ export function CloudSyncScreen() {
             ))}
           </>
         )}
+        {scope.phase === 'ready' && scope.mode === 'account' ? (
+          <SettingsBackupCard key={`${scope.userId}:${scope.revision}`} />
+        ) : null}
         {error ? <FeedbackModal message={error} onDismiss={() => setError('')} /> : null}
       </View>
     </Screen>

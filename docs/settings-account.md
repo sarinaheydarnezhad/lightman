@@ -1,6 +1,6 @@
 # Settings account, subscription and backup
 
-Inspected and extended on October 16, 2026. Existing authentication, guest scopes, entitlement controller, backup client and secure logout are reused; no backend, database schema, dependencies or configuration changed.
+Updated on October 24, 2026. Existing authentication, guest scopes, entitlement controller, backup client and secure logout are reused; no backend, database schema, dependencies or configuration changed.
 
 ## What was already implemented
 
@@ -8,10 +8,11 @@ Settings already had account/guest switching, authentication navigation, Paywall
 
 ## Gaps completed
 
-- Guests now see an explicit local-only explanation, existing shared free limits (1 deck / 50 cards), and a prominent **Log In / Sign Up** action to `/auth`. No account profile, subscription or backup component is mounted for guests; the public Paywall remains reachable.
-- Authenticated Settings shows signed-in scope, actual username and a masked phone exposing only its last two digits. The raw phone is not placed in component state, text or accessibility labels. Existing email-only accounts still display their actual email. Profile loading/failure/retry is independent of subscription and backup; safe localized errors replace silent failures and internal account-ID placeholders.
-- The new subscription card reads metadata through the existing client and effective access from the existing owner-scoped entitlement controller. It shows confirmed Plus/free/expired/cancelled/scheduled/unavailable status, start/expiration in local time, active-purchase prohibition, and free/over-limit access explanations. It links to the existing Plus Paywall; no purchase activation exists.
-- Failed status requests, loading and provisional offline entitlements show **Unconfirmed**, not a guessed active or expired subscription. A newly invalidated entitlement immediately hides previously confirmed details. Expiration display uses effective backend access and backend validation time, not a failed request or a device-clock inference.
+- Guests see **Log In / Sign Up** and **Subscription**, without subscription or backup queries.
+- Authenticated Settings shows only the owner's phone (email for legacy accounts), a **Subscription** button and the retained logout action. Username, signed-in text, access explanations and subscription marketing are omitted. Profile failures use a safe localized modal with retry.
+- The subscription button uses the existing owner-scoped entitlement controller and refreshes stale access automatically. Confirmed active Plus labels it **Subscription (Plus)**, never **Upgrade to Plus**. Unknown, loading, invalidated and provisional offline access use the neutral **Subscription** label.
+- Opening the existing subscription page shows server status and valid start/end dates without times, inside the Plus card. The old Subscription and access section and Refresh access controls are removed. Active Plus hides purchase/duration controls. Premium remains unavailable; no purchase activation exists.
+- Backup details and controls now live under **Settings > About > Cloud sync**, retaining verified creation, failure recovery and account isolation rather than cluttering the top-level account card.
 - Profile, subscription and backup resources remount on storage revision/owner changes. Late focus requests cannot repopulate an unmounted scope, and existing CloudClient session epochs protect API reads. Guest/account datasets are never copied or modified by opening Settings.
 - Read-only subscription/entitlement/backup-status methods no longer take the exclusive account-write/sync lock. Their scope, session and operation-epoch checks remain; they can load independently instead of one read failing merely because another section is loading. Mutating backup/sync/logout operations retain the existing exclusive transactional/synchronization paths.
 - Backup status refresh failures label the current status unconfirmed while preserving historical successful metadata. A genuinely verified creation remains reported as completed even if its subsequent metadata refresh fails. No local save is called a server backup.
@@ -21,9 +22,9 @@ Settings already had account/guest switching, authentication navigation, Paywall
 
 All paths have the existing `/api/v1` prefix and use the existing JWT/refresh/session client for authenticated requests. No caller supplies an ownership ID.
 
-- `GET /me/`: `{ id, displayName, phoneNumber, email }`; owner ID checked against the active local scope before presenting a masked contact.
-- `GET /me/entitlements`: current effective access through `learningAccess().refresh()`, including limits/usage and server validation timestamp; no second entitlement store.
-- `GET /me/subscription`: existing `CurrentSubscription` DTO; its subscription metadata supplements, but does not replace, the controller's authoritative effective access.
+- `GET /me/`: `{ id, displayName, phoneNumber, email }`; owner ID checked against the active local scope before presenting the contact.
+- `GET /me/entitlements`: current effective access through `learningAccess().refreshIfStale()` in Settings and automatic refresh on the subscription page; no second entitlement store.
+- `GET /me/subscription`: read only on the subscription page, where metadata supplements but does not replace the controller's authoritative effective access.
 - `GET /backups/status` plus `GET /backups/?page=1&limit=1`: the existing `backupStatus()` adapter combines last completed and latest-operation metadata.
 - `POST /backups/`: existing retry-safe verified `createBackup()` flow, including synchronization, sync-version verification and post-creation verification. UI duplicate submissions remain blocked.
 - Logout only navigates to `/settings/logout`; that existing flow offers backup/no-backup/cancel and invokes existing revocation/local isolation. Settings does not implement its own token clearing or server deletion.
@@ -32,14 +33,17 @@ All paths have the existing `/api/v1` prefix and use the existing JWT/refresh/se
 ## Changed files
 
 - `src/features/settings/presentation/settings-account-card.tsx`
-- `src/features/settings/presentation/settings-subscription-card.tsx` (new)
+- `src/features/settings/presentation/settings-subscription-card.tsx`
+- `src/features/settings/presentation/subscription-screen.tsx`
+- `src/features/settings/presentation/cloud-sync-screen.tsx`
+- `src/features/settings/presentation/cloud-sync-backup.test.tsx`
 - `src/features/settings/presentation/settings-backup-card.tsx`
 - `src/core/sync/sync-engine.ts`
 - `src/shared/localization/messages.ts`
 - `src/features/settings/presentation/settings-account-card.test.tsx`
 - `src/features/settings/presentation/settings-screen.test.tsx`
 - `src/core/sync/subscription.test.ts`
-- `src/shared/navigation/navigation.test.tsx` (only the Settings login-button label)
+- `src/shared/navigation/navigation.test.tsx` (Settings subscription navigation)
 - This document and `settings-account-verification.md`
 
 ## Availability and remaining dependencies

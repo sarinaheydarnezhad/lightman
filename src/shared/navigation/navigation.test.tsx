@@ -189,13 +189,13 @@ test('settings opens the local import/export route', async () => {
 });
 
 test.each(['en', 'fa'] as const)(
-  'Settings opens Plus with the upgrade stack title in %s',
+  'Settings opens subscription details in %s',
   async (language) => {
     await application.settings.setLanguage(languageTag(language));
     try {
       const rendered = renderRouter(routes, { initialUrl: '/settings' });
       fireEvent.press(
-        await screen.findByRole('button', { name: translate(language, 'settings.upgradePlus') }),
+        await screen.findByRole('button', { name: translate(language, 'subscription.title') }),
       );
       const title = translate(language, 'paywall.title');
       expect(await screen.findByRole('header', { name: title })).toBeTruthy();
