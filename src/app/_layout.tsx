@@ -129,6 +129,7 @@ function Navigation() {
         <Stack.Screen name="auth/index" options={{ title: t('auth.title') }} />
         <Stack.Screen name="auth/guest-data" options={{ title: t('migration.title') }} />
         <Stack.Screen name="settings/transfer" options={{ title: t('transfer.title') }} />
+        <Stack.Screen name="settings/import-preview" options={{ title: t('transfer.preview') }} />
         <Stack.Screen name="+not-found" options={{ title: t('common.notFound') }} />
         <Stack.Screen name="design-system" options={{ title: t('nav.designSystem') }} />
       </Stack>

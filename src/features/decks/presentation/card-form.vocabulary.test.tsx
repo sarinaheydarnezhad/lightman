@@ -100,13 +100,9 @@ test.each([false, true])('front and back precede optional fields when editing is
   expect(screen.getByRole('header', { name: 'Optional details' })).toBeTruthy();
   const label = editing ? 'Save card' : 'Create card';
   expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
-  if (editing) {
-    expect(screen.queryByTestId('navigation-save-action')).toBeNull();
-  } else {
-    expect(
-      within(screen.getByTestId('navigation-save-action')).getByRole('button', { name: label }),
-    ).toBeTruthy();
-  }
+  expect(
+    within(screen.getByTestId('navigation-save-action')).getByRole('button', { name: label }),
+  ).toBeTruthy();
   expect(
     within(screen.UNSAFE_getByType(ScrollView)).queryByRole('button', { name: label }),
   ).toBeNull();
@@ -146,30 +142,33 @@ test('the relocated action retains validation and keyboard dismissal', async () 
   }
 });
 
-test('the top check submits required fields without optional data and blocks repeat submissions', async () => {
-  let finish: () => void = () => {};
-  const submit = showForm({
-    onSubmit: () =>
-      new Promise<void>((resolve) => {
-        finish = resolve;
-      }),
-  });
-  fireEvent.changeText(screen.getByLabelText('Front text'), 'Front');
-  fireEvent.changeText(screen.getByLabelText('Meaning'), 'Back');
-  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
-  expect(
-    screen.getByRole('button', { name: 'Create card', busy: true, disabled: true }),
-  ).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Create card' }));
-  expect(submit).toHaveBeenCalledTimes(1);
-  expect(submit).toHaveBeenCalledWith(
-    expect.objectContaining({ frontText: 'Front', meaning: 'Back' }),
-  );
-  await act(async () => finish());
-  expect(screen.getByLabelText('Front text').props.value).toBe('');
-  expect(screen.getByLabelText('Meaning').props.value).toBe('');
-  expect(screen.getByRole('button', { name: 'Create card', disabled: false })).toBeTruthy();
-});
+test.each([false, true])(
+  'the top check blocks repeat submissions when editing is %s',
+  async (editing) => {
+    let finish: () => void = () => {};
+    const submit = showForm({
+      existing: editing ? makeCard() : undefined,
+      onSubmit: () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    });
+    const label = editing ? 'Save card' : 'Create card';
+    fireEvent.changeText(screen.getByLabelText('Front text'), 'Front');
+    fireEvent.changeText(screen.getByLabelText('Meaning'), 'Back');
+    fireEvent.press(screen.getByRole('button', { name: label }));
+    expect(screen.getByRole('button', { name: label, busy: true, disabled: true })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: label }));
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ frontText: 'Front', meaning: 'Back' }),
+    );
+    await act(async () => finish());
+    expect(screen.getByLabelText('Front text').props.value).toBe(editing ? 'Front' : '');
+    expect(screen.getByLabelText('Meaning').props.value).toBe(editing ? 'Back' : '');
+    expect(screen.getByRole('button', { name: label, disabled: false })).toBeTruthy();
+  },
+);
 
 test('create form hides vocabulary help and clears fields after successful manual saves', async () => {
   const submit = showForm();

@@ -10,3 +10,8 @@ export async function sqliteEngine() {
   engine ??= initSqlJs();
   return engine;
 }
+
+export async function openAnkiMetadataDatabase(bytes: Uint8Array) {
+  const sqlite = await sqliteEngine();
+  return new sqlite.Database(bytes);
+}

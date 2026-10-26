@@ -12,7 +12,10 @@ jest.mock('@/features/auth/presentation/guest-data-screen', () => {
   const MockText = jest.requireActual<typeof import('react-native')>('react-native').Text;
   return { GuestDataScreen: () => <MockText>Guest decision modal</MockText> };
 });
-jest.mock('expo-router', () => ({ router: { replace: jest.fn(), dismissAll: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { replace: jest.fn(), dismissAll: jest.fn() },
+  usePathname: () => '/settings',
+}));
 jest.mock('@/core/composition/repositories', () => ({
   storageScopes: {
     snapshot: () => mockState,

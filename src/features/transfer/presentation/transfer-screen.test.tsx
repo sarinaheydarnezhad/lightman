@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { application } from '@/core/composition/application';
 import {
   transferService,
@@ -11,6 +12,14 @@ import { makeDeck } from '@/../test/fixtures';
 import { TransferScreen } from './transfer-screen';
 
 jest.setTimeout(20_000);
+
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useFocusEffect: (effect: () => (() => void) | void) => {
+    const react = jest.requireActual<typeof import('react')>('react');
+    react.useEffect(effect, [effect]);
+  },
+}));
 
 jest.mock('@/core/composition/application', () => ({ application: { listDecks: jest.fn() } }));
 jest.mock('@/core/composition/transfer', () => ({
@@ -48,30 +57,25 @@ beforeEach(() => {
   jest.mocked(shareTransferFile).mockResolvedValue('file:///cache/cards.csv');
 });
 
-test('selection parses to preview; nothing saves before explicit confirmation', async () => {
-  render(<TransferScreen />);
+test('selection opens a separate preview page without saving cards', async () => {
+  const view = render(<TransferScreen />);
   await waitFor(() => expect(application.listDecks).toHaveBeenCalled());
   fireEvent.press(screen.getByText('Select file'));
-  await screen.findByText('Import preview');
-  expect(
-    screen.getByText('Format: CSV\nTotal cards: 3\nNew cards: 1\nDuplicates: 1\nInvalid rows: 1'),
-  ).toBeTruthy();
-  expect(screen.getByText('Decks: Vocabulary')).toBeTruthy();
-  expect(screen.getByText('Row 4: Missing back')).toBeTruthy();
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/settings/import-preview'));
+  expect(transferService.preview).toHaveBeenCalledWith('csv', new Uint8Array([1]), 'Cards.csv');
+  expect(screen.queryByText('Import preview')).toBeNull();
   expect(transferService.confirm).not.toHaveBeenCalled();
-  fireEvent.press(screen.getByText('Confirm import'));
-  await screen.findByText('Imported: 1\nDuplicates skipped: 1\nInvalid / skipped rows: 1');
-  expect(transferService.confirm).toHaveBeenCalledTimes(1);
+  view.unmount();
+  expect(transferService.cancel).not.toHaveBeenCalled();
 });
 
-test('cancelling a preview does not save any cards', async () => {
+test('a parsing failure stays on the upload page', async () => {
+  jest.mocked(transferService.preview).mockRejectedValueOnce(new Error('Invalid file'));
   render(<TransferScreen />);
   fireEvent.press(screen.getByText('Select file'));
-  await screen.findByText('Import preview');
-  fireEvent.press(screen.getByText('Cancel'));
-  expect(transferService.cancel).toHaveBeenCalledTimes(1);
+  await screen.findByText('Invalid file');
+  expect(router.push).not.toHaveBeenCalled();
   expect(transferService.confirm).not.toHaveBeenCalled();
-  expect(screen.queryByText('Import preview')).toBeNull();
 });
 
 test('picker cancellation never parses or saves', async () => {
@@ -89,11 +93,14 @@ test('exports a selected deck in chosen format using the platform sharing adapte
   fireEvent.press(screen.getByText('XLSX'));
   fireEvent.press(screen.getByText('Share / Save file'));
   await waitFor(() => expect(shareTransferFile).toHaveBeenCalledWith('xlsx', new Uint8Array([2])));
+  await screen.findByText('Ready to share: /cache/cards.csv');
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
   expect(transferService.export).toHaveBeenCalledWith('xlsx', 'deck-1');
   fireEvent.press(screen.getByText('All decks'));
   fireEvent.press(screen.getByText('Anki (.apkg)'));
   fireEvent.press(screen.getByText('Share / Save file'));
   await waitFor(() => expect(transferService.export).toHaveBeenCalledWith('apkg', undefined));
+  await screen.findByText('Ready to share: /cache/cards.csv');
 });
 
 test('export confirmation displays the chosen folder and filename instead of the Android URI', async () => {

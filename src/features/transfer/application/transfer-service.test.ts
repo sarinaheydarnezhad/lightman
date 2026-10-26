@@ -49,10 +49,27 @@ test('preview is read-only; confirm skips existing/in-file duplicates, validates
 test('cancel and forged confirmations never write repositories', async () => {
   const { app, service } = setup();
   const preview = await service.preview('csv', strToU8('Front,Back\na,b'), 'Deck.csv');
+  expect(service.pendingPreview()).toBe(preview);
   await expect(service.confirm({ ...preview })).rejects.toThrow('preview');
   service.cancel(preview);
+  expect(service.pendingPreview()).toBeNull();
   await expect(service.confirm(preview)).rejects.toThrow('preview');
   expect(await app.listDecks()).toEqual([]);
+});
+
+test('preview ownership survives page navigation and clears only after approval or rejection', async () => {
+  const { app, service } = setup();
+  expect(service.pendingPreview()).toBeNull();
+  const first = await service.preview('csv', strToU8('Front,Back\na,b'), 'First.csv');
+  expect(first.fileName).toBe('First.csv');
+  const second = await service.preview('csv', strToU8('Front,Back\nc,d'), 'Second.csv');
+  await expect(service.confirm(first)).rejects.toThrow('preview');
+  service.cancel(first);
+  expect(service.pendingPreview()).toBe(second);
+  expect(await app.listDecks()).toHaveLength(0);
+  await service.confirm(second);
+  expect(service.pendingPreview()).toBeNull();
+  expect(await app.listDecks()).toHaveLength(1);
 });
 
 test('confirmation rechecks duplicates added after preview', async () => {

@@ -67,7 +67,9 @@ function SettingsRow({
   );
   if (!onPress) {
     return (
-      <View className="min-h-listItem justify-center border-b border-border py-lg">{content}</View>
+      <View className="min-h-listItem w-full flex-row items-center border-b border-border py-lg">
+        {content}
+      </View>
     );
   }
   return (

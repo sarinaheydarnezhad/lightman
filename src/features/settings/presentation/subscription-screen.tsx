@@ -93,6 +93,11 @@ export function SubscriptionScreen() {
     <Screen edges={stackScreenEdges} scroll testID="plus-paywall">
       <View className="gap-lg">
         <PageTitle>{t('paywall.title')}</PageTitle>
+        {!access.isAccount ? (
+          <Text variant="bodySmall" tone="secondary">
+            {t('account.purchaseLoginHint')}
+          </Text>
+        ) : null}
         <Card variant="outlined" style={{ backgroundColor: colors.primarySoft }}>
           <View
             className={`items-start gap-lg ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}

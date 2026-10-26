@@ -52,6 +52,35 @@ test.each(['legacy', 'modern'])('reads a genuine %s Anki-exported collection', a
   expect(parsed.records[0]?.card).toMatchObject(transferCard);
 });
 
+test('imports a genuine modern Anki package through preview and confirmation', async () => {
+  const bytes = new Uint8Array(
+    Buffer.from(readFileSync('test/fixtures/anki-modern.apkg.base64', 'utf8').trim(), 'base64'),
+  );
+  const parsed = await apkgAdapter.parse(bytes, 'Fallback');
+  expect(parsed.issues).toEqual([]);
+  expect(parsed.records).toHaveLength(1);
+  expect(parsed.records[0]?.card).toMatchObject(transferCard);
+  const repositories = makeRepositories();
+  const app = createApplication(repositories, fixedClock, sequenceIds(), undefined, undefined, {
+    assertAllowed: async () => {},
+  });
+  const service = createTransferService(app, repositories, {
+    csv: csvAdapter,
+    xlsx: xlsxAdapter,
+    apkg: apkgAdapter,
+  });
+  const preview = await service.preview('apkg', bytes, 'modern.apkg');
+  expect(preview).toMatchObject({ totalCards: 1, newCards: 1, duplicates: 0, invalidRows: 0 });
+  expect(await app.listDecks()).toEqual([]);
+  expect(await service.confirm(preview)).toMatchObject({ imported: 1, invalidSkipped: 0 });
+  expect(await service.preview('apkg', bytes, 'modern.apkg')).toMatchObject({
+    totalCards: 1,
+    newCards: 0,
+    duplicates: 1,
+    invalidRows: 0,
+  });
+});
+
 test('the APKG SQLite codec runs without Node, WASM, DOM, or network APIs', async () => {
   const module = { exports: {} as unknown };
   const source = readFileSync(require.resolve('sql.js/dist/sql-asm-memory-growth.js'), 'utf8');

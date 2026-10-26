@@ -310,6 +310,44 @@ test('account profile uses the existing authenticated me API', async () => {
   );
 });
 
+test('saving an account name uses the authenticated owner-only profile endpoint', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  const profile = { id: 'account-id', displayName: 'سارا', phoneNumber: null, email: null };
+  globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => profile });
+  expect(await new CloudClient().updateAccountName('  سارا  ')).toEqual(profile);
+  expect(fetch).toHaveBeenCalledWith(
+    'https://api.example.test/api/v1/me/profile',
+    expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify({ displayName: 'سارا' }),
+      headers: expect.objectContaining({
+        Authorization: 'Bearer new-access',
+        'Content-Type': 'application/json',
+      }),
+    }),
+  );
+});
+
+test.each(['', '   ', 'a'.repeat(121)])(
+  'invalid profile names make no request: %j',
+  async (name) => {
+    globalThis.fetch = jest.fn();
+    await expect(new CloudClient().updateAccountName(name)).rejects.toThrow(
+      'Invalid display name.',
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+
+test('an incomplete profile response cannot claim the account name was saved', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({ id: 'account-id', displayName: '' }),
+  });
+  await expect(new CloudClient().updateAccountName('Sara')).rejects.toThrow('not saved');
+});
+
 test('legacy account profile responses normalize absent optional details', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
   globalThis.fetch = jest

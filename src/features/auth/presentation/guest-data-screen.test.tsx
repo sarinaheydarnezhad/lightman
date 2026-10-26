@@ -26,7 +26,13 @@ jest.mock('@/core/composition/repositories', () => ({
 jest.mock('@/core/composition/guest-transfer', () => ({
   guestTransfer: { preview: jest.fn(), transfer: jest.fn(), finish: jest.fn(), discard: jest.fn() },
 }));
-jest.mock('@/core/composition/sync', () => ({ syncEngine: { signOut: jest.fn(async () => {}) } }));
+jest.mock('@/core/composition/sync', () => ({
+  syncEngine: {
+    signOut: jest.fn(async () => {}),
+    accountProfile: jest.fn(),
+    updateAccountName: jest.fn(),
+  },
+}));
 
 const service = guestTransfer!;
 const preview: TransferPreview = {
@@ -45,6 +51,13 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRouteParams = {};
   mockSettings = { language: 'en' };
+  jest.mocked(syncEngine!.accountProfile).mockReset().mockResolvedValue({
+    id: 'account',
+    displayName: 'Student',
+    phoneNumber: null,
+    email: null,
+  });
+  jest.mocked(syncEngine!.updateAccountName).mockReset();
   jest.mocked(service.preview).mockReset().mockResolvedValue(preview);
   jest.mocked(service.transfer).mockReset().mockResolvedValue();
   jest.mocked(service.finish).mockReset().mockResolvedValue();
@@ -63,6 +76,30 @@ function mount() {
     </SafeAreaProvider>,
   );
 }
+
+test.each(['en', 'fa'] as const)(
+  '%s asks unnamed users for their name before checking guest data',
+  async (language) => {
+    mockRouteParams = { language };
+    const profile = { id: 'account', displayName: '', phoneNumber: null, email: null };
+    jest.mocked(syncEngine!.accountProfile).mockResolvedValue(profile);
+    jest.mocked(syncEngine!.updateAccountName).mockImplementation(async (displayName) => ({
+      ...profile,
+      displayName,
+    }));
+    mount();
+    const input = await screen.findByLabelText(translate(language, 'onboarding.nameLabel'));
+    expect(service.preview).not.toHaveBeenCalled();
+    expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
+    fireEvent.changeText(input, 'Sara');
+    fireEvent.press(
+      screen.getByRole('button', { name: translate(language, 'onboarding.nameSave') }),
+    );
+    await screen.findByRole('button', { name: translate(language, 'migration.add') });
+    expect(syncEngine!.updateAccountName).toHaveBeenCalledWith('Sara');
+    expect(service.preview).toHaveBeenCalledTimes(1);
+  },
+);
 
 test.each(['en', 'fa'] as const)(
   '%s requires a merge or permanent discard decision',

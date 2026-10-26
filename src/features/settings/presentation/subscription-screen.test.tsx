@@ -146,6 +146,9 @@ test.each([
   jest.spyOn(theme, 'useThemeColors').mockReturnValue(palette[mode]);
   render(<SubscriptionScreen />);
   await screen.findByTestId('plus-plan-1');
+  expect(screen.getByText(translate(locale, 'account.purchaseLoginHint'))).toHaveStyle({
+    writingDirection: resolveDirection(locale),
+  });
   const title = translate(locale, 'paywall.title');
   expect(screen.getByRole('header', { name: title }).props.allowFontScaling).toBe(true);
   expect(screen.getByText(translate(locale, 'paywall.introTitle'))).toBeTruthy();
@@ -208,6 +211,7 @@ test.each(['en', 'fa'] as const)(
     jest.mocked(engine.planCatalog).mockReturnValue(new Promise(() => {}));
     jest.mocked(engine.subscription).mockReturnValue(new Promise(() => {}));
     render(<SubscriptionScreen />);
+    expect(screen.queryByText(translate(locale, 'account.purchaseLoginHint'))).toBeNull();
     expect(
       screen.getByRole('progressbar', { name: translate(locale, 'paywall.loading') }),
     ).toBeTruthy();

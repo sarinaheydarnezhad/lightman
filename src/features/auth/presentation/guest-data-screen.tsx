@@ -17,6 +17,7 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { guestTransferFeedback } from './guest-transfer-feedback';
+import { AccountNameGate } from './account-name-gate';
 
 export function GuestDataScreen({
   embedded = false,
@@ -35,7 +36,9 @@ export function GuestDataScreen({
   );
   return (
     <LocalizationProvider language={language === 'fa' || language === 'en' ? language : undefined}>
-      <GuestDataContent embedded={embedded} />
+      <AccountNameGate>
+        <GuestDataContent embedded={embedded} />
+      </AccountNameGate>
     </LocalizationProvider>
   );
 }

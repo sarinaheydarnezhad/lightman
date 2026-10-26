@@ -190,7 +190,6 @@ export function CardForm({
       onPress={() => void save()}
     />
   );
-  const renderHeaderAction = existing ? undefined : renderSaveAction;
 
   return (
     <Screen
@@ -199,7 +198,7 @@ export function CardForm({
       edges={stackScreenEdges}
       header={
         <View className="gap-md">
-          {renderHeaderAction?.(saveButton)}
+          {renderSaveAction?.(saveButton)}
           <View style={{ flexDirection: 'row', direction: 'ltr', alignItems: 'flex-start' }}>
             <View className="flex-1">
               <ScreenHeader
@@ -207,7 +206,7 @@ export function CardForm({
                 description={t('form.cardHint', { name: deck.name })}
               />
             </View>
-            {renderHeaderAction ? null : saveButton}
+            {renderSaveAction ? null : saveButton}
           </View>
           {created ? (
             <FeedbackModal message={t('form.cardCreated')} tone="success" onDismiss={() => setCreated(false)} />

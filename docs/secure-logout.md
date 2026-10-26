@@ -20,6 +20,8 @@ Access/refresh credentials are removed from the existing SecureStore key before 
 
 ## Server revocation and interrupted logout
 
+Logout result feedback and credential-removal retries are limited to the main Settings, Cloud Sync and logout screens. Changing the interface language updates the wording, not the logout event: a dismissed result stays dismissed while navigating or changing languages. Unrelated settings, authentication and learning screens do not display logout feedback.
+
 The existing authenticated `POST /api/v1/auth/logout` revokes the JWT's current session. Confirmation requires HTTP 204. If access has expired and the server returns 401, the existing refresh endpoint may rotate the captured token solely for this immediate revocation attempt; those rotated credentials are never saved locally. Logout aborts other requests and invalidates token-write generations, so a late rotation cannot re-establish the session.
 
 Before erasing credentials, the app saves only the user UUID, session UUID and request time in a small SecureStore revocation journal. No JWT, refresh token, password, OTP, account contents or guest contents are kept for retry. The additive token response provides `sessionId` and the original absolute `sessionExpiresAtUtc`; rotation does not extend that deadline. Older JWTs may provide non-secret `sub`/`sid` references through local decoding, which is not authentication or authorization. If a valid reference cannot be saved, the UI explicitly says retry is unavailable rather than claiming success.

@@ -5,7 +5,7 @@ import type { PackageDatabase, PackageValue } from './package-database';
 import type { ImportIssue, ImportRecord, TransferAdapter } from '../domain/transfer';
 import { normalizeIdentity } from '../domain/transfer';
 import { recognizedHeader, tableToImport } from './tabular';
-import { sqliteEngine } from './sqlite-codec';
+import { openAnkiMetadataDatabase, sqliteEngine } from './sqlite-codec';
 
 const fieldNames = ['Front', 'Back', 'Phonetic', 'Category', 'Examples'];
 const maxCollectionSize = 100 * 1024 * 1024;
@@ -54,6 +54,22 @@ function rows(database: PackageDatabase, sql: string): Record<string, PackageVal
         Object.fromEntries(result.columns.map((column, index) => [column, values[index] ?? null])),
       )
     : [];
+}
+
+function readModernMetadata(
+  database: PackageDatabase,
+  deckNames: Map<string, string>,
+  modelFields: Map<string, string[]>,
+) {
+  rows(database, 'SELECT id, name FROM decks').forEach((deck) =>
+    deckNames.set(String(deck.id), String(deck.name).replace(/\x1f/g, '::')),
+  );
+  rows(database, 'SELECT ntid, ord, name FROM fields ORDER BY ntid, ord').forEach((field) => {
+    const id = String(field.ntid);
+    const fields = modelFields.get(id) ?? [];
+    fields[Number(field.ord)] = String(field.name);
+    modelFields.set(id, fields);
+  });
 }
 
 function decompressCollection(bytes: Uint8Array): Uint8Array {
@@ -141,15 +157,18 @@ export const apkgAdapter: TransferAdapter = {
           ),
         );
       } else {
-        rows(database, 'SELECT id, name FROM decks').forEach((deck) =>
-          deckNames.set(String(deck.id), String(deck.name).replace(/\x1f/g, '::')),
-        );
-        rows(database, 'SELECT ntid, ord, name FROM fields ORDER BY ntid, ord').forEach((field) => {
-          const id = String(field.ntid);
-          const fields = modelFields.get(id) ?? [];
-          fields[Number(field.ord)] = String(field.name);
-          modelFields.set(id, fields);
-        });
+        try {
+          readModernMetadata(database, deckNames, modelFields);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (!/no such collation sequence|no query solution/i.test(message)) throw error;
+          const metadata = await openAnkiMetadataDatabase(collection);
+          try {
+            readModernMetadata(metadata, deckNames, modelFields);
+          } finally {
+            metadata.close();
+          }
+        }
       }
       const notes = rows(
         database,

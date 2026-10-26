@@ -21,6 +21,7 @@ export interface ImportPreviewRow {
   status: 'ready' | 'duplicate';
 }
 export interface ImportPreview {
+  readonly fileName?: string;
   readonly format: TransferFormat;
   readonly decks: readonly string[];
   readonly totalCards: number;
@@ -45,6 +46,7 @@ export function createTransferService(
   adapters: Record<TransferFormat, TransferAdapter>,
 ) {
   const plans = new WeakMap<ImportPreview, ParsedImport>();
+  let pendingPreview: ImportPreview | null = null;
   let saving = false;
 
   async function classify(parsed: ParsedImport) {
@@ -88,6 +90,7 @@ export function createTransferService(
   }
 
   return {
+    pendingPreview: (): ImportPreview | null => pendingPreview,
     async preview(
       format: TransferFormat,
       bytes: Uint8Array,
@@ -112,6 +115,7 @@ export function createTransferService(
         status: readyLocations.has(location) ? ('ready' as const) : ('duplicate' as const),
       }));
       const preview: ImportPreview = {
+        fileName,
         format,
         decks: Object.freeze([...names.values()]),
         totalCards: parsed.records.length + parsed.issues.length,
@@ -122,11 +126,14 @@ export function createTransferService(
         columns: Object.freeze(columns),
         rows: Object.freeze(rows),
       };
+      if (pendingPreview) plans.delete(pendingPreview);
       plans.set(preview, parsed);
+      pendingPreview = preview;
       return preview;
     },
     cancel(preview: ImportPreview) {
       plans.delete(preview);
+      if (pendingPreview === preview) pendingPreview = null;
     },
     async confirm(
       preview: ImportPreview,
@@ -194,6 +201,7 @@ export function createTransferService(
           }
         }
         plans.delete(preview);
+        if (pendingPreview === preview) pendingPreview = null;
         return summary;
       } finally {
         saving = false;

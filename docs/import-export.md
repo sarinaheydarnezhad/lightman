@@ -1,9 +1,14 @@
 # Local import and export
 
-Open **Settings → Import / Export**, or **Export cards** on a deck. Choose a CSV,
+Open **Settings → Import / Export**, **Import cards** when creating a deck, or
+**Export cards** on a deck. Choose a CSV,
 XLSX, or Anki APKG file for import. Parsing, validation, and duplicate checks are
 read-only. Review the format, decks, total/new/duplicate/invalid counts and row
-errors, then explicitly confirm. Cancelling never changes repositories.
+errors on the separate import preview page. Cards can be edited or removed before saving.
+**Reject** and **Approve** stay side by side in a fixed bottom action bar while cards scroll.
+Only approval saves cards; rejection or navigating back discards the pending preview without
+changing repositories. Preview data stays in memory, scoped to the current account or guest
+session, rather than being passed through route parameters or saved as drafts.
 
 Export either the selected active deck or all active decks, select a format, then
 share/save. Native platforms use Expo's share sheet; web downloads the file.
@@ -35,6 +40,11 @@ a new development/release build, rather than only refreshing JavaScript.
   database, backend, or package-codec WASM download.
 - APKG import supports legacy `collection.anki2`/`collection.anki21` and modern
   Zstandard-compressed `collection.anki21b` with separate deck/field tables.
+  If native SQLite cannot read Anki's custom `unicase` metadata tables, it reads a
+  separate temporary copy with only those table declarations normalized to `BINARY`.
+  That copy is reopened read-only and deleted after use; the source package and
+  card content are never modified. Native bundles do not include sql.js: its deeply
+  nested asm.js code cannot be compiled by Hermes for release builds.
   A note's first field becomes Front, its second Back, and later fields map only
   to matching Phonetic, Category, or Examples fields. HTML becomes plain text.
   Multiple templates for the same note/deck become one application card.

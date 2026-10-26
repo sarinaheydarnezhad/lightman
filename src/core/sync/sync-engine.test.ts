@@ -32,6 +32,36 @@ test.each([false, true])('account profile reads require account scope (%s)', asy
   }
 });
 
+test.each([false, true])(
+  'account name updates require an authenticated account (%s)',
+  async (signedIn) => {
+    const profile = { id: 'user-one', displayName: 'Sara', phoneNumber: null, email: null };
+    const cloud = {
+      available: true,
+      hasSession: jest.fn(async () => true),
+      updateAccountName: jest.fn(async () => profile),
+    };
+    const engine = new SyncEngine(
+      {} as SyncStore,
+      cloud as unknown as CloudClient,
+      undefined,
+      undefined,
+      {
+        isAccount: () => signedIn,
+        enterAccount: jest.fn(async () => {}),
+        enterGuest: jest.fn(async () => {}),
+      },
+    );
+    if (signedIn) {
+      await expect(engine.updateAccountName('Sara')).resolves.toEqual(profile);
+      expect(cloud.updateAccountName).toHaveBeenCalledWith('Sara');
+    } else {
+      await expect(engine.updateAccountName('Sara')).rejects.toThrow('authenticated account');
+      expect(cloud.updateAccountName).not.toHaveBeenCalled();
+    }
+  },
+);
+
 const operation: PendingOperation = {
   sequence: 1,
   operationId: 'operation-one',

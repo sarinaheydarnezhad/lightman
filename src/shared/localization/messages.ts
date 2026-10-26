@@ -1,6 +1,17 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
   'account.loginSignup': 'Log In / Sign Up',
+  'account.editName': 'Edit name',
+  'account.saveName': 'Save name',
+  'onboarding.nameTitle': 'What should we call you?',
+  'onboarding.nameDescription': 'Please tell us your name to finish setting up your account.',
+  'onboarding.nameLabel': 'Your name',
+  'onboarding.nameSave': 'Save and continue',
+  'onboarding.nameInvalid': 'Enter a name between 1 and 120 characters.',
+  'onboarding.nameLoadError': 'Could not check your account name. Please try again.',
+  'onboarding.nameSaveError': 'Could not save your name. Please try again.',
+  'account.purchaseLoginHint':
+    'To save your purchase and track your order, please log in to your account first.',
   'account.logout': 'Log Out',
   'account.signedIn': 'Account status: Signed in',
   'account.guestLocal':
@@ -359,6 +370,9 @@ export const en = {
   'transfer.importHint': 'Review a preview before saving. No existing cards are overwritten.',
   'transfer.select': 'Select file',
   'transfer.preview': 'Import preview',
+  'transfer.approve': 'Approve',
+  'transfer.reject': 'Reject',
+  'transfer.previewMissing': 'Select a file to preview its cards before importing.',
   'transfer.previewCounts':
     'Format: {format}\nTotal cards: {total}\nNew cards: {new}\nDuplicates: {duplicates}\nInvalid rows: {invalid}',
   'transfer.decks': 'Decks: {names}',
@@ -769,6 +783,17 @@ export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
   'account.loginSignup': 'ورود / ثبت‌نام',
+  'account.editName': 'ویرایش نام',
+  'account.saveName': 'ذخیره نام',
+  'onboarding.nameTitle': 'شما را چه صدا کنیم؟',
+  'onboarding.nameDescription': 'برای تکمیل حساب کاربری، لطفاً نام خود را وارد کنید.',
+  'onboarding.nameLabel': 'نام شما',
+  'onboarding.nameSave': 'ذخیره و ادامه',
+  'onboarding.nameInvalid': 'نامی بین ۱ تا ۱۲۰ نویسه وارد کنید.',
+  'onboarding.nameLoadError': 'بررسی نام حساب ممکن نشد. لطفاً دوباره تلاش کنید.',
+  'onboarding.nameSaveError': 'ذخیره نام ممکن نشد. لطفاً دوباره تلاش کنید.',
+  'account.purchaseLoginHint':
+    'برای ثبت خرید و پیگیری سفارش، لطفاً ابتدا وارد حساب کاربری خود شوید.',
   'account.logout': 'خروج از حساب',
   'account.signedIn': 'وضعیت حساب: واردشده',
   'account.guestLocal':
@@ -1121,6 +1146,9 @@ export const fa: Dictionary = {
   'transfer.importHint': 'پیش از ذخیره، پیش‌نمایش را بررسی کنید. کارت‌های موجود بازنویسی نمی‌شوند.',
   'transfer.select': 'انتخاب فایل',
   'transfer.preview': 'پیش‌نمایش ورود',
+  'transfer.approve': 'تأیید',
+  'transfer.reject': 'رد کردن',
+  'transfer.previewMissing': 'برای پیش‌نمایش کارت‌ها پیش از ورود، یک فایل انتخاب کنید.',
   'transfer.previewCounts':
     'قالب: {format}\nکل کارت‌ها: {total}\nکارت‌های جدید: {new}\nتکراری: {duplicates}\nردیف‌های نامعتبر: {invalid}',
   'transfer.decks': 'دسته‌ها: {names}',

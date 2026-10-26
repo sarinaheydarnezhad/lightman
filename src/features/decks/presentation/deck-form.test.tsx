@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { Modal, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -14,6 +15,10 @@ import {
 } from '@/shared/localization/localization';
 import { DeckForm } from './deck-form';
 import { AppError } from '@/core/errors/app-error';
+
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+}));
 
 jest.mock('@/core/composition/application', () => ({
   application: {
@@ -111,6 +116,30 @@ function expectRows(language: UiLanguage) {
     ).toBeNull();
   }
 }
+
+test.each(['en', 'fa'] as const)(
+  'creation offers a localized import shortcut without submitting in %s',
+  (language) => {
+    const submit = jest.fn(async () => {});
+    jest.mocked(router.push).mockClear();
+    setLanguage(language);
+    render(form(undefined, submit));
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'transfer.import') }));
+    expect(router.push).toHaveBeenCalledWith('/settings/transfer');
+    expect(submit).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['en', 'fa'] as const)(
+  'editing does not offer the creation import shortcut in %s',
+  (language) => {
+    setLanguage(language);
+    render(form(makeDeck()));
+    expect(
+      screen.queryByRole('button', { name: translate(language, 'transfer.import') }),
+    ).toBeNull();
+  },
+);
 
 test.each(['en-US', 'fa-IR', 'es'])(
   'editing preserves stored %s language and category data when app language changes',

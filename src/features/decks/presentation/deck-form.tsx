@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { router } from 'expo-router';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { Keyboard, Modal, TextInput, View } from 'react-native';
 import { Info } from 'lucide-react-native';
@@ -112,6 +113,17 @@ export function DeckForm({
           title={existing ? t('form.editDeck', { name: existing.name }) : t('form.createDeck')}
           description={t('form.deckHint')}
         />
+        {!existing ? (
+          <Button
+            label={t('transfer.import')}
+            variant="secondary"
+            disabled={saving}
+            onPress={() => {
+              Keyboard.dismiss();
+              router.push('/settings/transfer');
+            }}
+          />
+        ) : null}
         <View className="gap-md">
           <Input
             label={t('form.deckName')}

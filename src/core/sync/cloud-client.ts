@@ -38,6 +38,17 @@ export interface AccountProfile {
   readonly email: string | null;
 }
 
+function normalizeAccountProfile(account: AccountProfile): AccountProfile {
+  if (!account || typeof account.id !== 'string' || !account.id)
+    throw new Error('Invalid account response.');
+  return {
+    id: account.id,
+    displayName: typeof account.displayName === 'string' ? account.displayName : '',
+    phoneNumber: typeof account.phoneNumber === 'string' ? account.phoneNumber : null,
+    email: typeof account.email === 'string' ? account.email : null,
+  };
+}
+
 interface AccountReviewState {
   cardId: string;
   box: number;
@@ -185,14 +196,22 @@ export class CloudClient {
 
   private async loadAccountProfile(): Promise<AccountProfile> {
     const account = await this.request<AccountProfile>('/me/', { method: 'GET' });
-    if (!account || typeof account.id !== 'string' || !account.id)
-      throw new Error('Invalid account response.');
-    return {
-      id: account.id,
-      displayName: typeof account.displayName === 'string' ? account.displayName : '',
-      phoneNumber: typeof account.phoneNumber === 'string' ? account.phoneNumber : null,
-      email: typeof account.email === 'string' ? account.email : null,
-    };
+    return normalizeAccountProfile(account);
+  }
+
+  async updateAccountName(displayName: string): Promise<AccountProfile> {
+    const name = displayName.trim();
+    if (!name || name.length > 120) throw new Error('Invalid display name.');
+    const account = normalizeAccountProfile(
+      await this.request<AccountProfile>('/me/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: name }),
+      }),
+    );
+    if (account.displayName !== name) throw new Error('The account name was not saved.');
+    this.reads.delete('profile');
+    return account;
   }
 
   async ownedReviewState(cardId: string): Promise<AccountReviewState> {

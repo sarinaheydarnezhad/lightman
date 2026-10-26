@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { usePathname } from 'expo-router';
 import { syncEngine } from '@/core/composition/sync';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from '@/shared/ui/text';
@@ -10,6 +11,9 @@ const emptySnapshot = () => null;
 
 export function LogoutNotice() {
   const { t } = useLocalization();
+  const pathname = usePathname();
+  const accountRoute =
+    pathname === '/settings' || pathname === '/settings/cloud' || pathname === '/settings/logout';
   const result = useSyncExternalStore(
     syncEngine?.subscribeLogout ?? emptySubscribe,
     syncEngine?.logoutSnapshot ?? emptySnapshot,
@@ -37,6 +41,7 @@ export function LogoutNotice() {
       message={t(result.credentialsCleared ? 'logout.success' : 'logout.clearFailed')}
       tone={result.credentialsCleared ? 'info' : 'error'}
       eventKey={result}
+      enabled={accountRoute}
       onRetry={
         result.credentialsCleared ? undefined : () => void syncEngine?.signOut().catch(() => {})
       }

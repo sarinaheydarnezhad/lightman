@@ -1,9 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { makeSettings } from '@/../test/fixtures';
+import { config } from '@/core/infrastructure/platform';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import {
   formatNumber,
@@ -72,6 +74,7 @@ function expectControls(language: UiLanguage, enabled: boolean) {
     const classes = button.props.className.split(' ');
     expect(classes).toContain('w-full');
     expect(classes).toContain('justify-between');
+    expect(classes).toContain('py-lg');
     expect(classes).toContain(direction === 'rtl' ? 'flex-row-reverse' : 'flex-row');
     expect(classes).not.toContain(direction === 'rtl' ? 'flex-row' : 'flex-row-reverse');
     expect(
@@ -81,12 +84,33 @@ function expectControls(language: UiLanguage, enabled: boolean) {
       within(button).UNSAFE_queryByType(direction === 'rtl' ? ChevronRight : ChevronLeft),
     ).toBeNull();
   }
+  for (const key of [
+    'settings.app',
+    'settings.version',
+    ...(config.buildNumber ? (['settings.build'] as const) : []),
+    'settings.yourData',
+  ] as const) {
+    const row = screen
+      .UNSAFE_getAllByType(View)
+      .find(
+        (view) =>
+          view.props.className?.split(' ').includes('border-b') &&
+          within(view).queryByText(translate(language, key)),
+      );
+    expect(row).toBeDefined();
+    const classes = row!.props.className.split(' ');
+    expect(classes).toContain('flex-row');
+    expect(classes).toContain('items-center');
+    expect(classes).toContain('py-lg');
+    expect(classes).toContain('min-h-listItem');
+  }
   const toggles = screen.getAllByRole('switch');
   expect(toggles).toHaveLength(1);
   for (const toggle of toggles) {
     const classes = toggle.props.className.split(' ');
     expect(classes).toContain('w-full');
     expect(classes).toContain('justify-between');
+    expect(classes).toContain('py-lg');
     expect(classes).toContain(direction === 'rtl' ? 'flex-row-reverse' : 'flex-row');
     expect(classes).not.toContain(direction === 'rtl' ? 'flex-row' : 'flex-row-reverse');
     expect(toggle.props.accessibilityState.checked).toBe(enabled);

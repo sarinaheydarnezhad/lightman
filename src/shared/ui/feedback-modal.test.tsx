@@ -73,12 +73,59 @@ test('clearing a message allows the same error to appear on another attempt', ()
   expect(screen.getByText('Check your password.')).toBeTruthy();
 });
 
-test('a changed message reopens feedback even when the event key stays the same', () => {
+test('translated wording does not reopen a dismissed event', () => {
   const eventKey = {};
   const { rerender } = render(<FeedbackModal message="Backup completed." eventKey={eventKey} />);
   fireEvent.press(screen.getByRole('button', { name: 'Close' }));
-  rerender(<FeedbackModal message="Backup expired." eventKey={eventKey} />);
+  rerender(<FeedbackModal message="Sauvegarde terminée." eventKey={eventKey} />);
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+});
+
+test('changed messages without an explicit event key still show new feedback', () => {
+  const { rerender } = render(<FeedbackModal message="Backup completed." />);
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  rerender(<FeedbackModal message="Backup expired." />);
   expect(screen.getByText('Backup expired.')).toBeTruthy();
+});
+
+test('clearing a message resets dismissal even with a stable event key', () => {
+  const eventKey = {};
+  const { rerender } = render(<FeedbackModal message="Unable to save." eventKey={eventKey} />);
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  rerender(<FeedbackModal message={null} eventKey={eventKey} />);
+  rerender(<FeedbackModal message="Unable to save." eventKey={eventKey} />);
+  expect(screen.getByText('Unable to save.')).toBeTruthy();
+});
+
+test('updating wording for the active event does not move it behind queued notices', () => {
+  const eventKey = {};
+  const content = (message: string) => (
+    <>
+      <FeedbackModal message={message} eventKey={eventKey} />
+      <FeedbackModal message="Second notice" />
+    </>
+  );
+  const { rerender } = render(content('First notice'));
+  rerender(content('Translated first notice'));
+  expect(screen.getByText('Translated first notice')).toBeTruthy();
+  expect(screen.queryByText('Second notice')).toBeNull();
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  expect(screen.getByText('Second notice')).toBeTruthy();
+});
+
+test('disabled feedback does not block other notices in the queue', () => {
+  const content = (enabled: boolean) => (
+    <>
+      <FeedbackModal message="Account notice" enabled={enabled} />
+      <FeedbackModal message="Language notice" />
+    </>
+  );
+  const { rerender } = render(content(true));
+  expect(screen.getByText('Account notice')).toBeTruthy();
+  rerender(content(false));
+  expect(screen.queryByText('Account notice')).toBeNull();
+  expect(screen.getByText('Language notice')).toBeTruthy();
+  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
 });
 
 test('removing the active notice advances the queue without showing stale messages', () => {

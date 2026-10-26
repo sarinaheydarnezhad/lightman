@@ -32,6 +32,7 @@ export function FeedbackModal({
   title,
   tone = 'error',
   eventKey = message,
+  enabled = true,
   children,
   onDismiss,
   onRetry,
@@ -41,6 +42,7 @@ export function FeedbackModal({
   title?: string;
   tone?: 'error' | 'success' | 'info' | 'warning';
   eventKey?: unknown;
+  enabled?: boolean;
   children?: ReactNode;
   onDismiss?: () => void;
   onRetry?: () => void;
@@ -50,13 +52,14 @@ export function FeedbackModal({
   const colors = useThemeColors();
   const [identity] = useState(() => Symbol('feedback'));
   const heading = useRef<View>(null);
-  const [state, setState] = useState({ message, eventKey, dismissed: false });
-  const sameEvent = state.message === message && Object.is(state.eventKey, eventKey);
-  if (!sameEvent) setState({ message, eventKey, dismissed: false });
+  const hasMessage = !!message;
+  const [state, setState] = useState({ hasMessage, eventKey, dismissed: false });
+  const sameEvent = state.hasMessage === hasMessage && Object.is(state.eventKey, eventKey);
+  if (!sameEvent) setState({ hasMessage, eventKey, dismissed: false });
   const dismissed = sameEvent && state.dismissed;
   const active = useSyncExternalStore(subscribe, snapshot, snapshot);
   useEffect(() => {
-    if (!message || dismissed) return;
+    if (!enabled || !hasMessage || dismissed) return;
     const token = identity;
     pending.push(token);
     notify();
@@ -65,18 +68,18 @@ export function FeedbackModal({
       if (position !== -1) pending.splice(position, 1);
       notify();
     };
-  }, [message, eventKey, dismissed, identity]);
+  }, [enabled, hasMessage, eventKey, dismissed, identity]);
 
-  const visible = !!message && !dismissed && active === identity;
+  const visible = enabled && hasMessage && !dismissed && active === identity;
   useEffect(() => {
     if (visible) Keyboard.dismiss();
   }, [visible]);
   const close = () => {
-    setState({ message, eventKey, dismissed: true });
+    setState({ hasMessage, eventKey, dismissed: true });
     onDismiss?.();
   };
   if (!visible)
-    return message && dismissed && onRetry ? (
+    return enabled && hasMessage && dismissed && onRetry ? (
       <Button label={retryLabel ?? t('common.tryAgain')} variant="secondary" onPress={onRetry} />
     ) : null;
 

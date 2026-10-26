@@ -6,11 +6,20 @@ import type { StorageState } from '@/core/storage/local-storage-scopes';
 import type { LogoutResult } from '@/core/sync/logout-journal';
 import { LogoutScreen } from './logout-screen';
 import { LogoutNotice } from '@/features/auth/presentation/logout-notice';
+import { LocalizationProvider } from '@/shared/localization/localization-provider';
+import { translate } from '@/shared/localization/localization';
 
 let mockScope: StorageState = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
 let mockResult: LogoutResult | null = null;
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() }, Stack: { Screen: () => null } }));
-jest.mock('@/core/composition/application', () => ({ application: {} }));
+let mockPathname = '/settings';
+jest.mock('expo-router', () => ({
+  router: { replace: jest.fn() },
+  Stack: { Screen: () => null },
+  usePathname: () => mockPathname,
+}));
+jest.mock('@/core/composition/application', () => ({
+  application: { settings: { subscribe: () => () => {}, snapshot: () => null } },
+}));
 jest.mock('@/core/composition/repositories', () => ({
   storageScopes: { snapshot: () => mockScope, subscribe: () => () => {} },
 }));
@@ -34,6 +43,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockScope = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
   mockResult = null;
+  mockPathname = '/settings';
   Object.defineProperty(engine, 'available', { value: true, configurable: true });
   jest.mocked(engine.signOut).mockReset().mockResolvedValue(result);
 });
@@ -190,6 +200,74 @@ test('logout details are modal-only and stay dismissed on ordinary rerenders', (
   expect(screen.queryByText(/Server revocation is unconfirmed/)).toBeNull();
   rerender(<LogoutNotice />);
   expect(screen.queryByTestId('feedback-modal')).toBeNull();
+});
+
+test('dismissed logout feedback stays closed across language changes', () => {
+  mockResult = result;
+  const { rerender } = render(
+    <LocalizationProvider language="en">
+      <LogoutNotice />
+    </LocalizationProvider>,
+  );
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  for (const language of ['fa', 'en', 'fa'] as const) {
+    rerender(
+      <LocalizationProvider language={language}>
+        <LogoutNotice />
+      </LocalizationProvider>,
+    );
+    expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  }
+});
+
+test.each(['/settings/language', '/settings/appearance', '/auth', '/decks', '/study'])(
+  'logout feedback does not appear on unrelated route %s',
+  (pathname) => {
+    mockPathname = pathname;
+    mockResult = result;
+    render(<LogoutNotice />);
+    expect(screen.queryByTestId('feedback-modal')).toBeNull();
+    expect(screen.queryByText(translate('en', 'logout.success'))).toBeNull();
+  },
+);
+
+test('navigation preserves dismissal but a new logout result can show feedback', () => {
+  mockResult = result;
+  const { rerender } = render(<LogoutNotice />);
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  mockPathname = '/settings/language';
+  rerender(<LogoutNotice />);
+  mockPathname = '/settings';
+  rerender(<LogoutNotice />);
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  mockResult = { ...result, synchronized: true, serverRevoked: true };
+  rerender(<LogoutNotice />);
+  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+});
+
+test('an undismissed logout notice is suspended outside account-related screens', () => {
+  mockResult = result;
+  const { rerender } = render(<LogoutNotice />);
+  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+  mockPathname = '/settings/language';
+  rerender(<LogoutNotice />);
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  mockPathname = '/settings/cloud';
+  rerender(<LogoutNotice />);
+  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+});
+
+test('dismissed security retry stays in account-related screens', () => {
+  mockResult = { ...result, credentialsCleared: false };
+  const { rerender } = render(<LogoutNotice />);
+  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  mockPathname = '/settings/language';
+  rerender(<LogoutNotice />);
+  expect(screen.queryByRole('button', { name: 'Retry secure credential removal' })).toBeNull();
+  mockPathname = '/settings';
+  rerender(<LogoutNotice />);
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Retry secure credential removal' })).toBeTruthy();
 });
 
 test('credential removal failures keep the security retry inside the logout modal', async () => {

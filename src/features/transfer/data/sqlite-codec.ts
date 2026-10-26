@@ -1,1 +1,1 @@
-export { sqliteEngine } from './sqlite-codec.web';
+export { openAnkiMetadataDatabase, sqliteEngine } from './sqlite-codec.web';

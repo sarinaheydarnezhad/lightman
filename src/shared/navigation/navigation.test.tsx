@@ -38,10 +38,12 @@ import LanguageSettings from '@/app/settings/language';
 import CloudSync from '@/app/settings/cloud';
 import Authentication from '@/app/auth';
 import Transfer from '@/app/settings/transfer';
+import ImportPreviewRoute from '@/app/settings/import-preview';
 import Subscription from '@/app/settings/subscription';
 import DesignSystem from '@/app/design-system';
 import { idGenerator } from '@/core/infrastructure/platform';
 import { application } from '@/core/composition/application';
+import { selectTransferFile, transferService } from '@/core/composition/transfer';
 import { repositories } from '@/core/composition/repositories';
 import { seedDevelopmentData } from '@/core/composition/development-seed';
 import { haptics } from '@/core/composition/haptics';
@@ -51,6 +53,7 @@ import { AppError } from '@/core/errors/app-error';
 import { calendarDate, instant, languageTag, localTime } from '@/core/domain/values';
 import { makeCard, makeEvent, makeState } from '@/../test/fixtures';
 import { CardForm } from '@/features/decks/presentation/card-form';
+import type { ImportPreview } from '@/features/transfer/application/transfer-service';
 import {
   analyticsWindow,
   getStudySummary,
@@ -99,7 +102,13 @@ jest.mock('@/core/infrastructure/expo-local-notifications', () => ({
 }));
 
 jest.mock('@/core/composition/transfer', () => ({
-  transferService: { preview: jest.fn(), confirm: jest.fn(), cancel: jest.fn(), export: jest.fn() },
+  transferService: {
+    preview: jest.fn(),
+    pendingPreview: jest.fn(() => null),
+    confirm: jest.fn(),
+    cancel: jest.fn(),
+    export: jest.fn(),
+  },
   selectTransferFile: jest.fn(),
   shareTransferFile: jest.fn(),
 }));
@@ -134,6 +143,7 @@ const routes = {
   'settings/cloud': CloudSync,
   'auth/index': Authentication,
   'settings/transfer': Transfer,
+  'settings/import-preview': ImportPreviewRoute,
   'settings/subscription': Subscription,
   'design-system': DesignSystem,
 };
@@ -187,6 +197,66 @@ test('settings opens the local import/export route', async () => {
   expect(await screen.findByRole('button', { name: 'Select file' })).toBeTruthy();
   expect(rendered.getPathname()).toBe('/settings/transfer');
 });
+
+test.each(['Approve', 'Reject'] as const)(
+  'uploaded files open a dedicated card preview and %s returns to the upload page',
+  async (action) => {
+    const preview: ImportPreview = {
+      fileName: 'Cards.csv',
+      format: 'csv',
+      decks: ['Preview deck'],
+      totalCards: 1,
+      newCards: 1,
+      duplicates: 0,
+      invalidRows: 0,
+      issues: [],
+      rows: [
+        {
+          location: 'Row 2',
+          status: 'ready',
+          card: {
+            deckName: 'Preview deck',
+            frontText: 'Preview front',
+            meaning: 'Preview back',
+            phonetic: null,
+            category: null,
+            examples: [],
+          },
+        },
+      ],
+    };
+    jest.mocked(selectTransferFile).mockResolvedValue({
+      name: 'Cards.csv',
+      format: 'csv',
+      bytes: new Uint8Array([1]),
+    });
+    jest.mocked(transferService.preview).mockResolvedValue(preview);
+    jest.mocked(transferService.pendingPreview).mockReturnValue(preview);
+    jest.mocked(transferService.confirm).mockReset().mockResolvedValue({
+      imported: 1,
+      duplicatesSkipped: 0,
+      invalidSkipped: 0,
+      issues: [],
+    });
+    const rendered = renderRouter(routes, { initialUrl: '/settings/transfer' });
+    fireEvent.press(await screen.findByRole('button', { name: 'Select file' }));
+    await screen.findByTestId('import-preview-screen');
+    expect(rendered.getPathname()).toBe('/settings/import-preview');
+    expect(screen.getByDisplayValue('Preview front')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Share / Save file' })).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: action }));
+    if (action === 'Approve') {
+      await screen.findByText('Imported: 1\nDuplicates skipped: 0\nInvalid / skipped rows: 0');
+      expect(transferService.confirm).toHaveBeenCalledWith(preview, preview.rows);
+      fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    } else {
+      expect(transferService.cancel).toHaveBeenCalledWith(preview);
+      expect(transferService.confirm).not.toHaveBeenCalled();
+    }
+    await screen.findByRole('button', { name: 'Select file' });
+    expect(rendered.getPathname()).toBe('/settings/transfer');
+  },
+);
 
 test.each(['en', 'fa'] as const)(
   'Settings opens subscription details in %s',
@@ -493,6 +563,17 @@ test('create deck opens its secondary route', async () => {
   await screen.findByRole('header', { name: 'Decks' });
   fireEvent.press(screen.getByRole('button', { name: 'Create deck' }));
   expect(await screen.findByText('Create a deck')).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/decks/create');
+});
+
+test('create deck opens import and returning preserves the draft', async () => {
+  const rendered = renderRouter(routes, { initialUrl: '/decks/create' });
+  fireEvent.changeText(await screen.findByLabelText('Deck name'), 'Draft deck');
+  fireEvent.press(screen.getByRole('button', { name: 'Import cards' }));
+  expect(await screen.findByRole('button', { name: 'Select file' })).toBeTruthy();
+  expect(rendered.getPathname()).toBe('/settings/transfer');
+  await act(async () => router.back());
+  expect(await screen.findByLabelText('Deck name')).toHaveDisplayValue('Draft deck');
   expect(rendered.getPathname()).toBe('/decks/create');
 });
 
@@ -914,12 +995,16 @@ test('UI creates and edits a deck, deletes its card, and deletes the deck', asyn
     fireEvent.press(screen.getByRole('button', { name: 'Edit card' }));
     await screen.findByRole('header', { name: 'Edit card' });
     expect(
-      within(screen.UNSAFE_getByType(CardForm)).getByRole('button', { name: 'Save card' }),
-    ).toBeTruthy();
+      within(screen.UNSAFE_getByType(CardForm)).queryByRole('button', { name: 'Save card' }),
+    ).toBeNull();
     const editHeader = screen
       .UNSAFE_getAllByType(ScreenStackHeaderConfig)
       .find((config) => config.props.title === 'Edit card')!;
-    expect(within(editHeader).queryByRole('button', { name: 'Save card' })).toBeNull();
+    expect(
+      within(within(editHeader).UNSAFE_getByType(ScreenStackHeaderRightView)).getByRole('button', {
+        name: 'Save card',
+      }),
+    ).toBeTruthy();
     fireEvent.changeText(screen.getByLabelText('Meaning'), 'Updated meaning');
     fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
     expect(await screen.findByText('Updated meaning')).toBeTruthy();
@@ -1022,6 +1107,80 @@ test.each([
       ids.mockRestore();
       nativePlatform.restore();
       await act(async () => application.settings.setLanguage(languageTag('en')));
+    }
+  },
+);
+
+test.each([
+  ['ios', 'en'],
+  ['ios', 'fa'],
+  ['android', 'en'],
+  ['android', 'fa'],
+] as const)(
+  'edit-card uses the same right save slot and left back control on %s in %s',
+  async (platform, language) => {
+    const nativePlatform = jest.replaceProperty(Platform, 'OS', platform);
+    const ids = jest
+      .spyOn(idGenerator, 'create')
+      .mockReturnValue(`header-edit-${platform}-${language}`);
+    await application.settings.setLanguage(languageTag(language));
+    try {
+      const card = await application.createCard({
+        deckId: 'fresh-collection',
+        frontText: `Header edit ${platform} ${language}`,
+        meaning: 'Original meaning',
+        phonetic: null,
+        category: null,
+        examples: [],
+      });
+      const detailsPath = `/decks/${card.deckId}/cards/${card.id}`;
+      const rendered = renderRouter(routes, { initialUrl: detailsPath });
+      await screen.findByRole('header', { name: card.frontText });
+      fireEvent.press(
+        screen.getByRole('button', { name: translate(language, 'details.editCard') }),
+      );
+      await screen.findByRole('header', { name: translate(language, 'form.editCard') });
+      const header = screen
+        .UNSAFE_getAllByType(ScreenStackHeaderConfig)
+        .find((config) => config.props.title === translate(language, 'nav.editCard'))!;
+      expect(header.props.direction).toBe('ltr');
+      expect(header.props.hideBackButton).toBe(true);
+      const label = translate(language, 'form.saveCard');
+      const slot = within(header).UNSAFE_getByType(ScreenStackHeaderRightView);
+      expect(within(slot).getByRole('button', { name: label })).toBeTruthy();
+      expect(within(slot).UNSAFE_getByType(Check).props.strokeWidth).toBe(3);
+      expect(screen.getAllByRole('button', { name: label })).toHaveLength(1);
+      expect(
+        within(screen.UNSAFE_getByType(CardForm)).queryByRole('button', { name: label }),
+      ).toBeNull();
+      fireEvent.changeText(screen.getByLabelText(translate(language, 'form.meaning')), 'Discarded');
+      const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
+      expect(
+        within(back).UNSAFE_getByType(platform === 'ios' ? ChevronLeft : ArrowLeft),
+      ).toBeTruthy();
+      fireEvent.press(
+        within(back).getByRole('button', { name: translate(language, 'common.cancel') }),
+      );
+      await waitFor(() => expect(rendered.getPathname()).toBe(detailsPath));
+      expect((await application.getCard(card.id)).meaning).toBe('Original meaning');
+      expect(screen.queryByRole('button', { name: label })).toBeNull();
+      fireEvent.press(
+        screen.getByRole('button', { name: translate(language, 'details.editCard') }),
+      );
+      await screen.findByRole('header', { name: translate(language, 'form.editCard') });
+      fireEvent.changeText(
+        screen.getByLabelText(translate(language, 'form.meaning')),
+        'Updated from header',
+      );
+      fireEvent.press(screen.getByRole('button', { name: label }));
+      await screen.findByText('Updated from header');
+      expect(rendered.getPathname()).toBe(detailsPath);
+      expect((await application.getCard(card.id)).meaning).toBe('Updated from header');
+      expect(screen.queryByRole('button', { name: label })).toBeNull();
+    } finally {
+      await act(async () => application.settings.setLanguage(languageTag('en')));
+      ids.mockRestore();
+      nativePlatform.restore();
     }
   },
 );

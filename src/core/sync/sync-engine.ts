@@ -66,6 +66,10 @@ export class SyncEngine {
     return this.cloud.accountProfile();
   }
 
+  updateAccountName(displayName: string) {
+    return this.readAccount((cloud) => cloud.updateAccountName(displayName));
+  }
+
   backupStatus() {
     return this.readAccount((cloud) => cloud.backupStatus());
   }

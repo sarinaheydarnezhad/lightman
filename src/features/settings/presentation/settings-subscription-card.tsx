@@ -21,7 +21,7 @@ export function SettingsSubscriptionCard() {
           ? t('subscription.current', { plan: t('account.plusPlan') })
           : t('subscription.title')
       }
-      variant="secondary"
+      variant={active ? 'primary' : 'secondary'}
       onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
     />
   );
