@@ -1,0 +1,24 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace 'ir.myketBillingReactNative'
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        manifestPlaceholders['marketApplicationId'] = 'ir.mservices.market'
+        manifestPlaceholders['marketBindAddress'] = 'ir.mservices.market.InAppBillingService.BIND'
+        manifestPlaceholders['marketPermission'] = 'ir.mservices.market.BILLING'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+    implementation 'com.facebook.react:react-android'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    implementation 'ir.myket:billing:2.2'
+}

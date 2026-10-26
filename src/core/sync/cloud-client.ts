@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { validateEntitlements, validatePlanCatalog, validateSubscription } from './subscription';
 import { RequestCache } from './request-cache';
+import { validateMyketCheckout, validateMyketConfiguration } from './myket-payment';
 import { retryAfterDelay } from './retry-policy';
 import {
   validateBackupMetadata,
@@ -483,7 +484,10 @@ export class CloudClient {
     return this.reads.get(
       'plans',
       async () => {
-        const response = await this.fetchWithTimeout('/plans', { method: 'GET' });
+        const response = await this.fetchWithTimeout('/plans', {
+          method: 'GET',
+          headers: { 'X-Lerona-Payments': 'myket-v1' },
+        });
         if (!response.ok) throw new CloudError(response.status);
         return validatePlanCatalog(await response.json());
       },
@@ -496,6 +500,38 @@ export class CloudClient {
     return this.reads.get('subscription', async () =>
       validateSubscription(await this.request('/me/subscription', { method: 'GET' })),
     );
+  }
+
+  async myketConfiguration() {
+    return validateMyketConfiguration(await this.request('/payments/myket/', { method: 'GET' }));
+  }
+
+  async beginMyketCheckout(durationMonths: number) {
+    return validateMyketCheckout(
+      await this.request('/payments/myket/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ durationMonths }),
+      }),
+    );
+  }
+
+  async verifyMyketPurchase(sku: string, token: string) {
+    const result = validateSubscription(
+      await this.request('/payments/myket/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku, token }),
+      }),
+    );
+    this.reads.clear();
+    return result;
+  }
+
+  cancelMyketCheckout(id: string): Promise<void> {
+    return this.request(`/payments/myket/orders/${encodeURIComponent(id)}/cancel`, {
+      method: 'POST',
+    });
   }
 
   async entitlements() {
@@ -809,7 +845,11 @@ export class CloudClient {
         response.status,
         undefined,
         undefined,
-        undefined,
+        (
+          (typeof response.json === 'function' ? await response.json().catch(() => ({})) : {}) as {
+            code?: string;
+          }
+        ).code,
         retryAfterDelay(response.headers?.get('Retry-After')),
       );
     }

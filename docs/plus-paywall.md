@@ -1,6 +1,6 @@
 # Plus Paywall
 
-The existing `/settings/subscription` route presents Plus duration selection and a separate Premium card using the existing design system and English/Persian localization. Selection is informational: **no payment provider or trusted purchase-verification endpoint exists**, so the purchase action is always disabled. No activation, checkout, pending payment, cancellation or payment-success state is simulated. Premium is visibly marked as not available to all users right now and is never selectable. The reserved internal/API `Full` identifier is retained for compatibility; its user-facing name is Premium.
+The `/settings/subscription` route presents Plus duration selection and a separate Premium card using the existing design system and English/Persian localization. Myket checkout and server-side verification are now implemented for supported Android builds; see `myket-payments.md` for configuration, recovery, deployment and release limitations. Purchases remain disabled unless the server is configured. Premium/Full is still never selectable or purchasable.
 
 ## Entry points and status
 

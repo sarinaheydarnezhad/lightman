@@ -19,7 +19,7 @@ export interface PlanDefinition {
 
 export interface PlanCatalog {
   readonly currency: 'Toman';
-  readonly purchaseSupported: false;
+  readonly purchaseSupported: boolean;
   readonly freeLimits: PlanLimits;
   readonly plans: readonly PlanDefinition[];
 }
@@ -31,8 +31,8 @@ export interface Entitlements {
   readonly expiresAtUtc: string | null;
   readonly features: PlanFeatures;
   readonly limits: PlanLimits;
-  readonly isPurchasable: false;
-  readonly purchaseSupported: false;
+  readonly isPurchasable: boolean;
+  readonly purchaseSupported: boolean;
   readonly withinFreeTierLimits: boolean;
   readonly usage: { readonly decks: number; readonly cards: number };
   readonly validatedAtUtc: string;
@@ -85,7 +85,7 @@ export function validatePlanCatalog(value: unknown): PlanCatalog {
   if (
     !catalog ||
     catalog.currency !== 'Toman' ||
-    catalog.purchaseSupported !== false ||
+    typeof catalog.purchaseSupported !== 'boolean' ||
     !validLimits(catalog.freeLimits) ||
     !Array.isArray(catalog.plans) ||
     !catalog.plans.length ||
@@ -95,7 +95,8 @@ export function validatePlanCatalog(value: unknown): PlanCatalog {
         !plan ||
         typeof plan.plan !== 'string' ||
         !plan.plan ||
-        plan.isPurchasable !== false ||
+        typeof plan.isPurchasable !== 'boolean' ||
+        (plan.isPurchasable && (plan.plan !== 'Plus' || !catalog.purchaseSupported)) ||
         typeof plan.unavailableReason !== 'string' ||
         !Array.isArray(plan.prices) ||
         (plan.limits !== null && !validLimits(plan.limits)) ||
@@ -123,8 +124,9 @@ export function validateEntitlements(value: unknown): Entitlements {
     !['Free', 'Plus'].includes(entitlement.currentPlan) ||
     typeof entitlement.isActive !== 'boolean' ||
     entitlement.isActive !== (entitlement.currentPlan === 'Plus') ||
-    entitlement.isPurchasable !== false ||
-    entitlement.purchaseSupported !== false ||
+    typeof entitlement.isPurchasable !== 'boolean' ||
+    typeof entitlement.purchaseSupported !== 'boolean' ||
+    (entitlement.isPurchasable && (!entitlement.purchaseSupported || entitlement.isActive)) ||
     !validDate(entitlement.validatedAtUtc) ||
     typeof entitlement.withinFreeTierLimits !== 'boolean' ||
     !validLimits(entitlement.limits) ||

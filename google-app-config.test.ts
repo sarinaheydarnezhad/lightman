@@ -9,13 +9,28 @@ afterEach(() => {
 
 test('unconfigured Google sign-in preserves the existing Expo build configuration', () => {
   delete process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  expect(configure({ config: appConfig.expo })).toBe(appConfig.expo);
+  expect(configure({ config: appConfig.expo })).toEqual({
+    ...appConfig.expo,
+    plugins: expect.arrayContaining(appConfig.expo.plugins),
+  });
+  expect(configure({ config: appConfig.expo }).plugins).toContainEqual([
+    './plugins/withMarketPlace',
+    expect.objectContaining({ marketApplicationId: 'ir.mservices.market' }),
+  ]);
 });
 
 test('Google iOS configuration adds the reversed client URL scheme without removing other plugins', () => {
   process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = '12345-ios-client.apps.googleusercontent.com';
   expect(configure({ config: appConfig.expo }).plugins).toEqual([
     ...appConfig.expo.plugins,
+    [
+      './plugins/withMarketPlace',
+      {
+        marketApplicationId: 'ir.mservices.market',
+        marketBindAddress: 'ir.mservices.market.InAppBillingService.BIND',
+        marketPermission: 'ir.mservices.market.BILLING',
+      },
+    ],
     [
       '@react-native-google-signin/google-signin',
       {

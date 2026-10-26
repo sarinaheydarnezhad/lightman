@@ -15,6 +15,7 @@ import { SubscriptionScreen } from './subscription-screen';
 import { FreePlanLimit } from '@/shared/access/free-plan-limit';
 import * as theme from '@/shared/theme/theme-provider';
 import { palette } from '@/shared/theme/tokens';
+import { myketPayments, myketSupported } from '@/features/payments/myket-driver';
 
 let mockAccess: LearningAccessController;
 let mockUsage = { decks: 1, cards: 50 };
@@ -54,6 +55,10 @@ jest.mock('@/core/composition/sync', () => ({
   },
 }));
 jest.mock('@/shared/localization/localization-provider', () => ({ useLocalization: jest.fn() }));
+jest.mock('@/features/payments/myket-driver', () => ({
+  myketSupported: jest.fn(() => false),
+  myketPayments: { run: jest.fn() },
+}));
 
 const engine = syncEngine!;
 const catalog: PlanCatalog = {
@@ -131,10 +136,63 @@ beforeEach(() => {
   Object.defineProperty(engine, 'available', { configurable: true, value: true });
   jest.mocked(engine.planCatalog).mockReset().mockResolvedValue(catalog);
   jest.mocked(engine.subscription).mockReset();
+  jest.mocked(myketSupported).mockReturnValue(false);
+  jest.mocked(myketPayments.run).mockReset();
   language('en');
 });
 
 afterEach(() => jest.restoreAllMocks());
+
+test.each(['en', 'fa'] as const)(
+  'configured Myket checkout requires login and uses the selected server duration in %s',
+  async (locale) => {
+    language(locale);
+    jest.mocked(myketSupported).mockReturnValue(true);
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      purchaseSupported: true,
+      plans: catalog.plans.map((plan) =>
+        plan.plan === 'Plus' ? { ...plan, isPurchasable: true } : plan,
+      ),
+    });
+    const rendered = render(<SubscriptionScreen />);
+    await screen.findByTestId('plus-plan-1');
+    const label = translate(locale, 'paywall.purchase');
+    expect(screen.getByRole('button', { name: label })).toBeDisabled();
+    rendered.unmount();
+    account();
+    jest.mocked(myketPayments.run).mockResolvedValue(true);
+    render(<SubscriptionScreen />);
+    await waitFor(() => expect(screen.getByRole('button', { name: label })).toBeEnabled());
+    fireEvent.press(screen.getByTestId('plus-plan-6'));
+    fireEvent.press(screen.getByRole('button', { name: label }));
+    await waitFor(() =>
+      expect(myketPayments.run).toHaveBeenCalledWith(engine, 6, expect.any(Function)),
+    );
+    expect(await screen.findByText(translate(locale, 'payment.completed'))).toBeTruthy();
+    expect(mockAccess.snapshot().entitlements?.isActive).toBe(false);
+  },
+);
+
+test('recover purchases never requests a new checkout and shows failures without activating Plus', async () => {
+  account();
+  jest.mocked(myketSupported).mockReturnValue(true);
+  jest.mocked(engine.planCatalog).mockResolvedValue({
+    ...catalog,
+    purchaseSupported: true,
+    plans: catalog.plans.map((plan) =>
+      plan.plan === 'Plus' ? { ...plan, isPurchasable: true } : plan,
+    ),
+  });
+  jest.mocked(myketPayments.run).mockRejectedValue(new Error('Verification interrupted'));
+  render(<SubscriptionScreen />);
+  fireEvent.press(await screen.findByRole('button', { name: translate('en', 'payment.recover') }));
+  await waitFor(() =>
+    expect(myketPayments.run).toHaveBeenCalledWith(engine, null, expect.any(Function)),
+  );
+  expect(await screen.findByText(translate('en', 'payment.pending'))).toBeTruthy();
+  expect(mockAccess.snapshot().entitlements?.isActive).toBe(false);
+});
 
 test.each([
   ['en', 'light'],

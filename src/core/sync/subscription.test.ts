@@ -115,7 +115,7 @@ test('catalog preserves actual server pricing without a mobile price table or pu
 test.each([
   null,
   { ...catalog, currency: 'IRR' },
-  { ...catalog, purchaseSupported: true },
+  { ...catalog, purchaseSupported: 'yes' },
   { ...catalog, plans: [{ ...catalog.plans[1], isPurchasable: true }] },
   { ...catalog, plans: [{ ...catalog.plans[1], prices: [{ durationMonths: 1, priceToman: 1 }] }] },
   {
@@ -156,7 +156,7 @@ test.each(['Expired', 'Scheduled', 'Cancelled', 'Unavailable'] as const)(
 test.each([
   null,
   { ...free, isActive: true },
-  { ...free, purchaseSupported: true },
+  { ...free, purchaseSupported: 'yes' },
   { ...free, usage: { decks: -1, cards: 0 } },
   { ...free, validatedAtUtc: 'not-a-date' },
   { ...plus.entitlements, expiresAtUtc: free.validatedAtUtc },

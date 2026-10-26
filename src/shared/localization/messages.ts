@@ -1,5 +1,19 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'payment.hint':
+    'Pay securely in Myket. This is a one-time purchase for the selected period, not an auto-renewing subscription.',
+  'payment.recover': 'Recover purchases',
+  'payment.completed': 'Purchase verified. Your subscription status has been refreshed.',
+  'payment.none': 'No unfinished Myket purchases were found for recovery.',
+  'payment.cancelled': 'Payment cancelled. No new subscription was activated.',
+  'payment.pending':
+    'The purchase could not be completed or confirmed. Do not pay again. Check that Myket is installed, connect to the internet, sign in to the original account, then tap Recover purchases.',
+  'payment.unavailable':
+    'Myket payments are unavailable in this build or are not configured on the server.',
+  'payment.active':
+    'You already have an active or scheduled subscription. Another purchase is not allowed.',
+  'payment.checkoutPending':
+    'A checkout is pending. Recover purchases first, then retry the same duration. To choose a different duration, wait one hour or cancel the original Myket checkout.',
   'account.loginSignup': 'Log In / Sign Up',
   'account.editName': 'Edit name',
   'account.saveName': 'Save name',
@@ -782,6 +796,18 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'payment.hint':
+    'پرداخت امن در مایکت. این خرید یک‌باره برای مدت انتخاب‌شده است و تمدید خودکار ندارد.',
+  'payment.recover': 'بازیابی خریدها',
+  'payment.completed': 'خرید تأیید شد. وضعیت اشتراک شما به‌روز شده است.',
+  'payment.none': 'خرید ناتمام مایکت برای بازیابی پیدا نشد.',
+  'payment.cancelled': 'پرداخت لغو شد. اشتراک جدیدی فعال نشد.',
+  'payment.pending':
+    'خرید تکمیل یا تأیید نشد. دوباره پرداخت نکنید. نصب بودن مایکت و اتصال اینترنت را بررسی کنید، وارد حساب اصلی شوید و سپس «بازیابی خریدها» را بزنید.',
+  'payment.unavailable': 'پرداخت مایکت در این نسخه در دسترس نیست یا در سرور تنظیم نشده است.',
+  'payment.active': 'اشتراک فعال یا زمان‌بندی‌شده دارید. خرید مجدد مجاز نیست.',
+  'payment.checkoutPending':
+    'یک خرید در انتظار تکمیل است. ابتدا خریدها را بازیابی و سپس همان مدت را امتحان کنید. برای انتخاب مدت دیگر، یک ساعت صبر کنید یا پرداخت اصلی مایکت را لغو کنید.',
   'account.loginSignup': 'ورود / ثبت‌نام',
   'account.editName': 'ویرایش نام',
   'account.saveName': 'ذخیره نام',

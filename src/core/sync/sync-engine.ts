@@ -86,6 +86,22 @@ export class SyncEngine {
     return this.readAccount((cloud) => cloud.entitlements());
   }
 
+  myketConfiguration() {
+    return this.readAccount((cloud) => cloud.myketConfiguration());
+  }
+
+  beginMyketCheckout(durationMonths: number) {
+    return this.readAccount((cloud) => cloud.beginMyketCheckout(durationMonths));
+  }
+
+  verifyMyketPurchase(sku: string, token: string) {
+    return this.readAccount((cloud) => cloud.verifyMyketPurchase(sku, token));
+  }
+
+  cancelMyketCheckout(id: string) {
+    return this.readAccount((cloud) => cloud.cancelMyketCheckout(id));
+  }
+
   private async readAccount<Result>(
     read: (cloud: CloudClient) => Promise<Result>,
   ): Promise<Result> {

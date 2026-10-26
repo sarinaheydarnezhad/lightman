@@ -1,4 +1,4 @@
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { View } from 'react-native';
 import { BookOpen, Crown, Layers, RectangleHorizontal, type LucideIcon } from 'lucide-react-native';
@@ -19,6 +19,10 @@ import { LoadingState } from '@/shared/ui/loading-state';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useThemeColors } from '@/shared/theme/theme-provider';
 import { icons } from '@/shared/theme/tokens';
+import { myketPayments, myketSupported } from '@/features/payments/myket-driver';
+import { MyketPaymentError } from '@/features/payments/myket-payment';
+import { CloudError } from '@/core/sync/cloud-client';
+import type { MessageKey } from '@/shared/localization/messages';
 
 function PlanFeature({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   const { direction } = useLocalization();
@@ -42,6 +46,16 @@ export function SubscriptionScreen() {
   const state = useSyncExternalStore(access.subscribe, access.snapshot);
   const [trigger] = useState(() => state.restriction);
   const [selectedMonths, setSelectedMonths] = useState<number | null>(null);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentNotice, setPaymentNotice] = useState<MessageKey | null>(null);
+  const paymentRunning = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const catalog = useFocusedResource(
     useCallback(async () => {
       if (!syncEngine?.available) throw new Error('Cloud unavailable');
@@ -79,6 +93,52 @@ export function SubscriptionScreen() {
           ? t(`paywall.status.${subscription.status}`)
           : t('paywall.free');
   const confirmed = !details.loading && !details.error && !state.provisional;
+  const paymentAvailable =
+    catalog.data?.purchaseSupported === true && plus?.isPurchasable === true && myketSupported();
+
+  async function pay(months: number | null) {
+    if (paymentRunning.current || !syncEngine || !access.isAccount || !paymentAvailable) return;
+    const scope = storageScopes.current();
+    const revision = storageScopes.snapshot().revision;
+    const assertCurrent = () => storageScopes.assertCurrent(scope, revision);
+    paymentRunning.current = true;
+    setPaymentBusy(true);
+    setPaymentNotice(null);
+    try {
+      const delivered = await myketPayments.run(syncEngine, months, assertCurrent);
+      assertCurrent();
+      if (mounted.current) setPaymentNotice(delivered ? 'payment.completed' : 'payment.none');
+    } catch (error) {
+      let message: MessageKey = 'payment.pending';
+      if (error instanceof MyketPaymentError && error.code === 'cancelled')
+        message = 'payment.cancelled';
+      else if (error instanceof MyketPaymentError && error.code === 'unavailable')
+        message = 'payment.unavailable';
+      else if (error instanceof CloudError && error.code === 'subscription_active')
+        message = 'payment.active';
+      else if (error instanceof CloudError && error.code === 'checkout_pending')
+        message = 'payment.checkoutPending';
+      else if (error instanceof CloudError && error.code === 'payments_unavailable')
+        message = 'payment.unavailable';
+      try {
+        assertCurrent();
+        if (mounted.current) setPaymentNotice(message);
+      } catch {}
+    } finally {
+      try {
+        assertCurrent();
+        await access.refresh();
+        assertCurrent();
+        if (mounted.current) {
+          setPaymentBusy(false);
+          details.refresh();
+        }
+      } catch {
+        if (mounted.current) setPaymentBusy(false);
+      }
+      paymentRunning.current = false;
+    }
+  }
   const starts = confirmed ? (state.entitlements?.startsAtUtc ?? subscription?.startsAtUtc) : null;
   const expires = confirmed
     ? (state.entitlements?.expiresAtUtc ?? subscription?.expiresAtUtc)
@@ -228,6 +288,7 @@ export function SubscriptionScreen() {
                       accessibilityState={{
                         selected: selected?.durationMonths === price.durationMonths,
                       }}
+                      disabled={paymentBusy}
                       onPress={() => setSelectedMonths(price.durationMonths)}
                     />
                   );
@@ -248,13 +309,44 @@ export function SubscriptionScreen() {
                 })}
               </Text>
             ) : null}
-            <Button label={t('paywall.purchaseUnavailable')} disabled />
-            <View className="gap-sm rounded-md bg-primarySoft p-md">
+            <Button
+              label={t(paymentAvailable ? 'paywall.purchase' : 'paywall.purchaseUnavailable')}
+              disabled={
+                !paymentAvailable ||
+                !access.isAccount ||
+                !confirmed ||
+                !selected ||
+                catalog.loading ||
+                !!catalog.error ||
+                paymentBusy
+              }
+              loading={paymentBusy}
+              onPress={() => void pay(selected?.durationMonths ?? null)}
+            />
+            {!paymentAvailable ? (
+              <View className="gap-sm rounded-md bg-primarySoft p-md">
+                <Text variant="bodySmall" tone="secondary">
+                  {t('paywall.providerMissing')}
+                </Text>
+              </View>
+            ) : (
               <Text variant="bodySmall" tone="secondary">
-                {t('paywall.providerMissing')}
+                {t('payment.hint')}
               </Text>
-            </View>
+            )}
           </Card>
+        ) : null}
+
+        {paymentAvailable && access.isAccount ? (
+          <Button
+            label={t('payment.recover')}
+            variant="secondary"
+            disabled={paymentBusy}
+            onPress={() => void pay(null)}
+          />
+        ) : null}
+        {paymentNotice ? (
+          <FeedbackModal message={t(paymentNotice)} onDismiss={() => setPaymentNotice(null)} />
         ) : null}
 
         <Card
