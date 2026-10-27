@@ -75,7 +75,7 @@
       "typedRoutes": true
     },
     "splash": {
-      "image": "./assets/icon.jpg",
+      "image": "./assets/lerona-splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#161321"
     },
