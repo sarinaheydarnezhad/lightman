@@ -115,7 +115,8 @@ test('account access still refreshes without displaying a top-of-screen notice',
     fetch,
   });
   const view = render(<LearningAccessNotice />);
-  await waitFor(() => expect(mockAccess.snapshot().restriction?.decks).toBe(true));
+  await waitFor(() => expect(mockAccess.snapshot().entitlements?.currentPlan).toBe('Free'));
+  expect(mockAccess.snapshot().restriction).toBeUndefined();
   expect(fetch).toHaveBeenCalled();
   expect(Network.addNetworkStateListener).toHaveBeenCalled();
   expect(view.toJSON()).toBeNull();

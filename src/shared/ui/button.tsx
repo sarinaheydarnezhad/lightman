@@ -8,6 +8,7 @@ type ButtonProps = Omit<PressableProps, 'children'> & {
   variant?: 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'destructive';
   loading?: boolean;
   icon?: LucideIcon;
+  iconOnly?: boolean;
 };
 
 const appearance = {
@@ -24,6 +25,7 @@ export function Button({
   disabled,
   loading = false,
   icon: Icon,
+  iconOnly = false,
   style,
   accessibilityState,
   ...props
@@ -43,7 +45,7 @@ export function Button({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ ...accessibilityState, disabled: unavailable, busy: loading }}
-      className={`min-h-button flex-row items-center justify-center gap-sm overflow-hidden rounded-md border py-sm ${Icon ? 'px-3xl' : 'px-lg'} ${disabled ? 'bg-surfaceElevated border-border' : appearance[variant]}`}
+      className={`min-h-button flex-row items-center justify-center gap-sm overflow-hidden rounded-md border py-sm ${iconOnly ? 'px-0' : Icon ? 'px-3xl' : 'px-lg'} ${disabled ? 'bg-surfaceElevated border-border' : appearance[variant]}`}
       style={(state) => [
         { opacity: state.pressed && !unavailable ? 0.88 : 1 },
         typeof style === 'function' ? style(state) : style,
@@ -56,27 +58,29 @@ export function Button({
           {'\u2713'}
         </Text>
       ) : null}
-      <Text
-        variant="labelLarge"
-        className="flex-shrink"
-        align="center"
-        tone={
-          disabled
-            ? 'disabled'
-            : variant === 'primary'
-              ? 'primaryForeground'
-              : variant === 'destructive'
-                ? 'errorForeground'
-                : 'primaryText'
-        }
-      >
-        {label}
-      </Text>
-      {Icon ? (
+      {!iconOnly ? (
+        <Text
+          variant="labelLarge"
+          className="flex-shrink"
+          align="center"
+          tone={
+            disabled
+              ? 'disabled'
+              : variant === 'primary'
+                ? 'primaryForeground'
+                : variant === 'destructive'
+                  ? 'errorForeground'
+                  : 'primaryText'
+          }
+        >
+          {label}
+        </Text>
+      ) : null}
+      {Icon && !(iconOnly && loading) ? (
         <View
           pointerEvents="none"
           importantForAccessibility="no-hide-descendants"
-          style={{ position: 'absolute', right: 16 }}
+          style={iconOnly ? undefined : { position: 'absolute', right: 16 }}
         >
           <Icon color={foreground} size={22} />
         </View>

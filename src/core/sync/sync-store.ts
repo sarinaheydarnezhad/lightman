@@ -225,6 +225,8 @@ export class SyncStore {
       throw new Error(
         'Account changes remain pending, failed or conflicted. Nothing was backed up.',
       );
+    // Untouched device defaults have no server version and do not need uploading.
+    // Every explicit settings edit must still have its outbox acknowledgement.
     const missing = await this.database.execute(
       `
       SELECT 'deck' AS kind FROM decks d LEFT JOIN sync_entity_versions v
@@ -238,6 +240,7 @@ export class SyncStore {
         AND NOT EXISTS (SELECT 1 FROM review_events e JOIN sync_review_versions v ON v.event_id = e.id WHERE e.card_id = s.card_id)
       UNION ALL SELECT 'settings' FROM user_settings s
         WHERE NOT EXISTS (SELECT 1 FROM sync_entity_versions v WHERE v.entity_type = 'settings' AND v.entity_id = ?)
+        AND EXISTS (SELECT 1 FROM sync_operations o WHERE o.entity_type = 'settings' AND o.status <> 'discarded')
       UNION ALL SELECT 'scheduler' FROM decks WHERE review_system <> 'leitner'
       LIMIT 1`,
       [account.userId],
@@ -407,68 +410,71 @@ export class SyncStore {
     const time = new Date().toISOString();
     if (change.entityType === 'deck') {
       if (change.operation === 'archive') {
-        await transaction.execute(
+        const updated = await transaction.execute(
           'UPDATE decks SET archived_at = MAX(created_at, ?), updated_at = MAX(created_at, ?) WHERE id = ?',
           [time, time, change.entityId],
         );
-      } else {
-        await transaction.execute(
-          `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, review_system, created_at, updated_at, archived_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+        if (updated.rowsAffected) return;
+        // Bootstrap/restore feeds can start with an archived snapshot on a fresh device.
+      }
+      await transaction.execute(
+        `INSERT INTO decks (id, name, description, language, text_alignment, typography_size, review_system, created_at, updated_at, archived_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET name = excluded.name, description = excluded.description,
              language = excluded.language, text_alignment = excluded.text_alignment,
              typography_size = excluded.typography_size, review_system = excluded.review_system,
              updated_at = MAX(decks.created_at, excluded.updated_at)`,
-          [
-            change.entityId,
-            field(payload, 'name'),
-            field(payload, 'description'),
-            field(payload, 'language'),
-            field(payload, 'textAlignment'),
-            field(payload, 'typographySize'),
-            optionalField(payload, 'reviewSystem') ?? 'leitner',
-            time,
-            time,
-          ],
-        );
-      }
+        [
+          change.entityId,
+          field(payload, 'name'),
+          field(payload, 'description'),
+          field(payload, 'language'),
+          field(payload, 'textAlignment'),
+          field(payload, 'typographySize'),
+          optionalField(payload, 'reviewSystem') ?? 'leitner',
+          time,
+          time,
+          change.operation === 'archive' ? time : null,
+        ],
+      );
     } else if (change.entityType === 'card') {
       if (change.operation === 'archive') {
-        await transaction.execute(
+        const updated = await transaction.execute(
           'UPDATE cards SET archived_at = MAX(created_at, ?), updated_at = MAX(created_at, ?) WHERE id = ?',
           [time, time, change.entityId],
         );
-      } else {
-        await transaction.execute(
-          `INSERT INTO cards (id, deck_id, front_text, meaning, phonetic, category, examples_json, created_at, updated_at, archived_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+        if (updated.rowsAffected) return;
+      }
+      await transaction.execute(
+        `INSERT INTO cards (id, deck_id, front_text, meaning, phonetic, category, examples_json, created_at, updated_at, archived_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET front_text = excluded.front_text, meaning = excluded.meaning,
              phonetic = excluded.phonetic, category = excluded.category, examples_json = excluded.examples_json,
              updated_at = MAX(cards.created_at, excluded.updated_at)`,
-          [
-            change.entityId,
-            field(payload, 'deckId'),
-            field(payload, 'frontText'),
-            field(payload, 'meaning'),
-            optionalField(payload, 'phonetic'),
-            optionalField(payload, 'category'),
-            JSON.stringify(payload.examples),
-            time,
-            time,
-          ],
-        );
-        const state = await transaction.execute(
-          'SELECT 1 AS found FROM card_review_state WHERE card_id = ?',
-          [change.entityId],
-        );
-        if (!state.rows.length) {
-          await transaction.execute(
-            `INSERT INTO card_review_state
+        [
+          change.entityId,
+          field(payload, 'deckId'),
+          field(payload, 'frontText'),
+          field(payload, 'meaning'),
+          optionalField(payload, 'phonetic'),
+          optionalField(payload, 'category'),
+          JSON.stringify(payload.examples),
+          time,
+          time,
+          change.operation === 'archive' ? time : null,
+        ],
+      );
+      const state = await transaction.execute(
+        'SELECT 1 AS found FROM card_review_state WHERE card_id = ?',
+        [change.entityId],
+      );
+      if (!state.rows.length) {
+        await transaction.execute(
+          `INSERT INTO card_review_state
             (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
             VALUES (?, 1, ?, NULL, 0, 0, 0, ?)`,
-            [change.entityId, time.slice(0, 10), time],
-          );
-        }
+          [change.entityId, time.slice(0, 10), time],
+        );
       }
     } else if (change.entityType === 'settings') {
       await transaction.execute(

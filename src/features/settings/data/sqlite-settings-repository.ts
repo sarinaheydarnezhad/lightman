@@ -16,6 +16,38 @@ import {
 import { resolveUiLanguage } from '@/shared/localization/localization';
 import type { SettingsRepository } from '../domain/settings-repository';
 
+/** Device defaults are placeholders until the account has been pulled, not user edits. */
+export async function initializeSettingsDefaults(
+  database: Database,
+  settings: UserSettings,
+): Promise<void> {
+  const valid = validateUserSettings(settings);
+  await database.transaction(async (transaction) => {
+    if ((await transaction.execute('SELECT id FROM user_settings WHERE id = 1')).rows.length)
+      return;
+    const flag = (
+      await transaction.execute('SELECT applying_remote FROM sync_account WHERE id = 1')
+    ).rows[0]?.applying_remote;
+    await transaction.execute('UPDATE sync_account SET applying_remote = 1 WHERE id = 1');
+    await transaction.execute(
+      `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
+       VALUES (1, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        valid.theme,
+        encodeBoolean(valid.hapticsEnabled),
+        valid.language,
+        encodeBoolean(valid.dailyReminderEnabled),
+        valid.dailyReminderTime,
+        valid.preferredSpeechLanguage,
+        valid.preferredSpeechAccent,
+      ],
+    );
+    await transaction.execute('UPDATE sync_account SET applying_remote = ? WHERE id = 1', [
+      flag ?? 0,
+    ]);
+  });
+}
+
 function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
   if (!source) return null;
   return validateUserSettings({
@@ -26,7 +58,9 @@ function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
     dailyReminderTime: nullableText(source, 'daily_reminder_time')
       ? localTime(nullableText(source, 'daily_reminder_time')!)
       : null,
-    preferredSpeechLanguage: languageTag(resolveUiLanguage(text(source, 'preferred_speech_language'))),
+    preferredSpeechLanguage: languageTag(
+      resolveUiLanguage(text(source, 'preferred_speech_language')),
+    ),
     preferredSpeechAccent: nullableText(source, 'preferred_speech_accent') as EnglishAccent | null,
   });
 }

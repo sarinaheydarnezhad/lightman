@@ -165,12 +165,7 @@ export class CloudClient {
     const stored = await SecureStore.getItemAsync(tokenKey);
     if (!stored || this.locallySignedOut) return null;
     try {
-      const tokens = validateTokens(JSON.parse(stored));
-      if (tokens.sessionExpiresAtUtc && Date.parse(tokens.sessionExpiresAtUtc) <= Date.now()) {
-        await this.clearTokens();
-        return null;
-      }
-      return tokens;
+      return validateTokens(JSON.parse(stored));
     } catch {
       await this.clearTokens();
       return null;
@@ -178,17 +173,8 @@ export class CloudClient {
   }
 
   async hasSession(): Promise<boolean> {
-    const tokens = await this.readTokens();
-    if (!tokens) return false;
-    if (!tokens.sessionExpiresAtUtc && Date.parse(tokens.accessExpiresAtUtc) <= Date.now()) {
-      try {
-        await this.refresh();
-      } catch {
-        if (!this.locallySignedOut) await this.clearTokens();
-        return false;
-      }
-    }
-    return !this.locallySignedOut;
+    // Token expiry controls cloud requests; it must not hide the account's local data.
+    return !!(await this.readTokens()) && !this.locallySignedOut;
   }
 
   accountProfile(): Promise<AccountProfile> {
@@ -794,7 +780,9 @@ export class CloudClient {
       .catch(async (error) => {
         if (
           epoch === this.sessionEpoch &&
-          (!(error instanceof CloudError) || error.status === 0 || error.status === 401)
+          error instanceof CloudError &&
+          error.status === 401 &&
+          !this.locallySignedOut
         )
           await this.clearTokens();
         throw error;

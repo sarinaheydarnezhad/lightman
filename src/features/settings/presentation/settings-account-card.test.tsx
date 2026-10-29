@@ -288,7 +288,7 @@ test('locked account scope shows no previous phone or subscription controls', as
 });
 
 test.each([false, true])(
-  'offline cache never advertises a confirmed paid plan (Plus %s)',
+  'offline cache displays the saved subscription (Plus %s)',
   async (paid) => {
     const now = Date.now();
     const response: Entitlements = paid
@@ -311,11 +311,9 @@ test.each([false, true])(
     mockState = { phase: 'ready', mode: 'account', userId: account.id, revision: 1 };
     render(<SettingsAccountCard />);
     await screen.findByText(account.phoneNumber!);
-    expect(screen.getByRole('button', { name: 'Subscription' })).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Subscription' }).props.className.split(' '),
-    ).toContain('bg-surface');
-    expect(screen.queryByRole('button', { name: 'Subscription (Plus)' })).toBeNull();
+    const label = paid ? 'Subscription (Plus)' : 'Subscription';
+    const button = await screen.findByRole('button', { name: label });
+    expect(button.props.className.split(' ')).toContain(paid ? 'bg-primary' : 'bg-surface');
     expect(screen.queryByTestId('feedback-modal')).toBeNull();
   },
 );

@@ -20,6 +20,7 @@ import { deckContentStyle, deckTypography } from './deck-presentation';
 import { useDeckActions, useDeckDetailsViewModel } from './use-decks-view-model';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
 import { ReviewDistribution } from '@/features/study/presentation/review-distribution';
+import { StudyOrderButton } from '@/features/study/presentation/study-order-button';
 
 export function DeckDetailsScreen({ deckId }: { deckId: string }) {
   const { t, number, language } = useLocalization();
@@ -106,10 +107,10 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               router.push(`/settings/transfer?deckId=${encodeURIComponent(deckId)}` as Href)
             }
           />
-          <Button
+          <StudyOrderButton
             label={t('study.start')}
             loading={study.starting}
-            onPress={() => void study.start({ kind: 'specific-deck', deckId })}
+            onStart={(order) => void study.start({ kind: 'specific-deck', deckId }, false, order)}
           />
           <View className="gap-sm border-b border-border pb-xl">
             <Badge

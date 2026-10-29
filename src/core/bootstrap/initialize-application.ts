@@ -1,6 +1,10 @@
 import { defaultSettings } from '@/core/composition/default-settings';
 import { application } from '@/core/composition/application';
-import { database, initializeRepositories } from '@/core/composition/repositories';
+import {
+  database,
+  initializeDeviceSettings,
+  initializeRepositories,
+} from '@/core/composition/repositories';
 import { logger } from '@/core/infrastructure/platform';
 
 let initialization: Promise<void> | null = null;
@@ -12,6 +16,7 @@ export function initializeApplication(): Promise<void> {
       if (database) {
         const { restoreLocalSession, syncEngine } = await import('@/core/composition/sync');
         await restoreLocalSession();
+        await initializeDeviceSettings();
         syncEngine?.start();
       }
       void Promise.resolve()

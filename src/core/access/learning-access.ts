@@ -3,7 +3,6 @@ import type { LearningAccess, LearningOperation } from '@/core/ports/learning-ac
 import type { Repositories } from '@/core/ports/repositories';
 import { validateEntitlements, type Entitlements } from '@/core/sync/subscription';
 
-export const provisionalEntitlementLifetimeMs = 5 * 60 * 1000;
 export const freeLearningLimits = { decks: 1, cards: 50 } as const;
 
 export interface EntitlementCache {
@@ -19,11 +18,11 @@ export function serverEntitlementCache(
   const remaining =
     entitlements.isActive && entitlements.expiresAtUtc
       ? Date.parse(entitlements.expiresAtUtc) - Date.parse(entitlements.validatedAtUtc)
-      : provisionalEntitlementLifetimeMs;
+      : null;
   return {
     entitlements,
     fetchedAt,
-    validUntil: fetchedAt + Math.min(remaining, provisionalEntitlementLifetimeMs),
+    validUntil: remaining === null ? Number.MAX_SAFE_INTEGER : fetchedAt + remaining,
   };
 }
 
@@ -79,6 +78,7 @@ export interface AccessState {
 export class LearningAccessController implements LearningAccess {
   private cache: EntitlementCache | null = null;
   private loaded = false;
+  private restoring: Promise<void> | null = null;
   private refreshing: Promise<void> | null = null;
   private refreshingOperation?: LearningOperation;
   private refreshedAt: number | null = null;
@@ -164,14 +164,7 @@ export class LearningAccessController implements LearningAccess {
     const generation = this.generation;
     dependencies.assertCurrent?.();
     if (!dependencies.userId) return;
-    if (!this.loaded) {
-      const cache = (await dependencies.readCache?.()) ?? null;
-      dependencies.assertCurrent?.();
-      if (generation !== this.generation)
-        throw new AppError('unavailable', 'Account permissions changed. Refresh online.');
-      this.cache = cache;
-      this.loaded = true;
-    }
+    await this.restore();
     dependencies.assertCurrent?.();
     try {
       if (!dependencies.fetch || !(await dependencies.online?.())) throw new Error('offline');
@@ -196,23 +189,15 @@ export class LearningAccessController implements LearningAccess {
       this.publish({
         entitlements: accepted?.entitlements ?? null,
         provisional: !accepted,
-        restriction:
-          accepted && !accepted.entitlements.isActive && !accepted.entitlements.withinFreeTierLimits
-            ? {
-                decks: accepted.entitlements.usage.decks > freeLearningLimits.decks,
-                cards: accepted.entitlements.usage.cards > freeLearningLimits.cards,
-              }
-            : undefined,
+        restriction: accepted?.entitlements.isActive ? undefined : this.state.restriction,
         message: !accepted
           ? 'The server response is too old to confirm access. Refresh online; free limits apply.'
-          : !accepted.entitlements.isActive && !accepted.entitlements.withinFreeTierLimits
-            ? 'Your account exceeds 1 active deck or 50 active cards. Study and new content are restricted. Existing data, editing and export remain available.'
-            : !accepted.entitlements.isActive &&
-                accepted.entitlements.expiresAtUtc &&
-                Date.parse(accepted.entitlements.expiresAtUtc) <=
-                  Date.parse(accepted.entitlements.validatedAtUtc)
-              ? 'Your Plus subscription has expired. Free limits apply; your data is preserved. View plans.'
-              : null,
+          : !accepted.entitlements.isActive &&
+              accepted.entitlements.expiresAtUtc &&
+              Date.parse(accepted.entitlements.expiresAtUtc) <=
+                Date.parse(accepted.entitlements.validatedAtUtc)
+            ? 'Your Plus subscription has expired. Free limits apply; your data is preserved. View plans.'
+            : null,
       });
     } catch (error) {
       dependencies.assertCurrent?.();
@@ -240,13 +225,39 @@ export class LearningAccessController implements LearningAccess {
     }
   }
 
+  /** Restore account access from disk without waiting for a network request. */
+  async restore(): Promise<void> {
+    this.dependencies.assertCurrent?.();
+    if (this.loaded || !this.isAccount) return;
+    if (!this.restoring) {
+      const generation = this.generation;
+      this.restoring = (async () => {
+        const cache = (await this.dependencies.readCache?.()) ?? null;
+        this.dependencies.assertCurrent?.();
+        if (generation !== this.generation)
+          throw new AppError('unavailable', 'Account permissions changed. Refresh online.');
+        this.cache = cache;
+        this.loaded = true;
+        this.publish({
+          entitlements: this.freshCache()?.entitlements ?? null,
+          provisional: true,
+          message: null,
+        });
+      })().finally(() => {
+        this.restoring = null;
+      });
+    }
+    await this.restoring;
+  }
+
   private freshCache(): EntitlementCache | null {
     const cache = this.cache;
     const time = this.now();
     return cache &&
       cache.fetchedAt <= time &&
       time < cache.validUntil &&
-      cache.validUntil - cache.fetchedAt <= provisionalEntitlementLifetimeMs
+      Number.isSafeInteger(cache.validUntil) &&
+      cache.validUntil <= serverEntitlementCache(cache.entitlements, cache.fetchedAt).validUntil
       ? cache
       : null;
   }
@@ -254,7 +265,7 @@ export class LearningAccessController implements LearningAccess {
   async assertAllowed(operation: LearningOperation, amount = 1): Promise<void> {
     if (!Number.isSafeInteger(amount) || amount < 0)
       throw new AppError('validation', 'Invalid content count.');
-    await this.refresh(operation);
+    await this.restore();
     this.dependencies.assertCurrent?.();
     let local: { decks: number; cards: number };
     try {
@@ -269,12 +280,11 @@ export class LearningAccessController implements LearningAccess {
     }
     this.dependencies.assertCurrent?.();
     const entitlement = this.freshCache()?.entitlements;
+    if (!entitlement && this.state.entitlements)
+      this.publish({ entitlements: null, provisional: true, message: null });
     if (this.dependencies.userId && entitlement?.isActive && entitlement.currentPlan === 'Plus')
       return;
-    const usage = {
-      decks: Math.max(local.decks, this.dependencies.userId ? (entitlement?.usage.decks ?? 0) : 0),
-      cards: Math.max(local.cards, this.dependencies.userId ? (entitlement?.usage.cards ?? 0) : 0),
-    };
+    const usage = local;
     const decksExceeded =
       usage.decks + (operation === 'deck' ? amount : 0) > freeLearningLimits.decks;
     const cardsExceeded =

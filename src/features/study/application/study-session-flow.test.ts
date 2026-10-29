@@ -22,11 +22,17 @@ async function setup(ids: readonly string[], decks: readonly string[] = ['deck-1
     await repos.cards.create(makeCard({ id, deckId }));
     await repos.reviews.saveState(makeState({ cardId: id }));
   }
+  const app = createApplication(repos, fixedClock, sequenceIds(), undefined, undefined, {
+    assertAllowed: async () => {},
+  });
   return {
     repos,
-    app: createApplication(repos, fixedClock, sequenceIds(), undefined, undefined, {
-      assertAllowed: async () => {},
-    }),
+    // Workflow assertions use a fixed order; random presentation is tested separately.
+    app: {
+      ...app,
+      startStudySession: (scope: StudyScope) => app.startStudySession(scope, 'in-order'),
+      reviewMissedCards: (id: string) => app.reviewMissedCards(id, 'in-order'),
+    },
   };
 }
 

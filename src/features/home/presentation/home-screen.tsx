@@ -18,6 +18,7 @@ import { DeckListItem } from '@/features/decks/presentation/deck-list-item';
 import { useHomeViewModel } from './use-home-view-model';
 import { StudyEmblem, StudyIllustration } from './study-illustration';
 import { useStartStudy, openStudySession } from '@/features/study/presentation/use-start-study';
+import { StudyOrderButton } from '@/features/study/presentation/study-order-button';
 
 export function HomeScreen() {
   const { t, number, language, direction } = useLocalization();
@@ -90,22 +91,20 @@ export function HomeScreen() {
                   <StudyEmblem />
                 </View>
               </View>
-              <Button
-                label={
-                  home.dueCount > 0
-                    ? t('study.start')
-                    : home.cardCount > 0
-                      ? t('common.browseDecks')
-                      : t('decks.create')
-                }
-                icon={ChevronRight}
-                loading={study.starting}
-                onPress={() =>
-                  home.dueCount > 0
-                    ? void study.start({ kind: 'all-decks' })
-                    : router.push(home.cardCount > 0 ? '/decks' : '/decks/create')
-                }
-              />
+              {home.dueCount > 0 ? (
+                <StudyOrderButton
+                  label={t('study.start')}
+                  loading={study.starting}
+                  onStart={(order) => void study.start({ kind: 'all-decks' }, false, order)}
+                />
+              ) : (
+                <Button
+                  label={home.cardCount > 0 ? t('common.browseDecks') : t('decks.create')}
+                  icon={ChevronRight}
+                  loading={study.starting}
+                  onPress={() => router.push(home.cardCount > 0 ? '/decks' : '/decks/create')}
+                />
+              )}
             </Card>
             {study.error ? (
               <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>

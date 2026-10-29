@@ -8,6 +8,7 @@ import { LogoutScreen } from './logout-screen';
 import { LogoutNotice } from '@/features/auth/presentation/logout-notice';
 import { LocalizationProvider } from '@/shared/localization/localization-provider';
 import { translate } from '@/shared/localization/localization';
+import { CloudError } from '@/core/sync/cloud-client';
 
 let mockScope: StorageState = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
 let mockResult: LogoutResult | null = null;
@@ -73,6 +74,22 @@ test('logout confirmation presents explicit choices and cancellation changes no 
   fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
   expect(engine.signOut).not.toHaveBeenCalled();
   expect(router.replace).toHaveBeenCalledWith('/(tabs)/settings');
+});
+
+test('missing backup configuration explains the server failure and leaves backup-and-logout retry available', async () => {
+  jest
+    .mocked(engine.signOut)
+    .mockRejectedValueOnce(new CloudError(503, undefined, undefined, 'backups_unavailable'));
+  mount();
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up and Log Out' }));
+  await screen.findByText(new RegExp('Cloud backup is not set up on the server'));
+  expect(router.replace).not.toHaveBeenCalled();
+  expect(mockScope.mode).toBe('account');
+  expect(
+    screen.getByRole('button', { name: 'Back Up and Log Out' }).props.accessibilityState?.disabled,
+  ).not.toBe(true);
+  fireEvent.press(screen.getByRole('button', { name: 'Back Up and Log Out' }));
+  await waitFor(() => expect(engine.signOut).toHaveBeenCalledTimes(2));
 });
 
 test('confirmed retained backup shows actual UTC expiration and explicitly discloses unavailable restore', () => {

@@ -31,6 +31,8 @@ jest.mock('@/core/composition/sync', () => ({
     signOut: jest.fn(async () => {}),
     accountProfile: jest.fn(),
     updateAccountName: jest.fn(),
+    status: jest.fn(),
+    resolve: jest.fn(),
   },
 }));
 
@@ -58,6 +60,20 @@ beforeEach(() => {
     email: null,
   });
   jest.mocked(syncEngine!.updateAccountName).mockReset();
+  jest
+    .mocked(syncEngine!.status)
+    .mockReset()
+    .mockResolvedValue({
+      userId: 'account',
+      cursor: 0,
+      signedIn: true,
+      sessionError: null,
+      pending: 0,
+      failed: 0,
+      conflict: 0,
+      conflicts: [],
+    });
+  jest.mocked(syncEngine!.resolve).mockReset().mockResolvedValue();
   jest.mocked(service.preview).mockReset().mockResolvedValue(preview);
   jest.mocked(service.transfer).mockReset().mockResolvedValue();
   jest.mocked(service.finish).mockReset().mockResolvedValue();
@@ -76,6 +92,53 @@ function mount() {
     </SafeAreaProvider>,
   );
 }
+
+test.each([
+  ['en', 'server'],
+  ['fa', 'local'],
+] as const)(
+  '%s allows an explicit %s settings choice to recover a previously failed account connection',
+  async (language, choice) => {
+    mockRouteParams = { language };
+    jest.mocked(service.preview).mockRejectedValueOnce(new CloudError(409));
+    jest
+      .mocked(syncEngine!.status)
+      .mockResolvedValue({
+        userId: 'account',
+        cursor: 0,
+        signedIn: true,
+        sessionError: null,
+        pending: 0,
+        failed: 0,
+        conflict: 1,
+        conflicts: [
+          {
+            operationId: 'saved-edit',
+            entityType: 'settings',
+            entityId: '',
+            serverVersion: 5,
+            archived: false,
+          },
+        ],
+      });
+    mount();
+    await screen.findByText(translate(language, 'migration.settingsConflict'));
+    expect(syncEngine!.resolve).not.toHaveBeenCalled();
+    expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
+    jest
+      .mocked(service.preview)
+      .mockResolvedValue({ ...preview, scenario: 'empty', guest: [], hasGuestData: false });
+    fireEvent.press(
+      screen.getByRole('button', {
+        name: translate(language, choice === 'server' ? 'sync.keepServer' : 'sync.keepLocal'),
+      }),
+    );
+    await waitFor(() => expect(storageScopes.completeAccountEntry).toHaveBeenCalled());
+    expect(syncEngine!.resolve).toHaveBeenCalledWith('saved-edit', choice);
+    expect(service.discard).not.toHaveBeenCalled();
+    expect(syncEngine!.signOut).not.toHaveBeenCalled();
+  },
+);
 
 test.each(['en', 'fa'] as const)(
   '%s asks unnamed users for their name before checking guest data',

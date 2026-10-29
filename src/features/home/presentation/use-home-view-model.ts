@@ -9,7 +9,7 @@ export function useHomeViewModel() {
         application.getHomeSummary(),
         application.getAnalyticsWindow(7),
       ]);
-      const due = await application.getStudyQueue({
+      const due = await application.previewStudyQueue({
         scope: { kind: 'all-decks' },
         targetDate: activity.today,
       });

@@ -643,13 +643,17 @@ test.each([
   },
 );
 
-test('a lost refresh response clears uncertain credentials rather than replaying the consumed token', async () => {
+test('a network failure during token refresh preserves local account access', async () => {
   globalThis.fetch = jest.fn().mockRejectedValue(new TypeError('Network disconnected'));
-  await expect(new CloudClient().pull(0)).rejects.toMatchObject({
+  const lost = jest.fn();
+  const client = new CloudClient(lost);
+  await expect(client.pull(0)).rejects.toMatchObject({
     status: 0,
     code: 'network_error',
   });
-  expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
+  expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+  expect(lost).not.toHaveBeenCalled();
+  await expect(client.hasSession()).resolves.toBe(true);
   expect(SecureStore.setItemAsync).not.toHaveBeenCalledWith(
     'lerona.cloud.credentials.v1',
     expect.anything(),
@@ -721,22 +725,25 @@ test('corrupt secure credentials do not count as a session', async () => {
   expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
 });
 
-test('known session expiration disables offline credential restoration and isolates account state', async () => {
+test('cloud session expiry does not prevent offline account restoration', async () => {
   jest
     .mocked(SecureStore.getItemAsync)
     .mockResolvedValue(JSON.stringify({ ...rotated, sessionExpiresAtUtc: '2020-01-01T00:00:00Z' }));
   const lost = jest.fn();
-  await expect(new CloudClient(lost).hasSession()).resolves.toBe(false);
-  expect(lost).toHaveBeenCalled();
-  expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('lerona.cloud.credentials.v1');
+  globalThis.fetch = jest.fn().mockRejectedValue(new TypeError('Offline'));
+  await expect(new CloudClient(lost).hasSession()).resolves.toBe(true);
+  expect(fetch).not.toHaveBeenCalled();
+  expect(lost).not.toHaveBeenCalled();
+  expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
 });
 
-test('legacy credentials with expired access and no known session deadline cannot restore offline account access', async () => {
+test('expired access credentials restore offline without contacting the backend', async () => {
   globalThis.fetch = jest.fn().mockRejectedValue(new TypeError('Offline'));
   const lost = jest.fn();
-  await expect(new CloudClient(lost).hasSession()).resolves.toBe(false);
-  expect(lost).toHaveBeenCalled();
-  expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('lerona.cloud.credentials.v1');
+  await expect(new CloudClient(lost).hasSession()).resolves.toBe(true);
+  expect(fetch).not.toHaveBeenCalled();
+  expect(lost).not.toHaveBeenCalled();
+  expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
 });
 
 test('logout invalidates active rotation immediately and never persists its late token response', async () => {

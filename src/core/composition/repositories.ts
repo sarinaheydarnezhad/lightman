@@ -10,6 +10,8 @@ import { LocalStorageScopes } from '@/core/storage/local-storage-scopes';
 import { installFreeTierGuards } from '@/core/database/free-tier-guards';
 import type { Database } from '@/core/database/database';
 import { defaultSettings } from './default-settings';
+import { initializeSettingsDefaults } from '@/features/settings/data/sqlite-settings-repository';
+import { DeviceLanguagePreference } from '@/features/settings/data/device-language-settings-repository';
 
 function inMemoryRepositories(): Repositories {
   return {
@@ -22,13 +24,15 @@ function inMemoryRepositories(): Repositories {
 }
 
 const testEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
+const deviceLanguage = new DeviceLanguagePreference();
 export const storageScopes = new LocalStorageScopes<Repositories>(
   async (name) => {
     const scopedDatabase = new OpSqliteDatabase(name);
     await scopedDatabase.initialize();
     await installFreeTierGuards(scopedDatabase);
-    const value = createSqliteRepositories(scopedDatabase);
-    if (!(await value.settings.get())) await value.settings.update(defaultSettings());
+    await initializeSettingsDefaults(scopedDatabase, defaultSettings());
+    const value = createSqliteRepositories(scopedDatabase, deviceLanguage);
+    await value.settings.get();
     return { database: scopedDatabase, value };
   },
   testEnvironment ? { database: null, value: inMemoryRepositories() } : undefined,
@@ -48,4 +52,15 @@ export const repositories: Repositories = new Proxy({} as Repositories, {
 
 export async function initializeRepositories(): Promise<void> {
   await storageScopes.initialize();
+}
+
+export async function initializeDeviceSettings(): Promise<void> {
+  if (!testEnvironment) {
+    const guest = await storageScopes.guestScope();
+    const settings = await storageScopes.current().value.settings.get();
+    await deviceLanguage.initialize(
+      guest.database!,
+      settings?.language ?? defaultSettings().language,
+    );
+  }
 }

@@ -1,8 +1,5 @@
 import type { Database } from './database';
-import {
-  freeLearningLimits,
-  provisionalEntitlementLifetimeMs,
-} from '@/core/access/learning-access';
+import { freeLearningLimits } from '@/core/access/learning-access';
 
 export async function installFreeTierGuards(database: Database): Promise<void> {
   await database.transaction(async (transaction) => {
@@ -10,8 +7,25 @@ export async function installFreeTierGuards(database: Database): Promise<void> {
       user_id TEXT PRIMARY KEY NOT NULL, response_json TEXT NOT NULL,
       fetched_at_ms INTEGER NOT NULL, valid_until_ms INTEGER NOT NULL
     )`);
+    // Match Date.parse's millisecond truncation for server timestamps with finer precision.
+    const milliseconds = (field: string) => {
+      const date = `json_extract(response_json, '$.${field}')`;
+      const fraction = `replace(replace(substr(${date}, 21), 'Z', ''), '+00:00', '')`;
+      return `(CAST(strftime('%s', substr(${date}, 1, 19) || 'Z') AS INTEGER) * 1000 + CASE WHEN substr(${date}, 20, 1) = '.' THEN CAST(substr(${fraction} || '000', 1, 3) AS INTEGER) ELSE 0 END)`;
+    };
+    const duration = `(${milliseconds('expiresAtUtc')} - ${milliseconds('validatedAtUtc')})`;
+    // Upgrade the former five-minute cache using its original server validation time.
+    // Keeping fetched_at_ms preserves the deadline even when the response is replayed.
+    await transaction.execute(`UPDATE local_entitlements
+      SET valid_until_ms = fetched_at_ms + ${duration}
+      WHERE json_valid(response_json) AND json_extract(response_json, '$.isActive') = 1
+        AND valid_until_ms - fetched_at_ms = 300000
+        AND ${duration} > 300000`);
+    await transaction.execute(`UPDATE local_entitlements SET valid_until_ms = 9007199254740991
+      WHERE json_valid(response_json) AND json_extract(response_json, '$.isActive') = 0
+        AND valid_until_ms - fetched_at_ms = 300000`);
     const timestamp = `(CAST(strftime('%s', 'now') AS INTEGER) * 1000 + CAST(substr(strftime('%f', 'now'), 4, 3) AS INTEGER))`;
-    const withinLease = `${timestamp} >= fetched_at_ms AND ${timestamp} < valid_until_ms AND valid_until_ms - fetched_at_ms <= ${provisionalEntitlementLifetimeMs}`;
+    const withinLease = `${timestamp} >= fetched_at_ms AND ${timestamp} < valid_until_ms AND valid_until_ms - fetched_at_ms <= ${duration}`;
     const paid = `EXISTS (SELECT 1 FROM local_entitlements WHERE user_id <> '' AND user_id = (SELECT user_id FROM sync_account WHERE id = 1) AND ${withinLease} AND json_extract(response_json, '$.currentPlan') = 'Plus' AND json_extract(response_json, '$.isActive') = 1)`;
     const local = `(SELECT applying_remote FROM sync_account WHERE id = 1) = 0 AND NOT (${paid})`;
     const over = `(SELECT COUNT(*) FROM decks WHERE archived_at IS NULL) > ${freeLearningLimits.decks} OR (SELECT COUNT(*) FROM cards WHERE archived_at IS NULL) > ${freeLearningLimits.cards}`;

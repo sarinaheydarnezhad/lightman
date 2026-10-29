@@ -139,10 +139,9 @@ export function SubscriptionScreen() {
       paymentRunning.current = false;
     }
   }
-  const starts = confirmed ? (state.entitlements?.startsAtUtc ?? subscription?.startsAtUtc) : null;
-  const expires = confirmed
-    ? (state.entitlements?.expiresAtUtc ?? subscription?.expiresAtUtc)
-    : null;
+  const starts = state.entitlements?.startsAtUtc ?? (confirmed ? subscription?.startsAtUtc : null);
+  const expires =
+    state.entitlements?.expiresAtUtc ?? (confirmed ? subscription?.expiresAtUtc : null);
   const localDate = (value: string) =>
     new Date(value).toLocaleDateString(language === 'fa' ? 'fa-IR' : 'en-US', {
       year: 'numeric',

@@ -1,4 +1,4 @@
-import { Volume2, VolumeX } from 'lucide-react-native';
+import { Volume2 } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { IconButton } from '@/shared/ui/icon-button';
@@ -13,7 +13,7 @@ export function PronunciationButton({ text, language }: { text: string; language
   return (
     <View className="items-start gap-xs">
       <IconButton
-        icon={speaking ? VolumeX : Volume2}
+        icon={Volume2}
         label={t(speaking ? 'speech.stop' : 'speech.pronounce', { term: text })}
         accessibilityHint={t('speech.voiceHint')}
         accessibilityState={{ selected: speaking, busy: pronunciation.status === 'stopping' }}
@@ -21,7 +21,9 @@ export function PronunciationButton({ text, language }: { text: string; language
         onPress={() => void pronunciation.press()}
       />
       {pronunciation.error ? (
-        <FeedbackModal message={uiLanguage === 'en' ? pronunciation.error : t('common.genericError')} />
+        <FeedbackModal
+          message={uiLanguage === 'en' ? pronunciation.error : t('common.genericError')}
+        />
       ) : null}
     </View>
   );

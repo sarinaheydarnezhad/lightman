@@ -173,6 +173,31 @@ test('backup capacity errors explain the operational cleanup dependency rather t
   expect(screen.getByText('Backup failed')).toBeTruthy();
 });
 
+test.each(['en', 'fa'] as const)(
+  'missing server backup configuration is actionable in %s and never replaces the last successful timestamp',
+  async (language) => {
+    setLanguage(language);
+    jest.mocked(engine.backupStatus).mockResolvedValue({ latest: backup, lastSuccessful: backup });
+    jest
+      .mocked(engine.createBackup)
+      .mockRejectedValueOnce(new CloudError(503, undefined, undefined, 'backups_unavailable'));
+    authenticated();
+    await screen.findByText(translate(language, 'backup.completed'));
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'backup.now') }));
+    await screen.findByText(translate(language, 'backup.configurationError'));
+    expect(screen.getByText(translate(language, 'backup.failed'))).toBeTruthy();
+    expect(screen.queryByText(translate(language, 'backup.verified'))).toBeNull();
+    expect(
+      screen.getByText(
+        translate(language, 'backup.last', {
+          time: new Date(completedAtUtc).toLocaleString(language),
+        }),
+      ),
+    ).toBeTruthy();
+    expect(engine.createBackup).toHaveBeenCalledTimes(1);
+  },
+);
+
 test('an explicit status refresh resolves an uncertain failed operation using actual server completion', async () => {
   jest.mocked(engine.createBackup).mockRejectedValueOnce(new CloudError(0));
   authenticated();

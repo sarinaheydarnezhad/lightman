@@ -601,6 +601,7 @@ test('offline last-known Plus is explicitly provisional, and unknown access neve
     ),
   ).toBeTruthy();
   expect(screen.getByText(translate('en', 'access.provisional'))).toBeTruthy();
+  expect(screen.getAllByText(/Start date:|End date:/)).toHaveLength(2);
   view.unmount();
   mockAccess = new LearningAccessController({
     userId: 'owner',
@@ -665,7 +666,7 @@ test('subscription failure offers a generic retry without an access refresh butt
   render(<SubscriptionScreen />);
   await screen.findByText(translate('en', 'paywall.statusError'));
   expect(screen.queryByText('private database error')).toBeNull();
-  expect(screen.queryByText(/Start date:|End date:/)).toBeNull();
+  expect(screen.getAllByText(/Start date:|End date:/)).toHaveLength(2);
   expect(screen.queryByRole('button', { name: 'Refresh access' })).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
   await screen.findByText(/Start date:/);

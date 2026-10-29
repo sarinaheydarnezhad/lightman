@@ -10,18 +10,7 @@ import { Card } from '@/shared/ui/card';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Text } from '@/shared/ui/text';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
-
-function failureMessage(error: unknown): MessageKey {
-  if (error instanceof CloudError) {
-    if (error.code === 'backup_capacity_reached') return 'backup.capacityError';
-    if (error.status === 401) return 'backup.authError';
-    if (error.status === 0) return 'backup.networkError';
-    if (error.status === 429) return 'backup.rateError';
-    if (error.status === 503 || error.status === 404) return 'backup.unavailable';
-    if (error.status === 413) return 'backup.sizeError';
-  }
-  return 'backup.error';
-}
+import { backupFailureMessage } from './backup-failure';
 
 export function SettingsBackupCard() {
   const { t, language, number } = useLocalization();
@@ -59,7 +48,7 @@ export function SettingsBackupCard() {
         setOperation(null);
       }
     } catch (failure) {
-      if (mounted.current) setError(failureMessage(failure));
+      if (mounted.current) setError(backupFailureMessage(failure));
     } finally {
       statusRequest.current = null;
       if (mounted.current) setLoading(false);
@@ -93,12 +82,12 @@ export function SettingsBackupCard() {
         const refreshed = await syncEngine.backupStatus();
         if (mounted.current) setOverview(refreshed);
       } catch (failure) {
-        if (mounted.current) setError(failureMessage(failure));
+        if (mounted.current) setError(backupFailureMessage(failure));
       }
     } catch (failure) {
       if (mounted.current) {
         setOperation('failed');
-        setError(failureMessage(failure));
+        setError(backupFailureMessage(failure));
       }
     } finally {
       inFlight.current = false;
@@ -155,12 +144,22 @@ export function SettingsBackupCard() {
         </>
       ) : null}
       {operation === 'completed' ? (
-        <FeedbackModal message={t('backup.verified')} tone="success" onDismiss={() => setOperation(null)} />
+        <FeedbackModal
+          message={t('backup.verified')}
+          tone="success"
+          onDismiss={() => setOperation(null)}
+        />
       ) : null}
       {error ? (
-        <FeedbackModal message={t(error)} onRetry={() => void refresh()} retryLabel={t('backup.refresh')} />
+        <FeedbackModal
+          message={t(error)}
+          onRetry={() => void refresh()}
+          retryLabel={t('backup.refresh')}
+        />
       ) : null}
-      {latest?.status === 'Failed' && !error ? <FeedbackModal message={t('backup.error')} eventKey={latest} /> : null}
+      {latest?.status === 'Failed' && !error ? (
+        <FeedbackModal message={t('backup.error')} eventKey={latest} />
+      ) : null}
       <Text tone="secondary">{t('backup.coverage')}</Text>
       <Button
         label={t('backup.now')}

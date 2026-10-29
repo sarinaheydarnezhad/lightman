@@ -10,6 +10,7 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { useStartStudy, openStudySession } from './use-start-study';
+import { StudyOrderButton } from './study-order-button';
 
 export function StudyScreen() {
   const { t, language } = useLocalization();
@@ -24,10 +25,10 @@ export function StudyScreen() {
             {t('study.ready')}
           </Text>
           <Text tone="secondary">{t('study.instructions')}</Text>
-          <Button
+          <StudyOrderButton
             label={t('study.start')}
             loading={study.starting}
-            onPress={() => void study.start({ kind: 'all-decks' })}
+            onStart={(order) => void study.start({ kind: 'all-decks' }, false, order)}
           />
           <Text variant="bodySmall" tone="tertiary">
             {t('study.allDecks')}

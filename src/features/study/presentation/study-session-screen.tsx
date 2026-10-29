@@ -20,6 +20,7 @@ import { StudyCard } from './study-card';
 import { StudyControls } from './study-controls';
 import { StudyResultSummary } from './study-result-summary';
 import { useStudySessionViewModel } from './use-study-session-view-model';
+import { StudyOrderButton } from './study-order-button';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
 export function StudySessionScreen({ sessionId }: { sessionId: string }) {
@@ -121,17 +122,21 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           />
           <StudyResultSummary progress={progress} />
           {study.actionError ? (
-            <FeedbackModal message={language === 'en' ? study.actionError : t('common.genericError')} />
+            <FeedbackModal
+              message={language === 'en' ? study.actionError : t('common.genericError')}
+            />
           ) : null}
           {progress.canReviewAgain ? (
-            <Button
+            <StudyOrderButton
               label={t('review.again')}
               loading={study.reviewingAgain}
-              onPress={() => void study.reviewAgain()}
+              onStart={(order) => void study.reviewAgain(order)}
             />
           ) : null}
           {study.start.error ? (
-            <FeedbackModal message={language === 'en' ? study.start.error : t('common.genericError')} />
+            <FeedbackModal
+              message={language === 'en' ? study.start.error : t('common.genericError')}
+            />
           ) : null}
           {study.start.activeSession ? (
             <Button
@@ -147,11 +152,11 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             />
           ) : null}
           <Button label={t('study.done')} onPress={() => router.dismissTo('/analytics')} />
-          <Button
+          <StudyOrderButton
             label={t('study.again')}
             variant="secondary"
             loading={study.start.starting}
-            onPress={() => void study.start.start(session.scope, true)}
+            onStart={(order) => void study.start.start(session.scope, true, order)}
           />
         </View>
       </Screen>
@@ -232,7 +237,9 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             onSwipeAnswer={study.submitSwipe}
           />
           {study.actionError && !study.confirmExit ? (
-            <FeedbackModal message={language === 'en' ? study.actionError : t('common.genericError')} />
+            <FeedbackModal
+              message={language === 'en' ? study.actionError : t('common.genericError')}
+            />
           ) : null}
           <StudyControls
             revealed={study.revealed}

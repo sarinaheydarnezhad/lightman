@@ -13,7 +13,7 @@ export function SettingsSubscriptionCard() {
       void access.refreshIfStale().catch(() => {});
     }, [access]),
   );
-  const active = !state.provisional && state.entitlements?.isActive === true;
+  const active = state.entitlements?.isActive === true;
   return (
     <Button
       label={

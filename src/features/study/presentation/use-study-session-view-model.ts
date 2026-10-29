@@ -12,6 +12,7 @@ import type { ReviewResult } from '../domain/review';
 import type { StudySession } from '../domain/study-session';
 import type { CurrentStudyItem, StudyProgress } from '../application/create-study-use-cases';
 import { useStartStudy } from './use-start-study';
+import type { StudyOrder } from '../domain/study-order';
 
 type Phase = 'loading' | 'ready' | 'completed' | 'cancelled' | 'error';
 type BackTab = 'meaning' | 'examples';
@@ -223,23 +224,26 @@ export function useStudySessionViewModel(sessionId: string) {
     } else router.replace('/study');
   }, [session, progress, cancel]);
 
-  const reviewAgain = useCallback(async () => {
-    if (inFlight.current || !progress?.canReviewAgain) return;
-    inFlight.current = true;
-    setReviewingAgain(true);
-    setActionError(null);
-    try {
-      const retry = await application.reviewMissedCards(sessionId);
-      if (mounted.current)
-        router.replace({ pathname: '/study/[sessionId]', params: { sessionId: retry.id } });
-    } catch (cause) {
-      if (mounted.current)
-        setActionError(safeError(cause, 'Unable to review missed cards. Try again.'));
-    } finally {
-      inFlight.current = false;
-      if (mounted.current) setReviewingAgain(false);
-    }
-  }, [progress, sessionId]);
+  const reviewAgain = useCallback(
+    async (order: StudyOrder = 'random') => {
+      if (inFlight.current || !progress?.canReviewAgain) return;
+      inFlight.current = true;
+      setReviewingAgain(true);
+      setActionError(null);
+      try {
+        const retry = await application.reviewMissedCards(sessionId, order);
+        if (mounted.current)
+          router.replace({ pathname: '/study/[sessionId]', params: { sessionId: retry.id } });
+      } catch (cause) {
+        if (mounted.current)
+          setActionError(safeError(cause, 'Unable to review missed cards. Try again.'));
+      } finally {
+        inFlight.current = false;
+        if (mounted.current) setReviewingAgain(false);
+      }
+    },
+    [progress, sessionId],
+  );
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {

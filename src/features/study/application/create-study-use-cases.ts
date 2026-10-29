@@ -12,6 +12,7 @@ import type { Repositories } from '@/core/ports/repositories';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { ReviewEngine } from '../domain/review-engine';
 import { reviewResult, type ReviewResult } from '../domain/review';
+import { orderStudyQueue, type StudyOrder } from '../domain/study-order';
 import {
   validateStudyScope,
   type StudyQueueItem,
@@ -39,6 +40,7 @@ interface StudyDependencies {
   readonly reviewCard: (input: ReviewCardInput) => Promise<ReviewCardOutput>;
   readonly prepareReview: (input: ReviewCardInput) => Promise<ReviewCardOutput>;
   readonly persistence: <T>(operation: () => Promise<T>) => Promise<T>;
+  readonly random?: () => number;
 }
 
 export interface SubmitStudyAnswerInput {
@@ -59,6 +61,7 @@ export function createStudyUseCases({
   persistence,
   reviewEngine,
   assertStudyAllowed = async () => {},
+  random = Math.random,
 }: StudyDependencies) {
   const { decks, cards, reviews, sessions } = repositories;
   const submitting = new Set<string>();
@@ -133,10 +136,14 @@ export function createStudyUseCases({
 
   return {
     getStudyQueue: (input: Parameters<typeof getStudyQueue>[0]) => getStudyQueue(input),
+    previewStudyQueue: (input: Parameters<typeof getStudyQueue>[0]) => getStudyQueue(input, false),
     async getActiveStudySession(): Promise<StudySession | null> {
       return persistence(() => sessions.getActive());
     },
-    async startStudySession(scope: StudyScope): Promise<StudySession> {
+    async startStudySession(
+      scope: StudyScope,
+      order: StudyOrder = 'random',
+    ): Promise<StudySession> {
       validateStudyScope(scope);
       await assertStudyAllowed();
       if (await persistence(() => sessions.getActive()))
@@ -145,11 +152,16 @@ export function createStudyUseCases({
       const targetDate = calendarDateAtInstant(startedAt, clock.timeZone());
       const queue = await getStudyQueue({ scope, targetDate }, false);
       return persistence(() =>
-        sessions.create(createSession(ids.create(), scope, queue, startedAt)),
+        sessions.create(
+          createSession(ids.create(), scope, orderStudyQueue(queue, order, random), startedAt),
+        ),
       );
     },
     getStudySession,
-    async reviewMissedCards(sessionId: string): Promise<StudySession> {
+    async reviewMissedCards(
+      sessionId: string,
+      order: StudyOrder = 'random',
+    ): Promise<StudySession> {
       await assertStudyAllowed();
       const previous = await getStudySession(sessionId);
       if (previous.status !== 'completed' || previous.sourceSessionId)
@@ -161,20 +173,34 @@ export function createStudyUseCases({
         throw new AppError('conflict', 'Finish or cancel your current study session first.');
       const missed = previous.missedQueue ?? previous.retryQueue;
       const queue: StudyQueueItem[] = [];
+      const priorities = new Map<string, number>();
       for (const item of missed) {
         const card = await persistence(() => cards.getById(item.cardId));
         const deck = await persistence(() => decks.getById(item.deckId));
         if (card && !card.archivedAt && deck && !deck.archivedAt && card.deckId === item.deckId) {
           const state = await persistence(() => reviews.getState(card.id));
           if (!state) throw new AppError('not-found', 'Review state not found.');
+          priorities.set(card.id, reviewEngine.getQueuePriority(state, deck.reviewSystem));
           queue.push({ cardId: card.id, deckId: deck.id, dueDate: state.dueDate, box: state.box });
         }
       }
       if (!queue.length)
         throw new AppError('not-found', 'No missed cards are available to review.');
+      queue.sort(
+        (first, second) =>
+          compareIds(first.dueDate, second.dueDate) ||
+          priorities.get(first.cardId)! - priorities.get(second.cardId)! ||
+          compareIds(first.cardId, second.cardId),
+      );
       return persistence(() =>
         sessions.create(
-          createSession(ids.create(), previous.scope, queue, now(clock), previous.id),
+          createSession(
+            ids.create(),
+            previous.scope,
+            orderStudyQueue(queue, order, random),
+            now(clock),
+            previous.id,
+          ),
         ),
       );
     },

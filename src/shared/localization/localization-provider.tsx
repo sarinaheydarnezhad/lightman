@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useMemo,
+  useState,
   useSyncExternalStore,
   type PropsWithChildren,
 } from 'react';
@@ -41,7 +42,10 @@ export function LocalizationProvider({
     application.settings.subscribe,
     application.settings.snapshot,
   )?.language;
-  const language = languageOverride ?? resolveUiLanguage(tag);
+  const [savedLanguage, setSavedLanguage] = useState(() => resolveUiLanguage(tag));
+  const currentLanguage = tag ? resolveUiLanguage(tag) : savedLanguage;
+  if (currentLanguage !== savedLanguage) setSavedLanguage(currentLanguage);
+  const language = languageOverride ?? currentLanguage;
   const direction = resolveDirection(language);
   const value = useMemo<Localization>(
     () => ({

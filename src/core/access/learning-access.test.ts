@@ -1,7 +1,6 @@
 import {
   LearningAccessController,
   localLearningUsage,
-  provisionalEntitlementLifetimeMs,
   serverEntitlementCache,
 } from './learning-access';
 import { createApplication } from '@/core/application/create-application';
@@ -27,7 +26,7 @@ const owner = '11111111-1111-1111-1111-111111111111';
 const other = '22222222-2222-2222-2222-222222222222';
 const all = { kind: 'all-decks' as const };
 
-test('foreground and network event storms refresh once per minute, while explicit study remains fresh', async () => {
+test('foreground events refresh once per minute while study uses saved access', async () => {
   let now = Date.now();
   const fetch = jest.fn(async () => response(now));
   const access = new LearningAccessController({
@@ -41,11 +40,10 @@ test('foreground and network event storms refresh once per minute, while explici
   await access.refreshIfStale();
   expect(fetch).toHaveBeenCalledTimes(1);
   await access.assertAllowed('study');
-  expect(fetch).toHaveBeenLastCalledWith('study');
-  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(fetch).toHaveBeenCalledTimes(1);
   now += 60_000;
   await access.refreshIfStale();
-  expect(fetch).toHaveBeenCalledTimes(3);
+  expect(fetch).toHaveBeenCalledTimes(2);
 });
 
 test('background failures back off and permission invalidation clears the cooldown', async () => {
@@ -74,7 +72,7 @@ test('background failures back off and permission invalidation clears the cooldo
   expect(fetch).toHaveBeenCalledTimes(3);
 });
 
-test('study authorization does not piggyback on an in-flight metadata refresh', async () => {
+test('local study does not wait for an in-flight metadata refresh', async () => {
   let finish!: (value: Entitlements) => void;
   const fetch = jest
     .fn()
@@ -92,12 +90,11 @@ test('study authorization does not piggyback on an in-flight metadata refresh', 
     fetch,
   });
   const background = access.refreshIfStale();
-  await Promise.resolve();
-  await Promise.resolve();
-  const study = access.assertAllowed('study');
+  while (!fetch.mock.calls.length) await Promise.resolve();
+  await access.assertAllowed('study');
   finish(response(Date.now()));
-  await Promise.all([background, study]);
-  expect(fetch.mock.calls.map(([operation]) => operation)).toEqual([undefined, 'study']);
+  await background;
+  expect(fetch.mock.calls.map(([operation]) => operation)).toEqual([undefined]);
 });
 
 function response(time: number, plus = false, decks = 1, cards = 50): Entitlements {
@@ -158,7 +155,7 @@ test('guest has offline creation, edit and study at exactly one deck/fifty cards
 });
 
 test.each(['deck', 'card', 'study'] as const)(
-  'free authenticated %s checks server usage as well as local content',
+  'free authenticated %s uses local quantities independently of cloud usage',
   async (operation) => {
     const fetch = jest.fn(async () => response(Date.now(), false, 2, 51));
     const access = new LearningAccessController({
@@ -167,11 +164,9 @@ test.each(['deck', 'card', 'study'] as const)(
       online: async () => true,
       fetch,
     });
-    await expect(access.assertAllowed(operation)).rejects.toMatchObject({
-      code: 'free-tier-limit',
-    });
-    expect(fetch).toHaveBeenCalledWith(operation);
-    expect(access.snapshot().message).toContain('preserved');
+    await access.refresh();
+    await expect(access.assertAllowed(operation)).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(1);
   },
 );
 
@@ -193,6 +188,7 @@ test('real SQLite Plus creation and review above free limits fall back at expiry
     undefined,
     access,
   );
+  await access.refresh();
   const deck = await app.createDeck(makeDeck());
   await app.createDeck(makeDeck());
   for (let index = 0; index < 51; index++) await app.createCard({ ...makeCard(), deckId: deck.id });
@@ -206,6 +202,7 @@ test('real SQLite Plus creation and review above free limits fall back at expiry
   });
   const previousState = await app.getReviewState(item.cardId);
   active = false;
+  await access.refresh();
   for (const action of [
     () => app.getStudySnapshot(session.id),
     () => app.getCurrentStudyItem(session.id),
@@ -262,8 +259,10 @@ test('offline Plus is explicitly provisional and expires at the server-relative 
     online: async () => online,
     fetch: async () => response(start, true, 2, 51),
   });
+  await access.refresh();
   await access.assertAllowed('study');
   online = false;
+  await access.refresh();
   time = start + 59_999;
   await access.assertAllowed('study');
   expect(access.snapshot().provisional).toBe(true);
@@ -285,7 +284,7 @@ test('offline Plus is explicitly provisional and expires at the server-relative 
   await expect(free.assertAllowed('card')).rejects.toMatchObject({ code: 'free-tier-limit' });
 });
 
-test('stale responses, network errors and clock rollback cannot prolong the bounded provisional lease', async () => {
+test('stale responses and network errors preserve access until expiry; clock rollback does not grant access', async () => {
   let time = Date.now();
   const initial = time;
   const fetch = jest.fn(async () => ({
@@ -299,15 +298,17 @@ test('stale responses, network errors and clock rollback cannot prolong the boun
     online: async () => true,
     fetch,
   });
+  await access.refresh();
   await access.assertAllowed('study');
   time = initial + 1000;
   fetch.mockResolvedValue({
     ...response(initial - 1, true, 2, 51),
     expiresAtUtc: new Date(initial + 86_400_000).toISOString(),
   });
+  await access.refresh();
   await access.assertAllowed('study');
   expect(access.snapshot().provisional).toBe(true);
-  time = initial + provisionalEntitlementLifetimeMs;
+  time = initial + 86_400_000;
   await expect(access.assertAllowed('study')).rejects.toMatchObject({ code: 'free-tier-limit' });
   fetch.mockRejectedValue(new Error('network failure'));
   time = initial - 1;
@@ -329,7 +330,7 @@ test.each([401, 403])(
         throw Object.assign(new Error('Server denied access'), { status });
       },
     });
-    await expect(access.assertAllowed('study')).rejects.toMatchObject({
+    await expect(access.refresh('study')).rejects.toMatchObject({
       code: status === 403 ? 'free-tier-limit' : 'unavailable',
     });
     expect(writeCache).toHaveBeenCalledWith(null);
@@ -357,7 +358,7 @@ test('late responses after switching accounts cannot cache or expose permissions
       if (!selected) throw new Error('Account changed');
     },
   });
-  const operation = access.assertAllowed('study');
+  const operation = access.refresh('study');
   while (!fetch.mock.calls.length) await Promise.resolve();
   selected = false;
   resolve(response(Date.now(), true, 2, 51));
@@ -382,7 +383,7 @@ test('a late paid response cannot reverse a concurrent server rejection for the 
     fetch,
     writeCache,
   });
-  const request = access.assertAllowed('study');
+  const request = access.refresh('study');
   while (!fetch.mock.calls.length) await Promise.resolve();
   await access.invalidate('Server rejected this subscription.');
   resolve(response(Date.now(), true, 2, 51));
@@ -406,8 +407,10 @@ test('an identical replayed server timestamp cannot renew paid access forever', 
     online: async () => true,
     fetch: async () => paid,
   });
+  await access.refresh();
   await access.assertAllowed('study');
-  time += provisionalEntitlementLifetimeMs;
+  time += 86_400_000;
+  await access.refresh();
   await expect(access.assertAllowed('study')).rejects.toMatchObject({ code: 'free-tier-limit' });
 });
 
@@ -450,6 +453,7 @@ test('request latency cannot extend a Plus subscription past its server-relative
       };
     },
   });
+  await access.refresh();
   await expect(access.assertAllowed('study')).rejects.toMatchObject({ code: 'free-tier-limit' });
   expect(access.snapshot().entitlements).toBeNull();
   expect(access.snapshot().provisional).toBe(true);
@@ -480,6 +484,108 @@ test('account-scoped cache survives restart without authorizing guests or anothe
     code: 'free-tier-limit',
   });
   expect(await repositories.decks.list()).toHaveLength(2);
+});
+
+test('a week-old subscription and legacy cache support offline decks, study and saved answers across restarts', async () => {
+  const { database, repositories } = await sqlite(owner);
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  const paid = {
+    ...response(weekAgo, true, 2, 51),
+    expiresAtUtc: new Date(weekAgo + 30 * 86_400_000).toISOString(),
+  };
+  await writeEntitlementCache(database, owner, serverEntitlementCache(paid, weekAgo));
+  await repositories.decks.create(makeDeck());
+  await repositories.decks.create(makeDeck({ id: 'second' }));
+  for (let index = 0; index < 51; index++) {
+    await repositories.cards.create(makeCard({ id: `card-${index}` }));
+    await repositories.reviews.saveState(makeState({ cardId: `card-${index}` }));
+  }
+  // Simulate an installation upgrading from the former five-minute cache.
+  await database.execute('UPDATE local_entitlements SET valid_until_ms = fetched_at_ms + 300000');
+  const restored = await RealSqliteDatabase.open(database.handle.export());
+  await installFreeTierGuards(restored);
+  const local = createSqliteRepositories(restored);
+  const fetch = jest.fn(async (): Promise<Entitlements> => {
+    throw new Error('Backend is off');
+  });
+  const access = new LearningAccessController({
+    userId: owner,
+    usage: localLearningUsage(local),
+    readCache: () => readEntitlementCache(restored, owner),
+    online: async () => true,
+    fetch,
+  });
+  const app = createApplication(local, fixedClock, sequenceIds(), undefined, undefined, access);
+  expect((await app.getHomeSummary()).decks).toHaveLength(2);
+  const session = await app.startStudySession(all);
+  expect(session.initialQueue).toHaveLength(51);
+  const item = (await app.getCurrentStudyItem(session.id))!;
+  await app.submitStudyAnswer({
+    sessionId: session.id,
+    cardId: item.cardId,
+    presentationId: item.presentationId,
+    result: 'success',
+  });
+  await app.createDeck(makeDeck({ name: 'Offline deck' }));
+  expect(fetch).not.toHaveBeenCalled();
+  await access.refresh();
+  await expect(access.assertAllowed('study')).resolves.toBeUndefined();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  const next = await RealSqliteDatabase.open(restored.handle.export());
+  await installFreeTierGuards(next);
+  const nextRepositories = createSqliteRepositories(next);
+  const nextAccess = new LearningAccessController({
+    userId: owner,
+    usage: localLearningUsage(nextRepositories),
+    readCache: () => readEntitlementCache(next, owner),
+  });
+  const nextApp = createApplication(
+    nextRepositories,
+    fixedClock,
+    sequenceIds(),
+    undefined,
+    undefined,
+    nextAccess,
+  );
+  expect((await nextApp.getHomeSummary()).decks).toHaveLength(3);
+  expect((await nextApp.getStudySnapshot(session.id)).progress.completed).toBe(1);
+  expect(await nextApp.getReviewState(item.cardId)).toMatchObject({ totalReviews: 1 });
+});
+
+test('legacy Free status remains available offline after upgrading the five-minute cache', async () => {
+  const { database } = await sqlite(owner);
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  await writeEntitlementCache(database, owner, serverEntitlementCache(response(weekAgo), weekAgo));
+  await database.execute('UPDATE local_entitlements SET valid_until_ms = fetched_at_ms + 300000');
+  await installFreeTierGuards(database);
+  const access = new LearningAccessController({
+    userId: owner,
+    usage: async () => ({ decks: 1, cards: 50 }),
+    readCache: () => readEntitlementCache(database, owner),
+  });
+  await access.assertAllowed('study');
+  expect(access.snapshot().entitlements?.currentPlan).toBe('Free');
+  await expect(access.assertAllowed('deck')).rejects.toMatchObject({ code: 'free-tier-limit' });
+});
+
+test('SQLite and local access use the same expiry for server timestamps with fractional seconds', async () => {
+  const { database, repositories } = await sqlite(owner);
+  const now = Date.now();
+  const base = new Date(now).toISOString().slice(0, 19);
+  const paid = {
+    ...response(now, true),
+    startsAtUtc: new Date(now - 86_400_000).toISOString(),
+    validatedAtUtc: `${base}.9995000Z`,
+    expiresAtUtc: `${new Date(now + 86_400_000).toISOString().slice(0, 19)}.0001000Z`,
+  };
+  const cache = serverEntitlementCache(paid, now);
+  await writeEntitlementCache(database, owner, cache);
+  await repositories.decks.create(makeDeck());
+  await repositories.decks.create(makeDeck({ id: 'second' }));
+  await database.execute('UPDATE local_entitlements SET valid_until_ms = fetched_at_ms + 300000');
+  await installFreeTierGuards(database);
+  expect((await readEntitlementCache(database, owner))?.validUntil).toBe(cache.validUntil);
+  await repositories.decks.create(makeDeck({ id: 'third' }));
 });
 
 test('SQLite cache writers cannot renew a replayed lease or overwrite a newer free response, including competing writers', async () => {
@@ -541,6 +647,10 @@ test('bulk import preflight rejects an over-limit dataset without partial conten
   await expect(transfer.confirm(preview)).rejects.toMatchObject({ code: 'free-tier-limit' });
   expect(await repositories.cards.countByDeck('deck-1')).toBe(49);
   await repositories.decks.create(makeDeck({ id: 'legacy-excess' }));
+  expect((await app.getHomeSummary()).decks).toHaveLength(2);
+  expect(await app.previewStudyQueue({ scope: all, targetDate: makeState().dueDate })).toHaveLength(
+    49,
+  );
   await expect(app.startStudySession(all)).rejects.toMatchObject({ code: 'free-tier-limit' });
   await expect(
     app.getStudyQueue({ scope: all, targetDate: makeState().dueDate }),

@@ -169,6 +169,10 @@ export const en = {
     'Stored backup capacity is reached. Contact support to clean up expired backup artifacts; your learning data was not deleted.',
   'backup.unavailable':
     'Server backup is unavailable. Retry later or contact support to check backup configuration.',
+  'backup.configurationError':
+    'Cloud backup is not set up on the server. Your data remains on this device. Contact support, then retry.',
+  'migration.settingsConflict':
+    'Saved account settings differ from this device. Choose which settings to keep to finish connecting. Your learning data will be preserved.',
   'backup.sizeError':
     'Account data exceeds the server backup size limit. Contact support; your data was not deleted.',
   'migration.backupSafety':
@@ -490,6 +494,11 @@ export const en = {
   'study.instructions':
     'Tap a card to flip between its front and answer, then choose Success or Failure. Missed cards get one more try at the end.',
   'study.start': 'Start study',
+  'study.order.choose': 'Choose study order',
+  'study.order.default': 'Start in random order',
+  'study.order.random': 'Random',
+  'study.order.in-order': 'In order',
+  'study.order.reverse': 'Reverse',
   'study.resume': 'Resume session',
   'study.session': 'Study session',
   'study.correctAnswers': 'Correct Answers: {count}',
@@ -963,6 +972,10 @@ export const fa: Dictionary = {
     'ظرفیت پشتیبان‌ها پر است. برای پاک‌سازی پشتیبان‌های منقضی‌شده با پشتیبانی تماس بگیرید؛ داده‌های یادگیری حذف نشده‌اند.',
   'backup.unavailable':
     'پشتیبان سرور در دسترس نیست. بعداً تلاش کنید یا برای بررسی تنظیمات با پشتیبانی تماس بگیرید.',
+  'backup.configurationError':
+    'پشتیبان ابری در سرور راه‌اندازی نشده است. داده‌های شما در این دستگاه باقی می‌ماند. با پشتیبانی تماس بگیرید و سپس دوباره تلاش کنید.',
+  'migration.settingsConflict':
+    'تنظیمات ذخیره‌شدهٔ حساب با این دستگاه متفاوت است. برای تکمیل اتصال، تنظیماتی را که می‌خواهید نگه دارید انتخاب کنید. داده‌های یادگیری شما حفظ می‌شود.',
   'backup.sizeError':
     'حجم داده‌ها از حد پشتیبان سرور بیشتر است. با پشتیبانی تماس بگیرید؛ داده‌ای حذف نشده است.',
   'migration.backupSafety':
@@ -1275,6 +1288,11 @@ export const fa: Dictionary = {
   'study.instructions':
     '۱. روی کارت ضربه بزنید تا پاسخ نمایش داده شود.\n۲. گزینه «می‌دانم» یا «نمی‌دانم» را انتخاب کنید.\n۳. کارت‌های فراموش‌شده به انتهای صف منتقل می‌شوند تا دوباره تکرار شوند.',
   'study.start': 'شروع مطالعه',
+  'study.order.choose': 'انتخاب ترتیب مطالعه',
+  'study.order.default': 'شروع با ترتیب تصادفی',
+  'study.order.random': 'تصادفی',
+  'study.order.in-order': 'به‌ترتیب',
+  'study.order.reverse': 'معکوس',
   'study.resume': 'ادامهٔ جلسه',
   'study.session': 'جلسهٔ مطالعه',
   'study.correctAnswers': 'پاسخ‌های درست: {count}',

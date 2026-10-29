@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { Volume2, VolumeX } from 'lucide-react-native';
 
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { speech } from '@/core/composition/speech';
@@ -46,6 +47,8 @@ test('StudyCard has a labelled audio action for only the front term in RTL', asy
   );
   expect(screen.getByRole('button', { name: 'Stop pronunciation of کتاب' })).toBeTruthy();
   expect(speech.speak).toHaveBeenCalledTimes(1);
+  expect(screen.UNSAFE_getByType(Volume2)).toBeTruthy();
+  expect(screen.UNSAFE_queryByType(VolumeX)).toBeNull();
 });
 
 test('pressing while speaking stops; next press starts again without stacking requests', async () => {

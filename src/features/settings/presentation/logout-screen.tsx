@@ -10,6 +10,8 @@ import { Card } from '@/shared/ui/card';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { LoadingState } from '@/shared/ui/loading-state';
+import { backupFailureMessage } from './backup-failure';
+import { CloudError } from '@/core/sync/cloud-client';
 
 export function LogoutScreen() {
   const { t } = useLocalization();
@@ -40,7 +42,13 @@ export function LogoutScreen() {
       if (mounted.current) router.replace('/(tabs)/settings');
     } catch (failure) {
       if (mounted.current)
-        setError(failure instanceof Error ? failure.message : t('logout.backupFailed'));
+        setError(
+          failure instanceof CloudError
+            ? t(backupFailureMessage(failure))
+            : failure instanceof Error
+              ? failure.message
+              : t('logout.backupFailed'),
+        );
     } finally {
       submitting.current = false;
       if (mounted.current) setBusy(false);

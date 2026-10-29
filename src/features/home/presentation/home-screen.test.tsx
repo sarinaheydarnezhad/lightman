@@ -80,7 +80,7 @@ test.each([
       : [palette.dark.achievement, palette.dark.achievement],
   );
   fireEvent.press(screen.getByRole('button', { name: translate(language, 'study.start') }));
-  expect(mockStart).toHaveBeenCalledWith({ kind: 'all-decks' });
+  expect(mockStart).toHaveBeenCalledWith({ kind: 'all-decks' }, false, 'random');
   fireEvent.press(
     screen.getByRole('button', { name: translate(language, 'home.openDeck', { name: 'Aaa' }) }),
   );

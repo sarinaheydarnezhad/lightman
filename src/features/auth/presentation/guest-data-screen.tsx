@@ -49,6 +49,7 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<TransferProgress | null>(null);
   const [error, setError] = useState('');
+  const [settingsConflict, setSettingsConflict] = useState<string | null>(null);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const mounted = useRef(true);
@@ -69,6 +70,7 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
     submitting.current = true;
     setBusy(true);
     setError('');
+    setSettingsConflict(null);
     setProgress(null);
     try {
       if (!guestTransfer) throw new Error(t('migration.unavailable'));
@@ -82,13 +84,36 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
         openAccount();
       }
     } catch (failure) {
-      if (mounted.current)
+      const status = await syncEngine?.status().catch(() => null);
+      if (mounted.current) {
+        setSettingsConflict(
+          status?.conflicts.find((conflict) => conflict.entityType === 'settings')?.operationId ??
+            null,
+        );
         setError(guestTransferFeedback(failure, language, t, 'migration.failure'));
+      }
     } finally {
       submitting.current = false;
       if (mounted.current) setBusy(false);
     }
   }, [t, language, openAccount]);
+
+  const resolveSettings = async (choice: 'server' | 'local') => {
+    if (submitting.current || !settingsConflict || !syncEngine) return;
+    submitting.current = true;
+    setBusy(true);
+    try {
+      await syncEngine.resolve(settingsConflict, choice);
+    } catch (failure) {
+      if (mounted.current)
+        setError(guestTransferFeedback(failure, language, t, 'migration.failure'));
+      return;
+    } finally {
+      submitting.current = false;
+      if (mounted.current) setBusy(false);
+    }
+    if (mounted.current) await load();
+  };
 
   useEffect(() => {
     mounted.current = true;
@@ -203,6 +228,22 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
             >
               {error !== t('migration.failure') ? (
                 <Text tone="secondary">{t('migration.failure')}</Text>
+              ) : null}
+              {settingsConflict ? (
+                <View className="gap-sm">
+                  <Text>{t('migration.settingsConflict')}</Text>
+                  <Button
+                    label={t('sync.keepServer')}
+                    disabled={busy}
+                    onPress={() => void resolveSettings('server')}
+                  />
+                  <Button
+                    label={t('sync.keepLocal')}
+                    variant="secondary"
+                    disabled={busy}
+                    onPress={() => void resolveSettings('local')}
+                  />
+                </View>
               ) : null}
             </FeedbackModal>
           ) : null}

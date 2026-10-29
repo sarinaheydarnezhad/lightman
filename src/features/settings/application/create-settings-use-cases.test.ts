@@ -50,13 +50,13 @@ test('UI language saves independently of speech and replaces an active localized
   await settings.setReminderEnabled(true);
   expect(notifications.scheduleDailyReminder).toHaveBeenLastCalledWith('09:00', 'fa');
   notifications.scheduleDailyReminder.mockRejectedValueOnce(new Error('native failure'));
-  await expect(settings.setLanguage(languageTag('ar'))).rejects.toMatchObject({
+  await expect(settings.setLanguage(languageTag('en'))).rejects.toMatchObject({
     code: 'unavailable',
   });
   expect(settings.snapshot()?.language).toBe('fa');
-  await settings.setLanguage(languageTag('ar'));
-  expect(notifications.scheduleDailyReminder).toHaveBeenLastCalledWith('09:00', 'ar');
-  expect(settings.snapshot()?.language).toBe('ar');
+  await settings.setLanguage(languageTag('en'));
+  expect(notifications.scheduleDailyReminder).toHaveBeenLastCalledWith('09:00', 'en');
+  expect(settings.snapshot()?.language).toBe('en');
 });
 
 test('theme, haptics and speech writes update the repository and dependent service reads immediately', async () => {
