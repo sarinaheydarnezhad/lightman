@@ -1,12 +1,22 @@
 import { useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, Shuffle } from 'lucide-react-native';
-import { Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { StudyOrder } from '../domain/study-order';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors } from '@/shared/theme/theme-provider';
-import { radii } from '@/shared/theme/tokens';
-import { Button } from '@/shared/ui/button';
+import { heights, interaction, radii } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
 
 const choices = [
@@ -14,6 +24,34 @@ const choices = [
   { order: 'in-order', icon: ArrowDown },
   { order: 'reverse', icon: ArrowUp },
 ] as const;
+
+// Keep layout in concrete styles: NativeWind can discard Pressable style callbacks.
+function InteractiveSurface({
+  activeColor,
+  style,
+  disabled,
+  ...props
+}: Omit<PressableProps, 'style'> & { activeColor: string; style?: StyleProp<ViewStyle> }) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  return (
+    <Pressable
+      {...props}
+      disabled={disabled}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
+        style,
+        !disabled && (hovered || focused || pressed) && { backgroundColor: activeColor },
+      ]}
+    />
+  );
+}
 
 export function StudyOrderButton({
   label,
@@ -37,10 +75,21 @@ export function StudyOrderButton({
   const [bounds, setBounds] = useState({ x: 16, y: 16, width: 0, height: 0 });
   const rtl = direction === 'rtl';
   const unavailable = loading || disabled;
-  const menuWidth = Math.min(240, window.width - 32);
-  const rowHeight = Math.max(52, 32 + 22 * window.fontScale);
+  const background = disabled
+    ? colors.surfaceElevated
+    : variant === 'primary'
+      ? colors.primary
+      : colors.surface;
+  const foreground = disabled
+    ? colors.disabled
+    : variant === 'primary'
+      ? colors.primaryForeground
+      : colors.primaryText;
+  const activeColor = variant === 'primary' ? colors.primaryPressed : colors.surfaceElevated;
+  const menuWidth = Math.min(Math.max(bounds.width, 240), 320, window.width - 32);
+  const rowHeight = Math.max(56, 24 + 23 * window.fontScale);
   const menuHeight = Math.min(
-    choices.length * rowHeight + 12,
+    choices.length * rowHeight + 16 + 18 * window.fontScale + 16,
     window.height - insets.top - insets.bottom - 16,
   );
   const bottom = bounds.y + bounds.height + 8;
@@ -60,55 +109,57 @@ export function StudyOrderButton({
       setBounds({ x, y, width, height });
     });
   return (
-    <View ref={anchor} collapsable={false} onLayout={measure}>
-      <View style={{ flexDirection: rtl ? 'row-reverse' : 'row', alignItems: 'stretch' }}>
-        <Button
-          label={label}
-          variant={variant}
-          loading={loading}
-          disabled={disabled}
+    <View ref={anchor} collapsable={false} onLayout={measure} style={styles.container}>
+      <View
+        style={[
+          styles.splitButton,
+          {
+            flexDirection: rtl ? 'row-reverse' : 'row',
+            backgroundColor: background,
+            borderColor: variant === 'primary' && !disabled ? colors.primary : colors.border,
+            opacity: disabled ? interaction.disabledOpacity : 1,
+          },
+        ]}
+      >
+        <InteractiveSurface
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityState={{ disabled: unavailable, busy: loading }}
           accessibilityHint={t('study.order.default')}
+          disabled={unavailable}
+          activeColor={activeColor}
           onPress={() => onStart('random')}
-          style={{
-            flex: 1,
-            ...(rtl
-              ? { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
-              : { borderTopRightRadius: 0, borderBottomRightRadius: 0 }),
-          }}
+          style={[styles.startAction, { flexDirection: rtl ? 'row-reverse' : 'row' }]}
+        >
+          {loading ? <ActivityIndicator size="small" color={foreground} /> : null}
+          <Text variant="labelLarge" align="center" style={{ color: foreground, flexShrink: 1 }}>
+            {label}
+          </Text>
+        </InteractiveSurface>
+        <View
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.separator, { backgroundColor: foreground }]}
         />
-        <Button
-          label={t('study.order.choose')}
-          icon={ChevronDown}
-          iconOnly
-          variant={variant}
+        <InteractiveSurface
+          accessibilityRole="button"
+          accessibilityLabel={t('study.order.choose')}
           accessibilityHint={label}
+          aria-haspopup="menu"
           accessibilityState={{ expanded: open, disabled: unavailable }}
-          disabled={disabled}
-          loading={loading}
+          disabled={unavailable}
+          activeColor={activeColor}
           onPress={() => {
             measure();
             setOpen(true);
           }}
-          style={{
-            width: 52,
-            flexShrink: 0,
-            ...(rtl
-              ? {
-                  borderTopLeftRadius: radii.md,
-                  borderBottomLeftRadius: radii.md,
-                  borderTopRightRadius: 0,
-                  borderBottomRightRadius: 0,
-                  borderRightWidth: 0,
-                }
-              : {
-                  borderTopRightRadius: radii.md,
-                  borderBottomRightRadius: radii.md,
-                  borderTopLeftRadius: 0,
-                  borderBottomLeftRadius: 0,
-                  borderLeftWidth: 0,
-                }),
-          }}
-        />
+          style={styles.orderAction}
+        >
+          <ChevronDown
+            size={22}
+            color={foreground}
+            style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
+          />
+        </InteractiveSurface>
       </View>
       <Modal
         visible={open && !unavailable}
@@ -124,23 +175,31 @@ export function StudyOrderButton({
             onPress={() => setOpen(false)}
           />
           <View
+            accessibilityRole="menu"
             accessibilityLabel={t('study.order.choose')}
             style={{
               position: 'absolute',
               top,
               left,
               width: menuWidth,
-              paddingVertical: 6,
+              padding: 8,
               backgroundColor: colors.surface,
               borderColor: colors.border,
               borderWidth: 1,
-              borderRadius: radii.sm,
-              boxShadow: '0 6px 24px rgba(0, 0, 0, 0.16)',
+              borderRadius: radii.md,
+              boxShadow: '0 12px 32px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.12)',
             }}
           >
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: menuHeight - 12 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: menuHeight - 16 }}>
+              <Text
+                variant="caption"
+                tone="secondary"
+                style={{ paddingHorizontal: 12, paddingVertical: 8 }}
+              >
+                {t('study.order.choose')}
+              </Text>
               {choices.map(({ order, icon: Icon }) => (
-                <Pressable
+                <InteractiveSurface
                   key={order}
                   accessibilityRole="menuitem"
                   accessibilityLabel={t(`study.order.${order}`)}
@@ -148,17 +207,26 @@ export function StudyOrderButton({
                     setOpen(false);
                     onStart(order);
                   }}
-                  style={({ pressed }) => ({
+                  activeColor={colors.surfaceElevated}
+                  style={{
                     flexDirection: rtl ? 'row-reverse' : 'row',
                     alignItems: 'center',
                     gap: 12,
-                    paddingHorizontal: 16,
+                    paddingHorizontal: 12,
+                    paddingVertical: 10,
                     minHeight: rowHeight,
-                    backgroundColor: pressed ? colors.surfaceElevated : colors.surface,
-                  })}
+                    borderRadius: radii.sm,
+                  }}
                 >
-                  <Icon size={20} color={colors.primary} />
+                  <View
+                    style={[styles.icon, { backgroundColor: colors.primarySoft }]}
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    <Icon size={20} color={colors.primary} />
+                  </View>
                   <Text
+                    variant="bodyMedium"
+                    weight="medium"
                     style={{
                       color: colors.primaryText,
                       flex: 1,
@@ -167,7 +235,7 @@ export function StudyOrderButton({
                   >
                     {t(`study.order.${order}`)}
                   </Text>
-                </Pressable>
+                </InteractiveSurface>
               ))}
             </ScrollView>
           </View>
@@ -176,3 +244,26 @@ export function StudyOrderButton({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { width: '100%', alignSelf: 'stretch' },
+  splitButton: {
+    alignItems: 'stretch',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: radii.md,
+    minHeight: heights.button,
+  },
+  startAction: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  orderAction: { width: 56, alignItems: 'center', justifyContent: 'center' },
+  separator: { width: 1, marginVertical: 14, opacity: 0.2 },
+  icon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+});
