@@ -11,7 +11,7 @@ const purchase: MyketPurchase = {
   token: 'paid-token',
   developerPayload: 'server-nonce',
   purchaseState: 0,
-  packageName: 'com.example.lerona',
+  packageName: 'com.lerona.app',
   originalJson: '{}',
   signature: 'signed',
   itemType: 'inapp',

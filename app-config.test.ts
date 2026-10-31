@@ -35,7 +35,7 @@ describe('native release configuration', () => {
 
   it('pins Android release settings, enables shrinking and blocks broad storage permissions', () => {
     expect(appConfig.expo.android).toMatchObject({
-      package: 'com.example.lerona',
+      package: 'com.lerona.app',
       versionCode: 1,
       allowBackup: false,
       blockedPermissions: [

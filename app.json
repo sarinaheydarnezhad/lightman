@@ -30,7 +30,7 @@
       }
     },
     "android": {
-      "package": "com.example.lerona",
+      "package": "com.lerona.app",
       "versionCode": 1,
       "allowBackup": false,
       "blockedPermissions": [

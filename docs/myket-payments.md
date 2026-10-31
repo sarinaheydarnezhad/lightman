@@ -22,7 +22,7 @@ Configure these values privately in backend deployment environment settings:
 
 ```text
 Payments__Myket__Enabled=true
-Payments__Myket__PackageName=<exact package reserved in Myket>
+Payments__Myket__PackageName=com.lerona.app
 Payments__Myket__PublicKey=<base64 RSA public key from Myket>
 Payments__Myket__AccessToken=<Myket server verification API access token>
 Payments__Myket__Products__1=<one-month SKU>
@@ -45,7 +45,7 @@ Authenticated, no-store routes:
 
 ## Android setup
 
-The package in `app.json` remains `com.example.lerona`. Confirm it is the package you reserved; change it deliberately before the first release if necessary. The backend package must match the installed application ID. Configure your real production signing credentials; this change does not create signing keys or change an existing app identity.
+The Android package in `app.json` is `com.lerona.app`. Reserve this package in Myket and configure its products, public key and server verification access token. The backend package must match the installed application ID. Configure your real production signing credentials; this change does not create signing keys. Existing installations of `com.example.lerona` have a separate app identity and purchase history; see [Android package migration](android-package-migration.md) before switching a live backend.
 
 `app.config.js` now registers the plugin as a proper plugin/options tuple regardless of Google iOS configuration. The plugin preserves other plugins, manifest placeholders and Android queries, and adds the Myket billing permission/package visibility. It registers the official Myket Maven repository for every Android project, restricted to the `ir.myket` group; declaring it only in the SDK module does not resolve the application's transitive billing dependency.
 
