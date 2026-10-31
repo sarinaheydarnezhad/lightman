@@ -5,7 +5,6 @@ import { View } from 'react-native';
 
 import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { deckLanguageLabel } from '@/shared/localization/localization';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -120,7 +119,6 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
             />
             <Text variant="labelLarge">{t('details.deckSettings')}</Text>
             <Text tone="secondary">
-              {deckLanguageLabel(deck.language, language)} ·{' '}
               {t(`form.alignment.${deck.textAlignment}`)} · {t(`form.size.${deck.typographySize}`)}
             </Text>
             <Text tone="tertiary" variant="caption">
