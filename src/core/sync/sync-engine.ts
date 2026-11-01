@@ -74,8 +74,8 @@ export class SyncEngine {
     return this.readAccount((cloud) => cloud.backupStatus());
   }
 
-  planCatalog() {
-    return this.cloud.planCatalog();
+  planCatalog(force = false) {
+    return this.cloud.planCatalog(force);
   }
 
   subscription() {

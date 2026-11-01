@@ -1,5 +1,10 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
+  'payment.nativeMissing':
+    'This app version does not include Myket billing. Install the latest Android version to purchase.',
+  'payment.appUpdateRequired': 'Update the Android app to purchase through Myket.',
+  'payment.serverUnavailable':
+    'Myket purchases are temporarily unavailable on the server. Try again later.',
   'payment.hint':
     'Pay securely in Myket. This is a one-time purchase for the selected period, not an auto-renewing subscription.',
   'payment.recover': 'Recover purchases',
@@ -805,6 +810,11 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'payment.nativeMissing':
+    'این نسخه از برنامه پرداخت مایکت ندارد. برای خرید، جدیدترین نسخه اندروید را نصب کنید.',
+  'payment.appUpdateRequired': 'برای خرید از مایکت، برنامه اندروید را به‌روزرسانی کنید.',
+  'payment.serverUnavailable':
+    'خرید از مایکت در سرور موقتاً در دسترس نیست. بعداً دوباره تلاش کنید.',
   'payment.hint':
     'پرداخت امن در مایکت. این خرید یک‌باره برای مدت انتخاب‌شده است و تمدید خودکار ندارد.',
   'payment.recover': 'بازیابی خریدها',

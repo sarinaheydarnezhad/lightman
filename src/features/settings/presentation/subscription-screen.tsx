@@ -59,7 +59,7 @@ export function SubscriptionScreen() {
   const catalog = useFocusedResource(
     useCallback(async () => {
       if (!syncEngine?.available) throw new Error('Cloud unavailable');
-      return syncEngine.planCatalog();
+      return syncEngine.planCatalog(true);
     }, []),
   );
   const details = useFocusedResource(
@@ -95,6 +95,11 @@ export function SubscriptionScreen() {
   const confirmed = !details.loading && !details.error && !state.provisional;
   const paymentAvailable =
     catalog.data?.purchaseSupported === true && plus?.isPurchasable === true && myketSupported();
+  const paymentUnavailableReason: MessageKey = !myketSupported()
+    ? 'payment.nativeMissing'
+    : plus?.unavailableReason === 'app_update_required'
+      ? 'payment.appUpdateRequired'
+      : 'payment.serverUnavailable';
 
   async function pay(months: number | null) {
     if (paymentRunning.current || !syncEngine || !access.isAccount || !paymentAvailable) return;
@@ -322,17 +327,17 @@ export function SubscriptionScreen() {
               loading={paymentBusy}
               onPress={() => void pay(selected?.durationMonths ?? null)}
             />
-            {!paymentAvailable ? (
+            {!paymentAvailable && !catalog.loading && !catalog.error ? (
               <View className="gap-sm rounded-md bg-primarySoft p-md">
                 <Text variant="bodySmall" tone="secondary">
-                  {t('paywall.providerMissing')}
+                  {t(paymentUnavailableReason)}
                 </Text>
               </View>
-            ) : (
+            ) : paymentAvailable ? (
               <Text variant="bodySmall" tone="secondary">
                 {t('payment.hint')}
               </Text>
-            )}
+            ) : null}
           </Card>
         ) : null}
 

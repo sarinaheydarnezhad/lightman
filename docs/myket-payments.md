@@ -56,6 +56,10 @@ SDK 2.2.0's published Android build script expects its own root version catalog 
 
 After dependency installation, run `npx expo prebuild --platform android --no-install`, then rebuild the native app. Do not use `--clean` unless you intend to regenerate native files and have preserved custom native changes. An existing installation or Expo Go cannot gain native billing through a JavaScript-only update.
 
+For local release builds, use `npm run android:release`. This runs prebuild before `expo run:android --variant release --no-bundler --no-build-cache`. Running only `expo run:android` when `android/` already exists does not reapply config plugins; disabling the build cache does not change that. The prebuild step applies the Myket permissions, Maven repository and SDK compatibility shim. The command does not pass `--clean`; Expo may still regenerate a native project it detects as malformed.
+
+The paywall requests a fresh catalog on entry/retry and distinguishes a missing native billing module, a server-required app update and disabled server payments. A successful build does not by itself verify a real checkout; inspect the displayed reason if buying remains disabled.
+
 ## Release acceptance and limitations
 
 No live charge, console product creation, API credential provisioning, production migration, deployment or refund has been performed. Before enabling production payments, test on a Myket-equipped device using the reserved, correctly signed app: all three periods, cancellation, missing Myket, interrupted checkout, offline verification, interrupted consumption, process death/restart, original-account recovery, account switching, repeated taps and concurrent devices. Check the actual store prices/currency and exactly-once activation in SQL Server.

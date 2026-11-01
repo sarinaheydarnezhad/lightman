@@ -144,6 +144,57 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 test.each(['en', 'fa'] as const)(
+  'enabled server with missing native billing explains the required app update in %s',
+  async (locale) => {
+    language(locale);
+    account();
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      purchaseSupported: true,
+      plans: catalog.plans.map((plan) =>
+        plan.plan === 'Plus' ? { ...plan, isPurchasable: true } : plan,
+      ),
+    });
+    render(<SubscriptionScreen />);
+    expect(await screen.findByText(translate(locale, 'payment.nativeMissing'))).toBeTruthy();
+    expect(engine.planCatalog).toHaveBeenCalledWith(true);
+    expect(
+      screen.getByRole('button', {
+        name: translate(locale, 'paywall.purchaseUnavailable'),
+      }),
+    ).toBeDisabled();
+    expect(myketPayments.run).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['payment_provider_not_configured', 'app_update_required'])(
+  'native billing with server restriction %s shows the server reason',
+  async (reason) => {
+    account();
+    jest.mocked(myketSupported).mockReturnValue(true);
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      plans: catalog.plans.map((plan) =>
+        plan.plan === 'Plus' ? { ...plan, unavailableReason: reason } : plan,
+      ),
+    });
+    render(<SubscriptionScreen />);
+    expect(
+      await screen.findByText(
+        translate(
+          'en',
+          reason === 'app_update_required'
+            ? 'payment.appUpdateRequired'
+            : 'payment.serverUnavailable',
+        ),
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(translate('en', 'payment.nativeMissing'))).toBeNull();
+    expect(myketPayments.run).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['en', 'fa'] as const)(
   'configured Myket checkout requires login and uses the selected server duration in %s',
   async (locale) => {
     language(locale);
@@ -435,7 +486,7 @@ test('no provider means no purchase request, activation, simulated cancellation 
   fireEvent.press(purchase);
   fireEvent.press(purchase);
   fireEvent.press(screen.getByTestId('plus-plan-12'));
-  expect(screen.getByText(/does not charge you or activate Plus/)).toBeTruthy();
+  expect(screen.getByText(translate('en', 'payment.nativeMissing'))).toBeTruthy();
   expect(screen.getByText('Premium is not available to all users right now.')).toBeTruthy();
   expect(screen.queryByRole('button', { name: /Premium/ })).toBeNull();
   expect(engine.subscription).not.toHaveBeenCalled();
