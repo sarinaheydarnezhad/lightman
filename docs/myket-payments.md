@@ -18,23 +18,26 @@ Cancellation is handled only for explicit Myket cancellation codes. Unknown fail
 
 ## Server setup required
 
-Configure these values privately in backend deployment environment settings:
+The Myket RSA public key is configured in the backend's `Flashcards.Api/appsettings.json` and `publish/appsettings.json`. The app receives it from the authenticated backend configuration endpoint. `Payments__Myket__PublicKey` can override it for a different Myket application.
+
+Configure the remaining values privately in backend deployment environment settings:
 
 ```text
 Payments__Myket__Enabled=true
 Payments__Myket__PackageName=com.lerona.app
-Payments__Myket__PublicKey=<base64 RSA public key from Myket>
 Payments__Myket__AccessToken=<Myket server verification API access token>
-Payments__Myket__Products__1=<one-month SKU>
-Payments__Myket__Products__6=<six-month SKU>
-Payments__Myket__Products__12=<twelve-month SKU>
+Payments__Myket__Products__1=lerona_plus_1month
+Payments__Myket__Products__6=lerona_plus_6months
+Payments__Myket__Products__12=lerona_plus_12months
 ```
 
 `AccessToken` is a secret: never put it in `EXPO_PUBLIC_*`, mobile code, source control or chat. Only the public key, package and SKU list are returned to authenticated clients. Verification uses POST to `https://developer.myket.ir/api/partners/applications/{package}/purchases/products/{sku}/verify`, header `X-Access-Token`, and JSON `{ "tokenId": "..." }`. Header logging is redacted and purchase tokens are not stored in plaintext.
 
 Official contract checked on October 26, 2026: `https://myket.ir/kb/pages/server-to-server-payment-validation-api/`. React Native instructions: `https://myket.ir/kb/pages/adding-inapp-purchase-in-react-native/`.
 
-Apply backend migration `20261026120851_AddMyketOrders` and deploy the updated API before enabling payments. The migration is additive and has not been applied to a live database. Existing deployments that only contain the old read-only subscription API cannot process these purchases. Rebuild/publish the backend rather than uploading an old `backend/publish` folder.
+For a new backend deployment, apply migration `20261026120851_AddMyketOrders` and deploy the updated API before enabling payments. Existing deployments that only contain the old read-only subscription API cannot process these purchases. Rebuild/publish the backend rather than uploading an old `backend/publish` folder.
+
+On November 1, 2026, the live backend was confirmed to already have this migration and its purchase ledger. Myket credentials and the product IDs above were configured in Liara's private backend environment, and billing was enabled. The production catalog at `https://lerona-app.com/api/v1/plans` with `X-Lerona-Payments: myket-v1` offers all three Plus periods. No real checkout was performed; verify the provider token, product availability and fulfillment on a signed Android build with Myket installed.
 
 Authenticated, no-store routes:
 
