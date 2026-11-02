@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { syncEngine } from '@/core/composition/sync';
 import type { StorageState } from '@/core/storage/local-storage-scopes';
@@ -147,7 +147,10 @@ test.each([
   const subscription = screen.getByRole('button', {
     name: translate(language, 'subscription.title'),
   });
-  expect(subscription.props.className.split(' ')).toContain('bg-surface');
+  expect(subscription.props.className.split(' ')).toContain('bg-primary');
+  expect(
+    within(subscription).getByText(translate(language, 'subscription.title')).props.className.split(' '),
+  ).toContain('text-primaryForeground');
   fireEvent.press(subscription);
   expect(router.push).toHaveBeenCalledWith('/settings/subscription');
   expect(
@@ -221,7 +224,12 @@ test('logout remains available from the compact account card', async () => {
   render(<SettingsAccountCard />);
   await screen.findByText(account.phoneNumber!);
   expect(screen.queryByRole('button', { name: 'Log In / Sign Up' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Log Out' }));
+  const logout = screen.getByRole('button', { name: 'Log Out' });
+  expect(logout.props.className.split(' ')).toContain('bg-error');
+  expect(within(logout).getByText('Log Out').props.className.split(' ')).toContain(
+    'text-errorForeground',
+  );
+  fireEvent.press(logout);
   expect(router.push).toHaveBeenCalledWith('/settings/logout');
 });
 
@@ -313,7 +321,7 @@ test.each([false, true])(
     await screen.findByText(account.phoneNumber!);
     const label = paid ? 'Subscription (Plus)' : 'Subscription';
     const button = await screen.findByRole('button', { name: label });
-    expect(button.props.className.split(' ')).toContain(paid ? 'bg-primary' : 'bg-surface');
+    expect(button.props.className.split(' ')).toContain('bg-primary');
     expect(screen.queryByTestId('feedback-modal')).toBeNull();
   },
 );
@@ -336,7 +344,7 @@ test('entitlement invalidation removes the paid label immediately', async () => 
   expect(screen.queryByRole('button', { name: 'Subscription (Plus)' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Subscription' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Subscription' }).props.className.split(' ')).toContain(
-    'bg-surface',
+    'bg-primary',
   );
 });
 

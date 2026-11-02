@@ -360,7 +360,12 @@ test.each([
   expect(
     screen.getByRole('button', { name: translate(locale, 'paywall.purchaseUnavailable') }),
   ).toBeDisabled();
-  fireEvent.press(screen.getByRole('button', { name: translate(locale, 'sync.signIn') }));
+  const signInButton = screen.getByRole('button', { name: translate(locale, 'sync.signIn') });
+  expect(signInButton.props.className.split(' ')).toContain('bg-primary');
+  expect(
+    within(signInButton).getByText(translate(locale, 'sync.signIn')).props.className.split(' '),
+  ).toContain('text-primaryForeground');
+  fireEvent.press(signInButton);
   expect(router.push).toHaveBeenCalledWith('/auth');
   expect(engine.planCatalog).toHaveBeenCalledTimes(1);
 });

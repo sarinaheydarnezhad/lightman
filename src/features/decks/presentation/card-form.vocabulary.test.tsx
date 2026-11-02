@@ -7,7 +7,6 @@ import type { CreateCardInput } from '@/core/application/create-application';
 import { makeCard, makeDeck } from '@/../test/fixtures';
 import { vocabularyHelper } from '@/core/composition/vocabulary';
 import { languageTag } from '@/core/domain/values';
-import type { DictionaryLookupResult } from '@/features/vocabulary/domain/dictionary';
 import { ThemeProvider } from '@/shared/theme/theme-provider';
 import { palette } from '@/shared/theme/tokens';
 import { setTestTheme } from '@/../test/set-test-theme';
@@ -20,22 +19,6 @@ jest.mock('@/core/composition/vocabulary', () => ({
     lookup: jest.fn(),
   },
 }));
-
-const found: DictionaryLookupResult = {
-  status: 'found',
-  suggestion: {
-    word: 'hello',
-    phonetic: '/hello/',
-    meanings: [
-      {
-        definition: 'A greeting.',
-        partOfSpeech: 'interjection',
-        examples: ['Hello,  friend.', 'Hello there.'],
-      },
-      { definition: 'An utterance.', examples: [] },
-    ],
-  },
-};
 
 test('card quota errors explain the limit and preserve unsaved card fields', async () => {
   showForm({
@@ -86,7 +69,7 @@ function showForm({
 }
 
 beforeEach(() => {
-  jest.mocked(vocabularyHelper.lookup).mockReset().mockResolvedValue(found);
+  jest.mocked(vocabularyHelper.lookup).mockReset();
 });
 
 test.each([false, true])('front and back precede optional fields when editing is %s', (editing) => {
@@ -207,9 +190,16 @@ test('create form hides vocabulary help and clears fields after successful manua
       }),
     ),
   );
+  const notice = await screen.findByText('Card added successfully. You can add another card.');
+  expect(notice.props.className.split(' ')).toContain('text-success');
+  expect(notice.props.accessibilityLiveRegion).toBe('polite');
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   expect(
-    await screen.findByText('Card added successfully. You can add another card.'),
-  ).toBeTruthy();
+    within(screen.UNSAFE_getByType(ScrollView)).queryByText(
+      'Card added successfully. You can add another card.',
+    ),
+  ).toBeNull();
   for (const label of ['Front text', 'Phonetic (optional)', 'Category (optional)', 'Meaning']) {
     expect(screen.getByLabelText(label).props.value).toBe('');
   }
@@ -236,7 +226,7 @@ test('create form hides vocabulary help and clears fields after successful manua
   await waitFor(() => expect(screen.getByLabelText('Front text').props.value).toBe(''));
 });
 
-test('editing offers explicit meaning and phonetic choices without overwriting existing examples', async () => {
+test('editing hides vocabulary help and preserves examples during manual changes', async () => {
   const submit = showForm({
     existing: makeCard({
       phonetic: '/old/',
@@ -244,27 +234,29 @@ test('editing offers explicit meaning and phonetic choices without overwriting e
       examples: [{ sentence: 'Hello, friend.', notes: 'mine' }],
     }),
   });
-  fireEvent.press(screen.getByRole('button', { name: 'Find suggestions' }));
-  fireEvent.press(await screen.findByRole('button', { name: 'Use this definition 1' }));
-  expect(screen.getByRole('button', { name: 'Apply suggestion', disabled: true })).toBeTruthy();
+  expect(screen.queryByRole('header', { name: 'Vocabulary helper' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Find suggestions' })).toBeNull();
   expect(screen.getByLabelText('Meaning').props.value).toBe('Handwritten.');
-  fireEvent.press(screen.getByRole('button', { name: 'Append meaning' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Keep phonetic' }));
-  fireEvent.press(screen.getByRole('button', { name: 'Apply suggestion' }));
-  expect(screen.getByLabelText('Meaning').props.value).toBe('Handwritten.\n\nA greeting.');
+  fireEvent.changeText(screen.getByLabelText('Front text'), 'Updated term');
+  fireEvent.changeText(screen.getByLabelText('Meaning'), 'Updated meaning.');
+  expect(screen.queryByRole('button', { name: 'Find suggestions' })).toBeNull();
   expect(screen.getByLabelText('Phonetic (optional)').props.value).toBe('/old/');
   expect(screen.getByLabelText('Sentence 1').props.value).toBe('Hello, friend.');
-  expect(screen.getByLabelText('Sentence 2').props.value).toBe('Hello there.');
+  expect(screen.queryByLabelText('Sentence 2')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
   await waitFor(() =>
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
-        examples: [{ sentence: 'Hello, friend.', notes: 'mine' }, { sentence: 'Hello there.' }],
+        frontText: 'Updated term',
+        meaning: 'Updated meaning.',
+        phonetic: '/old/',
+        examples: [{ sentence: 'Hello, friend.', notes: 'mine' }],
       }),
     ),
   );
-  expect(screen.getByLabelText('Front text').props.value).toBe('hello');
-  expect(screen.getByLabelText('Meaning').props.value).toBe('Handwritten.\n\nA greeting.');
+  expect(screen.getByLabelText('Front text').props.value).toBe('Updated term');
+  expect(screen.getByLabelText('Meaning').props.value).toBe('Updated meaning.');
+  expect(vocabularyHelper.lookup).not.toHaveBeenCalled();
   expect(screen.queryByText('Card added successfully. You can add another card.')).toBeNull();
 });
 
@@ -301,21 +293,18 @@ test('failed creation preserves all fields and preview for retry', async () => {
   expect(screen.queryByText('Card added successfully. You can add another card.')).toBeNull();
 });
 
-test('offline lookup allows retry once, hiding results, and manual card saving', async () => {
+test('offline editing saves manual changes without a vocabulary lookup', async () => {
   jest.mocked(vocabularyHelper.lookup).mockResolvedValue({ status: 'offline' });
   const submit = showForm({ existing: makeCard() });
   fireEvent.changeText(screen.getByLabelText('Front text'), 'local term');
-  fireEvent.press(screen.getByRole('button', { name: 'Find suggestions' }));
-  expect(await screen.findByText(/You appear to be offline/)).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Retry suggestions' }));
-  await waitFor(() => expect(vocabularyHelper.lookup).toHaveBeenCalledTimes(2));
+  expect(screen.queryByRole('button', { name: 'Find suggestions' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Retry suggestions' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Hide suggestions' }));
   fireEvent.changeText(screen.getByLabelText('Meaning'), 'My own meaning');
   fireEvent.press(screen.getByRole('button', { name: 'Save card' }));
   await waitFor(() =>
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ meaning: 'My own meaning' })),
   );
+  expect(vocabularyHelper.lookup).not.toHaveBeenCalled();
 });
 
 test('unsupported RTL decks never query an English provider; all themes keep manual entry available', async () => {

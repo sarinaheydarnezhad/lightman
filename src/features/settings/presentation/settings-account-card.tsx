@@ -141,7 +141,7 @@ function AccountDetails({ userId }: { userId: string }) {
       <SettingsSubscriptionCard />
       <Button
         label={t('account.logout')}
-        variant="tertiary"
+        variant="destructive"
         onPress={() => router.push('/settings/logout' as import('expo-router').Href)}
       />
     </>
@@ -172,7 +172,7 @@ export function SettingsAccountCard() {
           <Button label={t('account.loginSignup')} onPress={() => router.push('/auth')} />
           <Button
             label={t('subscription.title')}
-            variant="secondary"
+            variant="primary"
             onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
           />
         </View>

@@ -9,19 +9,9 @@ import { AppError } from '@/core/errors/app-error';
 import { haptics } from '@/core/composition/haptics';
 import type { Deck } from '@/features/decks/domain/deck';
 import { validateCardContent, type Card, type CardExample } from '@/features/study/domain/card';
-import {
-  canAppendMeaning,
-  hasMeaningConflict,
-  hasPhoneticConflict,
-  mergeSuggestion,
-  type ImportChoices,
-  type SelectedDefinition,
-} from '@/features/vocabulary/application/merge-suggestion';
-import { VocabularyHelper } from '@/features/vocabulary/presentation/vocabulary-helper';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
-import { Chip } from '@/shared/ui/chip';
 import { Card as Surface } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { IconButton } from '@/shared/ui/icon-button';
@@ -57,10 +47,6 @@ export function CardForm({
   const [meaningError, setMeaningError] = useState<string | null>(null);
   const [exampleError, setExampleError] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingSuggestion, setPendingSuggestion] = useState<SelectedDefinition | null>(null);
-  const [meaningChoice, setMeaningChoice] = useState<ImportChoices['meaning'] | null>(null);
-  const [phoneticChoice, setPhoneticChoice] = useState<ImportChoices['phonetic'] | null>(null);
-  const [importMessage, setImportMessage] = useState<string | null>(null);
   const submitting = useRef(false);
   const mounted = useRef(true);
   const phoneticRef = useRef<TextInput>(null);
@@ -79,36 +65,6 @@ export function CardForm({
       current.map((item, position) => (position === index ? { ...item, ...changes } : item)),
     );
     setExampleError(null);
-  }
-
-  function applySuggestion() {
-    if (!pendingSuggestion) return;
-    const conflictMeaning = hasMeaningConflict(meaning, pendingSuggestion);
-    const conflictPhonetic = hasPhoneticConflict(phonetic, pendingSuggestion);
-    if (
-      (conflictMeaning && !meaningChoice) ||
-      (conflictPhonetic && !phoneticChoice) ||
-      (meaningChoice === 'append' && !canAppendMeaning(meaning, pendingSuggestion.definition))
-    )
-      return;
-    const result = mergeSuggestion({ meaning, phonetic, examples }, pendingSuggestion, {
-      meaning: meaningChoice ?? 'keep',
-      phonetic: phoneticChoice ?? 'keep',
-    });
-    const changed =
-      result.fields.meaning !== meaning ||
-      result.fields.phonetic !== phonetic ||
-      result.addedExamples > 0;
-    setMeaning(result.fields.meaning);
-    setPhonetic(result.fields.phonetic);
-    setExamples([...result.fields.examples]);
-    setMeaningError(null);
-    setExampleError(null);
-    setImportMessage(
-      `${t(changed ? 'form.suggestionAdded' : 'form.suggestionUnchanged')}${result.limitedExamples ? ` ${t('form.examplesLimit')}` : ''}`,
-    );
-    setPendingSuggestion(null);
-    if (changed) void haptics.actionConfirmed();
   }
 
   async function save() {
@@ -156,10 +112,6 @@ export function CardForm({
         setMeaning('');
         setExamples([]);
         setPreview(false);
-        setPendingSuggestion(null);
-        setMeaningChoice(null);
-        setPhoneticChoice(null);
-        setImportMessage(null);
         setCreated(true);
       }
     } catch (cause) {
@@ -209,7 +161,16 @@ export function CardForm({
             {renderSaveAction ? null : saveButton}
           </View>
           {created ? (
-            <FeedbackModal message={t('form.cardCreated')} tone="success" onDismiss={() => setCreated(false)} />
+            <View className="rounded-md border border-success/30 bg-surface px-lg py-md">
+              <Text
+                variant="bodySmall"
+                weight="medium"
+                tone="success"
+                accessibilityLiveRegion="polite"
+              >
+                {t('form.cardCreated')}
+              </Text>
+            </View>
           ) : null}
           {error ? (
             <FeedbackModal message={error} onDismiss={() => setError(null)} />
@@ -229,8 +190,6 @@ export function CardForm({
             onChangeText={(value) => {
               setFrontText(value);
               setFrontError(null);
-              setPendingSuggestion(null);
-              setImportMessage(null);
             }}
             error={frontError ?? undefined}
             onDismissError={() => setFrontError(null)}
@@ -265,87 +224,6 @@ export function CardForm({
           <Text variant="headingMedium" accessibilityRole="header">
             {t('form.optionalDetails')}
           </Text>
-          <View style={existing ? undefined : { display: 'none' }}>
-            <VocabularyHelper
-              key={`${deck.language}:${frontText}`}
-              word={frontText}
-              language={deck.language}
-              textAlignment={deck.textAlignment}
-              onSelect={(selection) => {
-                setPendingSuggestion(selection);
-                setMeaningChoice(null);
-                setPhoneticChoice(null);
-                setImportMessage(null);
-              }}
-            />
-          </View>
-          {pendingSuggestion ? (
-            <Surface className="gap-md" accessibilityLiveRegion="polite">
-              <Text variant="headingSmall" accessibilityRole="header">
-                {t('form.reviewSuggestion')}
-              </Text>
-              <Text tone="secondary">{pendingSuggestion.definition}</Text>
-              {hasMeaningConflict(meaning, pendingSuggestion) ? (
-                <View className="gap-sm">
-                  <Text>{t('form.existingMeaning', { value: meaning })}</Text>
-                  <Text tone="secondary">{t('form.meaningConflict')}</Text>
-                  {(['keep', 'replace', 'append'] as const).map((choice) => (
-                    <Chip
-                      key={choice}
-                      label={t(
-                        choice === 'keep'
-                          ? 'form.keepMeaning'
-                          : choice === 'replace'
-                            ? 'form.replaceMeaning'
-                            : 'form.appendMeaning',
-                      )}
-                      selected={meaningChoice === choice}
-                      disabled={
-                        choice === 'append' &&
-                        !canAppendMeaning(meaning, pendingSuggestion.definition)
-                      }
-                      onPress={() => setMeaningChoice(choice)}
-                    />
-                  ))}
-                </View>
-              ) : null}
-              {hasPhoneticConflict(phonetic, pendingSuggestion) ? (
-                <View className="gap-sm">
-                  <Text>{t('form.existingPhonetic', { value: phonetic })}</Text>
-                  <Text tone="secondary">{t('form.phoneticConflict')}</Text>
-                  {(['keep', 'replace'] as const).map((choice) => (
-                    <Chip
-                      key={choice}
-                      label={t(choice === 'keep' ? 'form.keepPhonetic' : 'form.replacePhonetic')}
-                      selected={phoneticChoice === choice}
-                      onPress={() => setPhoneticChoice(choice)}
-                    />
-                  ))}
-                </View>
-              ) : null}
-              <Text variant="bodySmall" tone="secondary">
-                {t('form.suggestionHint')}
-              </Text>
-              <Button
-                label={t('form.applySuggestion')}
-                disabled={
-                  (hasMeaningConflict(meaning, pendingSuggestion) && !meaningChoice) ||
-                  (hasPhoneticConflict(phonetic, pendingSuggestion) && !phoneticChoice) ||
-                  (meaningChoice === 'append' &&
-                    !canAppendMeaning(meaning, pendingSuggestion.definition))
-                }
-                onPress={applySuggestion}
-              />
-              <Button
-                label={t('form.cancelSuggestion')}
-                variant="tertiary"
-                onPress={() => setPendingSuggestion(null)}
-              />
-            </Surface>
-          ) : null}
-          {importMessage ? (
-            <FeedbackModal message={importMessage} tone="info" onDismiss={() => setImportMessage(null)} />
-          ) : null}
           <Input
             ref={phoneticRef}
             label={t('form.phonetic')}

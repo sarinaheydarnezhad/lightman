@@ -419,7 +419,7 @@ export function SubscriptionScreen() {
         {!access.isAccount ? (
           <Button
             label={t('sync.signIn')}
-            variant="tertiary"
+            variant="primary"
             onPress={() => router.push('/auth')}
           />
         ) : null}

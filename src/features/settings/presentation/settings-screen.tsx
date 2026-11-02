@@ -1,8 +1,7 @@
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
 import { FeedbackModal } from '@/shared/ui/feedback-modal';
-import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useCallback, useState, type ReactNode } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 import { config } from '@/core/infrastructure/platform';
@@ -12,11 +11,12 @@ import { tabScreenEdges } from '@/shared/navigation/safe-area';
 import { Card } from '@/shared/ui/card';
 import { Button } from '@/shared/ui/button';
 import { ErrorState } from '@/shared/ui/error-state';
+import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
+import { useThemeColors } from '@/shared/theme/theme-provider';
 import { icons, interaction } from '@/shared/theme/tokens';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
@@ -104,7 +104,7 @@ function SettingsSwitch({
   onChange,
 }: {
   label: string;
-  description: string;
+  description?: string;
   value: boolean;
   busy: boolean;
   disabled?: boolean;
@@ -133,9 +133,11 @@ function SettingsSwitch({
     >
       <View className="min-w-0 flex-1 gap-xs">
         <Text variant="labelLarge">{label}</Text>
-        <Text variant="bodySmall" tone="secondary">
-          {description}
-        </Text>
+        {description ? (
+          <Text variant="bodySmall" tone="secondary">
+            {description}
+          </Text>
+        ) : null}
       </View>
       <View
         className={
@@ -151,18 +153,6 @@ function SettingsSwitch({
     </Pressable>
   );
 }
-function timeAsDate(time: LocalTime): Date {
-  const [hour, minute] = time.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hour!, minute!, 0, 0);
-  return date;
-}
-
-function formatTime(date: Date): LocalTime {
-  return localTime(
-    `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`,
-  );
-}
 
 export function SettingsScreen() {
   const vm = useSettingsViewModel();
@@ -173,8 +163,8 @@ export function SettingsScreen() {
       void refreshReminder();
     }, [refreshReminder]),
   );
-  const mode = useThemeMode();
-  const [draftTime, setDraftTime] = useState<Date | null>(null);
+  const [draftTime, setDraftTime] = useState<string | null>(null);
+  const [timeInvalid, setTimeInvalid] = useState(false);
   const settings = vm.settings;
   const permissionLabel = vm.reminderPermission
     ? t(permissionLabels[vm.reminderPermission])
@@ -183,23 +173,25 @@ export function SettingsScreen() {
     `settings.theme.${appearanceChoices.find((choice) => choice.value === settings?.theme)?.value ?? 'light'}`,
   );
 
-  function pickTime() {
-    if (!settings?.dailyReminderTime || vm.busy.time || vm.busy.reminder) return;
-    const value = timeAsDate(settings.dailyReminderTime);
-    if (Platform.OS === 'android') {
-      DateTimePickerAndroid.open({
-        value,
-        mode: 'time',
-        is24Hour: true,
-        onChange: (event, selected) => {
-          if (event.type === 'set' && selected) void vm.setReminderTime(formatTime(selected));
-        },
-      });
-    } else setDraftTime(value);
+  async function saveTime() {
+    if (draftTime === null || vm.busy.time || vm.busy.reminder) return;
+    let time: LocalTime;
+    try {
+      time = localTime(
+        draftTime
+          .trim()
+          .replace(/[\u06f0-\u06f9]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+          .replace(/[\u0660-\u0669]/g, (digit) => String(digit.charCodeAt(0) - 0x0660)),
+      );
+    } catch {
+      setTimeInvalid(true);
+      return;
+    }
+    if (await vm.setReminderTime(time)) setDraftTime(null);
   }
 
   return (
-    <Screen scroll edges={tabScreenEdges}>
+    <Screen scroll keyboardAware edges={tabScreenEdges}>
       <View className="gap-2xl">
         <ScreenHeader title={t('nav.settings')} description={t('settings.description')} />
         <SettingsAccountCard />
@@ -227,6 +219,13 @@ export function SettingsScreen() {
             </SettingsSection>
 
             <SettingsSection title={t('settings.study')}>
+              <SettingsSwitch
+                label={t('settings.dailyReminder')}
+                value={settings.dailyReminderEnabled}
+                busy={!!vm.busy.reminder || !!vm.busy.time}
+                disabled={vm.reminderPermission === 'unavailable' && !settings.dailyReminderEnabled}
+                onChange={() => void vm.setReminder(!settings.dailyReminderEnabled)}
+              />
               <Text
                 variant="bodySmall"
                 tone="secondary"
@@ -235,48 +234,52 @@ export function SettingsScreen() {
               >
                 {t('settings.permission', { value: permissionLabel })}
               </Text>
-              <SettingsSwitch
-                label={t('settings.dailyReminder')}
-                description={t('settings.reminderHint')}
-                value={settings.dailyReminderEnabled}
-                busy={!!vm.busy.reminder || !!vm.busy.time}
-                disabled={vm.reminderPermission === 'unavailable' && !settings.dailyReminderEnabled}
-                onChange={() => void vm.setReminder(!settings.dailyReminderEnabled)}
-              />
               {settings.dailyReminderEnabled && settings.dailyReminderTime ? (
                 <>
                   <SettingsRow
                     label={t('settings.reminderTime')}
                     detail={t('settings.localTime', { time: settings.dailyReminderTime })}
                     disabled={!!vm.busy.time || !!vm.busy.reminder}
-                    onPress={pickTime}
+                    onPress={() => {
+                      setDraftTime(settings.dailyReminderTime);
+                      setTimeInvalid(false);
+                    }}
                   />
-                  {draftTime && Platform.OS !== 'android' ? (
+                  {draftTime !== null ? (
                     <Card className="gap-sm">
-                      <DateTimePicker
+                      <Input
+                        label={t('settings.reminderTime')}
                         value={draftTime}
-                        mode="time"
-                        display="spinner"
-                        is24Hour
-                        themeVariant={mode === 'light' ? 'light' : 'dark'}
-                        onChange={(_event, value) => {
-                          if (value) setDraftTime(value);
+                        placeholder="HH:mm"
+                        helperText={t('settings.timeFormat')}
+                        error={timeInvalid ? t('settings.timeInvalid') : undefined}
+                        onDismissError={() => setTimeInvalid(false)}
+                        disabled={!!vm.busy.time || !!vm.busy.reminder}
+                        autoFocus
+                        selectTextOnFocus
+                        autoCorrect={false}
+                        autoCapitalize="none"
+                        returnKeyType="done"
+                        textAlign="left"
+                        style={{ writingDirection: 'ltr' }}
+                        onChangeText={(value) => {
+                          setDraftTime(value);
+                          setTimeInvalid(false);
                         }}
+                        onSubmitEditing={() => void saveTime()}
                       />
                       <View className="flex-row flex-wrap gap-sm">
                         <Button
                           label={t('common.cancel')}
                           variant="secondary"
+                          disabled={!!vm.busy.time || !!vm.busy.reminder}
                           onPress={() => setDraftTime(null)}
                         />
                         <Button
                           label={t('settings.saveTime')}
                           loading={!!vm.busy.time}
-                          onPress={() => {
-                            void vm.setReminderTime(formatTime(draftTime)).then((saved) => {
-                              if (saved) setDraftTime(null);
-                            });
-                          }}
+                          disabled={!!vm.busy.reminder}
+                          onPress={() => void saveTime()}
                         />
                       </View>
                     </Card>

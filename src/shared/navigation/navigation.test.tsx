@@ -3,7 +3,6 @@ import { renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
 import { DefaultTheme, HeaderBackButton } from 'expo-router/react-navigation';
 import { AccessibilityInfo, Platform, Pressable, View } from 'react-native';
-import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import {
   ScreenStackHeaderConfig,
   ScreenStackHeaderLeftView,
@@ -821,7 +820,7 @@ test('a cold-start reminder tap is consumed after navigation becomes ready', asy
   expect(start).toHaveBeenCalledTimes(1);
 });
 
-test('changing the reminder time through the Android picker reschedules once', async () => {
+test('typing the reminder time on Android reschedules once', async () => {
   const nativePlatform = jest.replaceProperty(Platform, 'OS', 'android');
   try {
     const schedule = jest
@@ -831,20 +830,15 @@ test('changing the reminder time through the Android picker reschedules once', a
     await application.settings.setReminderEnabled(false);
     await application.settings.setReminderTime(localTime('09:00'));
     await application.settings.setReminderEnabled(true);
-    const picker = jest.spyOn(DateTimePickerAndroid, 'open').mockImplementation(() => {});
     renderRouter(routes, { initialUrl: '/settings' });
     fireEvent.press(await screen.findByRole('button', { name: /Reminder time, 09:00/ }));
     schedule.mockClear();
-    expect(picker).toHaveBeenCalledTimes(1);
-    const selected = new Date();
-    selected.setHours(18, 45, 0, 0);
-    await act(async () => {
-      picker.mock.calls[0]![0].onChange?.({ type: 'set' } as never, selected);
-    });
+    fireEvent.changeText(screen.getByLabelText('Reminder time'), '18:45');
+    fireEvent.press(screen.getByRole('button', { name: 'Save time' }));
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Reminder time, 18:45/ })).toBeTruthy(),
     );
-    expect(schedule).toHaveBeenLastCalledWith('18:45', 'en');
+    expect(schedule).toHaveBeenLastCalledWith('18:45', 'en', expect.any(Array));
     expect(schedule).toHaveBeenCalledTimes(1);
     await application.settings.setReminderEnabled(false);
   } finally {
@@ -1088,7 +1082,10 @@ test.each([
       fireEvent.changeText(screen.getByLabelText(translate(language, 'form.frontText')), 'Term');
       fireEvent.changeText(screen.getByLabelText(translate(language, 'form.meaning')), 'Meaning');
       fireEvent.press(within(slot).getByRole('button', { name: label }));
-      await screen.findByText(translate(language, 'form.cardCreated'));
+      const notice = await screen.findByText(translate(language, 'form.cardCreated'));
+      expect(notice.props.className.split(' ')).toContain('text-success');
+      expect(notice.props.accessibilityLiveRegion).toBe('polite');
+      expect(screen.queryByTestId('feedback-modal')).toBeNull();
       expect(await application.countActiveCardsForDeck('fresh-collection')).toBe(cardCount + 1);
       expect(rendered.getPathname()).toBe('/decks/fresh-collection/cards/create');
       const back = within(header).UNSAFE_getByType(ScreenStackHeaderLeftView);
