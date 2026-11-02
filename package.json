@@ -9,6 +9,7 @@
     "android": "expo run:android",
     "android:release": "expo prebuild --platform android --no-install && expo run:android --variant release --no-bundler --no-build-cache",
     "android:apk": "node ./scripts/build-android-release.cjs",
+    "android:verify": "node ./scripts/verify-android-release.cjs",
     "ios": "expo run:ios",
     "web": "node --require ./scripts/dev-server-headers.cjs ./node_modules/expo/bin/cli start --web",
     "lint": "eslint .",

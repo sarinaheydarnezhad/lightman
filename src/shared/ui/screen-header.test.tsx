@@ -38,7 +38,7 @@ test.each(['headingLarge', 'headingSmall'] as const)(
   },
 );
 
-test('page title normalization does not change section or card typography', () => {
+test('page titles, sections, and card metrics use their bundled faces without another native weight', () => {
   render(
     <>
       <PageTitle>Page title</PageTitle>
@@ -48,6 +48,6 @@ test('page title normalization does not change section or card typography', () =
   );
   expect(screen.getByText('Section title')).toHaveStyle({ fontFamily: 'Vazirmatn-SemiBold' });
   expect(screen.getByText('Card metric')).toHaveStyle({ fontFamily: 'Vazirmatn-Bold' });
-  expect(screen.getByText('Section title')).not.toHaveStyle({ fontWeight: 'normal' });
-  expect(screen.getByText('Card metric')).not.toHaveStyle({ fontWeight: 'normal' });
+  expect(screen.getByText('Section title')).toHaveStyle({ fontWeight: 'normal' });
+  expect(screen.getByText('Card metric')).toHaveStyle({ fontWeight: 'normal' });
 });

@@ -51,6 +51,7 @@ function normalizeAccountProfile(account: AccountProfile): AccountProfile {
 }
 
 interface AccountReviewState {
+  schedulerStateJson?: string | null;
   cardId: string;
   box: number;
   dueDate: string;
@@ -255,11 +256,12 @@ export class CloudClient {
     return result;
   }
 
-  async ownedDecks(): Promise<{ id: string; name: string; archivedAtUtc: string | null }[]> {
-    const decks = await this.request<{ id: string; name: string; archivedAtUtc: string | null }[]>(
-      '/me/decks',
-      { method: 'GET' },
-    );
+  async ownedDecks(): Promise<
+    { id: string; name: string; reviewSystem?: string; archivedAtUtc: string | null }[]
+  > {
+    const decks = await this.request<
+      { id: string; name: string; reviewSystem?: string; archivedAtUtc: string | null }[]
+    >('/me/decks', { method: 'GET' });
     if (
       !Array.isArray(decks) ||
       decks.some((deck) => typeof deck.id !== 'string' || typeof deck.name !== 'string')
@@ -860,14 +862,9 @@ export class CloudClient {
       operation.operation === 'upsert' &&
       payload &&
       typeof payload === 'object' &&
-      'reviewSystem' in payload
+      'reviewSystem' in payload &&
+      payload.reviewSystem === 'leitner'
     ) {
-      if (payload.reviewSystem !== 'leitner')
-        throw new CloudError(
-          400,
-          undefined,
-          'The backend only supports Leitner decks. Other scheduler data remains local.',
-        );
       const { reviewSystem: _reviewSystem, ...supported } = payload;
       payload = supported;
     }

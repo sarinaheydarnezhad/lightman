@@ -429,7 +429,7 @@ test.each(['en', 'fa'] as const)(
     expect(screen.getByTestId('selected-plan').props.children).toBe(
       translate(locale, 'paywall.total', {
         months: formatNumber(6, locale),
-        amount: formatNumber(294000, locale),
+        amount: amount(294000),
       }),
     );
     expect(screen.getByTestId('selected-plan-monthly').props.children).toBe(
@@ -490,7 +490,7 @@ test.each(['fa', 'en'] as const)(
       expect(screen.getByTestId('selected-plan').props.children).toBe(
         translate(locale, price.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
           months: formatNumber(price.durationMonths, locale),
-          amount: formatNumber(price.priceToman, locale),
+          amount: locale === 'fa' ? `\u2066${formatted[index]}\u2069` : formatted[index]!,
         }),
       );
     }

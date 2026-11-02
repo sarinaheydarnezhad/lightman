@@ -309,7 +309,7 @@ export function SubscriptionScreen() {
               <Text variant="labelLarge" testID="selected-plan">
                 {t(selected.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
                   months: number(selected.durationMonths),
-                  amount: number(selected.priceToman),
+                  amount: amount(selected.priceToman),
                 })}
               </Text>
             ) : null}

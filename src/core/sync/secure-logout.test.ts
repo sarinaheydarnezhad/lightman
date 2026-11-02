@@ -248,8 +248,10 @@ async function setup(withGuest = true) {
     if (path === '/me/decks') {
       return response(
         (
-          await server.database.execute('SELECT id, name FROM decks WHERE archived_at IS NULL')
-        ).rows.map((deck) => ({ ...deck, archivedAtUtc: null })),
+          await server.database.execute(
+            'SELECT id, name, review_system FROM decks WHERE archived_at IS NULL',
+          )
+        ).rows.map((deck) => ({ ...deck, reviewSystem: deck.review_system, archivedAtUtc: null })),
       ) as Response;
     }
     const cards = /^\/me\/decks\/([^/]+)\/cards$/.exec(path);
@@ -279,6 +281,7 @@ async function setup(withGuest = true) {
       return response({
         cardId: statePath[1],
         box: corruptProgress ? 5 : state.box,
+        schedulerStateJson: state.scheduler_state_json,
         dueDate: state.due_date,
         totalReviews: state.total_reviews,
         totalSuccesses: state.total_successes,
@@ -292,13 +295,13 @@ async function setup(withGuest = true) {
     loginUser = userId;
     await engine.signInPhone('+989121234567', 'private password');
   };
-  const createPrivate = async (name = 'Account A') => {
+  const createPrivate = async (name = 'Account A', reviewSystem = 'leitner') => {
     const app = createApplication(
       scopes.current().value,
-      { now: () => new Date('2026-10-14T12:00:00.000Z'), timeZone: () => 'UTC' },
+      { now: () => new Date(), timeZone: () => 'UTC' },
       { create: randomUUID },
     );
-    const deck = await app.createDeck(makeDeck({ name }));
+    const deck = await app.createDeck(makeDeck({ name, reviewSystem }));
     await app.createCard({ ...makeCard(), deckId: deck.id });
     return app;
   };
@@ -694,4 +697,37 @@ test('an account without authoritative sync versions cannot claim a backup', asy
   expect(fixture.scopes.snapshot().mode).toBe('account');
   expect(secure.has(credentialKey)).toBe(true);
   expect(fixture.revoked.size).toBe(0);
+});
+
+test('SM-2 decks can back up before and after reviews and restore their scheduler on a fresh device', async () => {
+  const fixture = await setup(false);
+  await fixture.login();
+  const app = await fixture.createPrivate('SM-2', 'sm2');
+  await fixture.engine.createBackup();
+  const deck = (await app.listDecks())[0]!;
+  const card = (await app.listCardsForDeck(deck.id))[0]!;
+  for (const result of ['success', 'success', 'success', 'failure'] as const) {
+    await app.reviewCard({ cardId: card.id, deckId: deck.id, result, studySessionId: null });
+  }
+  const saved = await app.getReviewState(card.id);
+  const backup = await fixture.engine.createBackup();
+  expect(backup.syncVersion).toBe(fixture.remote.get(accountA)!.feed.length);
+  expect(await fixture.store.counts()).toEqual({ pending: 0, failed: 0, conflict: 0 });
+  expect(await app.getReviewState(card.id)).toMatchObject({
+    schedulerState: saved!.schedulerState,
+  });
+  const restored = await RealSqliteDatabase.open();
+  await runMigrations(restored);
+  await new SyncStore(restored).applyPage({
+    cursor: backup.syncVersion,
+    latestVersion: backup.syncVersion,
+    hasMore: false,
+    changes: fixture.remote.get(accountA)!.feed,
+  });
+  const repositories = createSqliteRepositories(restored);
+  expect((await repositories.decks.getById(deck.id))?.reviewSystem).toBe('sm2');
+  expect((await repositories.reviews.getState(card.id))?.schedulerState).toEqual(
+    saved!.schedulerState,
+  );
+  expect((await restored.execute('SELECT scheduler_json FROM review_events')).rows).toHaveLength(4);
 });

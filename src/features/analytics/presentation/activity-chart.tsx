@@ -33,6 +33,8 @@ export function ActivityChart({
     reviews: number(totalReviews),
     days: number(activeDays),
   });
+  const dateLabel = (date: string | undefined) =>
+    date?.replace(/[0-9]/g, (digit) => number(Number(digit)));
   const heights = chartBarHeights(activity);
   const width = 360;
   const baseline = 72;
@@ -74,10 +76,10 @@ export function ActivityChart({
       </View>
       <View className="flex-row justify-between gap-md" style={{ direction: 'ltr' }}>
         <Text variant="caption" tone="secondary" style={{ writingDirection: 'ltr' }}>
-          {activity[0]?.date}
+          {dateLabel(activity[0]?.date)}
         </Text>
         <Text variant="caption" tone="secondary" style={{ writingDirection: 'ltr' }}>
-          {activity.at(-1)?.date}
+          {dateLabel(activity.at(-1)?.date)}
         </Text>
       </View>
       <Text tone="secondary" variant="bodySmall" accessibilityLiveRegion="polite">

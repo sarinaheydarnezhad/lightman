@@ -260,6 +260,41 @@ const schedulerSyncStatements = [
   END`,
 ] as const;
 
+// Keep existing migrations unchanged; update installed devices and their rejected SM-2 outbox.
+const sm2SyncStatements = [
+  'DROP TRIGGER IF EXISTS sync_review_insert',
+  'DROP TRIGGER IF EXISTS sync_state_insert',
+  syncSchemaStatements
+    .find((sql) => sql.startsWith('CREATE TRIGGER sync_review_insert'))!
+    .replace(
+      "'studySessionId', NEW.study_session_id)",
+      "'studySessionId', NEW.study_session_id, 'scheduler', json(NEW.scheduler_json))",
+    ),
+  syncSchemaStatements
+    .find((sql) => sql.startsWith('CREATE TRIGGER sync_state_insert'))!
+    .replace(
+      "'totalSuccesses', NEW.total_successes)",
+      "'totalSuccesses', NEW.total_successes, 'schedulerState', json(NEW.scheduler_state_json))",
+    ),
+  `UPDATE sync_operations SET payload_json = json_set(payload_json, '$.scheduler',
+      json((SELECT scheduler_json FROM review_events WHERE id = entity_id)))
+    WHERE entity_type = 'reviewEvent' AND status IN ('pending', 'failed')
+      AND json_extract(payload_json, '$.scheduler') IS NULL
+      AND entity_id IN (SELECT e.id FROM review_events e JOIN decks d ON d.id = e.deck_id WHERE d.review_system = 'sm2')`,
+  `UPDATE sync_operations SET payload_json = json_set(payload_json, '$.schedulerState',
+      CASE WHEN json_extract(payload_json, '$.totalReviews') = 0
+        THEN json('{"schedulerId":"sm2","key":"new","data":{"repetitions":0,"intervalDays":0,"easeFactor":2.5}}')
+        ELSE json((SELECT scheduler_state_json FROM card_review_state WHERE card_id = entity_id)) END)
+    WHERE entity_type = 'reviewState' AND status IN ('pending', 'failed')
+      AND json_extract(payload_json, '$.schedulerState') IS NULL
+      AND entity_id IN (SELECT c.id FROM cards c JOIN decks d ON d.id = c.deck_id WHERE d.review_system = 'sm2')`,
+  `UPDATE sync_operations SET status = 'pending', retry_count = 0
+    WHERE status = 'failed' AND (
+      (entity_type = 'deck' AND entity_id IN (SELECT id FROM decks WHERE review_system = 'sm2')) OR
+      (entity_type IN ('card', 'reviewState') AND entity_id IN (SELECT c.id FROM cards c JOIN decks d ON d.id = c.deck_id WHERE d.review_system = 'sm2')) OR
+      (entity_type = 'reviewEvent' AND entity_id IN (SELECT e.id FROM review_events e JOIN decks d ON d.id = e.deck_id WHERE d.review_system = 'sm2')))`,
+] as const;
+
 export const migrations: readonly Migration[] = [
   { version: 1, statements: initialSchemaStatements },
   { version: 2, statements: productionSchemaStatements },
@@ -279,6 +314,7 @@ export const migrations: readonly Migration[] = [
     )`,
     ],
   },
+  { version: 7, statements: sm2SyncStatements },
 ];
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');

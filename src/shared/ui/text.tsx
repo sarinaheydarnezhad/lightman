@@ -64,13 +64,6 @@ const variantClass: Record<TypographyVariant, string> = {
   labelMedium: 'text-labelMedium',
   caption: 'text-caption',
 };
-const weightClass = {
-  regular: 'font-normal',
-  medium: 'font-medium',
-  semibold: 'font-semibold',
-  bold: 'font-bold',
-};
-
 function contentText(children: ReactNode): string {
   return Children.toArray(children)
     .map((child) => {
@@ -123,6 +116,9 @@ export function Text({
           : 'left';
   const baseStyle = {
     fontFamily: fontFamilyForWeight(resolvedWeight),
+    // Expo registers each bundled face at NORMAL on Android. Requesting another
+    // native weight misses that face and can fall back to a system font.
+    fontWeight: 'normal',
     writingDirection: direction,
     textAlign,
   } as const;
@@ -135,10 +131,11 @@ export function Text({
     <NativeText
       allowFontScaling
       numberOfLines={truncate ? (numberOfLines ?? 1) : numberOfLines}
-      className={`${variantClass[variant]} ${toneClass[tone]} ${weight ? weightClass[weight] : ''} ${className ?? ''}`}
+      className={`${variantClass[variant]} ${toneClass[tone]} ${className ?? ''}`}
       style={mergedStyle}
       {...props}
-      children={children}
-    />
+    >
+      {children}
+    </NativeText>
   );
 }

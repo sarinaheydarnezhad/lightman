@@ -1,6 +1,7 @@
 import type { Database, DatabaseTransaction, SqlRow } from '@/core/database/database';
 import { instant } from '@/core/domain/values';
 import { reviewResult } from '@/features/study/domain/review';
+import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
 import { mergeReviewEvents } from './review-merge';
 import { randomUUID } from 'expo-crypto';
 import type { CloudClient } from './cloud-client';
@@ -49,6 +50,16 @@ function integerField(payload: Record<string, unknown>, key: string): number {
   if (typeof result !== 'number' || !Number.isSafeInteger(result))
     throw new Error(`Invalid server ${key}.`);
   return result;
+}
+
+function sameScheduler(left: unknown, right: unknown): boolean {
+  const canonical = (value: unknown): string =>
+    JSON.stringify(value, (_, item: unknown) =>
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)))
+        : item,
+    );
+  return canonical(left ?? null) === canonical(right ?? null);
 }
 
 export class SyncStore {
@@ -241,7 +252,7 @@ export class SyncStore {
       UNION ALL SELECT 'settings' FROM user_settings s
         WHERE NOT EXISTS (SELECT 1 FROM sync_entity_versions v WHERE v.entity_type = 'settings' AND v.entity_id = ?)
         AND EXISTS (SELECT 1 FROM sync_operations o WHERE o.entity_type = 'settings' AND o.status <> 'discarded')
-      UNION ALL SELECT 'scheduler' FROM decks WHERE review_system <> 'leitner'
+      UNION ALL SELECT 'scheduler' FROM decks WHERE review_system NOT IN ('leitner', 'sm2')
       LIMIT 1`,
       [account.userId],
     );
@@ -250,13 +261,21 @@ export class SyncStore {
         'Some local account data has no verified sync version or uses an unsupported scheduler. Keep it locally and resolve sync before logout.',
       );
     const decks = (
-      await this.database.execute('SELECT id, name FROM decks WHERE archived_at IS NULL')
+      await this.database.execute(
+        'SELECT id, name, review_system FROM decks WHERE archived_at IS NULL',
+      )
     ).rows;
     const remoteDecks = (await cloud.ownedDecks()).filter((deck) => !deck.archivedAtUtc);
     if (
       decks.length !== remoteDecks.length ||
       decks.some(
-        (deck) => !remoteDecks.some((remote) => remote.id === deck.id && remote.name === deck.name),
+        (deck) =>
+          !remoteDecks.some(
+            (remote) =>
+              remote.id === deck.id &&
+              remote.name === deck.name &&
+              (remote.reviewSystem ?? 'leitner') === deck.review_system,
+          ),
       )
     )
       throw new Error(
@@ -297,6 +316,10 @@ export class SyncStore {
         if (
           !state ||
           state.box !== remote.box ||
+          !sameScheduler(
+            state.scheduler_state_json ? JSON.parse(value(state, 'scheduler_state_json')) : null,
+            remote.schedulerStateJson ? JSON.parse(remote.schedulerStateJson) : null,
+          ) ||
           state.due_date !== remote.dueDate ||
           state.total_reviews !== remote.totalReviews ||
           state.total_successes !== remote.totalSuccesses ||
@@ -471,9 +494,11 @@ export class SyncStore {
       if (!state.rows.length) {
         await transaction.execute(
           `INSERT INTO card_review_state
-            (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-            VALUES (?, 1, ?, NULL, 0, 0, 0, ?)`,
-          [change.entityId, time.slice(0, 10), time],
+            (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+            VALUES (?, 1, ?, NULL, 0, 0, 0, ?, (SELECT CASE WHEN review_system = 'sm2'
+              THEN '{"schedulerId":"sm2","key":"new","data":{"repetitions":0,"intervalDays":0,"easeFactor":2.5}}'
+              ELSE NULL END FROM decks WHERE id = ?))`,
+          [change.entityId, time.slice(0, 10), time, field(payload, 'deckId')],
         );
       }
     } else if (change.entityType === 'settings') {
@@ -502,11 +527,12 @@ export class SyncStore {
       );
       if (events.rows.length) return;
       await transaction.execute(
-        `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date,
            last_reviewed_at = excluded.last_reviewed_at, consecutive_successes = excluded.consecutive_successes,
-           total_reviews = excluded.total_reviews, total_successes = excluded.total_successes, updated_at = excluded.updated_at`,
+           total_reviews = excluded.total_reviews, total_successes = excluded.total_successes, updated_at = excluded.updated_at,
+           scheduler_state_json = excluded.scheduler_state_json`,
         [
           change.entityId,
           integerField(payload, 'box'),
@@ -516,6 +542,7 @@ export class SyncStore {
           integerField(payload, 'totalReviews'),
           integerField(payload, 'totalSuccesses'),
           time,
+          payload.schedulerState ? JSON.stringify(payload.schedulerState) : null,
         ],
       );
     } else {
@@ -532,7 +559,7 @@ export class SyncStore {
     const deckId = field(payload, 'deckId');
     const reviewedAt = utc(payload.reviewedAtUtc);
     const existing = await transaction.execute(
-      'SELECT card_id, deck_id, previous_box, new_box, result, reviewed_at FROM review_events WHERE id = ?',
+      'SELECT card_id, deck_id, previous_box, new_box, result, reviewed_at, scheduler_json FROM review_events WHERE id = ?',
       [change.entityId],
     );
     if (existing.rows.length) {
@@ -543,13 +570,17 @@ export class SyncStore {
         number(saved, 'previous_box') !== integerField(payload, 'previousBox') ||
         number(saved, 'new_box') !== integerField(payload, 'newBox') ||
         value(saved, 'result') !== field(payload, 'result') ||
-        value(saved, 'reviewed_at') !== reviewedAt
+        value(saved, 'reviewed_at') !== reviewedAt ||
+        !sameScheduler(
+          saved.scheduler_json ? JSON.parse(value(saved, 'scheduler_json')) : null,
+          payload.scheduler,
+        )
       )
         throw new Error('Review event identity collision; history was preserved.');
     }
     await transaction.execute(
-      `INSERT OR IGNORE INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         change.entityId,
         cardId,
@@ -559,6 +590,7 @@ export class SyncStore {
         field(payload, 'result'),
         reviewedAt,
         optionalField(payload, 'studySessionId'),
+        payload.scheduler ? JSON.stringify(payload.scheduler) : null,
       ],
     );
     await transaction.execute(
@@ -569,7 +601,10 @@ export class SyncStore {
   }
 
   private async replayReviews(transaction: DatabaseTransaction, cardId: string): Promise<void> {
-    const card = await transaction.execute('SELECT created_at FROM cards WHERE id = ?', [cardId]);
+    const card = await transaction.execute(
+      'SELECT c.created_at, d.review_system FROM cards c JOIN decks d ON d.id = c.deck_id WHERE c.id = ?',
+      [cardId],
+    );
     if (!card.rows[0]) throw new Error('Review event card is missing.');
     const events = await transaction.execute(
       `SELECT e.result, e.reviewed_at FROM review_events e
@@ -585,13 +620,15 @@ export class SyncStore {
         reviewedAt: instant(value(event, 'reviewed_at')),
         result: reviewResult(value(event, 'result')),
       })),
+      createReviewEngine().getScheduler(value(card.rows[0], 'review_system')),
     );
     await transaction.execute(
-      `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(card_id) DO UPDATE SET box = excluded.box, due_date = excluded.due_date,
          last_reviewed_at = excluded.last_reviewed_at, consecutive_successes = excluded.consecutive_successes,
-         total_reviews = excluded.total_reviews, total_successes = excluded.total_successes, updated_at = excluded.updated_at`,
+         total_reviews = excluded.total_reviews, total_successes = excluded.total_successes, updated_at = excluded.updated_at,
+         scheduler_state_json = excluded.scheduler_state_json`,
       [
         cardId,
         state.box ?? 1,
@@ -601,6 +638,7 @@ export class SyncStore {
         state.totalReviews,
         state.totalSuccesses,
         state.updatedAt,
+        state.schedulerState ? JSON.stringify(state.schedulerState) : null,
       ],
     );
   }

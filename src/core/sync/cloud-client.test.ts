@@ -142,7 +142,7 @@ test('backup capacity machine codes survive the existing authenticated request p
   });
 });
 
-test('Leitner sync writes match the backend contract and unsupported schedulers never upload', async () => {
+test('Leitner keeps its existing wire contract and SM-2 preserves its review system', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
   globalThis.fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -180,14 +180,14 @@ test('Leitner sync writes match the backend contract and unsupported schedulers 
     typographySize: 'medium',
   });
   expect(payload.reviewSystem).toBe('leitner');
-  expect(() =>
-    new CloudClient().push(
-      { ...operation, payload: { ...payload, reviewSystem: 'sm2' } },
-      'device',
-      'owner',
-    ),
-  ).toThrow('only supports Leitner');
-  expect(fetch).toHaveBeenCalledTimes(1);
+  await new CloudClient().push(
+    { ...operation, payload: { ...payload, reviewSystem: 'sm2' } },
+    'device',
+    'owner',
+  );
+  const sm2 = JSON.parse(jest.mocked(fetch).mock.calls[1]![1]!.body as string);
+  expect(sm2.changes[0].payload.reviewSystem).toBe('sm2');
+  expect(fetch).toHaveBeenCalledTimes(2);
 });
 
 test('owned account inventory and full review verification use authenticated existing read APIs', async () => {

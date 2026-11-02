@@ -63,7 +63,10 @@ test.each([
     </SafeAreaProvider>,
   );
   expect(screen.getByRole('header', { name: translate(language, 'home.welcome') })).toBeTruthy();
-  expect(screen.getByText(formatNumber(48, language))).toBeTruthy();
+  expect(screen.getByText(formatNumber(48, language))).toHaveStyle({
+    fontFamily: 'Vazirmatn-Bold',
+    fontWeight: 'normal',
+  });
   expect(screen.UNSAFE_getByType(Layers3).props.color).toBe(palette[theme].decorativeIcon);
   expect(screen.UNSAFE_getByType(Clock3).props.color).toBe(palette[theme].achievement);
   expect(

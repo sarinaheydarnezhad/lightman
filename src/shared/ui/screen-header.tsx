@@ -9,12 +9,7 @@ export function PageTitle({
   variant?: 'headingLarge' | 'headingSmall';
 }) {
   return (
-    <Text
-      variant={variant}
-      weight="bold"
-      accessibilityRole="header"
-      style={{ fontWeight: 'normal' }}
-    >
+    <Text variant={variant} weight="bold" accessibilityRole="header">
       {children}
     </Text>
   );
