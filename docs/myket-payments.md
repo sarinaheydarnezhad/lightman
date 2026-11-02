@@ -48,7 +48,7 @@ Authenticated, no-store routes:
 
 ## Android setup
 
-The Android package in `app.json` is `com.lerona.app`. Reserve this package in Myket and configure its products, public key and server verification access token. The backend package must match the installed application ID. Configure your real production signing credentials; this change does not create signing keys. Existing installations of `com.example.lerona` have a separate app identity and purchase history; see [Android package migration](android-package-migration.md) before switching a live backend.
+The Android package in `app.json` is `com.lerona.app`. Reserve this package in Myket and configure its products, public key and server verification access token. The backend package must match the installed application ID. Permanent production signing is now configured; see [Signed Android releases](android-release.md) for the private key backup, first release and repeatable `pnpm run android:apk` command. The app-signing certificate is separate from the Myket billing RSA public key. Existing installations of `com.example.lerona` have a separate app identity and purchase history; see [Android package migration](android-package-migration.md) before switching a live backend.
 
 `app.config.js` now registers the plugin as a proper plugin/options tuple regardless of Google iOS configuration. The plugin preserves other plugins, manifest placeholders and Android queries, and adds the Myket billing permission/package visibility. It registers the official Myket Maven repository for every Android project, restricted to the `ir.myket` group; declaring it only in the SDK module does not resolve the application's transitive billing dependency.
 

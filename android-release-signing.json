@@ -1,0 +1,9 @@
+{
+  "packageName": "com.lerona.app",
+  "keyAlias": "lerona-release",
+  "storeType": "PKCS12",
+  "certificateSha256": "b0f74dcd82d7a2135054178b0e283b55cf154f5599d44dec21f0d3fa4d1abb6b",
+  "certificateSha1": "93e2cd84e3c8669db688cfa49963f941aba077b6",
+  "certificateValidFrom": "Nov  2 08:06:28 2026 GMT",
+  "certificateValidTo": "Oct 25 08:06:28 2056 GMT"
+}

@@ -21,11 +21,14 @@ node_modules/
 *.p12
 *.key
 *.pem
+!/docs/android-release-certificate.pem
 *.mobileprovision
 *.apk
 *.aab
 *.ipa
 /credentials.json
+/.secrets/
+/releases/
 
 # Local configuration and temporary tools
 .env*

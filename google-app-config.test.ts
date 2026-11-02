@@ -17,6 +17,7 @@ test('unconfigured Google sign-in preserves the existing Expo build configuratio
     './plugins/withMarketPlace',
     expect.objectContaining({ marketApplicationId: 'ir.mservices.market' }),
   ]);
+  expect(configure({ config: appConfig.expo }).plugins).toContain('./plugins/withReleaseSigning');
 });
 
 test('Google iOS configuration adds the reversed client URL scheme without removing other plugins', () => {
@@ -31,6 +32,7 @@ test('Google iOS configuration adds the reversed client URL scheme without remov
         marketPermission: 'ir.mservices.market.BILLING',
       },
     ],
+    './plugins/withReleaseSigning',
     [
       '@react-native-google-signin/google-signin',
       {

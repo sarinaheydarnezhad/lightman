@@ -1,0 +1,70 @@
+import groovy.json.JsonSlurper
+import java.security.KeyStore
+import java.security.MessageDigest
+
+// Secrets stay outside generated android/ and never enter Expo's JS configuration.
+def signingOverride = System.getenv('LERONA_ANDROID_SIGNING_FILE')
+def privateSigningFile = signingOverride
+    ? new File(signingOverride)
+    : new File(rootDir.parentFile, '.secrets/android-release/signing.json')
+def publicSigningFile = new File(rootDir.parentFile, 'android-release-signing.json')
+def releaseSigningProblem = null
+
+// Always remove Expo's debug-key fallback, including on machines without credentials.
+android.buildTypes.release.signingConfig = null
+
+try {
+    if (!privateSigningFile.isFile() || !publicSigningFile.isFile()) {
+        throw new IllegalStateException('Missing permanent release credentials. Restore the signing backup or set LERONA_ANDROID_SIGNING_FILE to its signing.json.')
+    }
+    def parser = new JsonSlurper()
+    def credentials = parser.parse(privateSigningFile, 'UTF-8')
+    def expected = parser.parse(publicSigningFile, 'UTF-8')
+    for (def field : ['storeFile', 'storeType', 'storePassword', 'keyAlias', 'keyPassword']) {
+        if (!(credentials[field] instanceof String) || credentials[field].isBlank()) {
+            throw new IllegalStateException('Incomplete permanent release credentials.')
+        }
+    }
+    if (expected.packageName != android.defaultConfig.applicationId ||
+        expected.keyAlias != credentials.keyAlias || expected.storeType != credentials.storeType) {
+        throw new IllegalStateException('The permanent signing configuration does not match this application.')
+    }
+    def configuredStore = new File(credentials.storeFile)
+    def keyStoreFile = configuredStore.isAbsolute()
+        ? configuredStore : new File(privateSigningFile.parentFile, credentials.storeFile)
+    if (!keyStoreFile.isFile()) throw new IllegalStateException('The permanent release keystore is missing.')
+    def keyStore = KeyStore.getInstance(credentials.storeType)
+    keyStoreFile.withInputStream { stream -> keyStore.load(stream, credentials.storePassword.toCharArray()) }
+    def certificate = keyStore.getCertificate(credentials.keyAlias)
+    if (certificate == null || !keyStore.isKeyEntry(credentials.keyAlias)) {
+        throw new IllegalStateException('The permanent release key alias is missing.')
+    }
+    certificate.checkValidity()
+    def fingerprint = MessageDigest.getInstance('SHA-256').digest(certificate.encoded).encodeHex().toString()
+    if (!fingerprint.equalsIgnoreCase(expected.certificateSha256)) {
+        throw new IllegalStateException('Wrong release key. Restore the original signing backup; do not generate another key.')
+    }
+    if (keyStore.getKey(credentials.keyAlias, credentials.keyPassword.toCharArray()) == null) {
+        throw new IllegalStateException('The permanent release private key cannot be loaded.')
+    }
+    def releaseKey = android.signingConfigs.maybeCreate('leronaRelease')
+    releaseKey.storeFile = keyStoreFile
+    releaseKey.storeType = credentials.storeType
+    releaseKey.storePassword = credentials.storePassword
+    releaseKey.keyAlias = credentials.keyAlias
+    releaseKey.keyPassword = credentials.keyPassword
+    android.buildTypes.release.signingConfig = releaseKey
+} catch (Exception failure) {
+    // Do not include provider exceptions or secret values in Gradle output.
+    releaseSigningProblem = failure instanceof IllegalStateException
+        ? failure.message : 'The permanent release credentials could not be verified.'
+}
+
+if (releaseSigningProblem != null) {
+    def problem = releaseSigningProblem
+    gradle.taskGraph.whenReady { graph ->
+        if (graph.allTasks.any { task -> task.project == project && task.name.toLowerCase(Locale.ROOT).contains('release') }) {
+            throw new GradleException(problem)
+        }
+    }
+}

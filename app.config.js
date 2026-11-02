@@ -9,6 +9,7 @@ module.exports = ({ config }) => {
         marketPermission: 'ir.mservices.market.BILLING',
       },
     ],
+    './plugins/withReleaseSigning',
   ];
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID?.trim();
   if (!iosClientId) return { ...config, plugins };

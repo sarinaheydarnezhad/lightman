@@ -7,3 +7,5 @@ coverage
 package-lock.json
 pnpm-lock.yaml
 .tools
+.secrets
+releases
