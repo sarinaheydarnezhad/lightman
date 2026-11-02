@@ -1,7 +1,9 @@
 /** UI copy only. Deck contents and speech preferences are independent of these messages. */
 export const en = {
   'payment.nativeMissing':
-    'This app version does not include Myket billing. Install the latest Android version to purchase.',
+    'Myket purchases require the latest native Android app. They are unavailable in Expo Go and web browsers.',
+  'payment.accountUnconfirmed':
+    'Your account could not be verified online. Reconnect and try again to enable purchases.',
   'payment.appUpdateRequired': 'Update the Android app to purchase through Myket.',
   'payment.serverUnavailable':
     'Myket purchases are temporarily unavailable on the server. Try again later.',
@@ -810,8 +812,10 @@ export type MessageKey = keyof typeof en;
 export type Dictionary = Partial<Record<MessageKey, string>>;
 
 export const fa: Dictionary = {
+  'payment.accountUnconfirmed':
+    'حساب شما به‌صورت آنلاین تأیید نشد. اتصال اینترنت را بررسی کنید و برای فعال شدن خرید دوباره تلاش کنید.',
   'payment.nativeMissing':
-    'این نسخه از برنامه پرداخت مایکت ندارد. برای خرید، جدیدترین نسخه اندروید را نصب کنید.',
+    'خرید از مایکت به جدیدترین نسخه بومی اندروید نیاز دارد و در Expo Go یا مرورگر وب در دسترس نیست.',
   'payment.appUpdateRequired': 'برای خرید از مایکت، برنامه اندروید را به‌روزرسانی کنید.',
   'payment.serverUnavailable':
     'خرید از مایکت در سرور موقتاً در دسترس نیست. بعداً دوباره تلاش کنید.',

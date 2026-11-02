@@ -245,6 +245,59 @@ test('recover purchases never requests a new checkout and shows failures without
   expect(mockAccess.snapshot().entitlements?.isActive).toBe(false);
 });
 
+test.each(['en', 'fa'] as const)(
+  'unconfirmed account explains disabled checkout and can retry online in %s',
+  async (locale) => {
+    language(locale);
+    const response = account();
+    let online = false;
+    mockAccess = new LearningAccessController({
+      userId: 'owner',
+      usage: async () => mockUsage,
+      online: async () => online,
+      fetch: async () => response,
+    });
+    jest.mocked(myketSupported).mockReturnValue(true);
+    jest.mocked(engine.planCatalog).mockResolvedValue({
+      ...catalog,
+      purchaseSupported: true,
+      plans: catalog.plans.map((plan) =>
+        plan.plan === 'Plus' ? { ...plan, isPurchasable: true } : plan,
+      ),
+    });
+    render(<SubscriptionScreen />);
+    expect(await screen.findByText(translate(locale, 'payment.accountUnconfirmed'))).toBeTruthy();
+    const purchase = () =>
+      screen.getByRole('button', { name: translate(locale, 'paywall.purchase') });
+    expect(purchase()).toBeDisabled();
+    expect(myketPayments.run).not.toHaveBeenCalled();
+    online = true;
+    fireEvent.press(screen.getByRole('button', { name: translate(locale, 'common.tryAgain') }));
+    await waitFor(() => expect(purchase()).toBeEnabled());
+    expect(screen.queryByText(translate(locale, 'payment.accountUnconfirmed'))).toBeNull();
+    expect(engine.planCatalog).toHaveBeenCalledTimes(2);
+    expect(engine.subscription).toHaveBeenCalledTimes(2);
+  },
+);
+
+test('server availability can be refreshed without leaving the paywall', async () => {
+  account();
+  jest.mocked(myketSupported).mockReturnValue(true);
+  render(<SubscriptionScreen />);
+  await screen.findByText(translate('en', 'payment.serverUnavailable'));
+  jest.mocked(engine.planCatalog).mockResolvedValue({
+    ...catalog,
+    purchaseSupported: true,
+    plans: catalog.plans.map((plan) =>
+      plan.plan === 'Plus' ? { ...plan, isPurchasable: true } : plan,
+    ),
+  });
+  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.tryAgain') }));
+  await waitFor(() =>
+    expect(screen.getByRole('button', { name: translate('en', 'paywall.purchase') })).toBeEnabled(),
+  );
+});
+
 test.each([
   ['en', 'light'],
   ['fa', 'light'],

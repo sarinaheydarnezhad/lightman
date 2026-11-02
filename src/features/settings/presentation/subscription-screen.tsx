@@ -100,6 +100,13 @@ export function SubscriptionScreen() {
     : plus?.unavailableReason === 'app_update_required'
       ? 'payment.appUpdateRequired'
       : 'payment.serverUnavailable';
+  const accountUnconfirmed =
+    access.isAccount && !details.loading && !details.error && state.provisional;
+
+  function refreshPaymentAvailability() {
+    catalog.refresh();
+    details.refresh();
+  }
 
   async function pay(months: number | null) {
     if (paymentRunning.current || !syncEngine || !access.isAccount || !paymentAvailable) return;
@@ -332,11 +339,30 @@ export function SubscriptionScreen() {
                 <Text variant="bodySmall" tone="secondary">
                   {t(paymentUnavailableReason)}
                 </Text>
+                {myketSupported() ? (
+                  <Button
+                    label={t('common.tryAgain')}
+                    variant="secondary"
+                    onPress={refreshPaymentAvailability}
+                  />
+                ) : null}
               </View>
             ) : paymentAvailable ? (
               <Text variant="bodySmall" tone="secondary">
                 {t('payment.hint')}
               </Text>
+            ) : null}
+            {paymentAvailable && accountUnconfirmed ? (
+              <View className="gap-sm rounded-md bg-primarySoft p-md">
+                <Text variant="bodySmall" tone="secondary">
+                  {t('payment.accountUnconfirmed')}
+                </Text>
+                <Button
+                  label={t('common.tryAgain')}
+                  variant="secondary"
+                  onPress={refreshPaymentAvailability}
+                />
+              </View>
             ) : null}
           </Card>
         ) : null}
