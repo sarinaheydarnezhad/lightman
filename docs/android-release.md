@@ -1,6 +1,6 @@
 # Signed Android releases
 
-The current release candidate is `com.lerona.app`, version **1.0.0**, Android version code **4**. Earlier version-code-1 APKs used a debug key. Production releases use the permanent `lerona-release` key, with an RSA-4096 certificate valid through October 25, 2056.
+The current release candidate is `com.lerona.app`, version **1.0.0**, Android version code **5**. Earlier version-code-1 APKs used a debug key. Production releases use the permanent `lerona-release` key, with an RSA-4096 certificate valid through October 25, 2056.
 
 ## Build the Myket APK
 
@@ -12,7 +12,7 @@ pnpm run android:apk
 pnpm run android:verify
 ```
 
-This runs Android prebuild with the Myket and release-signing plugins, then assembles the universal APK using production environment files. It does not install the app or upload it to a store. The current release is copied to `releases/lerona-1.0.0-4-myket.apk`; Gradle also produces `android/app/build/outputs/apk/release/app-release.apk`.
+This runs Android prebuild with the Myket and release-signing plugins, then assembles the universal APK using production environment files. It does not install the app or upload it to a store. The current release is copied to `releases/lerona-1.0.0-5-myket.apk`; Gradle also produces `android/app/build/outputs/apk/release/app-release.apk`.
 
 The signing plugin is reapplied by prebuild. Its Gradle script loads the private key at build time and compares its certificate with the pinned public fingerprint in `android-release-signing.json`. Release builds fail if credentials are missing, invalid or belong to a different key; they cannot silently fall back to a debug key. Debug builds continue to use the debug signing configuration.
 
@@ -35,6 +35,12 @@ The signing setup and APK build do not publish the app. Myket still needs to acc
 A debug-signed installation cannot be updated directly with this production-signed APK because Android compares signing certificates. No phone is automatically uninstalled or cleared by the build command. Preserve/sync test data before arranging the one-time switch from the old debug installation. Subsequent production updates use this permanent key and can update in place.
 
 Increase `expo.android.versionCode` in `app.json` for every future store upload, and update the displayed version when appropriate. Real purchase fulfillment and production Google sign-in still need device acceptance with the production certificate.
+
+## Build 5 verification - November 3, 2026
+
+Version 1.0.0, Android build 5, includes the simplified logout confirmation with its three action buttons. Progress and actual failures are shown when needed. The signed APK is `releases/lerona-1.0.0-5-myket.apk` (105781774 bytes), with SHA-256 `7d937043f72b8fb06d3ae99b52fbb9c4b3099acc208ad962aeb257eb1871c231`.
+
+APK verification passed for the permanent signing certificate, version/package, non-debuggable build, all four architectures, Myket bridge and permission, production API URL, private-file exclusion, and all four Vazirmatn font assets. The verification report is beside the APK. Native assembly completed successfully with 119 tasks executed and 857 up-to-date. The 29 logout and release-configuration tests, TypeScript, targeted lint, formatting and diff checks passed.
 
 ## Build 4 verification - November 3, 2026
 
