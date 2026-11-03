@@ -1,6 +1,6 @@
 # Signed Android releases
 
-The current release candidate is `com.lerona.app`, version **1.0.0**, Android version code **3**. Earlier version-code-1 APKs used a debug key. Production releases use the permanent `lerona-release` key, with an RSA-4096 certificate valid through October 25, 2056.
+The current release candidate is `com.lerona.app`, version **1.0.0**, Android version code **4**. Earlier version-code-1 APKs used a debug key. Production releases use the permanent `lerona-release` key, with an RSA-4096 certificate valid through October 25, 2056.
 
 ## Build the Myket APK
 
@@ -12,7 +12,7 @@ pnpm run android:apk
 pnpm run android:verify
 ```
 
-This runs Android prebuild with the Myket and release-signing plugins, then assembles the universal APK using production environment files. It does not install the app or upload it to a store. The current release is copied to `releases/lerona-1.0.0-3-myket.apk`; Gradle also produces `android/app/build/outputs/apk/release/app-release.apk`.
+This runs Android prebuild with the Myket and release-signing plugins, then assembles the universal APK using production environment files. It does not install the app or upload it to a store. The current release is copied to `releases/lerona-1.0.0-4-myket.apk`; Gradle also produces `android/app/build/outputs/apk/release/app-release.apk`.
 
 The signing plugin is reapplied by prebuild. Its Gradle script loads the private key at build time and compares its certificate with the pinned public fingerprint in `android-release-signing.json`. Release builds fail if credentials are missing, invalid or belong to a different key; they cannot silently fall back to a debug key. Debug builds continue to use the debug signing configuration.
 
@@ -36,6 +36,16 @@ A debug-signed installation cannot be updated directly with this production-sign
 
 Increase `expo.android.versionCode` in `app.json` for every future store upload, and update the displayed version when appropriate. Real purchase fulfillment and production Google sign-in still need device acceptance with the production certificate.
 
+## Build 4 verification - November 3, 2026
+
+Version 1.0.0, Android build 4, prevents an old failed-backup modal from appearing while a new backup is running. The English and Persian regression tests reproduced that false notice before the fix. The signed APK is `releases/lerona-1.0.0-4-myket.apk` (105,782,086 bytes), with SHA-256 `78b69cd8e5f0d89c1cbe95580f73c95c764b3e73fb4880fdbc7a790117dfc914`.
+
+The APK verification passed for the pinned permanent certificate, package/version, non-debuggable build, four architectures, Myket bridge and billing permission, production API URL, exclusion of private signing files, and exact bytes of all four Vazirmatn fonts. Its machine-readable report is beside the APK. Native assembly completed successfully with 976 actionable tasks.
+
+The verified APK was installed as an in-place update on the connected Samsung Galaxy A73. The signed-in account remained available at sync cursor 25 with zero pending changes. Backup Now confirmed success on the first attempt in build 4. Earlier read-only verification of this account's stored snapshot confirmed successful decryption, two SM-2 decks, and three scheduler states. The backend repair is live as v44 with the existing backup-key disk mounted; the SM-2 SQL migration was already applied by the owner. No migration, restore, sign-out, or app-data clearing was performed during this repair.
+
+The focused backup and release-configuration suites passed 74 tests. TypeScript, targeted ESLint, formatting and diff checks passed. This APK has not been uploaded to Myket.
+
 ## Build 3 verification - November 2, 2026
 
 Version 1.0.0, Android version code 3, was rebuilt with the Persian price, Vazirmatn font, and SM-2 sync/backup fixes. The signed APK is `releases/lerona-1.0.0-3-myket.apk` (105,782,078 bytes). SHA-256: `2e0952d779755760f16b332d69c885a44f4c5988dcc7292b65b9c94b6e17b572`.
@@ -44,7 +54,7 @@ Version 1.0.0, Android version code 3, was rebuilt with the Persian price, Vazir
 
 The seven focused release/configuration/font suites passed 47 tests. TypeScript, targeted ESLint, formatting, and diff checks passed. Native assembly succeeded with 976 actionable tasks. This APK has not been uploaded to Myket or installed on a phone by this release operation.
 
-The SM-2 backend package is built and its full test suite passed 271 tests with one skipped. Production rollout is awaiting the database migration managed by the owner: `20261102105010_AddSm2ReviewSystem`. The final read-only production check did not list that migration, so the backend was not deployed. Apply the SQL in the backend's `deploy/sm2-backup-upgrade.sql` before completing deployment and testing cloud backup in build 3.
+On November 3, a read-only production check confirmed the owner had applied `20261102105010_AddSm2ReviewSystem`. Backend v44 restored the backup-key disk omitted by v43. The connected production-signed build-3 phone then confirmed backup creation; the stored snapshot decrypted and retained two SM-2 decks and three scheduler states. No further database migration was needed. Build 4 also suppresses the stale failure notice while a retry is running; its English and Persian regressions pass.
 
 ## Historical build 2 verification
 

@@ -157,7 +157,7 @@ export function SettingsBackupCard() {
           retryLabel={t('backup.refresh')}
         />
       ) : null}
-      {latest?.status === 'Failed' && !error ? (
+      {latest?.status === 'Failed' && !error && !busy ? (
         <FeedbackModal message={t('backup.error')} eventKey={latest} />
       ) : null}
       <Text tone="secondary">{t('backup.coverage')}</Text>

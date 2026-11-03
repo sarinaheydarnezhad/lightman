@@ -332,3 +332,41 @@ test('metadata refresh failure after a verified manual backup does not invent a 
   expect(await screen.findByText(/The server cannot be reached/)).toBeTruthy();
   expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
 });
+
+test.each(['en', 'fa'] as const)(
+  'retrying a failed backup hides the previous failure while waiting for verification in %s',
+  async (language) => {
+    setLanguage(language);
+    jest.mocked(engine.backupStatus).mockResolvedValue({
+      latest: {
+        ...backup,
+        status: 'Failed',
+        completedAtUtc: null,
+        sizeBytes: null,
+        syncVersion: null,
+        failureCode: 'backup_storage_failed',
+      },
+      lastSuccessful: null,
+    });
+    authenticated();
+    await screen.findByText(translate(language, 'backup.error'));
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.close') }));
+    jest.mocked(engine.createBackup).mockRejectedValueOnce(new CloudError(503));
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'backup.now') }));
+    await screen.findByText(translate(language, 'backup.unavailable'));
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.close') }));
+    let finish!: (value: Awaited<ReturnType<typeof engine.createBackup>>) => void;
+    jest.mocked(engine.createBackup).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'backup.now') }));
+    expect(screen.queryByText(translate(language, 'backup.error'))).toBeNull();
+    expect(screen.getByText(translate(language, 'backup.inProgress'))).toBeTruthy();
+    jest.mocked(engine.backupStatus).mockResolvedValue({ latest: backup, lastSuccessful: backup });
+    await act(async () => finish(backup as Awaited<ReturnType<typeof engine.createBackup>>));
+    await screen.findByText(translate(language, 'backup.verified'));
+    expect(screen.queryByText(translate(language, 'backup.error'))).toBeNull();
+  },
+);
