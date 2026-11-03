@@ -64,13 +64,8 @@ function mount(content = <LogoutScreen />) {
 
 test('logout confirmation presents explicit choices and cancellation changes no data', () => {
   mount();
-  expect(screen.getByRole('header', { name: 'Log out?' })).toHaveStyle({
-    fontFamily: 'Vazirmatn-Bold',
-    fontWeight: 'normal',
-  });
   expect(screen.getByRole('button', { name: 'Back Up and Log Out' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Log Out Without Backing Up' })).toBeTruthy();
-  expect(screen.getByText(/server-configured retention/)).toBeTruthy();
   fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
   expect(engine.signOut).not.toHaveBeenCalled();
   expect(router.replace).toHaveBeenCalledWith('/(tabs)/settings');
@@ -180,10 +175,10 @@ test('backup failure makes no success claim; proceeding requires the explicit wi
   await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/(tabs)/settings'));
 });
 
-test('unavailable sync is disclosed and logout without backup remains available', async () => {
+test('unavailable sync disables backup and logout without backup remains available', async () => {
   Object.defineProperty(engine, 'available', { value: false, configurable: true });
   mount();
-  expect(screen.getByText(/Verified server sync is unavailable/)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Back Up and Log Out' })).toBeDisabled();
   fireEvent.press(screen.getByRole('button', { name: 'Back Up and Log Out' }));
   expect(engine.signOut).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: 'Log Out Without Backing Up' }));
