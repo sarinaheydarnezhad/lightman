@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'jest-expo',
   testMatch: ['**/*.test.{ts,tsx}'],
-  modulePathIgnorePatterns: ['<rootDir>/.tools/'],
+  modulePathIgnorePatterns: ['<rootDir>/.tools/', '<rootDir>/.secrets/', '<rootDir>/.pnpm-store/'],
   moduleNameMapper: {
     '^.+[.]css$': '<rootDir>/test/style-mock.js',
     '^react-native-reanimated/mock$': '<rootDir>/test/reanimated-mock-impl.ts',

@@ -1,28 +1,4 @@
-import {
-  isValidRegistrationPassword,
-  normalizeLocalPhoneNumber,
-  normalizePhoneNumber,
-  validateTokens,
-} from './phone-auth';
-
-test.each(['Maple7xy', 'Private passphrase 2026!', 'درختسبز۷', 'a'.repeat(127) + '1'])(
-  'registration password accepts letters and numbers within the size limit: %s',
-  (password) => expect(isValidRegistrationPassword(password)).toBe(true),
-);
-
-test.each([
-  '',
-  'Maple7x',
-  '12345678',
-  'onlyletters',
-  '........',
-  'Password123!',
-  'pAsSw0Rd!',
-  'Qwerty123',
-  'a'.repeat(128) + '1',
-])('registration password rejects weak or invalid values: %s', (password) => {
-  expect(isValidRegistrationPassword(password)).toBe(false);
-});
+import { normalizeLocalPhoneNumber, normalizePhoneNumber, validateTokens } from './phone-auth';
 
 test.each(['09121234567', '۰۹۱۲۱۲۳۴۵۶۷', '٠٩١٢١٢٣٤٥٦٧', ' 09121234567 '])(
   'local phone entry accepts exactly 11 digits starting with zero: %s',
@@ -37,7 +13,7 @@ test.each([
   '0912123456',
   '091212345678',
   '19121234567',
-  '+989121234567',
+  '02121234567',
   '0912abc4567',
   '0912 1234567',
   '0912-1234567',
@@ -49,6 +25,7 @@ test.each(['+989121234567', '+۹۸۹۱۲۱۲۳۴۵۶۷', '+٩٨٩١٢١٢٣٤٥�
   'phone normalization supports international and localized digits: %s',
   (phone) => {
     expect(normalizePhoneNumber(phone)).toBe('+989121234567');
+    expect(normalizeLocalPhoneNumber(phone)).toBe('09121234567');
   },
 );
 

@@ -3,7 +3,18 @@ const expoConfig = require('eslint-config-expo/flat');
 
 module.exports = defineConfig([
   expoConfig,
-  { ignores: ['dist/**', 'android/**', 'ios/**', '.expo/**', 'coverage/**', '.tools/**'] },
+  {
+    ignores: [
+      'dist/**',
+      'android/**',
+      'ios/**',
+      '.expo/**',
+      'coverage/**',
+      '.tools/**',
+      '.secrets/**',
+      '.pnpm-store/**',
+    ],
+  },
   {
     files: ['src/core/sync/google-sign-in.ts'],
     rules: {

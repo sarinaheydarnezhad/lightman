@@ -27,6 +27,7 @@ import {
   type OtpVerification,
   type PhonePasswordRegistration,
   type PhoneRegistration,
+  type PhoneActivation,
 } from './phone-auth';
 
 const tokenKey = 'lerona.cloud.credentials.v1';
@@ -286,26 +287,12 @@ export class CloudClient {
   }
 
   async signIn(
-    email: string,
-    password: string,
-    bindUser: (userId: string) => Promise<void>,
-    displayName?: string,
+    _email: string,
+    _password: string,
+    _bindUser: (userId: string) => Promise<void>,
+    _displayName?: string,
   ): Promise<string> {
-    const epoch = this.sessionEpoch;
-    const response = await this.fetchWithTimeout(displayName ? '/auth/register' : '/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, ...(displayName ? { displayName } : {}) }),
-    });
-    if (!response.ok)
-      throw new CloudError(
-        response.status,
-        undefined,
-        undefined,
-        response.status === 401 ? 'invalid_credentials' : undefined,
-      );
-    const tokens = validateTokens(await response.json());
-    return this.completeSignIn(tokens, bindUser, epoch);
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
 
   private async completeSignIn(
@@ -361,42 +348,44 @@ export class CloudClient {
         response.status,
         undefined,
         typeof error.error === 'string' ? error.error : undefined,
-        error.code,
+        error.code ?? (response.status === 401 ? 'invalid_credentials' : undefined),
+        retryAfterDelay(response.headers?.get('Retry-After')),
       );
     }
     return (await response.json()) as T;
   }
 
-  async requestOtp(phoneNumber: string, purpose: OtpPurpose): Promise<OtpChallenge> {
+  async requestOtp(
+    phoneNumber: string,
+    purpose: OtpPurpose = 'authenticate',
+  ): Promise<OtpChallenge> {
     const challenge = await this.authPost<OtpChallenge>('/auth/phone/otp/request', {
       phoneNumber: normalizePhoneNumber(phoneNumber),
       purpose,
     });
+    return this.validateOtpChallenge(challenge);
+  }
+
+  async requestPhoneActivation(_activation: PhoneActivation): Promise<OtpChallenge> {
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
+  }
+
+  private validateOtpChallenge(challenge: OtpChallenge): OtpChallenge {
     if (
       !challenge ||
       typeof challenge.challengeId !== 'string' ||
       !challenge.challengeId ||
       !Number.isFinite(Date.parse(challenge.expiresAtUtc)) ||
-      !Number.isFinite(Date.parse(challenge.resendAtUtc))
+      !Number.isFinite(Date.parse(challenge.resendAtUtc)) ||
+      (challenge.codeLength !== undefined &&
+        (!Number.isInteger(challenge.codeLength) || challenge.codeLength !== 6))
     )
       throw new Error('Invalid OTP response.');
     return challenge;
   }
 
-  async verifyRegistrationOtp(challengeId: string, code: string): Promise<OtpVerification> {
-    const result = await this.authPost<OtpVerification>('/auth/phone/otp/verify', {
-      challengeId,
-      code,
-    });
-    if (
-      !result ||
-      !result.registrationToken ||
-      !result.expiresAtUtc ||
-      result.tokens ||
-      !Number.isFinite(Date.parse(result.expiresAtUtc))
-    )
-      throw new Error('Invalid OTP verification response.');
-    return result;
+  async verifyRegistrationOtp(_challengeId: string, _code: string): Promise<OtpVerification> {
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
 
   async loginWithOtp(
@@ -413,55 +402,29 @@ export class CloudClient {
   }
 
   async registerPhone(
-    registration: PhoneRegistration,
-    bindUser: (userId: string) => Promise<void>,
+    _registration: PhoneRegistration,
+    _bindUser: (userId: string) => Promise<void>,
   ): Promise<string> {
-    const epoch = this.sessionEpoch;
-    const tokens = validateTokens(
-      await this.authPost('/auth/phone/register', {
-        ...registration,
-        phoneNumber: normalizePhoneNumber(registration.phoneNumber),
-      }),
-    );
-    return this.completeSignIn(tokens, bindUser, epoch);
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
-
   async registerPhoneWithPassword(
-    registration: PhonePasswordRegistration,
-    bindUser: (userId: string) => Promise<void>,
+    _registration: PhonePasswordRegistration,
+    _bindUser: (userId: string) => Promise<void>,
   ): Promise<string> {
-    const epoch = this.sessionEpoch;
-    const tokens = validateTokens(
-      await this.authPost('/auth/phone/register-password', {
-        ...registration,
-        phoneNumber: normalizePhoneNumber(registration.phoneNumber),
-      }),
-    );
-    return this.completeSignIn(tokens, bindUser, epoch);
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
-
   async signInGoogle(
-    idToken: string,
-    bindUser: (userId: string) => Promise<void>,
+    _idToken: string,
+    _bindUser: (userId: string) => Promise<void>,
   ): Promise<string> {
-    const epoch = this.sessionEpoch;
-    const tokens = validateTokens(await this.authPost('/auth/google', { idToken }));
-    return this.completeSignIn(tokens, bindUser, epoch);
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
-
   async signInPhone(
-    phoneNumber: string,
-    password: string,
-    bindUser: (userId: string) => Promise<void>,
+    _phoneNumber: string,
+    _password: string,
+    _bindUser: (userId: string) => Promise<void>,
   ): Promise<string> {
-    const epoch = this.sessionEpoch;
-    const tokens = validateTokens(
-      await this.authPost('/auth/phone/login', {
-        phoneNumber: normalizePhoneNumber(phoneNumber),
-        password,
-      }),
-    );
-    return this.completeSignIn(tokens, bindUser, epoch);
+    throw new CloudError(410, undefined, undefined, 'sms_otp_only');
   }
 
   async logoutStatus(): Promise<LogoutResult | null> {

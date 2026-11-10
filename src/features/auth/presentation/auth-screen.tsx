@@ -1,53 +1,52 @@
 import { useEffect, useRef, useState } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router } from 'expo-router';
 import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
 import { CloudError } from '@/core/sync/cloud-client';
-import { isValidRegistrationPassword, normalizeLocalPhoneNumber } from '@/core/sync/phone-auth';
+import { normalizeLocalPhoneNumber, type OtpChallenge } from '@/core/sync/phone-auth';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Input } from '@/shared/ui/input';
 import { Button } from '@/shared/ui/button';
-
-type Mode = 'password' | 'register';
+import { Text } from '@/shared/ui/text';
 
 function errorKey(error: unknown): MessageKey {
   if (error instanceof Error && error.message === 'invalid_phone') return 'auth.invalidPhone';
   if (error instanceof CloudError) {
+    if (error.status === 429) return 'auth.rateLimit';
     switch (error.code) {
       case 'invalid_phone':
         return 'auth.invalidPhone';
-      case 'invalid_password':
-        return 'auth.invalidPassword';
-      case 'password_mismatch':
-        return 'auth.passwordMismatch';
-      case 'invalid_credentials':
-        return 'auth.credentials';
-      case 'duplicate_phone':
-        return 'auth.duplicate';
+      case 'invalid_otp':
+        return 'auth.invalidOtp';
+      case 'account_recovery_required':
+        return 'auth.recoveryRequired';
+      case 'sms_unavailable':
+        return 'auth.smsUnavailable';
       case 'network_error':
         return 'auth.network';
     }
-    if (error.status === 429) return 'auth.rateLimit';
-    if (error.status === 401) return 'auth.sessionExpired';
   }
   return 'auth.unexpected';
 }
 
 export function AuthScreen() {
   const { t } = useLocalization();
-  const [mode, setMode] = useState<Mode>('password');
-  const [success, setSuccess] = useState(false);
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState('');
+  const [challenge, setChallenge] = useState<OtpChallenge | null>(null);
+  const [busy, setBusy] = useState<'send' | 'verify' | null>(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [retryAt, setRetryAt] = useState(0);
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(Date.now);
   const mounted = useRef(true);
   const inFlight = useRef(false);
+  const resendSeconds = Math.max(0, Math.ceil((Math.max(retryAt, resendAt) - now) / 1000));
 
   useEffect(() => {
     mounted.current = true;
@@ -55,53 +54,59 @@ export function AuthScreen() {
       mounted.current = false;
     };
   }, []);
+  useEffect(() => {
+    if (!challenge && !retryAt && !resendAt) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [challenge, retryAt, resendAt]);
 
-  function reset(nextMode: Mode) {
-    if (inFlight.current) return;
-    setMode(nextMode);
-    setPassword('');
-    setConfirmPassword('');
-    setError('');
-  }
-
-  async function submit() {
-    if (inFlight.current || !syncEngine?.available) return;
+  async function submit(operation: 'send' | 'verify') {
+    if (inFlight.current || !syncEngine?.available || (operation === 'send' && resendSeconds > 0))
+      return;
     inFlight.current = true;
-    setBusy(true);
+    setBusy(operation);
     setError('');
     try {
-      const phoneNumber = normalizeLocalPhoneNumber(phone);
-      if (mode === 'register') {
-        if (!isValidRegistrationPassword(password)) {
-          setError(t('auth.invalidPassword'));
-          return;
+      if (operation === 'send') {
+        const requested = await syncEngine.requestOtp(
+          normalizeLocalPhoneNumber(phone),
+          'authenticate',
+        );
+        if (mounted.current) {
+          setChallenge(requested);
+          setResendAt(Date.parse(requested.resendAtUtc));
+          setCode('');
+          setNow(Date.now());
         }
-        if (password !== confirmPassword) {
-          setError(t('auth.passwordMismatch'));
-          return;
-        }
-        await syncEngine.registerPhoneWithPassword({ phoneNumber, password, confirmPassword });
       } else {
-        if (!password) {
-          setError(t('auth.passwordRequired'));
+        if (!challenge || !/^[0-9]{6}$/.test(code)) {
+          setError(t('auth.invalidCode'));
           return;
         }
-        await syncEngine.signInPhone(phoneNumber, password);
-      }
-      if (mounted.current) {
-        setPassword('');
-        setConfirmPassword('');
-        setSuccess(true);
+        if (Date.parse(challenge.expiresAtUtc) <= Date.now()) {
+          setError(t('auth.expired'));
+          return;
+        }
+        await syncEngine.loginWithOtp(challenge.challengeId, code);
+        if (mounted.current) {
+          setCode('');
+          setChallenge(null);
+          setSuccess(true);
+        }
       }
     } catch (failure) {
-      if (mounted.current) setError(t(errorKey(failure)));
+      if (mounted.current) {
+        setError(t(errorKey(failure)));
+        if (failure instanceof CloudError && failure.status === 429) {
+          setRetryAt(Date.now() + (failure.retryAfterMs ?? 60000));
+          setNow(Date.now());
+        }
+      }
     } finally {
       inFlight.current = false;
-      if (mounted.current) setBusy(false);
+      if (mounted.current) setBusy(null);
     }
   }
-
-  const registering = mode === 'register';
 
   return (
     <Screen scroll keyboardAware>
@@ -110,73 +115,71 @@ export function AuthScreen() {
         {!syncEngine?.available ? (
           <FeedbackModal message={t('sync.unavailable')} tone="info" />
         ) : success ? (
-          <FeedbackModal message={t('auth.success')} tone="success" onDismiss={() => router.replace('/settings/cloud')}>
+          <FeedbackModal
+            message={t('auth.success')}
+            tone="success"
+            onDismiss={() => router.replace('/settings/cloud')}
+          >
             <Button label={t('auth.done')} onPress={() => router.replace('/settings/cloud')} />
           </FeedbackModal>
         ) : (
           <>
-            <View className="gap-sm">
-              <Button
-                label={t('auth.passwordLogin')}
-                variant="secondary"
-                disabled={busy}
-                accessibilityState={{ selected: !registering }}
-                onPress={() => reset('password')}
-              />
-              <Button
-                label={t('auth.register')}
-                variant="secondary"
-                disabled={busy}
-                accessibilityState={{ selected: registering }}
-                onPress={() => reset('register')}
-              />
-            </View>
             <Input
               label={t('auth.phone')}
               helperText={t('auth.phoneHint')}
               placeholder="09121234567"
               value={phone}
-              onChangeText={setPhone}
-              disabled={busy}
-              maxLength={11}
+              onChangeText={(value) => {
+                setPhone(value);
+                setChallenge(null);
+                setCode('');
+                setError('');
+              }}
+              disabled={!!busy}
+              maxLength={32}
               keyboardType="phone-pad"
               autoComplete="tel"
               autoCapitalize="none"
               textAlign="left"
             />
-            <Input
-              label={t('sync.password')}
-              helperText={registering ? t('auth.passwordHint') : undefined}
-              value={password}
-              onChangeText={setPassword}
-              disabled={busy}
-              maxLength={128}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete={registering ? 'new-password' : 'current-password'}
-            />
-            {registering && (
-              <Input
-                label={t('auth.confirmPassword')}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                disabled={busy}
-                maxLength={128}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="new-password"
-              />
-            )}
             <Button
-              label={t(registering ? 'auth.complete' : 'sync.signIn')}
-              loading={busy}
-              onPress={() => void submit()}
+              label={t(busy === 'send' ? 'auth.sending' : 'auth.request')}
+              loading={busy === 'send'}
+              disabled={!!busy || resendSeconds > 0}
+              onPress={() => void submit('send')}
             />
+            {resendSeconds > 0 && <Text>{t('auth.resendWait', { time: resendSeconds })}</Text>}
+            {challenge && (
+              <>
+                <Text>{t('auth.requested')}</Text>
+                <Input
+                  label={t('auth.code')}
+                  value={code}
+                  onChangeText={(value) =>
+                    setCode(
+                      value.replace(/[\u06f0-\u06f9\u0660-\u0669]/g, (digit) =>
+                        String(digit.charCodeAt(0) - (digit >= '\u06f0' ? 0x06f0 : 0x0660)),
+                      ),
+                    )
+                  }
+                  disabled={!!busy}
+                  maxLength={6}
+                  keyboardType="number-pad"
+                  autoComplete="sms-otp"
+                  textAlign="left"
+                />
+                {Date.parse(challenge.expiresAtUtc) <= now && <Text>{t('auth.expired')}</Text>}
+                <Button
+                  label={t(busy === 'verify' ? 'auth.verifying' : 'auth.verify')}
+                  loading={busy === 'verify'}
+                  disabled={!!busy || now < retryAt || Date.parse(challenge.expiresAtUtc) <= now}
+                  onPress={() => void submit('verify')}
+                />
+              </>
+            )}
           </>
         )}
-        {!!error && (
-          <FeedbackModal message={error} onDismiss={() => setError('')} />
-        )}
+        {!!error && <FeedbackModal message={error} onDismiss={() => setError('')} />}
       </View>
     </Screen>
   );

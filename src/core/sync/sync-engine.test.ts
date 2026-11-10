@@ -201,7 +201,7 @@ test('authentication activates isolated account storage before binding; logout a
   });
   const credentials = {
     ...cloud,
-    signInPhone: jest.fn(
+    loginWithOtp: jest.fn(
       async (_phone: string, _password: string, bindUser: (id: string) => Promise<void>) => {
         await bindUser('11111111-1111-1111-1111-111111111111');
         events.push('save');
@@ -219,7 +219,7 @@ test('authentication activates isolated account storage before binding; logout a
     undefined,
     lifecycle,
   );
-  await engine.signInPhone('+989121234567', 'Password');
+  await engine.loginWithOtp('+989121234567', 'Password');
   expect(events).toEqual(['account', 'bind', 'save']);
   await expect(engine.signOut()).rejects.toThrow('Revocation unconfirmed');
   expect(lifecycle.enterGuest).toHaveBeenCalledTimes(1);
@@ -249,7 +249,7 @@ test('failed credential persistence restores guest data without invoking destruc
   const credentials = {
     ...cloud,
     forgetLocalSession: jest.fn(async () => {}),
-    signInPhone: jest.fn(
+    loginWithOtp: jest.fn(
       async (_phone: string, _password: string, bind: (id: string) => Promise<void>) => {
         await bind('11111111-1111-1111-1111-111111111111');
         throw new Error('Secure storage unavailable');
@@ -263,7 +263,7 @@ test('failed credential persistence restores guest data without invoking destruc
     undefined,
     lifecycle,
   );
-  await expect(engine.signInPhone('+989121234567', 'Password')).rejects.toThrow(
+  await expect(engine.loginWithOtp('+989121234567', 'Password')).rejects.toThrow(
     'Secure storage unavailable',
   );
   expect(credentials.forgetLocalSession).toHaveBeenCalled();
@@ -280,7 +280,7 @@ test('verified authentication requests the guest preview only after isolated acc
       },
     } as unknown as SyncStore,
     {
-      signInPhone: async (
+      loginWithOtp: async (
         _phone: string,
         _password: string,
         bind: (id: string) => Promise<void>,
@@ -303,82 +303,7 @@ test('verified authentication requests the guest preview only after isolated acc
       events.push('preview');
     },
   );
-  await engine.signInPhone('+989121234567', 'password');
-  expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
-});
-
-test('Google authentication uses the same isolated storage and guest preview lifecycle', async () => {
-  const events: string[] = [];
-  const cloud = {
-    signInGoogle: jest.fn(async (_token: string, bind: (id: string) => Promise<void>) => {
-      await bind('google-owner');
-      events.push('credentials');
-      return 'google-owner';
-    }),
-  };
-  const engine = new SyncEngine(
-    {
-      bind: async () => {
-        events.push('bind');
-      },
-    } as unknown as SyncStore,
-    cloud as unknown as CloudClient,
-    undefined,
-    undefined,
-    {
-      isAccount: () => true,
-      enterAccount: async () => {
-        events.push('account');
-      },
-      enterGuest: async () => {},
-    },
-    () => {
-      events.push('preview');
-    },
-  );
-  await engine.signInGoogle('google-id-token');
-  expect(cloud.signInGoogle).toHaveBeenCalledWith('google-id-token', expect.any(Function));
-  expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
-});
-
-test('password registration preserves isolated storage, binding and guest preview order', async () => {
-  const events: string[] = [];
-  const registration = {
-    phoneNumber: '09121234567',
-    password: 'Maple7xy',
-    confirmPassword: 'Maple7xy',
-  };
-  const cloud = {
-    registerPhoneWithPassword: jest.fn(
-      async (_registration, bind: (id: string) => Promise<void>) => {
-        await bind('phone-owner');
-        events.push('credentials');
-        return 'phone-owner';
-      },
-    ),
-  };
-  const engine = new SyncEngine(
-    {
-      bind: async () => {
-        events.push('bind');
-      },
-    } as unknown as SyncStore,
-    cloud as unknown as CloudClient,
-    undefined,
-    undefined,
-    {
-      isAccount: () => true,
-      enterAccount: async () => {
-        events.push('account');
-      },
-      enterGuest: async () => {},
-    },
-    () => {
-      events.push('preview');
-    },
-  );
-  await engine.registerPhoneWithPassword(registration);
-  expect(cloud.registerPhoneWithPassword).toHaveBeenCalledWith(registration, expect.any(Function));
+  await engine.loginWithOtp('+989121234567', 'password');
   expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
 });
 

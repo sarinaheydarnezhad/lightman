@@ -155,7 +155,7 @@ test('multiple examples show optional translation and notes', () => {
 
 test.each([
   ['ltr', 'small', 'left', 'text-headingMedium', 'text-bodySmall'],
-  ['rtl', 'large', 'right', 'text-display', 'text-bodyLarge'],
+  ['rtl', 'large', 'left', 'text-display', 'text-bodyLarge'],
   ['center', 'medium', 'center', 'text-headingLarge', 'text-bodyMedium'],
 ] as const)(
   'deck %s / %s controls only card alignment and semantic typography',
@@ -314,12 +314,25 @@ test('reduced motion switches the accessible face without a spatial flip', () =>
   expect(screen.queryByTestId('flip-card-back')).toBeNull();
 });
 
-test('RTL alignment is preserved on the answer face', () => {
+test('Latin answer content remains LTR inside an RTL deck', () => {
   show({ deck: makeDeck({ textAlignment: 'rtl' }), revealed: true });
   expect(screen.getByText('greeting').props.style).toMatchObject({
+    textAlign: 'left',
+    writingDirection: 'ltr',
+  });
+});
+
+test('Persian content is RTL on the question and answer faces', () => {
+  show({
+    card: makeCard({ frontText: 'سلام', meaning: 'درود' }),
+    deck: makeDeck({ textAlignment: 'rtl' }),
+    revealed: true,
+  });
+  expect(screen.getByText('سلام', { includeHiddenElements: true })).toHaveStyle({
     textAlign: 'right',
     writingDirection: 'rtl',
   });
+  expect(screen.getByText('درود')).toHaveStyle({ textAlign: 'right', writingDirection: 'rtl' });
 });
 
 test.each(['light', 'dark'] as const)(

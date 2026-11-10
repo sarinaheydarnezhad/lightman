@@ -33,7 +33,6 @@ jest.mock('expo-network', () => ({
 jest.setTimeout(40_000);
 
 const endpoint = process.env.LERONA_FLOW_API_URL!;
-const password = 'A long synthetic cloud test password 2026!';
 const databases: RealSqliteDatabase[] = [];
 const requests: { path: string; method: string; status: number }[] = [];
 let secure = new Map<string, string>();
@@ -117,10 +116,13 @@ async function installation(phoneNumber: string, register = false, legacyDefault
     enterEmptyGuest: () => scopes.enterEmptyGuest(),
     lockAccount: () => scopes.lockAccount(),
   });
-  if (register) {
-    await engine.registerPhoneWithPassword({ phoneNumber, password, confirmPassword: password });
-    await engine.updateAccountName('Synthetic cloud test');
-  } else await engine.signInPhone(phoneNumber, password);
+  const sms = await actualHttp(`/__test/otp?phone=${encodeURIComponent(phoneNumber)}`, {
+    method: 'POST',
+  });
+  expect(sms.status).toBe(200);
+  const { challengeId, code } = (await sms.json()) as { challengeId: string; code: string };
+  await engine.loginWithOtp(challengeId, code);
+  if (register) await engine.updateAccountName('Synthetic cloud test');
   const transfer = new GuestTransfer(engine, async () => ({
     guest: (await scopes.guestScope()).database!,
     account: scopes.current().database!,

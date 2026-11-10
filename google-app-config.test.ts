@@ -1,48 +1,20 @@
 import appConfig from './app.json';
 import configure from './app.config';
-const originalIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
-afterEach(() => {
-  if (originalIosClientId === undefined) delete process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  else process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = originalIosClientId;
-});
-
-test('unconfigured Google sign-in preserves the existing Expo build configuration', () => {
-  delete process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-  expect(configure({ config: appConfig.expo })).toEqual({
-    ...appConfig.expo,
-    plugins: expect.arrayContaining(appConfig.expo.plugins),
-  });
-  expect(configure({ config: appConfig.expo }).plugins).toContainEqual([
-    './plugins/withMarketPlace',
-    expect.objectContaining({ marketApplicationId: 'ir.mservices.market' }),
-  ]);
-  expect(configure({ config: appConfig.expo }).plugins).toContain('./plugins/withReleaseSigning');
-});
-
-test('Google iOS configuration adds the reversed client URL scheme without removing other plugins', () => {
-  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = '12345-ios-client.apps.googleusercontent.com';
-  expect(configure({ config: appConfig.expo }).plugins).toEqual([
-    ...appConfig.expo.plugins,
-    [
-      './plugins/withMarketPlace',
-      {
-        marketApplicationId: 'ir.mservices.market',
-        marketBindAddress: 'ir.mservices.market.InAppBillingService.BIND',
-        marketPermission: 'ir.mservices.market.BILLING',
-      },
-    ],
-    './plugins/withReleaseSigning',
-    [
-      '@react-native-google-signin/google-signin',
-      {
-        iosUrlScheme: 'com.googleusercontent.apps.12345-ios-client',
-      },
-    ],
-  ]);
-});
-
-test('malformed Google iOS client IDs cannot produce a broken native callback scheme', () => {
-  process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = 'not-a-google-client-id';
-  expect(() => configure({ config: appConfig.expo })).toThrow('Google iOS OAuth client ID');
-});
+test.each([undefined, '12345-ios-client.apps.googleusercontent.com', 'invalid'])(
+  'legacy Google configuration cannot enable Google authentication (%s)',
+  (value) => {
+    const original = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+    try {
+      if (value === undefined) delete process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+      else process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = value;
+      const result = configure({ config: appConfig.expo });
+      expect(result.plugins).toEqual(expect.arrayContaining(appConfig.expo.plugins));
+      expect(result.plugins).toContain('./plugins/withReleaseSigning');
+      expect(JSON.stringify(result.plugins)).not.toContain('google-signin');
+    } finally {
+      if (original === undefined) delete process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+      else process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = original;
+    }
+  },
+);

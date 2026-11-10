@@ -1,4 +1,4 @@
-import { act, fireEvent, render, waitFor, within } from '@testing-library/react-native';
+import { act, configure, fireEvent, render, waitFor, within } from '@testing-library/react-native';
 import { renderRouter, screen } from 'expo-router/testing-library';
 import { router } from 'expo-router';
 import { DefaultTheme, HeaderBackButton } from 'expo-router/react-navigation';
@@ -12,6 +12,8 @@ import { ArrowLeft, Check, ChevronLeft } from 'lucide-react-native';
 import {
   addNotificationResponseReceivedListener,
   getLastNotificationResponse,
+  getPermissionsAsync,
+  requestPermissionsAsync,
 } from '@/core/infrastructure/expo-local-notifications';
 
 import RootLayout, { ErrorBoundary } from '@/app/_layout';
@@ -36,6 +38,8 @@ import SpeechSettings from '@/app/settings/speech';
 import LanguageSettings from '@/app/settings/language';
 import CloudSync from '@/app/settings/cloud';
 import Authentication from '@/app/auth';
+import GuestData from '@/app/auth/guest-data';
+import Logout from '@/app/settings/logout';
 import Transfer from '@/app/settings/transfer';
 import ImportPreviewRoute from '@/app/settings/import-preview';
 import Subscription from '@/app/settings/subscription';
@@ -61,6 +65,11 @@ import {
 import { setTestTheme } from '@/../test/set-test-theme';
 import { formatNumber, translate } from '@/shared/localization/localization';
 import * as swipeSurface from '@/features/study/presentation/swipeable-study-card';
+
+// These integration flows mount the entire native navigation tree and perform
+// several asynchronous actions. Keep bounded CI budgets separate from unit tests.
+jest.setTimeout(30_000);
+configure({ asyncUtilTimeout: 5000 });
 
 jest.mock('@/core/composition/learning-access', () => {
   const state = { entitlements: null, provisional: false, message: null };
@@ -141,6 +150,8 @@ const routes = {
   'settings/language': LanguageSettings,
   'settings/cloud': CloudSync,
   'auth/index': Authentication,
+  'auth/guest-data': GuestData,
+  'settings/logout': Logout,
   'settings/transfer': Transfer,
   'settings/import-preview': ImportPreviewRoute,
   'settings/subscription': Subscription,
@@ -149,6 +160,13 @@ const routes = {
 
 beforeAll(async () => {
   await seedDevelopmentData(repositories);
+});
+
+beforeEach(() => {
+  jest.mocked(getPermissionsAsync).mockResolvedValue({ granted: true, status: 'granted' } as never);
+  jest
+    .mocked(requestPermissionsAsync)
+    .mockResolvedValue({ granted: true, status: 'granted' } as never);
 });
 
 afterEach(async () => {
@@ -340,14 +358,12 @@ test('app language switches visible navigation and RTL labels without changing d
     fireEvent.press(persian);
     await waitFor(() => expect(application.settings.snapshot()?.language).toBe('fa'));
     const heading = await screen.findByRole('header', { name: 'زبان برنامه' });
-    let layout = heading.parent;
-    while (layout && layout.props.style?.direction !== 'rtl') layout = layout.parent;
-    expect(layout?.props.style).toMatchObject({ direction: 'rtl' });
+    expect(heading).toHaveStyle({ textAlign: 'right', writingDirection: 'rtl' });
     expect(screen.getByRole('button', { name: 'فارسی', selected: true })).toBeTruthy();
     expect((await application.getDeck('travel-basics')).language).toBe(before);
-    fireEvent.press(screen.getByRole('button', { name: 'عربی' }));
-    await waitFor(() => expect(application.settings.snapshot()?.language).toBe('ar'));
-    expect(await screen.findByRole('header', { name: 'لغة التطبيق' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'انگلیسی' }));
+    await waitFor(() => expect(application.settings.snapshot()?.language).toBe('en'));
+    expect(await screen.findByRole('header', { name: 'App language' })).toBeTruthy();
   } finally {
     await act(async () => {
       await application.settings.setLanguage(languageTag('en'));
@@ -679,7 +695,8 @@ test('card form validates required fields and previews RTL content with examples
   fireEvent.changeText(screen.getByLabelText('Sentence 1'), '  A  sentence  ');
   fireEvent.changeText(screen.getByLabelText('Translation 1 (optional)'), '  ترجمه  ');
   fireEvent.press(screen.getByRole('button', { name: 'Preview card' }));
-  expect(screen.getByText('New term')).toHaveStyle({ textAlign: 'right', writingDirection: 'rtl' });
+  expect(screen.getByText('New term')).toHaveStyle({ textAlign: 'left', writingDirection: 'ltr' });
+  expect(screen.getByText('ترجمه')).toHaveStyle({ textAlign: 'right', writingDirection: 'rtl' });
   expect(screen.getByText('A  sentence')).toBeTruthy();
 });
 
@@ -749,7 +766,7 @@ test('daily reminder uses the notification service and reveals the local time co
   await waitFor(() =>
     expect(screen.getByRole('switch', { name: 'Daily reminder', checked: true })).toBeTruthy(),
   );
-  expect(schedule).toHaveBeenCalledWith('09:00', 'en');
+  expect(schedule).toHaveBeenCalledWith('09:00', 'en', expect.any(Array));
   expect(screen.getByRole('button', { name: /Reminder time, 09:00/ })).toBeTruthy();
   fireEvent.press(screen.getByRole('switch', { name: 'Daily reminder', checked: true }));
   await waitFor(() =>
@@ -760,7 +777,10 @@ test('daily reminder uses the notification service and reveals the local time co
 
 test('permission denial keeps reminder off and offers device settings', async () => {
   await application.settings.setReminderEnabled(false);
-  jest.spyOn(expoNotificationService, 'getPermissionStatus').mockResolvedValue('denied');
+  jest.mocked(getPermissionsAsync).mockResolvedValue({ granted: false, status: 'denied' } as never);
+  jest
+    .mocked(requestPermissionsAsync)
+    .mockResolvedValue({ granted: false, status: 'denied' } as never);
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByLabelText('Notification permission: Disabled in device settings');
   fireEvent.press(await screen.findByRole('switch', { name: 'Daily reminder', checked: false }));
@@ -770,7 +790,7 @@ test('permission denial keeps reminder off and offers device settings', async ()
 
 test('unavailable notifications leave the reminder switch disabled', async () => {
   await application.settings.setReminderEnabled(false);
-  jest.spyOn(expoNotificationService, 'getPermissionStatus').mockResolvedValue('unavailable');
+  jest.mocked(getPermissionsAsync).mockRejectedValue(new Error('Notifications unavailable'));
   renderRouter(routes, { initialUrl: '/settings' });
   await screen.findByLabelText('Notification permission: Unavailable');
   expect(screen.getByRole('switch', { name: 'Daily reminder', disabled: true })).toBeTruthy();
@@ -880,7 +900,7 @@ test('speech settings show accent options only for English', async () => {
     preferredSpeechLanguage: languageTag('en'),
     preferredSpeechAccent: null,
   });
-}, 15000);
+}, 30_000);
 
 test('card details pronounce only the term and stop speech when navigation leaves', async () => {
   const speak = jest.spyOn(speech, 'speak').mockResolvedValue(true);
@@ -1412,7 +1432,19 @@ test('rapid deck delete taps submit one removal', async () => {
 let studyId = 0;
 
 async function studyFixture(cardCount: number) {
-  jest.spyOn(idGenerator, 'create').mockImplementation(() => `study-ui-${++studyId}`);
+  // These navigation assertions address cards in insertion order. Random ordering
+  // is covered by study-order.test.ts; keep this workflow fixture deterministic.
+  const startStudySession = application.startStudySession;
+  jest
+    .spyOn(application, 'startStudySession')
+    .mockImplementation((scope) => startStudySession(scope, 'in-order'));
+  const reviewMissedCards = application.reviewMissedCards;
+  jest
+    .spyOn(application, 'reviewMissedCards')
+    .mockImplementation((id) => reviewMissedCards(id, 'in-order'));
+  jest
+    .spyOn(idGenerator, 'create')
+    .mockImplementation(() => `study-ui-${String(++studyId).padStart(8, '0')}`);
   const deck = await application.createDeck({
     name: `Study test ${cardCount}`,
     description: '',

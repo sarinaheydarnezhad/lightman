@@ -88,6 +88,7 @@ const credentials = {
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
   accessExpiresAtUtc: '2099-01-01T00:00:00Z',
+  phoneVerified: true,
   userId: '11111111-1111-1111-1111-111111111111',
 };
 

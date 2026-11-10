@@ -3,7 +3,12 @@ import * as Network from 'expo-network';
 import type { CloudClient } from './cloud-client';
 import { CloudError } from './cloud-client';
 import type { SyncStore } from './sync-store';
-import type { OtpPurpose, PhonePasswordRegistration, PhoneRegistration } from './phone-auth';
+import type {
+  OtpPurpose,
+  PhonePasswordRegistration,
+  PhoneRegistration,
+  PhoneActivation,
+} from './phone-auth';
 import type { LogoutResult } from './logout-journal';
 import type { ServerBackup } from './server-backup';
 import { retryDelay } from './retry-policy';
@@ -286,6 +291,10 @@ export class SyncEngine {
 
   requestOtp(phoneNumber: string, purpose: OtpPurpose) {
     return this.cloud.requestOtp(phoneNumber, purpose);
+  }
+
+  requestPhoneActivation(activation: PhoneActivation) {
+    return this.cloud.requestPhoneActivation(activation);
   }
 
   verifyRegistrationOtp(challengeId: string, code: string) {
