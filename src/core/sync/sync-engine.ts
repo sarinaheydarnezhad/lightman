@@ -313,6 +313,10 @@ export class SyncEngine {
     await this.authenticate((bind) => this.cloud.signInPhone(phoneNumber, password, bind));
   }
 
+  async resetPhonePassword(reset: import('./phone-auth').PhonePasswordReset): Promise<void> {
+    await this.authenticate((bind) => this.cloud.resetPhonePassword(reset, bind));
+  }
+
   async signInGoogle(idToken: string): Promise<void> {
     await this.authenticate((bind) => this.cloud.signInGoogle(idToken, bind));
   }

@@ -1,4 +1,4 @@
-export type OtpPurpose = 'authenticate';
+export type OtpPurpose = 'register' | 'reset';
 
 export interface OtpChallenge {
   readonly challengeId: string;
@@ -8,7 +8,7 @@ export interface OtpChallenge {
 }
 
 export interface AuthTokens {
-  readonly phoneVerified: true;
+  readonly phoneVerified?: boolean;
   readonly accessToken: string;
   readonly refreshToken: string;
   readonly accessExpiresAtUtc: string;
@@ -20,6 +20,14 @@ export interface OtpVerification {
   readonly registrationToken: string | null;
   readonly expiresAtUtc: string | null;
   readonly tokens: AuthTokens | null;
+  readonly resetPasswordToken?: string | null;
+}
+
+export interface PhonePasswordReset {
+  readonly phoneNumber: string;
+  readonly resetToken: string;
+  readonly password: string;
+  readonly confirmPassword: string;
 }
 
 export interface PhoneRegistration {
@@ -41,6 +49,38 @@ export interface PhoneActivation {
   readonly password?: string;
   readonly email?: string;
   readonly idToken?: string;
+}
+
+const commonPasswords = new Set([
+  'password1',
+  'password12',
+  'password123',
+  'password1234',
+  'password12345',
+  'password123456',
+  'qwerty123',
+  'qwerty12345',
+  'qwerty123456',
+  'abc12345',
+  'abcd1234',
+  '1234abcd',
+  'letmein123',
+  'welcome1',
+  'welcome123',
+  'admin123',
+  'admin1234',
+  'iloveyou1',
+  'passw0rd',
+]);
+
+export function isValidRegistrationPassword(password: string): boolean {
+  return (
+    password.length >= 8 &&
+    password.length <= 128 &&
+    /\p{L}/u.test(password) &&
+    /\p{Nd}/u.test(password) &&
+    !commonPasswords.has(password.replace(/[^\p{L}\p{Nd}]/gu, '').toLowerCase())
+  );
 }
 
 function normalizePhoneDigits(value: string): string {
@@ -69,7 +109,7 @@ export function validateTokens(value: unknown): AuthTokens {
   const tokens = value as Partial<AuthTokens> | null;
   if (
     !tokens ||
-    tokens.phoneVerified !== true ||
+    (tokens.phoneVerified !== undefined && typeof tokens.phoneVerified !== 'boolean') ||
     typeof tokens.accessToken !== 'string' ||
     !tokens.accessToken ||
     typeof tokens.refreshToken !== 'string' ||

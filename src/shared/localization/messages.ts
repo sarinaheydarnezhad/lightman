@@ -323,6 +323,13 @@ export const en = {
   'guest.storageError': 'Unable to open local data',
   'guest.storageErrorHint': 'Your data has not been deleted. Retry opening guest storage.',
   'auth.title': 'Sign in to Lerona',
+  'auth.forgotPassword': 'Forgot password?',
+  'auth.resetPassword': 'Save new password and sign in',
+  'auth.signupHint': 'Verify your mobile number, create a password, then enter your name.',
+  'auth.resetHint': 'Verify your mobile number to choose a new password.',
+  'auth.next': 'Continue to name',
+  'auth.name': 'Name',
+  'auth.editPassword': 'Edit password',
   'auth.googleContinue': 'Continue with Google',
   'auth.googleUnavailable':
     'Google sign-in is not configured or is temporarily unavailable. Use another sign-in option.',
@@ -372,7 +379,7 @@ export const en = {
   'auth.invalidPassword':
     'Use 8–128 characters with letters and numbers, and avoid common passwords.',
   'auth.passwordMismatch': 'The passwords do not match.',
-  'auth.invalidUsername': 'Enter a username of 1–120 characters.',
+  'auth.invalidUsername': 'Enter a name of 1–120 characters.',
   'auth.credentials': 'Invalid mobile number or password.',
   'auth.invalidOtp':
     'Verification is invalid, expired, already used, or has too many attempts. Request another code.',
@@ -1146,6 +1153,13 @@ export const fa: Dictionary = {
   'guest.storageError': 'داده‌های محلی باز نشدند',
   'guest.storageErrorHint': 'داده‌های شما حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کنید.',
   'auth.title': 'ورود به لرونا',
+  'auth.forgotPassword': 'رمز عبور را فراموش کرده‌اید؟',
+  'auth.resetPassword': 'ذخیرهٔ رمز جدید و ورود',
+  'auth.signupHint': 'شمارهٔ موبایل را تأیید کنید، رمز عبور بسازید و سپس نام خود را وارد کنید.',
+  'auth.resetHint': 'برای انتخاب رمز جدید، شمارهٔ موبایل خود را تأیید کنید.',
+  'auth.next': 'ادامه و ثبت نام',
+  'auth.name': 'نام',
+  'auth.editPassword': 'ویرایش رمز عبور',
   'auth.googleContinue': 'ادامه با گوگل',
   'auth.googleUnavailable':
     'ورود با گوگل تنظیم نشده یا موقتاً در دسترس نیست. از روش دیگری برای ورود استفاده کنید.',
@@ -1193,7 +1207,7 @@ export const fa: Dictionary = {
   'auth.invalidCode': 'شش رقم کد پیامک را وارد کنید.',
   'auth.invalidPassword': 'رمز عبور باید ۸ تا ۱۲۸ نویسه شامل حروف و عدد باشد و رایج نباشد.',
   'auth.passwordMismatch': 'رمزهای عبور یکسان نیستند.',
-  'auth.invalidUsername': 'نام کاربری بین ۱ تا ۱۲۰ نویسه وارد کنید.',
+  'auth.invalidUsername': 'نام خود را بین ۱ تا ۱۲۰ نویسه وارد کنید.',
   'auth.credentials': 'شماره موبایل یا رمز عبور نادرست است.',
   'auth.invalidOtp':
     'کد نامعتبر، منقضی، استفاده‌شده یا تعداد تلاش‌ها بیش از حد است. کد جدید درخواست کنید.',

@@ -201,7 +201,7 @@ test('authentication activates isolated account storage before binding; logout a
   });
   const credentials = {
     ...cloud,
-    loginWithOtp: jest.fn(
+    signInPhone: jest.fn(
       async (_phone: string, _password: string, bindUser: (id: string) => Promise<void>) => {
         await bindUser('11111111-1111-1111-1111-111111111111');
         events.push('save');
@@ -219,7 +219,7 @@ test('authentication activates isolated account storage before binding; logout a
     undefined,
     lifecycle,
   );
-  await engine.loginWithOtp('+989121234567', 'Password');
+  await engine.signInPhone('+989121234567', 'Password');
   expect(events).toEqual(['account', 'bind', 'save']);
   await expect(engine.signOut()).rejects.toThrow('Revocation unconfirmed');
   expect(lifecycle.enterGuest).toHaveBeenCalledTimes(1);
@@ -249,7 +249,7 @@ test('failed credential persistence restores guest data without invoking destruc
   const credentials = {
     ...cloud,
     forgetLocalSession: jest.fn(async () => {}),
-    loginWithOtp: jest.fn(
+    signInPhone: jest.fn(
       async (_phone: string, _password: string, bind: (id: string) => Promise<void>) => {
         await bind('11111111-1111-1111-1111-111111111111');
         throw new Error('Secure storage unavailable');
@@ -263,7 +263,7 @@ test('failed credential persistence restores guest data without invoking destruc
     undefined,
     lifecycle,
   );
-  await expect(engine.loginWithOtp('+989121234567', 'Password')).rejects.toThrow(
+  await expect(engine.signInPhone('+989121234567', 'Password')).rejects.toThrow(
     'Secure storage unavailable',
   );
   expect(credentials.forgetLocalSession).toHaveBeenCalled();
@@ -280,7 +280,7 @@ test('verified authentication requests the guest preview only after isolated acc
       },
     } as unknown as SyncStore,
     {
-      loginWithOtp: async (
+      signInPhone: async (
         _phone: string,
         _password: string,
         bind: (id: string) => Promise<void>,
@@ -303,7 +303,7 @@ test('verified authentication requests the guest preview only after isolated acc
       events.push('preview');
     },
   );
-  await engine.loginWithOtp('+989121234567', 'password');
+  await engine.signInPhone('+989121234567', 'password');
   expect(events).toEqual(['account', 'bind', 'credentials', 'preview']);
 });
 

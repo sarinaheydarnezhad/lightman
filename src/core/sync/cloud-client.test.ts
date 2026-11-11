@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { CloudClient } from './cloud-client';
 import type { PendingOperation } from './contract';
 
@@ -21,6 +22,35 @@ const rotated = {
   refreshToken: 'new-refresh',
   accessExpiresAtUtc: '2099-01-01T00:00:00.000Z',
 };
+
+test('only native development builds can use the USB loopback test API', () => {
+  const originalDev = __DEV__;
+  const originalOs = Platform.OS;
+  const originalUrl = process.env.EXPO_PUBLIC_API_URL;
+  try {
+    for (const development of [true, false]) {
+      Object.assign(globalThis, { __DEV__: development });
+      for (const os of ['android', 'web'] as const) {
+        Platform.OS = os;
+        for (const url of [
+          'http://127.0.0.1:5210',
+          'http://127.0.0.1:5210.evil.example',
+          'http://192.168.1.10:5210',
+          'http://api.example.test',
+        ]) {
+          process.env.EXPO_PUBLIC_API_URL = url;
+          expect(new CloudClient().available).toBe(
+            development && os === 'android' && url === 'http://127.0.0.1:5210',
+          );
+        }
+      }
+    }
+  } finally {
+    Object.assign(globalThis, { __DEV__: originalDev });
+    Platform.OS = originalOs;
+    process.env.EXPO_PUBLIC_API_URL = originalUrl;
+  }
+});
 
 test('backup metadata is shared across screens, expires after 15 seconds and can be explicitly refreshed', async () => {
   const clock = jest.spyOn(Date, 'now').mockReturnValue(100_000);
@@ -67,7 +97,7 @@ test('OTP rate limits preserve Retry-After for the authentication countdown', as
     headers: new Headers({ 'Retry-After': '3500' }),
     json: async () => ({ code: 'otp_rate_limit' }),
   });
-  await expect(new CloudClient().requestOtp('09121234567', 'authenticate')).rejects.toMatchObject({
+  await expect(new CloudClient().requestOtp('09121234567', 'register')).rejects.toMatchObject({
     status: 429,
     code: 'otp_rate_limit',
     retryAfterMs: 3500000,
@@ -87,7 +117,7 @@ test.each([0, 5, 9, 6.5, '6'])(
         codeLength,
       }),
     });
-    await expect(new CloudClient().requestOtp('09121234567', 'authenticate')).rejects.toThrow(
+    await expect(new CloudClient().requestOtp('09121234567', 'register')).rejects.toThrow(
       'Invalid OTP response',
     );
   },
@@ -421,10 +451,10 @@ test('access expiry refreshes securely before an authenticated pull', async () =
 test('sign-in never persists tokens before confirming the local account binding', async () => {
   globalThis.fetch = jest
     .fn()
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ tokens: rotated }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => rotated })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'other-user' }) });
   await expect(
-    new CloudClient().loginWithOtp('challenge', '123456', async () => {
+    new CloudClient().signInPhone('09121234567', 'Private password2026!', async () => {
       throw new Error('Another user owns the offline database.');
     }),
   ).rejects.toThrow('Another user');
@@ -445,35 +475,30 @@ test('logout revokes the session and removes secure credentials', async () => {
   expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
 });
 
-test('all legacy client authentication adapters fail locally without transmitting credentials', async () => {
+test('removed email, Google and passwordless adapters never transmit credentials', async () => {
   globalThis.fetch = jest.fn();
   const bind = jest.fn(async () => {});
   const cloud = new CloudClient();
-  const calls = [
+  for (const call of [
     () => cloud.signIn('a@b.com', 'password', bind),
     () => cloud.signInGoogle('token', bind),
-    () => cloud.signInPhone('09121234567', 'password', bind),
-    () =>
-      cloud.registerPhoneWithPassword(
-        { phoneNumber: '09121234567', password: 'password', confirmPassword: 'password' },
-        bind,
-      ),
-    () =>
-      cloud.registerPhone(
-        {
-          phoneNumber: '09121234567',
-          password: 'password',
-          confirmPassword: 'password',
-          username: 'Student',
-          registrationToken: 'proof',
-        },
-        bind,
-      ),
     () => cloud.requestPhoneActivation({ phoneNumber: '09121234567', password: 'password' }),
-    () => cloud.verifyRegistrationOtp('challenge', '123456'),
-  ];
-  for (const call of calls)
-    await expect(call()).rejects.toMatchObject({ status: 410, code: 'sms_otp_only' });
+    () => cloud.loginWithOtp('challenge', '123456', bind),
+  ])
+    await expect(call()).rejects.toMatchObject({
+      status: 410,
+      code: 'phone_password_auth_required',
+    });
+  await expect(
+    cloud.registerPhoneWithPassword(
+      {
+        phoneNumber: '09121234567',
+        password: 'password',
+        confirmPassword: 'password',
+      },
+      bind,
+    ),
+  ).rejects.toMatchObject({ status: 403, code: 'phone_verification_required' });
   expect(fetch).not.toHaveBeenCalled();
   expect(bind).not.toHaveBeenCalled();
   expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
@@ -486,30 +511,27 @@ test('requesting an OTP never persists credentials', async () => {
     codeLength: 6,
   };
   globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => challenge });
-  await expect(new CloudClient().requestOtp('09121234567', 'authenticate')).resolves.toEqual(
-    challenge,
-  );
+  await expect(new CloudClient().requestOtp('09121234567', 'register')).resolves.toEqual(challenge);
   expect(fetch).toHaveBeenCalledWith(
     'https://api.example.test/api/v1/auth/phone/otp/request',
     expect.objectContaining({
-      body: JSON.stringify({ phoneNumber: '+989121234567', purpose: 'authenticate' }),
+      body: JSON.stringify({ phoneNumber: '+989121234567', purpose: 'register' }),
     }),
   );
   expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
 });
 
-test('OTP login does not submit a password and uses the existing token storage', async () => {
+test('password login normalizes phone and uses existing secure account binding', async () => {
   globalThis.fetch = jest
     .fn()
-    .mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ registrationToken: null, expiresAtUtc: null, tokens: rotated }),
-    })
+    .mockResolvedValueOnce({ ok: true, json: async () => rotated })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'phone-user' }) });
-  await new CloudClient().loginWithOtp('challenge', '123456', async () => {});
-  expect(globalThis.fetch).toHaveBeenCalledWith(
-    'https://api.example.test/api/v1/auth/phone/otp/verify',
-    expect.objectContaining({ body: JSON.stringify({ challengeId: 'challenge', code: '123456' }) }),
+  await new CloudClient().signInPhone('09121234567', 'Private password2026!', async () => {});
+  expect(fetch).toHaveBeenCalledWith(
+    'https://api.example.test/api/v1/auth/phone/login',
+    expect.objectContaining({
+      body: JSON.stringify({ phoneNumber: '+989121234567', password: 'Private password2026!' }),
+    }),
   );
   expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
     expect.any(String),
@@ -517,6 +539,52 @@ test('OTP login does not submit a password and uses the existing token storage',
   );
 });
 
+test('SMS verification returns a purpose-bound proof and never persists credentials', async () => {
+  const proof = {
+    registrationToken: 'proof',
+    resetPasswordToken: null,
+    expiresAtUtc: '2099-01-01T00:00:00Z',
+    tokens: null,
+  };
+  globalThis.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => proof });
+  await expect(new CloudClient().verifyRegistrationOtp('challenge', '123456')).resolves.toEqual(
+    proof,
+  );
+  expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+});
+
+test.each(['registration', 'reset'])(
+  'verified %s completion sends its proof then binds the same account',
+  async (operation) => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => rotated })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 'phone-user' }) });
+    const cloud = new CloudClient();
+    const bind = jest.fn(async () => {});
+    const common = {
+      phoneNumber: '09121234567',
+      password: 'Private password2026!',
+      confirmPassword: 'Private password2026!',
+    };
+    if (operation === 'registration')
+      await cloud.registerPhone(
+        { ...common, registrationToken: 'proof', username: 'Student' },
+        bind,
+      );
+    else await cloud.resetPhonePassword({ ...common, resetToken: 'proof' }, bind);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.example.test/api/v1/auth/phone/' +
+        (operation === 'registration' ? 'register' : 'password/reset'),
+      expect.objectContaining({
+        body: expect.stringContaining(
+          operation === 'registration' ? '"registrationToken":"proof"' : '"resetToken":"proof"',
+        ),
+      }),
+    );
+    expect(bind).toHaveBeenCalledWith('phone-user');
+  },
+);
 test.each([
   [401, 'invalid_otp'],
   [409, 'duplicate_phone'],
@@ -529,7 +597,7 @@ test.each([
       .fn()
       .mockResolvedValue({ ok: false, status, json: async () => ({ error: 'Safe error', code }) });
     await expect(
-      new CloudClient().loginWithOtp('challenge', '123456', async () => {}),
+      new CloudClient().signInPhone('09121234567', 'Private password2026!', async () => {}),
     ).rejects.toMatchObject({ status, code });
     expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
   },
@@ -617,32 +685,28 @@ test('corrupt secure credentials do not count as a session', async () => {
   expect(SecureStore.deleteItemAsync).toHaveBeenCalled();
 });
 
-test('legacy credentials without SMS verification cannot restore an account offline', async () => {
+test('legacy password credentials without a verification marker still restore the same offline account', async () => {
   const legacy = { ...rotated, phoneVerified: undefined, userId: 'existing-account' };
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(legacy));
   const lost = jest.fn();
   globalThis.fetch = jest.fn();
   const cloud = new CloudClient(lost);
-  await expect(cloud.storedUserId()).resolves.toBeNull();
-  await expect(cloud.hasSession()).resolves.toBe(false);
-  expect(lost).toHaveBeenCalled();
-  expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('lerona.cloud.credentials.v1');
+  await expect(cloud.storedUserId()).resolves.toBe('existing-account');
+  await expect(cloud.hasSession()).resolves.toBe(true);
+  expect(lost).not.toHaveBeenCalled();
+  expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
   expect(fetch).not.toHaveBeenCalled();
 });
 
-test('a legacy backend response cannot bind an account or save credentials before SMS verification', async () => {
-  const legacy = { ...rotated, phoneVerified: undefined };
+test('OTP verification cannot turn a passwordless backend response into a session', async () => {
   globalThis.fetch = jest
     .fn()
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ tokens: legacy }) });
-  const bind = jest.fn(async () => {});
-  await expect(new CloudClient().loginWithOtp('challenge', '123456', bind)).rejects.toThrow(
-    'Invalid authentication response',
+    .mockResolvedValue({ ok: true, json: async () => ({ tokens: rotated }) });
+  await expect(new CloudClient().verifyRegistrationOtp('challenge', '123456')).rejects.toThrow(
+    'Invalid SMS verification response',
   );
-  expect(bind).not.toHaveBeenCalled();
   expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
 });
-
 test('legacy activation never sends account credentials', async () => {
   globalThis.fetch = jest.fn();
   await expect(
@@ -733,9 +797,9 @@ test('an authentication response arriving after logout cannot restore the sessio
     )
     .mockResolvedValue({ ok: true, status: 204 });
   const cloud = new CloudClient();
-  const signIn = cloud.loginWithOtp('challenge', '123456', async () => {});
+  const signIn = cloud.signInPhone('09121234567', 'Private password2026!', async () => {});
   await cloud.signOut();
-  respond({ ok: true, json: async () => ({ tokens: rotated }) });
+  respond({ ok: true, json: async () => rotated });
   await expect(signIn).rejects.toMatchObject({ status: 401 });
   expect(SecureStore.setItemAsync).not.toHaveBeenCalledWith(
     'lerona.cloud.credentials.v1',

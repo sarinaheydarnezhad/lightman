@@ -113,18 +113,16 @@ async function setup(withGuest = true) {
   globalThis.fetch = jest.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     if (!online) throw new TypeError('Offline');
     const path = String(input).replace('https://api.example.test/api/v1', '');
-    if (path === '/auth/phone/otp/verify') {
+    if (path === '/auth/phone/login') {
       const sessionId = randomUUID();
       const accessToken = `access-${sessionId}`;
       sessions.set(accessToken, { userId: loginUser, sessionId });
       return response({
-        tokens: {
-          accessToken,
-          refreshToken: `refresh-${sessionId}`,
-          sessionId,
-          accessExpiresAtUtc: '2099-01-01T00:00:00Z',
-          phoneVerified: true,
-        },
+        accessToken,
+        refreshToken: `refresh-${sessionId}`,
+        sessionId,
+        accessExpiresAtUtc: '2099-01-01T00:00:00Z',
+        phoneVerified: true,
       }) as Response;
     }
     const token =
@@ -296,7 +294,7 @@ async function setup(withGuest = true) {
   });
   const login = async (userId = accountA) => {
     loginUser = userId;
-    await engine.loginWithOtp('challenge', '123456');
+    await engine.signInPhone('09121234567', 'Private password2026!');
   };
   const createPrivate = async (name = 'Account A', reviewSystem = 'leitner') => {
     const app = createApplication(

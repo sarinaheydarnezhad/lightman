@@ -116,13 +116,22 @@ async function installation(phoneNumber: string, register = false, legacyDefault
     enterEmptyGuest: () => scopes.enterEmptyGuest(),
     lockAccount: () => scopes.lockAccount(),
   });
-  const sms = await actualHttp(`/__test/otp?phone=${encodeURIComponent(phoneNumber)}`, {
-    method: 'POST',
-  });
-  expect(sms.status).toBe(200);
-  const { challengeId, code } = (await sms.json()) as { challengeId: string; code: string };
-  await engine.loginWithOtp(challengeId, code);
-  if (register) await engine.updateAccountName('Synthetic cloud test');
+  const password = 'Cloud private password2026!';
+  if (register) {
+    const sms = await actualHttp(`/__test/otp?phone=${encodeURIComponent(phoneNumber)}`, {
+      method: 'POST',
+    });
+    expect(sms.status).toBe(200);
+    const { challengeId, code } = (await sms.json()) as { challengeId: string; code: string };
+    const proof = await engine.verifyRegistrationOtp(challengeId, code);
+    await engine.registerPhone({
+      phoneNumber,
+      registrationToken: proof.registrationToken!,
+      password,
+      confirmPassword: password,
+      username: 'Synthetic cloud test',
+    });
+  } else await engine.signInPhone(phoneNumber, password);
   const transfer = new GuestTransfer(engine, async () => ({
     guest: (await scopes.guestScope()).database!,
     account: scopes.current().database!,

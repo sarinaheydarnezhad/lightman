@@ -1,17 +1,11 @@
-# Kavenegar SMS-only authentication
+# Kavenegar verification for signup and password recovery
 
-The frontend has one SMS OTP flow for login and registration. Password, Google and
-separate credential-based activation are disabled in both the client and backend.
-No email, password, Google identity or username is required.
+Normal Lerona login uses mobile number and password. SMS is required for new
+signup and forgotten-password recovery; verifying a code does not issue a session.
 
-See [the backend setup and legacy recovery guide](../../Backend/docs/KAVENEGAR_OTP_SETUP.md)
-and [the current frontend contract](phone-authentication.md).
+See [the frontend contract](phone-authentication.md) and the backend
+`docs/PHONE_PASSWORD_OTP_REPORT.md` / `docs/KAVENEGAR_OTP_SETUP.md` for server setup.
+Only the public API URL belongs in the mobile app. Provider keys must be injected
+into the backend environment, never an Expo public variable or a tracked file.
 
-Real provider settings belong only in Git-ignored `Backend/.env`; `.env.example`
-contains placeholders. The backend loads these settings directly. No provider
-secrets are included in frontend configuration, code or reports. The Google SDK
-dependency/plugin and native sign-in bridge have been removed.
-
-Local configuration loading passed. Live provider permissions, debug-mode state,
-template approval and actual delivery are not confirmed by this run. No real SMS
-or production deployment is authorized without the user's explicit approval.
+No real SMS delivery, backend deployment or database migration was performed.

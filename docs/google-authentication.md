@@ -1,4 +1,4 @@
-> Historical document. Lerona Google authentication and its SDK/plugin have been removed. See [SMS-only authentication](phone-authentication.md). Cent is unchanged.
+> Historical document. Lerona Google authentication and its SDK/plugin have been removed. Google belongs to Cent. See [Lerona password login with SMS-verified signup/recovery](phone-authentication.md).
 
 # Google authentication
 
