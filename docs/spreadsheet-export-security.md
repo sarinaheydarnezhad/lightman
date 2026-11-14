@@ -1,0 +1,11 @@
+# Spreadsheet exports and lossless interchange
+
+CSV has no text-cell type. Delimiter/quote escaping keeps the file structurally valid but does not stop a spreadsheet from evaluating a formula. Lerona therefore rejects CSV serialization if any output cell (including extra column headers/values) has a formula-like leading `=`, `+`, `-` or `@` after whitespace/control/format characters, or starts with a tab, carriage return or line feed after those characters. Detection also examines NFKC compatibility normalization; it never rewrites the exported or stored value.
+
+The error directs users to the existing XLSX option. XLSX writes strings as text cells and preserves literal mathematical expressions, negative numbers, plus/minus-prefixed words, existing apostrophes, Persian and other Unicode text. This conservative CSV rejection does not label such learning content malicious. No partial file is returned. Choose XLSX when these values are intentional; Anki remains available for its existing interchange use.
+
+Ordinary CSV remains the existing BOM-prefixed UTF-8 format, with comma delimiters, doubled quotes and quoted embedded line breaks. Existing CSV imports still accept literal formula-like strings without evaluating them. No hidden prefix, version marker or apostrophe removal is introduced. Examples, translations and notes remain JSON inside the Examples cell; their leading characters are JSON syntax rather than individual spreadsheet cells. Additional metadata cells and their user-controlled headers are checked too. Application exports have Deck, Front, Back, Phonetic, Category and Examples; arbitrary extra columns belong to the adapter/preview contract and are not newly persisted by this change.
+
+Backups and application card storage do not use the CSV serializer and retain their existing format/content. Large content remains supported within existing limits; XLSX example continuations retain the established splitting/reassembly behavior.
+
+The regression suite verifies file structure, round trips and XLSX string-cell types without evaluating formulas. It does not certify every spreadsheet product, locale, import setting, resave operation or future parser. Excel and LibreOffice interactive verification remains required before release. Prefer XLSX's explicit text-cell representation for human spreadsheet use.

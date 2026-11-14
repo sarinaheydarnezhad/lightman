@@ -2,6 +2,15 @@ import type { Card, CardExample } from '@/features/study/domain/card';
 
 export type TransferFormat = 'csv' | 'xlsx' | 'apkg';
 
+export class SpreadsheetUnsafeCsvError extends Error {
+  readonly code = 'spreadsheet_unsafe_csv';
+  constructor() {
+    super(
+      'CSV cannot safely represent this text for spreadsheets. Choose XLSX to preserve all content as text.',
+    );
+  }
+}
+
 export interface TransferCard {
   readonly deckName: string;
   readonly frontText: string;

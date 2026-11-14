@@ -346,3 +346,39 @@ test('partial plan failure removes newly created alerts before restoring the pre
     }),
   );
 });
+
+test('rolling horizon retains matching notifications and only schedules the missing suffix', async () => {
+  existing.mockResolvedValueOnce([reminder('keep')]);
+  const tomorrow = { scheduledForUtc: new Date(2099, 0, 2, 9).toISOString(), dueCount: 4 };
+  await expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', [
+    ...plan(),
+    tomorrow,
+  ]);
+  expect(cancel).not.toHaveBeenCalled();
+  expect(schedule).toHaveBeenCalledTimes(1);
+  expect(schedule).toHaveBeenCalledWith(
+    expect.objectContaining({
+      content: expect.objectContaining({ data: expect.objectContaining(tomorrow) }),
+    }),
+  );
+});
+
+test('failed suffix scheduling leaves the retained plan intact', async () => {
+  existing.mockResolvedValue([reminder('keep')]);
+  schedule.mockRejectedValueOnce(new Error('queue unavailable'));
+  await expect(
+    expoNotificationService.scheduleDailyReminder(localTime('09:00'), 'en', [
+      ...plan(),
+      { scheduledForUtc: new Date(2099, 0, 2, 9).toISOString(), dueCount: 4 },
+    ]),
+  ).rejects.toThrow('queue unavailable');
+  expect(cancel).not.toHaveBeenCalled();
+  expect(schedule).toHaveBeenCalledTimes(1);
+});
+
+test('web scheduling remains unavailable without invoking native APIs', async () => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+  await expect(scheduleReminder(localTime('09:00'))).rejects.toMatchObject({ code: 'unavailable' });
+  expect(schedule).not.toHaveBeenCalled();
+  expect(cancel).not.toHaveBeenCalled();
+});

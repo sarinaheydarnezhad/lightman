@@ -4,6 +4,7 @@ import type { AppClock } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import { reminderPlanningDays, type StudyReminder } from '@/core/ports/notification';
 import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
+import { reminderDates } from './reminder-calendar';
 
 export async function createStudyReminderPlan(
   repositories: Repositories,
@@ -30,14 +31,8 @@ export async function createStudyReminderPlan(
   );
   const engine = createReviewEngine();
   const current = clock.now();
-  const [hour, minute] = time.split(':').map(Number);
-  const next = new Date(current);
-  next.setHours(hour!, minute!, 0, 0);
-  if (next <= current) next.setDate(next.getDate() + 1);
   const reminders: StudyReminder[] = [];
-  for (let offset = 0; offset < reminderPlanningDays; offset++) {
-    const date = new Date(next);
-    date.setDate(next.getDate() + offset);
+  for (const date of reminderDates(current, time, reminderPlanningDays)) {
     const targetDate = calendarDateAtInstant(instant(date.toISOString()), clock.timeZone());
     const dueCount = groups.reduce(
       (count, { deck, states }) =>

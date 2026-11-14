@@ -10,7 +10,7 @@ import {
   transferService,
 } from '@/core/composition/transfer';
 import type { Deck } from '@/features/decks/domain/deck';
-import type { TransferFormat } from '../domain/transfer';
+import { SpreadsheetUnsafeCsvError, type TransferFormat } from '../domain/transfer';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
@@ -87,7 +87,11 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
     } catch (cause) {
       if (mounted.current)
         setError(
-          language === 'en' && cause instanceof Error ? cause.message : t('common.genericError'),
+          cause instanceof SpreadsheetUnsafeCsvError
+            ? t('transfer.csvUnsafe')
+            : language === 'en' && cause instanceof Error
+              ? cause.message
+              : t('common.genericError'),
         );
     } finally {
       active.current = false;

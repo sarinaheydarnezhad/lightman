@@ -217,23 +217,26 @@ export const expoNotificationService: NotificationService = {
         throw new NotificationPermissionDenied();
 
       const previous = await reminderRequests();
-      if (
-        previous.length === plan.length &&
-        plan.every((item) =>
-          previous.some(
-            (request) =>
-              scheduledTime(request) === time &&
-              request.content.data?.scheduledForUtc === item.scheduledForUtc &&
-              request.content.data?.dueCount === item.dueCount &&
-              request.content.data?.uiLanguage === resolveUiLanguage(language),
-          ),
-        )
-      )
-        return;
+      const retained = new Set<string>();
+      const missing = plan.filter((item) => {
+        const matches = previous.filter(
+          (request) =>
+            scheduledTime(request) === time &&
+            request.content.data?.scheduledForUtc === item.scheduledForUtc &&
+            request.content.data?.dueCount === item.dueCount &&
+            request.content.data?.uiLanguage === resolveUiLanguage(language),
+        );
+        if (matches.length !== 1) return true;
+        retained.add(matches[0]!.identifier);
+        return false;
+      });
+      if (retained.size === previous.length && missing.length === 0) return;
       const created: string[] = [];
       try {
-        for (const request of previous) await cancelScheduledNotificationAsync(request.identifier);
-        for (const item of plan) created.push(await createReminder(time, language, item));
+        for (const request of previous)
+          if (!retained.has(request.identifier))
+            await cancelScheduledNotificationAsync(request.identifier);
+        for (const item of missing) created.push(await createReminder(time, language, item));
       } catch (error) {
         try {
           for (const identifier of created) await cancelScheduledNotificationAsync(identifier);

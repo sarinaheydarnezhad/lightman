@@ -414,6 +414,7 @@ export class SyncStore {
       )
         throw new Error('Invalid server cursor.');
       await transaction.execute('UPDATE sync_account SET applying_remote = 1 WHERE id = 1');
+      const affectedReviews = new Set<string>();
       for (const checkpoint of page.reviewCheckpoints ?? []) {
         if (
           !Number.isSafeInteger(checkpoint.throughVersion) ||
@@ -427,10 +428,16 @@ export class SyncStore {
           checkpoint.state,
           checkpoint.throughVersion,
         );
+        affectedReviews.add(checkpoint.cardId);
       }
-      for (const change of page.changes) await this.applyChange(transaction, change);
-      for (const checkpoint of page.reviewCheckpoints ?? [])
-        await this.replayReviews(transaction, checkpoint.cardId);
+      for (const change of page.changes) {
+        const cardId = await this.applyChange(transaction, change);
+        if (cardId !== undefined) affectedReviews.add(cardId);
+      }
+      // Records still validate/persist in feed order. None consumes an intermediate review
+      // projection: reviewState ignores cards with events; scheduler guards inspect history.
+      // Baselines are captured before the first insertion, never from a deferred projection.
+      for (const cardId of affectedReviews) await this.replayReviews(transaction, cardId);
       await transaction.execute(
         'UPDATE sync_account SET cursor = ?, applying_remote = 0 WHERE id = 1',
         [page.cursor],
@@ -438,13 +445,15 @@ export class SyncStore {
     });
   }
 
-  private async applyChange(transaction: DatabaseTransaction, change: ServerChange): Promise<void> {
+  private async applyChange(
+    transaction: DatabaseTransaction,
+    change: ServerChange,
+  ): Promise<string | undefined> {
     // Validate even a conflicting/acknowledged remote snapshot before persisting any evidence or cursor.
     if (change.entityType === 'card' && change.operation !== 'archive')
       validateCardContent(change.payload as unknown as Parameters<typeof validateCardContent>[0]);
     if (change.entityType === 'reviewEvent') {
-      await this.applyReviewEvent(transaction, change);
-      return;
+      return this.applyReviewEvent(transaction, change);
     }
     const entityId = change.entityId;
     if (change.entityType === 'deck') {
@@ -633,7 +642,7 @@ export class SyncStore {
   private async applyReviewEvent(
     transaction: DatabaseTransaction,
     change: ServerChange,
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const payload = change.payload;
     const cardId = field(payload, 'cardId');
     const deckId = field(payload, 'deckId');
@@ -641,7 +650,7 @@ export class SyncStore {
     const reviewCalendar = payload.reviewCalendar
       ? validateReviewCalendar(payload.reviewCalendar as ReviewCalendar, instant(reviewedAt))
       : null;
-    await this.ensureLocalBaseline(transaction, cardId);
+    const hasBaseline = await this.ensureLocalBaseline(transaction, cardId);
     const existing = await transaction.execute(
       'SELECT card_id, deck_id, previous_box, new_box, result, reviewed_at, scheduler_json, review_calendar_json FROM review_events WHERE id = ?',
       [change.entityId],
@@ -686,7 +695,13 @@ export class SyncStore {
       'INSERT OR IGNORE INTO sync_review_versions (event_id, server_version) VALUES (?, ?)',
       [change.entityId, change.serverVersion],
     );
-    await this.replayReviews(transaction, cardId);
+    if (!hasBaseline) {
+      // A retained card without a projection needs the former eager initialization boundary.
+      // The next event can then capture that exact state and covered IDs as its local baseline.
+      await this.replayReviews(transaction, cardId);
+      return;
+    }
+    return cardId;
   }
 
   private async replayReviews(transaction: DatabaseTransaction, cardId: string): Promise<void> {
@@ -856,16 +871,16 @@ export class SyncStore {
   private async ensureLocalBaseline(
     transaction: DatabaseTransaction,
     cardId: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const found = await transaction.execute(
       'SELECT card_id FROM review_replay_baselines WHERE card_id = ?',
       [cardId],
     );
-    if (found.rows.length) return;
+    if (found.rows.length) return true;
     const local = (
       await transaction.execute('SELECT * FROM card_review_state WHERE card_id = ?', [cardId])
     ).rows[0];
-    if (!local) return;
+    if (!local) return false;
     const state = this.checkpointState(cardId, {
       box: local.box,
       dueDate: local.due_date,
@@ -886,6 +901,7 @@ export class SyncStore {
       `INSERT INTO review_replay_baselines (card_id,through_version,state_json,included_event_ids_json) VALUES (?,?,?,?)`,
       [cardId, cursor ? number(cursor, 'cursor') : 0, JSON.stringify(state), JSON.stringify(ids)],
     );
+    return true;
   }
 
   async resolve(operationId: string, choice: 'server' | 'local'): Promise<void> {

@@ -1,6 +1,16 @@
 import { strFromU8, strToU8 } from 'fflate';
-import type { TransferAdapter } from '../domain/transfer';
+import { SpreadsheetUnsafeCsvError, type TransferAdapter } from '../domain/transfer';
 import { tableToImport, transferToTable } from './tabular';
+
+// Detection only: never normalize, prefix or rewrite stored/exported learning content.
+// CSV has no cell-type metadata. Quoting does not stop spreadsheet formula evaluation.
+function unsafeSpreadsheetCell(value: string): boolean {
+  const candidate = value.normalize('NFKC');
+  return (
+    /^[\p{White_Space}\p{Cf}\p{Cc}]*[=+\-@]/u.test(candidate) ||
+    /^[\p{White_Space}\p{Cf}\p{Cc}]*[\t\r\n]/u.test(candidate)
+  );
+}
 
 export function parseCsv(text: string): { rows: string[][]; invalid: Set<number> } {
   const rows: string[][] = [];
@@ -70,7 +80,9 @@ export const csvAdapter: TransferAdapter = {
     };
   },
   async serialize(cards) {
-    const text = transferToTable(cards)
+    const table = transferToTable(cards);
+    if (table.some((row) => row.some(unsafeSpreadsheetCell))) throw new SpreadsheetUnsafeCsvError();
+    const text = table
       .map((row) =>
         row
           .map((value) => (/[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value))

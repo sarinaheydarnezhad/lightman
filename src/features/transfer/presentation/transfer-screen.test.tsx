@@ -10,6 +10,7 @@ import {
 } from '@/core/composition/transfer';
 import { makeDeck } from '@/../test/fixtures';
 import { TransferScreen } from './transfer-screen';
+import { SpreadsheetUnsafeCsvError } from '../domain/transfer';
 
 jest.setTimeout(20_000);
 
@@ -55,6 +56,21 @@ beforeEach(() => {
     .mockResolvedValue({ imported: 1, duplicatesSkipped: 1, invalidSkipped: 1, issues: [] });
   jest.mocked(transferService.export).mockResolvedValue(new Uint8Array([2]));
   jest.mocked(shareTransferFile).mockResolvedValue('file:///cache/cards.csv');
+});
+
+test('unsafe CSV failure explains the XLSX alternative and does not save a partial file', async () => {
+  jest.mocked(transferService.export).mockRejectedValueOnce(new SpreadsheetUnsafeCsvError());
+  render(<TransferScreen />);
+  await waitFor(() => expect(application.listDecks).toHaveBeenCalled());
+  fireEvent.press(screen.getByText('Save file to device'));
+  await waitFor(() =>
+    expect(
+      screen.getByText(
+        'This text could be interpreted as a formula in CSV. Choose XLSX to preserve all content as text.',
+      ),
+    ).toBeTruthy(),
+  );
+  expect(saveTransferFile).not.toHaveBeenCalled();
 });
 
 test('selection opens a separate preview page without saving cards', async () => {
