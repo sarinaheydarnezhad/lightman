@@ -355,6 +355,20 @@ export const migrations: readonly Migration[] = [
         BEGIN SELECT RAISE(ABORT, 'scheduler_change_ineligible'); END`,
     ],
   },
+  {
+    version: 9,
+    statements: [
+      // Preserve legacy duplicates. Block new ones atomically in every connection/writer.
+      `CREATE TRIGGER study_single_active_insert BEFORE INSERT ON study_sessions
+        WHEN NEW.status = 'in-progress' AND EXISTS
+          (SELECT 1 FROM study_sessions WHERE status = 'in-progress')
+        BEGIN SELECT RAISE(ABORT, 'study_active_session_conflict'); END`,
+      `CREATE TRIGGER study_single_active_update BEFORE UPDATE OF status, id ON study_sessions
+        WHEN NEW.status = 'in-progress' AND (OLD.status <> 'in-progress' OR NEW.id <> OLD.id)
+          AND EXISTS (SELECT 1 FROM study_sessions WHERE status = 'in-progress' AND id <> OLD.id)
+        BEGIN SELECT RAISE(ABORT, 'study_active_session_conflict'); END`,
+    ],
+  },
 ];
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');

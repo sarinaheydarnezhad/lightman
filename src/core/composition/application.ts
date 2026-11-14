@@ -113,6 +113,7 @@ export function activeApplication(): Application {
       },
       undefined,
       learningAccess(),
+      () => storageScopes.assertCurrent(scope, revision),
     );
     current = guarded({ ...created, settings: guarded(created.settings, scope) }, scope);
     applications.set(scope.value, current);

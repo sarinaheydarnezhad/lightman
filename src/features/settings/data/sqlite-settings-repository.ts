@@ -1,4 +1,5 @@
 import type { Database } from '@/core/database/database';
+import { SerialWork } from '@/core/application/serial-work';
 import {
   booleanValue,
   databaseOperation,
@@ -16,36 +17,55 @@ import {
 import { resolveUiLanguage } from '@/shared/localization/localization';
 import type { SettingsRepository } from '../domain/settings-repository';
 
+const states = new WeakMap<
+  Database,
+  {
+    work: SerialWork;
+    cached: UserSettings | null;
+    listeners: Set<() => void>;
+  }
+>();
+function stateFor(database: Database) {
+  let state = states.get(database);
+  if (!state) {
+    state = { work: new SerialWork(), cached: null, listeners: new Set() };
+    states.set(database, state);
+  }
+  return state;
+}
+
 /** Device defaults are placeholders until the account has been pulled, not user edits. */
 export async function initializeSettingsDefaults(
   database: Database,
   settings: UserSettings,
 ): Promise<void> {
   const valid = validateUserSettings(settings);
-  await database.transaction(async (transaction) => {
-    if ((await transaction.execute('SELECT id FROM user_settings WHERE id = 1')).rows.length)
-      return;
-    const flag = (
-      await transaction.execute('SELECT applying_remote FROM sync_account WHERE id = 1')
-    ).rows[0]?.applying_remote;
-    await transaction.execute('UPDATE sync_account SET applying_remote = 1 WHERE id = 1');
-    await transaction.execute(
-      `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
+  await stateFor(database).work.run(() =>
+    database.transaction(async (transaction) => {
+      if ((await transaction.execute('SELECT id FROM user_settings WHERE id = 1')).rows.length)
+        return;
+      const flag = (
+        await transaction.execute('SELECT applying_remote FROM sync_account WHERE id = 1')
+      ).rows[0]?.applying_remote;
+      await transaction.execute('UPDATE sync_account SET applying_remote = 1 WHERE id = 1');
+      await transaction.execute(
+        `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
        VALUES (1, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        valid.theme,
-        encodeBoolean(valid.hapticsEnabled),
-        valid.language,
-        encodeBoolean(valid.dailyReminderEnabled),
-        valid.dailyReminderTime,
-        valid.preferredSpeechLanguage,
-        valid.preferredSpeechAccent,
-      ],
-    );
-    await transaction.execute('UPDATE sync_account SET applying_remote = ? WHERE id = 1', [
-      flag ?? 0,
-    ]);
-  });
+        [
+          valid.theme,
+          encodeBoolean(valid.hapticsEnabled),
+          valid.language,
+          encodeBoolean(valid.dailyReminderEnabled),
+          valid.dailyReminderTime,
+          valid.preferredSpeechLanguage,
+          valid.preferredSpeechAccent,
+        ],
+      );
+      await transaction.execute('UPDATE sync_account SET applying_remote = ? WHERE id = 1', [
+        flag ?? 0,
+      ]);
+    }),
+  );
 }
 
 function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
@@ -66,54 +86,89 @@ function mapSettings(source: ReturnType<typeof row>): UserSettings | null {
 }
 
 export class SQLiteSettingsRepository implements SettingsRepository {
-  private cached: UserSettings | null = null;
-  private readonly listeners = new Set<() => void>();
+  readonly mutationScope: object;
+  private readonly state;
 
-  constructor(private readonly database: Database) {}
-
-  get(): Promise<UserSettings | null> {
-    return databaseOperation(async () => {
-      const result = await this.database.execute('SELECT * FROM user_settings WHERE id = 1');
-      const next = mapSettings(row(result));
-      const changed = JSON.stringify(this.cached) !== JSON.stringify(next);
-      this.cached = next;
-      if (changed) this.listeners.forEach((listener) => listener());
-      return this.cached;
-    }, 'Unable to load settings.');
+  constructor(private readonly database: Database) {
+    this.mutationScope = database;
+    this.state = stateFor(database);
   }
 
-  update(settings: UserSettings): Promise<UserSettings> {
-    return databaseOperation(async () => {
-      const valid = validateUserSettings(settings);
-      await this.database.execute(
-        `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
+  private publish(next: UserSettings | null) {
+    const changed = JSON.stringify(this.state.cached) !== JSON.stringify(next);
+    this.state.cached = next;
+    if (changed) this.state.listeners.forEach((listener) => listener());
+  }
+
+  get(): Promise<UserSettings | null> {
+    return this.state.work.run(() =>
+      databaseOperation(async () => {
+        const result = await this.database.execute('SELECT * FROM user_settings WHERE id = 1');
+        const next = mapSettings(row(result));
+        this.publish(next);
+        return next;
+      }, 'Unable to load settings.'),
+    );
+  }
+
+  update(settings: Partial<UserSettings>, assertCurrentOwner = () => {}): Promise<UserSettings> {
+    return this.persist(settings, assertCurrentOwner, false);
+  }
+
+  initialize(settings: UserSettings, assertCurrentOwner = () => {}): Promise<UserSettings> {
+    return this.persist(settings, assertCurrentOwner, true);
+  }
+
+  private persist(
+    settings: Partial<UserSettings>,
+    assertCurrentOwner: () => void,
+    onlyIfMissing: boolean,
+  ): Promise<UserSettings> {
+    return this.state.work.run(() =>
+      databaseOperation(async () => {
+        let valid!: UserSettings;
+        await this.database.transaction(async (transaction) => {
+          assertCurrentOwner();
+          const previous = mapSettings(
+            row(await transaction.execute('SELECT * FROM user_settings WHERE id = 1')),
+          );
+          if (onlyIfMissing && previous) {
+            valid = previous;
+            return;
+          }
+          valid = validateUserSettings({ ...previous, ...settings } as UserSettings);
+          assertCurrentOwner();
+          await transaction.execute(
+            `INSERT INTO user_settings (id, theme, haptics_enabled, language, daily_reminder_enabled, daily_reminder_time, preferred_speech_language, preferred_speech_accent)
            VALUES (1, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET theme = excluded.theme, haptics_enabled = excluded.haptics_enabled,
              language = excluded.language, daily_reminder_enabled = excluded.daily_reminder_enabled,
              daily_reminder_time = excluded.daily_reminder_time, preferred_speech_language = excluded.preferred_speech_language,
              preferred_speech_accent = excluded.preferred_speech_accent`,
-        [
-          valid.theme,
-          encodeBoolean(valid.hapticsEnabled),
-          valid.language,
-          encodeBoolean(valid.dailyReminderEnabled),
-          valid.dailyReminderTime,
-          valid.preferredSpeechLanguage,
-          valid.preferredSpeechAccent,
-        ],
-      );
-      this.cached = valid;
-      this.listeners.forEach((listener) => listener());
-      return valid;
-    }, 'Unable to save settings.');
+            [
+              valid.theme,
+              encodeBoolean(valid.hapticsEnabled),
+              valid.language,
+              encodeBoolean(valid.dailyReminderEnabled),
+              valid.dailyReminderTime,
+              valid.preferredSpeechLanguage,
+              valid.preferredSpeechAccent,
+            ],
+          );
+          assertCurrentOwner();
+        });
+        this.publish(valid);
+        return valid;
+      }, 'Unable to save settings.'),
+    );
   }
 
   snapshot(): UserSettings | null {
-    return this.cached;
+    return this.state.cached;
   }
 
   subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    this.state.listeners.add(listener);
+    return () => this.state.listeners.delete(listener);
   }
 }

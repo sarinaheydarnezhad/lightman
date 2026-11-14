@@ -136,11 +136,42 @@ export function createStudyUseCases({
     return session;
   }
 
+  function compatible(active: StudySession, scope: StudyScope, sourceSessionId: string | null) {
+    return (
+      (active.sourceSessionId ?? null) === sourceSessionId &&
+      active.scope.kind === scope.kind &&
+      (scope.kind === 'all-decks' ||
+        (active.scope.kind === 'specific-deck' && active.scope.deckId === scope.deckId))
+    );
+  }
+
+  async function activeFor(scope: StudyScope, sourceSessionId: string | null = null) {
+    const active = await persistence(() => sessions.getActive());
+    if (active && !compatible(active, scope, sourceSessionId))
+      throw new AppError('conflict', 'Finish or cancel your current study session first.');
+    return active;
+  }
+
+  async function createOrResume(session: StudySession) {
+    try {
+      return await persistence(() => sessions.create(session));
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'conflict') {
+        const active = await activeFor(session.scope, session.sourceSessionId ?? null);
+        if (active) return active;
+      }
+      throw error;
+    }
+  }
+
   return {
     getStudyQueue: (input: Parameters<typeof getStudyQueue>[0]) => getStudyQueue(input),
     previewStudyQueue: (input: Parameters<typeof getStudyQueue>[0]) => getStudyQueue(input, false),
     async getActiveStudySession(): Promise<StudySession | null> {
       return persistence(() => sessions.getActive());
+    },
+    async listActiveStudySessions(): Promise<StudySession[]> {
+      return persistence(() => sessions.listActive());
     },
     async startStudySession(
       scope: StudyScope,
@@ -148,15 +179,13 @@ export function createStudyUseCases({
     ): Promise<StudySession> {
       validateStudyScope(scope);
       await assertStudyAllowed();
-      if (await persistence(() => sessions.getActive()))
-        throw new AppError('conflict', 'Finish or cancel your current study session first.');
+      const active = await activeFor(scope);
+      if (active) return active;
       const startedAt = now(clock);
       const targetDate = calendarDateAtInstant(startedAt, clock.timeZone());
       const queue = await getStudyQueue({ scope, targetDate }, false);
-      return persistence(() =>
-        sessions.create(
-          createSession(ids.create(), scope, orderStudyQueue(queue, order, random), startedAt),
-        ),
+      return createOrResume(
+        createSession(ids.create(), scope, orderStudyQueue(queue, order, random), startedAt),
       );
     },
     getStudySession,
@@ -171,8 +200,8 @@ export function createStudyUseCases({
           'conflict',
           'Review again is available after an original completed session.',
         );
-      if (await persistence(() => sessions.getActive()))
-        throw new AppError('conflict', 'Finish or cancel your current study session first.');
+      const active = await activeFor(previous.scope, previous.id);
+      if (active) return active;
       const missed = previous.missedQueue ?? previous.retryQueue;
       const queue: StudyQueueItem[] = [];
       const priorities = new Map<string, number>();
@@ -194,15 +223,13 @@ export function createStudyUseCases({
           priorities.get(first.cardId)! - priorities.get(second.cardId)! ||
           compareIds(first.cardId, second.cardId),
       );
-      return persistence(() =>
-        sessions.create(
-          createSession(
-            ids.create(),
-            previous.scope,
-            orderStudyQueue(queue, order, random),
-            now(clock),
-            previous.id,
-          ),
+      return createOrResume(
+        createSession(
+          ids.create(),
+          previous.scope,
+          orderStudyQueue(queue, order, random),
+          now(clock),
+          previous.id,
         ),
       );
     },

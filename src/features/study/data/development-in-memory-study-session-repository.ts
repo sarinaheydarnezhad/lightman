@@ -31,6 +31,12 @@ export class InMemoryStudySessionRepository implements StudySessionRepository {
     return session ? validateStudySession(session) : null;
   }
 
+  async listActive(): Promise<StudySession[]> {
+    return [...this.sessions.values()]
+      .filter((session) => session.status === 'in-progress')
+      .map(validateStudySession);
+  }
+
   async update(session: StudySession, expectedCurrentIndex: number): Promise<StudySession> {
     const valid = validateStudySession(session);
     const previous = this.sessions.get(valid.id);

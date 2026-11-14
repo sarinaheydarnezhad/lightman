@@ -5,5 +5,7 @@ export interface StudySessionRepository {
   create(session: StudySession): Promise<StudySession>;
   getById(id: string): Promise<StudySession | null>;
   getActive(): Promise<StudySession | null>;
+  /** Recovery/read-only inventory. Never choose a hidden survivor among legacy duplicates. */
+  listActive(): Promise<StudySession[]>;
   update(session: StudySession, expectedCurrentIndex: number): Promise<StudySession>;
 }

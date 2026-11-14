@@ -15,5 +15,6 @@ export interface DatabaseTransaction {
 
 export interface Database {
   execute(sql: string, params?: readonly SqlValue[]): Promise<SqlResult>;
+  /** Use only the supplied transaction inside the callback; do not reacquire this connection. */
   transaction(operation: (transaction: DatabaseTransaction) => Promise<void>): Promise<void>;
 }

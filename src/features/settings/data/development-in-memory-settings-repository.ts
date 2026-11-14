@@ -10,8 +10,17 @@ export class InMemorySettingsRepository implements SettingsRepository {
     return this.settings ? { ...this.settings } : null;
   }
 
-  async update(settings: UserSettings): Promise<UserSettings> {
-    this.settings = validateUserSettings(settings);
+  async initialize(settings: UserSettings, assertCurrentOwner = () => {}): Promise<UserSettings> {
+    assertCurrentOwner();
+    return this.settings ? { ...this.settings } : this.update(settings, assertCurrentOwner);
+  }
+
+  async update(
+    settings: Partial<UserSettings>,
+    assertCurrentOwner = () => {},
+  ): Promise<UserSettings> {
+    assertCurrentOwner();
+    this.settings = validateUserSettings({ ...this.settings, ...settings } as UserSettings);
     this.listeners.forEach((listener) => listener());
     return { ...this.settings };
   }

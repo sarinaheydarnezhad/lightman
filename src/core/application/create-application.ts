@@ -64,18 +64,24 @@ export function createApplication(
     userId: null,
     usage: localLearningUsage(repositories),
   }),
+  assertCurrentOwner: () => void = () => {},
 ) {
   const { decks, cards, reviews, settings } = repositories;
-  const settingsUseCases = createSettingsUseCases(settings, {
-    ...notificationService,
-    scheduleDailyReminder: async (time, language) => {
-      const plan = await createStudyReminderPlan(repositories, clock, time);
-      await notificationService.scheduleDailyReminder(time, language, plan);
+  const settingsUseCases = createSettingsUseCases(
+    settings,
+    {
+      ...notificationService,
+      scheduleDailyReminder: async (time, language) => {
+        const plan = await createStudyReminderPlan(repositories, clock, time);
+        await notificationService.scheduleDailyReminder(time, language, plan);
+      },
     },
-  });
+    assertCurrentOwner,
+  );
 
   async function persistence<T>(operation: () => Promise<T>): Promise<T> {
     try {
+      assertCurrentOwner();
       return await operation();
     } catch (error) {
       if (error instanceof AppError) throw error;

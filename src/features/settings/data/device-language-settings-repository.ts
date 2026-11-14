@@ -1,12 +1,14 @@
 import type { Database } from '@/core/database/database';
 import { languageTag, type LanguageTag } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { SerialWork } from '@/core/application/serial-work';
 import type { SettingsRepository } from '../domain/settings-repository';
 import type { UserSettings } from '../domain/user-settings';
 import { resolveUiLanguage } from '@/shared/localization/localization';
 
 /** Kept in guest/device storage, outside account sync and content transfers. */
 export class DeviceLanguagePreference {
+  private readonly work = new SerialWork();
   private database: Database | null = null;
   private language: LanguageTag | null = null;
   private readonly listeners = new Set<() => void>();
@@ -30,15 +32,18 @@ export class DeviceLanguagePreference {
 
   snapshot = (): LanguageTag | null => this.language;
 
-  async set(language: LanguageTag): Promise<void> {
-    if (!this.database) throw new AppError('unavailable', 'Device settings are not ready.');
-    const next = languageTag(resolveUiLanguage(language));
-    if (this.language === next) return;
-    await this.database.execute('UPDATE local_device_preferences SET language = ? WHERE id = 1', [
-      next,
-    ]);
-    this.language = next;
-    this.listeners.forEach((listener) => listener());
+  set(language: LanguageTag, assertCurrentOwner = () => {}): Promise<void> {
+    return this.work.run(async () => {
+      assertCurrentOwner();
+      if (!this.database) throw new AppError('unavailable', 'Device settings are not ready.');
+      const next = languageTag(resolveUiLanguage(language));
+      if (this.language === next) return;
+      await this.database.execute('UPDATE local_device_preferences SET language = ? WHERE id = 1', [
+        next,
+      ]);
+      this.language = next;
+      this.listeners.forEach((listener) => listener());
+    });
   }
 
   subscribe(listener: () => void): () => void {
@@ -49,24 +54,35 @@ export class DeviceLanguagePreference {
 
 /** Account settings can change without replacing the language selected on this device. */
 export class DeviceLanguageSettingsRepository implements SettingsRepository {
+  readonly mutationScope: object;
   private source: UserSettings | null = null;
   private cached: UserSettings | null = null;
 
   constructor(
     private readonly repository: SettingsRepository,
     private readonly preference: DeviceLanguagePreference,
-  ) {}
+  ) {
+    this.mutationScope = repository.mutationScope ?? repository;
+  }
 
   async get(): Promise<UserSettings | null> {
     await this.repository.get();
     return this.snapshot();
   }
 
-  async update(settings: UserSettings): Promise<UserSettings> {
+  async initialize(settings: UserSettings, assertCurrentOwner = () => {}): Promise<UserSettings> {
+    await this.repository.initialize(settings, assertCurrentOwner);
+    return this.snapshot()!;
+  }
+
+  async update(
+    settings: Partial<UserSettings>,
+    assertCurrentOwner = () => {},
+  ): Promise<UserSettings> {
     const previousLanguage = this.preference.snapshot();
-    const next = await this.repository.update(settings);
-    if (previousLanguage !== null && previousLanguage !== next.language)
-      await this.preference.set(next.language);
+    const next = await this.repository.update(settings, assertCurrentOwner);
+    if ('language' in settings && previousLanguage !== null && previousLanguage !== next.language)
+      await this.preference.set(next.language, assertCurrentOwner);
     return this.snapshot()!;
   }
 

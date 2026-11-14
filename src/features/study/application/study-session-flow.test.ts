@@ -413,8 +413,11 @@ test('two simultaneous starts cannot replace the same active session', async () 
     app.startStudySession(all),
     app.startStudySession(all),
   ]);
-  expect(settled.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-  expect(settled.filter((result) => result.status === 'rejected')).toHaveLength(1);
+  expect(settled.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
+  expect(settled.filter((result) => result.status === 'rejected')).toHaveLength(0);
+  expect(
+    new Set(settled.map((result) => result.status === 'fulfilled' && result.value.id)).size,
+  ).toBe(1);
   expect((await repos.sessions.getActive())?.status).toBe('in-progress');
 });
 
@@ -493,7 +496,7 @@ test('opening a missed-card session ignores due status and never changes states 
   await app.getStudySnapshot(retry.id);
   expect(await repos.reviews.listStates(['A', 'B'])).toEqual(states);
   expect(await repos.reviews.listEvents()).toEqual(events);
-  await expect(app.reviewMissedCards(session.id)).rejects.toMatchObject({ code: 'conflict' });
+  expect((await app.reviewMissedCards(session.id)).id).toBe(retry.id);
 });
 
 test('retry answers record exactly one event each, complete normally on failure, and cannot recursively retry', async () => {

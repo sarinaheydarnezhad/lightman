@@ -6,6 +6,9 @@ import { AppError } from '@/core/errors/app-error';
 import type { StudyScope, StudySession } from '../domain/study-session';
 import type { StudyOrder } from '../domain/study-order';
 
+// Only overlapping requests share navigation ownership. Later explicit resumes still navigate.
+const starts = new WeakMap<object, { pending: number; opened: Set<string> }>();
+
 export function openStudySession(session: StudySession, replace = false) {
   const destination = {
     pathname: '/study/[sessionId]' as const,
@@ -23,12 +26,12 @@ export function useStartStudy() {
   const [error, setError] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<StudySession | null>(null);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
       mounted.current = false;
-    },
-    [],
-  );
+    };
+  }, []);
 
   const start = useCallback(
     async (scope: StudyScope, replace = false, order: StudyOrder = 'random') => {
@@ -37,8 +40,21 @@ export function useStartStudy() {
       setStarting(true);
       setError(null);
       setActiveSession(null);
+      let startSession: typeof application.startStudySession | undefined;
+      let group: { pending: number; opened: Set<string> } | undefined;
       try {
-        openStudySession(await application.startStudySession(scope, order), replace);
+        startSession = application.startStudySession;
+        group = starts.get(startSession);
+        if (!group) {
+          group = { pending: 0, opened: new Set() };
+          starts.set(startSession, group);
+        }
+        group.pending++;
+        const session = await startSession(scope, order);
+        if (mounted.current && !group.opened.has(session.id)) {
+          group.opened.add(session.id);
+          openStudySession(session, replace);
+        }
       } catch (cause) {
         if (cause instanceof AppError && cause.code === 'conflict') {
           try {
@@ -58,6 +74,7 @@ export function useStartStudy() {
           );
         }
       } finally {
+        if (group && startSession && --group.pending === 0) starts.delete(startSession);
         pending.current = false;
         if (mounted.current) setStarting(false);
       }

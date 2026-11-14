@@ -6,6 +6,8 @@ export function mapDatabaseError(
 ): AppError {
   if (error instanceof AppError) return error;
   const text = error instanceof Error ? error.message.toLowerCase() : '';
+  if (text.includes('study_active_session_conflict'))
+    return new AppError('conflict', 'Finish or cancel your current study session first.', error);
   if (text.includes('scheduler_change_ineligible'))
     return new AppError(
       'conflict',

@@ -47,11 +47,7 @@ function writeSession(
 ): Promise<unknown> {
   return database.execute(
     `INSERT INTO study_sessions (id, scope_json, status, started_at, completed_at, cancelled_at, initial_queue_json, retry_queue_json, current_index, retry_successes, workflow_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET scope_json = excluded.scope_json, status = excluded.status, started_at = excluded.started_at,
-       completed_at = excluded.completed_at, cancelled_at = excluded.cancelled_at,
-       initial_queue_json = excluded.initial_queue_json, retry_queue_json = excluded.retry_queue_json,
-       current_index = excluded.current_index, retry_successes = excluded.retry_successes, workflow_json = excluded.workflow_json`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.id,
       JSON.stringify(session.scope),
@@ -98,11 +94,22 @@ export class SQLiteStudySessionRepository implements StudySessionRepository {
   }
 
   getActive(): Promise<StudySession | null> {
+    return this.listActive().then((sessions) => {
+      if (sessions.length > 1)
+        throw new AppError(
+          'conflict',
+          'Multiple unfinished study sessions are preserved. Review the active session list and explicitly leave the sessions you do not want to resume.',
+        );
+      return sessions[0] ?? null;
+    });
+  }
+
+  listActive(): Promise<StudySession[]> {
     return databaseOperation(async () => {
       const result = await this.database.execute(
-        `SELECT * FROM study_sessions WHERE status = 'in-progress' ORDER BY started_at DESC, id LIMIT 1`,
+        `SELECT * FROM study_sessions WHERE status = 'in-progress' ORDER BY started_at DESC, id`,
       );
-      return mapSession(row(result));
+      return result.rows.map((source) => mapSession(source)!);
     }, 'Unable to load the active study session.');
   }
 
