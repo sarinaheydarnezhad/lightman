@@ -3,6 +3,12 @@ import { instant } from '@/core/domain/values';
 import { reviewResult } from '@/features/study/domain/review';
 import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
 import { mergeReviewEvents } from './review-merge';
+import { validateReviewState, type CardReviewState } from '@/features/study/domain/review';
+import {
+  futureClockToleranceMs,
+  validateReviewCalendar,
+  type ReviewCalendar,
+} from '@/features/study/domain/review-calendar';
 import { randomUUID } from 'expo-crypto';
 import type { CloudClient } from './cloud-client';
 import type {
@@ -375,7 +381,23 @@ export class SyncStore {
       )
         throw new Error('Invalid server cursor.');
       await transaction.execute('UPDATE sync_account SET applying_remote = 1 WHERE id = 1');
+      for (const checkpoint of page.reviewCheckpoints ?? []) {
+        if (
+          !Number.isSafeInteger(checkpoint.throughVersion) ||
+          checkpoint.throughVersion < page.cursor ||
+          checkpoint.throughVersion > page.latestVersion
+        )
+          throw new Error('Invalid review checkpoint watermark.');
+        await this.installCheckpoint(
+          transaction,
+          checkpoint.cardId,
+          checkpoint.state,
+          checkpoint.throughVersion,
+        );
+      }
       for (const change of page.changes) await this.applyChange(transaction, change);
+      for (const checkpoint of page.reviewCheckpoints ?? [])
+        await this.replayReviews(transaction, checkpoint.cardId);
       await transaction.execute(
         'UPDATE sync_account SET cursor = ?, applying_remote = 0 WHERE id = 1',
         [page.cursor],
@@ -389,6 +411,17 @@ export class SyncStore {
       return;
     }
     const entityId = change.entityId;
+    if (change.entityType === 'deck') {
+      const known = (
+        await transaction.execute(
+          "SELECT server_version FROM sync_entity_versions WHERE entity_type = 'deck' AND entity_id = ?",
+          [entityId],
+        )
+      ).rows[0];
+      // A locally acknowledged later edit already represents this older feed entry. Reapplying
+      // the create payload could temporarily switch the scheduler of cards created after that edit.
+      if (known && number(known, 'server_version') >= change.serverVersion) return;
+    }
     const queued = await transaction.execute(
       `SELECT operation_id, payload_json FROM sync_operations WHERE entity_type = ? AND entity_id IN (?, '')
        AND status IN ('pending', 'conflict', 'failed') ORDER BY sequence LIMIT 1`,
@@ -521,11 +554,21 @@ export class SyncStore {
         ],
       );
     } else if (change.entityType === 'reviewState') {
+      const baseline = await transaction.execute(
+        'SELECT through_version FROM review_replay_baselines WHERE card_id = ?',
+        [change.entityId],
+      );
+      if (
+        baseline.rows.length &&
+        number(baseline.rows[0]!, 'through_version') >= change.serverVersion
+      )
+        return;
       const events = await transaction.execute(
         'SELECT 1 AS found FROM review_events WHERE card_id = ? LIMIT 1',
         [change.entityId],
       );
       if (events.rows.length) return;
+      await this.installCheckpoint(transaction, change.entityId, payload, change.serverVersion);
       await transaction.execute(
         `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -558,8 +601,12 @@ export class SyncStore {
     const cardId = field(payload, 'cardId');
     const deckId = field(payload, 'deckId');
     const reviewedAt = utc(payload.reviewedAtUtc);
+    const reviewCalendar = payload.reviewCalendar
+      ? validateReviewCalendar(payload.reviewCalendar as ReviewCalendar, instant(reviewedAt))
+      : null;
+    await this.ensureLocalBaseline(transaction, cardId);
     const existing = await transaction.execute(
-      'SELECT card_id, deck_id, previous_box, new_box, result, reviewed_at, scheduler_json FROM review_events WHERE id = ?',
+      'SELECT card_id, deck_id, previous_box, new_box, result, reviewed_at, scheduler_json, review_calendar_json FROM review_events WHERE id = ?',
       [change.entityId],
     );
     if (existing.rows.length) {
@@ -572,6 +619,10 @@ export class SyncStore {
         value(saved, 'result') !== field(payload, 'result') ||
         value(saved, 'reviewed_at') !== reviewedAt ||
         !sameScheduler(
+          saved.review_calendar_json ? JSON.parse(value(saved, 'review_calendar_json')) : null,
+          reviewCalendar,
+        ) ||
+        !sameScheduler(
           saved.scheduler_json ? JSON.parse(value(saved, 'scheduler_json')) : null,
           payload.scheduler,
         )
@@ -579,8 +630,8 @@ export class SyncStore {
         throw new Error('Review event identity collision; history was preserved.');
     }
     await transaction.execute(
-      `INSERT OR IGNORE INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json, review_calendar_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         change.entityId,
         cardId,
@@ -591,6 +642,7 @@ export class SyncStore {
         reviewedAt,
         optionalField(payload, 'studySessionId'),
         payload.scheduler ? JSON.stringify(payload.scheduler) : null,
+        reviewCalendar ? JSON.stringify(reviewCalendar) : null,
       ],
     );
     await transaction.execute(
@@ -606,21 +658,47 @@ export class SyncStore {
       [cardId],
     );
     if (!card.rows[0]) throw new Error('Review event card is missing.');
-    const events = await transaction.execute(
-      `SELECT e.result, e.reviewed_at FROM review_events e
-       LEFT JOIN sync_review_versions v ON v.event_id = e.id WHERE e.card_id = ?
-       ORDER BY CASE WHEN v.server_version IS NULL THEN 1 ELSE 0 END, v.server_version, e.reviewed_at, e.id`,
+    const baselineRows = await transaction.execute(
+      'SELECT * FROM review_replay_baselines WHERE card_id = ?',
       [cardId],
+    );
+    const baseline = baselineRows.rows[0];
+    const events = await transaction.execute(
+      `SELECT e.id, e.result, e.reviewed_at, e.review_calendar_json, v.server_version FROM review_events e
+       LEFT JOIN sync_review_versions v ON v.event_id = e.id WHERE e.card_id = ?
+       AND (v.server_version IS NULL OR v.server_version > ?)
+       AND e.id NOT IN (SELECT value FROM json_each(?))
+       ORDER BY CASE WHEN v.server_version IS NULL THEN 1 ELSE 0 END, v.server_version, e.rowid`,
+      [
+        cardId,
+        baseline ? number(baseline, 'through_version') : 0,
+        baseline ? value(baseline, 'included_event_ids_json') : '[]',
+      ],
     );
     const createdAt = instant(value(card.rows[0], 'created_at'));
     const state = mergeReviewEvents(
       cardId,
       createdAt,
       events.rows.map((event) => ({
+        id: value(event, 'id'),
         reviewedAt: instant(value(event, 'reviewed_at')),
         result: reviewResult(value(event, 'result')),
+        ...(typeof event.server_version === 'number'
+          ? { serverVersion: event.server_version }
+          : {}),
+        ...(event.review_calendar_json
+          ? { reviewCalendar: JSON.parse(value(event, 'review_calendar_json')) as ReviewCalendar }
+          : {}),
       })),
       createReviewEngine().getScheduler(value(card.rows[0], 'review_system')),
+      baseline
+        ? {
+            state: JSON.parse(value(baseline, 'state_json')) as CardReviewState,
+            throughVersion: number(baseline, 'through_version'),
+            // Covered IDs were excluded in SQL; do not allocate a second full history set on every replay.
+            includedEventIds: [],
+          }
+        : undefined,
     );
     await transaction.execute(
       `INSERT INTO card_review_state (card_id, box, due_date, last_reviewed_at, consecutive_successes, total_reviews, total_successes, updated_at, scheduler_state_json)
@@ -640,6 +718,136 @@ export class SyncStore {
         state.updatedAt,
         state.schedulerState ? JSON.stringify(state.schedulerState) : null,
       ],
+    );
+  }
+
+  private checkpointState(cardId: string, payload: Record<string, unknown>): CardReviewState {
+    const last = payload.lastReviewedAtUtc ? instant(utc(payload.lastReviewedAtUtc)) : null;
+    const now = new Date().toISOString();
+    return validateReviewState({
+      cardId,
+      box: integerField(payload, 'box') as CardReviewState['box'],
+      dueDate: field(payload, 'dueDate') as CardReviewState['dueDate'],
+      lastReviewedAt: last,
+      totalReviews: integerField(payload, 'totalReviews'),
+      totalSuccesses: integerField(payload, 'totalSuccesses'),
+      consecutiveSuccesses: integerField(payload, 'consecutiveSuccesses'),
+      updatedAt: instant(last && last > now ? last : now),
+      ...(payload.schedulerState
+        ? {
+            schedulerState: payload.schedulerState as NonNullable<
+              CardReviewState['schedulerState']
+            >,
+          }
+        : {}),
+    });
+  }
+
+  private async installCheckpoint(
+    transaction: DatabaseTransaction,
+    cardId: string,
+    payload: Record<string, unknown>,
+    version: number,
+  ): Promise<void> {
+    let state = this.checkpointState(cardId, payload);
+    const serverJson = JSON.stringify(payload);
+    const found = (
+      await transaction.execute('SELECT * FROM review_replay_baselines WHERE card_id = ?', [cardId])
+    ).rows[0];
+    if (found && number(found, 'through_version') > version) return;
+    if (found && number(found, 'through_version') === version && found.server_state_json) {
+      if (!sameScheduler(JSON.parse(value(found, 'server_state_json')), payload))
+        throw new Error('Conflicting review checkpoints; progress was retained.');
+      return;
+    }
+    const local = (
+      await transaction.execute('SELECT * FROM card_review_state WHERE card_id = ?', [cardId])
+    ).rows[0];
+    const invalidClock = await transaction.execute(
+      `SELECT 1 AS found FROM review_events e JOIN sync_operations o
+      ON o.entity_type='reviewEvent' AND o.entity_id=e.id WHERE e.card_id=? AND o.status='failed'
+      AND e.reviewed_at>? LIMIT 1`,
+      [cardId, new Date(Date.now() + futureClockToleranceMs).toISOString()],
+    );
+    if (invalidClock.rows.length)
+      throw new Error(
+        'A rejected future-clock review needs controlled time correction. Original history and progress were retained.',
+      );
+    const pending =
+      (
+        await transaction.execute(
+          `SELECT COUNT(*) AS count, SUM(CASE WHEN e.result='success' THEN 1 ELSE 0 END) AS successes FROM review_events e
+      LEFT JOIN sync_review_versions v ON v.event_id=e.id WHERE e.card_id=? AND (v.server_version IS NULL OR v.server_version>?)`,
+          [cardId, version],
+        )
+      ).rows[0] ?? {};
+    if (
+      local &&
+      typeof local.total_reviews === 'number' &&
+      (state.totalReviews + Number(pending.count ?? 0) < local.total_reviews ||
+        state.totalSuccesses + Number(pending.successes ?? 0) < Number(local.total_successes))
+    )
+      throw new Error(
+        'Incomplete review baseline; existing progress was retained for reconciliation.',
+      );
+    // A legacy device may know a valid local-calendar date the server never received. Preserve it,
+    // rather than guessing its historical zone; a later explicit-calendar review will converge.
+    const ambiguousCalendar =
+      found &&
+      (!found.server_state_json ||
+        JSON.parse(value(found, 'state_json')).dueDate !==
+          JSON.parse(value(found, 'server_state_json')).dueDate);
+    if (
+      ambiguousCalendar &&
+      local &&
+      local.total_reviews === state.totalReviews &&
+      local.total_successes === state.totalSuccesses &&
+      local.consecutive_successes === state.consecutiveSuccesses &&
+      local.last_reviewed_at === state.lastReviewedAt &&
+      local.due_date !== state.dueDate
+    ) {
+      state = { ...state, dueDate: value(local, 'due_date') as CardReviewState['dueDate'] };
+    }
+    await transaction.execute(
+      `INSERT INTO review_replay_baselines (card_id,through_version,state_json,included_event_ids_json,server_state_json)
+      VALUES (?,?,?,'[]',?) ON CONFLICT(card_id) DO UPDATE SET through_version=excluded.through_version,
+      state_json=excluded.state_json,included_event_ids_json='[]',server_state_json=excluded.server_state_json`,
+      [cardId, version, JSON.stringify(state), serverJson],
+    );
+  }
+
+  private async ensureLocalBaseline(
+    transaction: DatabaseTransaction,
+    cardId: string,
+  ): Promise<void> {
+    const found = await transaction.execute(
+      'SELECT card_id FROM review_replay_baselines WHERE card_id = ?',
+      [cardId],
+    );
+    if (found.rows.length) return;
+    const local = (
+      await transaction.execute('SELECT * FROM card_review_state WHERE card_id = ?', [cardId])
+    ).rows[0];
+    if (!local) return;
+    const state = this.checkpointState(cardId, {
+      box: local.box,
+      dueDate: local.due_date,
+      lastReviewedAtUtc: local.last_reviewed_at,
+      totalReviews: local.total_reviews,
+      totalSuccesses: local.total_successes,
+      consecutiveSuccesses: local.consecutive_successes,
+      schedulerState: local.scheduler_state_json
+        ? JSON.parse(value(local, 'scheduler_state_json'))
+        : null,
+    });
+    const ids = (
+      await transaction.execute('SELECT id FROM review_events WHERE card_id = ?', [cardId])
+    ).rows.map((event) => value(event, 'id'));
+    const cursor = (await transaction.execute('SELECT cursor FROM sync_account WHERE id = 1'))
+      .rows[0];
+    await transaction.execute(
+      `INSERT INTO review_replay_baselines (card_id,through_version,state_json,included_event_ids_json) VALUES (?,?,?,?)`,
+      [cardId, cursor ? number(cursor, 'cursor') : 0, JSON.stringify(state), JSON.stringify(ids)],
     );
   }
 

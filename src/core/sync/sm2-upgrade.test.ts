@@ -24,12 +24,19 @@ test('upgrade recovers rejected SM-2 operations and preserves immutable history 
   );
   const deck = await app.createDeck(makeDeck({ reviewSystem: 'sm2' }));
   const card = await app.createCard({ ...makeCard(), deckId: deck.id });
-  await app.reviewCard({
-    cardId: card.id,
-    deckId: deck.id,
-    result: 'success',
-    studySessionId: null,
-  });
+  // Seed exactly what the pre-calendar writer could store; current writers require schema 8.
+  await database.execute(
+    `UPDATE card_review_state SET due_date='2026-11-03', last_reviewed_at='2026-11-02T12:00:00.000Z',
+    total_reviews=1,total_successes=1,consecutive_successes=1,
+    scheduler_state_json='{"schedulerId":"sm2","key":"learning","data":{"repetitions":1,"intervalDays":1,"easeFactor":2.6}}'
+    WHERE card_id=?`,
+    [card.id],
+  );
+  await database.execute(
+    `INSERT INTO review_events (id,card_id,deck_id,previous_box,new_box,result,reviewed_at,scheduler_json)
+    VALUES ('legacy-event',?,?,1,1,'success','2026-11-02T12:00:00.000Z','{"schedulerId":"sm2","previousState":"new","newState":"learning"}')`,
+    [card.id, deck.id],
+  );
   const originalState = await app.getReviewState(card.id);
   const originalEvents = (await database.execute('SELECT * FROM review_events')).rows;
   await database.execute("UPDATE sync_operations SET status = 'failed', retry_count = 1");
@@ -50,7 +57,11 @@ test('upgrade recovers rejected SM-2 operations and preserves immutable history 
     scheduler: { schedulerId: 'sm2', previousState: 'new', newState: 'learning' },
   });
   expect(await app.getReviewState(card.id)).toEqual(originalState);
-  expect((await database.execute('SELECT * FROM review_events')).rows).toEqual(originalEvents);
+  expect(
+    (await database.execute('SELECT * FROM review_events')).rows.map(
+      ({ review_calendar_json: _calendar, ...event }) => event,
+    ),
+  ).toEqual(originalEvents);
   await runMigrations(database);
   expect(await store.pending()).toEqual(operations);
 });

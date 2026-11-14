@@ -6,6 +6,7 @@ import {
   type Instant,
 } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { validateReviewCalendar, type ReviewCalendar } from './review-calendar';
 
 export type LeitnerBox = 1 | 2 | 3 | 4 | 5;
 export type ReviewResult = 'success' | 'failure';
@@ -29,6 +30,7 @@ export interface CardReviewState {
 }
 
 export interface ReviewEvent {
+  readonly reviewCalendar?: ReviewCalendar;
   readonly id: string;
   readonly cardId: string;
   readonly deckId: string;
@@ -99,7 +101,12 @@ export function validateReviewEvent(event: ReviewEvent): Readonly<ReviewEvent> {
   }
   reviewResult(event.result);
   instant(event.reviewedAt);
-  return Object.freeze({ ...event });
+  return Object.freeze({
+    ...event,
+    ...(event.reviewCalendar
+      ? { reviewCalendar: validateReviewCalendar(event.reviewCalendar, event.reviewedAt) }
+      : {}),
+  });
 }
 
 export function validateSchedulerState(state: SchedulerState): SchedulerState {

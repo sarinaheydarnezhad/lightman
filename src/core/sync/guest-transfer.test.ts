@@ -595,8 +595,11 @@ test.each(['missing-history', 'different-UTC-day', 'other-scheduler'])(
       await fixture.guest.execute('UPDATE card_review_state SET total_reviews = 2');
     if (kind === 'different-UTC-day')
       await fixture.guest.execute("UPDATE card_review_state SET due_date = '2026-10-07'");
-    if (kind === 'other-scheduler')
+    if (kind === 'other-scheduler') {
+      // Emulate data written by the older schema, before scheduler eligibility was enforced.
+      await fixture.guest.execute('DROP TRIGGER deck_scheduler_eligibility');
       await fixture.guest.execute("UPDATE decks SET review_system = 'sm2'");
+    }
     const preview = await fixture.transfer.preview();
     expect(preview.blockers.length).toBeGreaterThan(0);
     await expect(fixture.transfer.transfer(preview)).rejects.toThrow();

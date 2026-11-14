@@ -23,6 +23,40 @@ const rotated = {
   accessExpiresAtUtc: '2099-01-01T00:00:00.000Z',
 };
 
+test('a new client retains scheduling data when the old backend lacks its capability', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest
+    .fn()
+    .mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+  await expect(new CloudClient().ensureSchedulingContract()).rejects.toMatchObject({
+    status: 426,
+    code: 'scheduling_upgrade_required',
+  });
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test('explicit Leitner selection is preserved in the actual sync request', async () => {
+  jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
+  globalThis.fetch = jest
+    .fn()
+    .mockResolvedValue({ ok: true, status: 200, json: async () => ({ cursor: 1, changes: [] }) });
+  const operation: PendingOperation = {
+    sequence: 1,
+    operationId: 'edit',
+    entityType: 'deck',
+    entityId: 'deck',
+    operation: 'upsert',
+    expectedVersion: 1,
+    createdAt: '2026-11-13T00:00:00.000Z',
+    retryCount: 0,
+    status: 'pending',
+    payload: { reviewSystem: 'leitner' },
+  };
+  await new CloudClient().push(operation, 'device', 'owner');
+  const body = JSON.parse(String(jest.mocked(fetch).mock.calls[0]![1]!.body));
+  expect(body.changes[0].payload.reviewSystem).toBe('leitner');
+});
+
 test('only native development builds can use the USB loopback test API', () => {
   const originalDev = __DEV__;
   const originalOs = Platform.OS;
@@ -207,7 +241,7 @@ test('backup capacity machine codes survive the existing authenticated request p
   });
 });
 
-test('Leitner keeps its existing wire contract and SM-2 preserves its review system', async () => {
+test('explicit Leitner and SM-2 both preserve their review system on the wire', async () => {
   jest.mocked(SecureStore.getItemAsync).mockResolvedValue(JSON.stringify(rotated));
   globalThis.fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -243,6 +277,7 @@ test('Leitner keeps its existing wire contract and SM-2 preserves its review sys
     language: 'en',
     textAlignment: 'ltr',
     typographySize: 'medium',
+    reviewSystem: 'leitner',
   });
   expect(payload.reviewSystem).toBe('leitner');
   await new CloudClient().push(

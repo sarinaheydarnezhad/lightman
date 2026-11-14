@@ -47,7 +47,7 @@ export async function snapshot(transaction: DatabaseTransaction): Promise<GuestS
     events: [
       ...(
         await transaction.execute(
-          'SELECT e.* FROM review_events e JOIN cards c ON c.id = e.card_id JOIN decks d ON d.id = c.deck_id WHERE c.archived_at IS NULL AND d.archived_at IS NULL ORDER BY e.reviewed_at, e.id',
+          'SELECT e.* FROM review_events e JOIN cards c ON c.id = e.card_id JOIN decks d ON d.id = c.deck_id WHERE c.archived_at IS NULL AND d.archived_at IS NULL ORDER BY e.rowid',
         )
       ).rows,
     ],
@@ -173,8 +173,12 @@ export function unsupportedReasons(source: GuestSnapshot): string[] {
       text(card, 'id'),
       instant(text(card, 'created_at')),
       events.map((event) => ({
+        id: text(event, 'id'),
         reviewedAt: instant(new Date(text(event, 'reviewed_at')).toISOString()),
         result: reviewResult(event.result),
+        ...(event.review_calendar_json
+          ? { reviewCalendar: JSON.parse(text(event, 'review_calendar_json')) }
+          : {}),
       })),
     );
     const normalized = {
@@ -185,7 +189,7 @@ export function unsupportedReasons(source: GuestSnapshot): string[] {
     };
     if (!stateMatches(normalized, replay))
       reasons.add(
-        'Guest review progress cannot be reproduced by the backend UTC-day scheduler. No progress was changed.',
+        'Guest review progress cannot be reproduced from its recorded calendar/history. No progress was changed.',
       );
   }
   return [...reasons];

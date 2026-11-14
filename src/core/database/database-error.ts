@@ -6,6 +6,12 @@ export function mapDatabaseError(
 ): AppError {
   if (error instanceof AppError) return error;
   const text = error instanceof Error ? error.message.toLowerCase() : '';
+  if (text.includes('scheduler_change_ineligible'))
+    return new AppError(
+      'conflict',
+      'The deck scheduler changed or this deck has retained cards/history. Reload before continuing.',
+      error,
+    );
   if (text.includes('free_tier_dataset_limit'))
     return new AppError(
       'free-tier-limit',

@@ -530,6 +530,8 @@ export const en = {
   'study.order.reverse': 'Reverse',
   'study.resume': 'Resume session',
   'study.session': 'Study session',
+  'study.clockRecovery':
+    'A previous review has a future clock date. Review this card now to resume scheduling from today. Earlier history and counts will be kept.',
   'study.correctAnswers': 'Correct Answers: {count}',
   'study.exit': 'Exit study',
   'study.reveal': 'Reveal answer',
@@ -1354,6 +1356,8 @@ export const fa: Dictionary = {
   'study.order.reverse': 'معکوس',
   'study.resume': 'ادامهٔ جلسه',
   'study.session': 'جلسهٔ مطالعه',
+  'study.clockRecovery':
+    'زمان یک مرور قبلی در آینده ثبت شده است. با مرور دوبارهٔ این کارت، زمان‌بندی از امروز ادامه می‌یابد؛ تاریخچه و شمارنده‌های قبلی حفظ می‌شوند.',
   'study.correctAnswers': 'پاسخ‌های درست: {count}',
   'study.exit': 'خروج از مطالعه',
   'study.reveal': 'نمایش پاسخ',

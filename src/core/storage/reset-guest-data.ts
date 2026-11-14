@@ -34,6 +34,7 @@ export async function resetGuestData(
       'sync_entity_versions',
       'guest_transfers',
       'study_sessions',
+      'review_replay_baselines',
       'review_events',
       'card_review_state',
       'cards',

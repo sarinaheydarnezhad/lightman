@@ -7,6 +7,7 @@ import {
   type Instant,
 } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { needsClockRecovery } from './review-calendar';
 import {
   leitnerBox,
   reviewResult,
@@ -82,8 +83,6 @@ export function calculateReviewTransition(
   reviewResult(result);
   calendarDate(reviewDate);
   instant(reviewedAt);
-  if (reviewedAt < previous.updatedAt)
-    throw new AppError('validation', 'Review time cannot precede the saved review state.');
   const newBox = result === 'failure' ? 1 : leitnerBox(Math.min(previous.box + 1, 5));
   const intervalDays = result === 'failure' ? 0 : getIntervalDays(newBox, policy);
   const newDueDate = result === 'failure' ? reviewDate : addCalendarDays(reviewDate, intervalDays);
@@ -92,7 +91,7 @@ export function calculateReviewTransition(
     box: newBox,
     dueDate: newDueDate,
     lastReviewedAt: reviewedAt,
-    updatedAt: reviewedAt,
+    updatedAt: previous.updatedAt > reviewedAt ? previous.updatedAt : reviewedAt,
     totalReviews: previous.totalReviews + 1,
     totalSuccesses: previous.totalSuccesses + (result === 'success' ? 1 : 0),
     consecutiveSuccesses: result === 'success' ? previous.consecutiveSuccesses + 1 : 0,
@@ -122,7 +121,11 @@ export function getDueReviewStates(
   calendarDate(targetDate);
   return states
     .map(validateLeitnerReviewState)
-    .filter((state) => isCardDue(state.dueDate, targetDate))
+    .filter(
+      (state) =>
+        isCardDue(state.dueDate, targetDate) ||
+        needsClockRecovery(state.lastReviewedAt, targetDate),
+    )
     .sort(
       (a, b) =>
         (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0) ||

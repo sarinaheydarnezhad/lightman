@@ -60,10 +60,16 @@ test.each([
   expect(() => calculateReviewTransition(makeState(changes), 'success', day, at)).toThrow(AppError);
 });
 
-test('review time cannot precede the saved state and counter overflow cannot enter state', () => {
-  expect(() =>
-    calculateReviewTransition(makeState(), 'success', day, instant('2026-09-23T00:00:00.000Z')),
-  ).toThrow('Review time cannot precede the saved review state.');
+test('receipt order tolerates corrected clocks while counter overflow cannot enter state', () => {
+  const corrected = calculateReviewTransition(
+    makeState(),
+    'success',
+    calendarDate('2026-09-23'),
+    instant('2026-09-23T00:00:00.000Z'),
+  ).updatedReviewState;
+  expect(corrected.lastReviewedAt).toBe('2026-09-23T00:00:00.000Z');
+  expect(corrected.dueDate).toBe('2026-09-25');
+  expect(corrected.totalReviews).toBe(1);
   const safe = Number.MAX_SAFE_INTEGER;
   expect(
     calculateReviewTransition(

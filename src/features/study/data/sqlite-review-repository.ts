@@ -63,6 +63,14 @@ function mapEvent(source: ReturnType<typeof row>): ReviewEvent | null {
         }),
     result: text(source, 'result') as ReviewEvent['result'],
     reviewedAt: instant(text(source, 'reviewed_at')),
+    ...(typeof source.review_calendar_json === 'string'
+      ? {
+          reviewCalendar: json<NonNullable<ReviewEvent['reviewCalendar']>>(
+            source,
+            'review_calendar_json',
+          ),
+        }
+      : {}),
     studySessionId: nullableText(source, 'study_session_id'),
   });
 }
@@ -242,8 +250,8 @@ export class SQLiteReviewRepository implements ReviewRepository {
     event: ReviewEvent,
   ): Promise<unknown> {
     return database.execute(
-      `INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, scheduler_json, review_calendar_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         event.id,
         event.cardId,
@@ -260,6 +268,7 @@ export class SQLiteReviewRepository implements ReviewRepository {
               newState: event.newState,
             })
           : null,
+        event.reviewCalendar ? JSON.stringify(event.reviewCalendar) : null,
       ],
     );
   }

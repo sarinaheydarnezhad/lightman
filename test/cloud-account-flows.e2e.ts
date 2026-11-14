@@ -151,7 +151,7 @@ async function installation(phoneNumber: string, register = false, legacyDefault
   scopes.completeAccountEntry();
   const app = createApplication(
     scopes.current().value,
-    { now: () => new Date('2026-10-27T10:00:00.000Z'), timeZone: () => 'UTC' },
+    { now: () => new Date('2026-11-12T21:30:00.000Z'), timeZone: () => 'Asia/Tehran' },
     { create: randomUUID },
   );
   return { scopes, cloud, engine, store, app, preview };
@@ -182,6 +182,45 @@ async function download(cloud: CloudClient, id: string) {
   expect(await cloud.hasSession()).toBe(true);
   return response.json();
 }
+
+test.each(['leitner', 'sm2'])(
+  'scheduling %s: offline empty-deck edit, Tehran push/pull and fresh-install recovery agree',
+  async (system) => {
+    const phone = system === 'leitner' ? '+989120000010' : '+989120000011';
+    const fixture = await installation(phone, true);
+    const from = system === 'leitner' ? 'sm2' : 'leitner';
+    const deck = await fixture.app.createDeck(
+      makeDeck({ name: 'Calendar contract', reviewSystem: from }),
+    );
+    await fixture.app.updateDeck(deck.id, { reviewSystem: system });
+    const card = await fixture.app.createCard({ ...makeCard(), deckId: deck.id });
+    await fixture.app.reviewCard({
+      cardId: card.id,
+      deckId: deck.id,
+      result: 'success',
+      studySessionId: null,
+    });
+    const due = system === 'leitner' ? '2026-11-15' : '2026-11-14';
+    expect((await fixture.scopes.current().value.reviews.getState(card.id))!.dueDate).toBe(due);
+    await fixture.engine.createBackup();
+    const events = await fixture.scopes.current().value.reviews.listEvents();
+    await fixture.engine.createBackup();
+    expect(await fixture.scopes.current().value.reviews.listEvents()).toEqual(events);
+    const fresh = await installation(phone);
+    expect(await fresh.scopes.current().value.decks.getById(deck.id)).toMatchObject({
+      reviewSystem: system,
+    });
+    expect(await fresh.scopes.current().value.reviews.getState(card.id)).toMatchObject({
+      dueDate: due,
+      totalReviews: 1,
+      totalSuccesses: 1,
+    });
+    expect((await fresh.scopes.current().value.reviews.listEvents())[0]!.reviewCalendar).toEqual({
+      reviewDate: '2026-11-13',
+      utcOffsetMinutes: 210,
+    });
+  },
+);
 
 test('Backup Now persists local changes; a backend 503 preserves the last successful timestamp and can be retried', async () => {
   const fixture = await installation('+989120000001', true);
@@ -221,6 +260,11 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
   expect(saved.settings[0]).toMatchObject({ theme: 'dark', hapticsEnabled: false });
   expect(saved.reviewEvents).toHaveLength(1);
   expect(saved.reviewStates[0].totalReviews).toBe(1);
+  expect(saved.reviewStates[0].dueDate).toBe('2026-11-15');
+  expect(JSON.parse(saved.reviewEvents[0].reviewCalendarJson)).toEqual({
+    reviewDate: '2026-11-13',
+    utcOffsetMinutes: 210,
+  });
   // Reproduce the original cleared-data failure against the same real account and API.
   const recovered = await installation('+989120000001', false, true);
   expect(await recovered.scopes.current().value.settings.get()).toMatchObject({
@@ -237,6 +281,9 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
     hapticsEnabled: false,
   });
   expect((await fresh.scopes.current().value.reviews.getState(card.id))!.totalReviews).toBe(1);
+  expect((await fresh.scopes.current().value.reviews.getState(card.id))!.dueDate).toBe(
+    '2026-11-15',
+  );
   expect((await fresh.store.account()).cursor).toBeGreaterThan(0);
   expect(requests.slice(before).filter((r) => r.path === '/api/v1/sync/push')).toHaveLength(0);
   expect(await fresh.cloud.ownedDecks()).toEqual([expect.objectContaining({ id: deck.id })]);

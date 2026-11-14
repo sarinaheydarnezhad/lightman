@@ -1,5 +1,6 @@
 import { calendarDateAtInstant, now, requiredId } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { reviewCalendarAt } from '@/features/study/domain/review-calendar';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import type { LearningAccess } from '@/core/ports/learning-access';
@@ -11,6 +12,7 @@ import { validateDeck, type Deck } from '@/features/decks/domain/deck';
 import { validateCard, type Card } from '@/features/study/domain/card';
 import {
   reviewResult,
+  validateReviewEvent,
   type CardReviewState,
   type ReviewEvent,
 } from '@/features/study/domain/review';
@@ -112,10 +114,11 @@ export function createApplication(
     const previous = await persistence(() => reviews.getState(card.id));
     if (!previous) throw new AppError('not-found', 'Review state not found.');
     const time = now(clock);
+    const reviewCalendar = reviewCalendarAt(time, clock.timeZone());
     const transition = reviewEngine.processReview(
       previous,
       input.result,
-      calendarDateAtInstant(time, clock.timeZone()),
+      reviewCalendar.reviewDate,
       time,
       cardDeck.reviewSystem,
     );
@@ -130,7 +133,7 @@ export function createApplication(
       },
       cardDeck.reviewSystem,
     );
-    return { ...transition, reviewEvent };
+    return { ...transition, reviewEvent: validateReviewEvent({ ...reviewEvent, reviewCalendar }) };
   }
 
   async function reviewCard(input: ReviewCardInput): Promise<ReviewCardOutput> {
@@ -205,7 +208,8 @@ export function createApplication(
       const selected = reviewEngine.getScheduler(changes.reviewSystem ?? deck.reviewSystem);
       if (
         selected.id !== (deck.reviewSystem ?? 'leitner') &&
-        (await persistence(() => cards.countByDeck(id)))
+        ((await persistence(() => cards.listByDeck(id, { includeArchived: true }))).length ||
+          (await persistence(() => reviews.countEvents({ deckId: id }))))
       )
         throw new AppError(
           'conflict',

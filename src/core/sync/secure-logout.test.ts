@@ -131,6 +131,8 @@ async function setup(withGuest = true) {
     if (!session || revoked.has(session.sessionId)) return response(null, 401) as Response;
     if (path === '/me/')
       return response({ id: session.userId, displayName: 'Account' }) as Response;
+    if (path === '/sync/capabilities')
+      return response({ version: 2, futureClockToleranceSeconds: 300 }) as Response;
     if (path === '/auth/logout') {
       if (holdLogout) await holdLogout();
       revoked.add(session.sessionId);

@@ -15,6 +15,7 @@ export type StudySessionStatus = 'not-started' | 'in-progress' | 'completed' | '
 export type StudyPresentationKind = 'initial' | 'retry';
 
 export interface StudyQueueItem {
+  readonly clockRecovery?: boolean;
   readonly cardId: string;
   readonly deckId: string;
   readonly dueDate: CalendarDate;
@@ -53,7 +54,13 @@ export function validateStudyQueueItem(item: StudyQueueItem): StudyQueueItem {
   requiredId(item.deckId, 'Deck ID');
   calendarDate(item.dueDate);
   if (item.box !== undefined) leitnerBox(item.box);
-  return { cardId: item.cardId, deckId: item.deckId, dueDate: item.dueDate, box: item.box };
+  return {
+    cardId: item.cardId,
+    deckId: item.deckId,
+    dueDate: item.dueDate,
+    box: item.box,
+    ...(item.clockRecovery === true ? { clockRecovery: true } : {}),
+  };
 }
 
 export function validateStudySession(session: StudySession): StudySession {

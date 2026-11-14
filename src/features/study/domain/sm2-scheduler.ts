@@ -7,6 +7,7 @@ import {
   type Instant,
 } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { needsClockRecovery } from './review-calendar';
 import {
   reviewResult,
   validateReviewEvent,
@@ -78,8 +79,6 @@ export function calculateSm2Transition(
   reviewResult(result);
   const date = calendarDate(reviewDate);
   const time = instant(reviewedAt);
-  if (time < previous.updatedAt)
-    throw new AppError('validation', 'Review time cannot precede the saved review state.');
 
   const newEaseFactor = nextEaseFactor(data.easeFactor, result);
   const newRepetitions = result === 'success' ? data.repetitions + 1 : 0;
@@ -110,7 +109,7 @@ export function calculateSm2Transition(
       box: undefined,
       dueDate: newDueDate,
       lastReviewedAt: time,
-      updatedAt: time,
+      updatedAt: previous.updatedAt > time ? previous.updatedAt : time,
       consecutiveSuccesses: result === 'success' ? previous.consecutiveSuccesses + 1 : 0,
       totalReviews: previous.totalReviews + 1,
       totalSuccesses: previous.totalSuccesses + (result === 'success' ? 1 : 0),
@@ -155,7 +154,7 @@ export const Sm2Scheduler: Scheduler = Object.freeze({
     const date = calendarDate(targetDate);
     return states
       .map((state) => validateReviewState(state))
-      .filter((state) => state.dueDate <= date)
+      .filter((state) => state.dueDate <= date || needsClockRecovery(state.lastReviewedAt, date))
       .sort(
         (a, b) =>
           a.dueDate.localeCompare(b.dueDate) ||

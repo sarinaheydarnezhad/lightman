@@ -60,6 +60,7 @@ test('ReviewCard loads initial state and records exactly one success transition 
     result: 'success',
     reviewedAt: '2026-09-24T10:00:00.000Z',
     studySessionId: 'session-1',
+    reviewCalendar: { reviewDate: '2026-09-24', utcOffsetMinutes: 0 },
   });
   expect(record).toHaveBeenCalledTimes(1);
   expect(record).toHaveBeenCalledWith(output.reviewEvent, output.updatedReviewState);

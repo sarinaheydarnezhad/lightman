@@ -430,7 +430,7 @@ export class GuestTransfer {
         );
       for (const event of source.events)
         await transaction.execute(
-          'INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)',
+          'INSERT INTO review_events (id, card_id, deck_id, previous_box, new_box, result, reviewed_at, study_session_id, review_calendar_json) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)',
           [
             plan.events[text(event, 'id')]!,
             plan.cards[text(event, 'card_id')]!,
@@ -439,6 +439,7 @@ export class GuestTransfer {
             event.new_box!,
             event.result!,
             new Date(text(event, 'reviewed_at')).toISOString(),
+            event.review_calendar_json ?? null,
           ],
         );
       await transaction.execute('DELETE FROM sync_operations WHERE sequence > ?', [sequence]);
@@ -511,6 +512,9 @@ export class GuestTransfer {
             newBox: event.new_box,
             result: event.result,
             reviewedAtUtc: new Date(text(event, 'reviewed_at')).toISOString(),
+            ...(event.review_calendar_json
+              ? { reviewCalendar: JSON.parse(text(event, 'review_calendar_json')) }
+              : {}),
             studySessionId: null,
           },
           text(event, 'reviewed_at'),
@@ -622,7 +626,7 @@ export class GuestTransfer {
     for (const event of plan.source.events) {
       const confirmed = (
         await database.execute(
-          'SELECT e.card_id, e.deck_id, e.previous_box, e.new_box, e.result, e.reviewed_at FROM review_events e JOIN sync_review_versions v ON v.event_id = e.id WHERE e.id = ?',
+          'SELECT e.card_id, e.deck_id, e.previous_box, e.new_box, e.result, e.reviewed_at, e.review_calendar_json FROM review_events e JOIN sync_review_versions v ON v.event_id = e.id WHERE e.id = ?',
           [plan.events[text(event, 'id')]!],
         )
       ).rows[0];
@@ -633,7 +637,8 @@ export class GuestTransfer {
         confirmed.previous_box !== event.previous_box ||
         confirmed.new_box !== event.new_box ||
         confirmed.result !== event.result ||
-        confirmed.reviewed_at !== new Date(text(event, 'reviewed_at')).toISOString()
+        confirmed.reviewed_at !== new Date(text(event, 'reviewed_at')).toISOString() ||
+        (confirmed.review_calendar_json ?? null) !== (event.review_calendar_json ?? null)
       )
         throw new Error('Review history is not fully verified. Retry without removing guest data.');
     }

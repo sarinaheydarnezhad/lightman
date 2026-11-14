@@ -855,18 +855,7 @@ export class CloudClient {
     cursor: number;
     changes: { status: 'applied' | 'duplicate'; serverVersion: number }[];
   }> {
-    let payload = operation.payload;
-    if (
-      operation.entityType === 'deck' &&
-      operation.operation === 'upsert' &&
-      payload &&
-      typeof payload === 'object' &&
-      'reviewSystem' in payload &&
-      payload.reviewSystem === 'leitner'
-    ) {
-      const { reviewSystem: _reviewSystem, ...supported } = payload;
-      payload = supported;
-    }
+    const payload = operation.payload;
     return this.request('/sync/push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -889,5 +878,31 @@ export class CloudClient {
 
   pull(cursor: number): Promise<PullPage> {
     return this.request(`/sync/pull?cursor=${cursor}&limit=100`, { method: 'GET' });
+  }
+
+  async ensureSchedulingContract(): Promise<void> {
+    let capability: { version: number };
+    try {
+      capability = await this.reads.get(
+        'scheduling-contract',
+        () => this.request<{ version: number }>('/sync/capabilities', { method: 'GET' }),
+        60_000,
+      );
+    } catch (error) {
+      if (!(error instanceof CloudError) || error.status !== 404) throw error;
+      throw new CloudError(
+        426,
+        undefined,
+        'The server must be upgraded before scheduling data can synchronize. Local changes were retained.',
+        'scheduling_upgrade_required',
+      );
+    }
+    if (capability.version !== 2)
+      throw new CloudError(
+        426,
+        undefined,
+        'The server must be upgraded before scheduling data can synchronize. Local changes were retained.',
+        'scheduling_upgrade_required',
+      );
   }
 }

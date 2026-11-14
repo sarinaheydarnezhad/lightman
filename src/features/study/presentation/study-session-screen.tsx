@@ -224,6 +224,9 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               })}
             />
           </View>
+          {item.clockRecovery ? (
+            <Text accessibilityRole="alert">{t('study.clockRecovery')}</Text>
+          ) : null}
           <StudyCard
             key={`${item.presentationId}-${study.swipeResetKey}`}
             card={card}

@@ -315,6 +315,46 @@ export const migrations: readonly Migration[] = [
     ],
   },
   { version: 7, statements: sm2SyncStatements },
+  {
+    version: 8,
+    statements: [
+      'ALTER TABLE review_events ADD COLUMN review_calendar_json TEXT',
+      `CREATE TABLE review_replay_baselines (
+        card_id TEXT PRIMARY KEY NOT NULL,
+        through_version INTEGER NOT NULL CHECK (through_version >= 0),
+        state_json TEXT NOT NULL,
+        included_event_ids_json TEXT NOT NULL,
+        server_state_json TEXT
+      )`,
+      // Capture the proven local projection and its exact covered IDs. Never infer missing time zones.
+      `INSERT INTO review_replay_baselines (card_id, through_version, state_json, included_event_ids_json)
+        SELECT s.card_id, (SELECT cursor FROM sync_account WHERE id = 1),
+          json_object('cardId', s.card_id, 'box', s.box, 'dueDate', s.due_date,
+            'lastReviewedAt', s.last_reviewed_at, 'consecutiveSuccesses', s.consecutive_successes,
+            'totalReviews', s.total_reviews, 'totalSuccesses', s.total_successes, 'updatedAt', s.updated_at,
+            'schedulerState', json(s.scheduler_state_json)),
+          (SELECT json_group_array(e.id) FROM review_events e WHERE e.card_id = s.card_id)
+        FROM card_review_state s`,
+      'DROP TRIGGER IF EXISTS sync_review_insert',
+      sm2SyncStatements
+        .find((sql) => sql.startsWith('CREATE TRIGGER sync_review_insert'))!
+        .replace(
+          "'scheduler', json(NEW.scheduler_json))",
+          "'scheduler', json(NEW.scheduler_json), 'reviewCalendar', json(NEW.review_calendar_json))",
+        ),
+      `CREATE TRIGGER deck_scheduler_eligibility BEFORE UPDATE OF review_system ON decks
+        WHEN NEW.review_system <> OLD.review_system AND (
+          EXISTS (SELECT 1 FROM cards WHERE deck_id = OLD.id) OR
+          EXISTS (SELECT 1 FROM review_events WHERE deck_id = OLD.id) OR
+          EXISTS (SELECT 1 FROM sync_operations WHERE status IN ('pending','failed','conflict')
+            AND entity_type IN ('card','reviewEvent') AND json_extract(payload_json, '$.deckId') = OLD.id)
+        ) BEGIN SELECT RAISE(ABORT, 'scheduler_change_ineligible'); END`,
+      `CREATE TRIGGER card_scheduler_consistency BEFORE INSERT ON card_review_state
+        WHEN COALESCE(json_extract(NEW.scheduler_state_json, '$.schedulerId'), 'leitner') <>
+          (SELECT d.review_system FROM cards c JOIN decks d ON d.id = c.deck_id WHERE c.id = NEW.card_id)
+        BEGIN SELECT RAISE(ABORT, 'scheduler_change_ineligible'); END`,
+    ],
+  },
 ];
 export async function runMigrations(database: Database): Promise<number> {
   const result = await database.execute('PRAGMA user_version');

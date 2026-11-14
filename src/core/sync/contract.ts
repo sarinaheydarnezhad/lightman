@@ -26,6 +26,12 @@ export interface ServerChange {
 }
 
 export interface PullPage {
+  readonly schedulingContractVersion?: number;
+  readonly reviewCheckpoints?: readonly {
+    readonly cardId: string;
+    readonly throughVersion: number;
+    readonly state: Record<string, unknown>;
+  }[];
   readonly cursor: number;
   readonly latestVersion: number;
   readonly hasMore: boolean;

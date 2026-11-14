@@ -7,6 +7,7 @@ import {
   type CalendarDate,
 } from '@/core/domain/values';
 import { AppError } from '@/core/errors/app-error';
+import { needsClockRecovery } from '../domain/review-calendar';
 import type { AppClock, IdGenerator } from '@/core/ports/platform';
 import type { Repositories } from '@/core/ports/repositories';
 import type { Deck } from '@/features/decks/domain/deck';
@@ -124,6 +125,7 @@ export function createStudyUseCases({
         deckId: deckIdByCardId.get(state.cardId)!,
         dueDate: state.dueDate,
         box: state.box,
+        ...(needsClockRecovery(state.lastReviewedAt, targetDate) ? { clockRecovery: true } : {}),
       }));
   }
 

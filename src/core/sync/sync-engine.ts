@@ -405,6 +405,10 @@ export class SyncEngine {
       return;
     }
     assertSession();
+    if (typeof this.cloud.ensureSchedulingContract === 'function') {
+      await this.cloud.ensureSchedulingContract();
+      assertSession();
+    }
     if (typeof this.cloud.retryPendingRevocations === 'function')
       await this.cloud.retryPendingRevocations().catch(() => {});
     assertSession();
