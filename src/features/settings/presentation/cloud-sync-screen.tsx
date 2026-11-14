@@ -3,6 +3,7 @@ import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
+import { CloudError } from '@/core/sync/cloud-client';
 import { storageScopes } from '@/core/composition/repositories';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
@@ -90,7 +91,13 @@ export function CloudSyncScreen() {
       await action();
       await refresh();
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : t('sync.error'));
+      setError(
+        failure instanceof CloudError && failure.status === 0
+          ? t('sync.error')
+          : failure instanceof Error
+            ? failure.message
+            : t('sync.error'),
+      );
       await refresh().catch(() => {});
     } finally {
       setBusy(false);

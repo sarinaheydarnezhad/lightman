@@ -2,6 +2,7 @@ import { database, storageScopes } from './repositories';
 import { CloudClient } from '@/core/sync/cloud-client';
 import { SyncStore } from '@/core/sync/sync-store';
 import { SyncEngine } from '@/core/sync/sync-engine';
+import { PostCommitDatabase } from '@/core/database/post-commit-database';
 import { application, refreshStudyReminder } from './application';
 import { logger } from '@/core/infrastructure/platform';
 import { invalidateLearningAccess, learningAccess } from './learning-access';
@@ -43,6 +44,46 @@ export const syncEngine = database
           .refresh()
           .catch(() => {});
         authenticationNavigation.afterAuthentication();
+      },
+      {
+        capture: () => {
+          const scope = storageScopes.current();
+          const revision = storageScopes.snapshot().revision;
+          return {
+            store: new SyncStore(scope.database!, isAccount),
+            assertCurrent: () => storageScopes.assertCurrent(scope, revision),
+          };
+        },
+        subscribeChanges: (listener) => {
+          let unsubscribe = () => {};
+          const connect = () => {
+            unsubscribe();
+            const db =
+              storageScopes.snapshot().phase === 'ready' ? storageScopes.current().database : null;
+            unsubscribe = db instanceof PostCommitDatabase ? db.subscribe(listener) : () => {};
+          };
+          const stop = storageScopes.subscribe(connect);
+          connect();
+          return () => {
+            stop();
+            unsubscribe();
+          };
+        },
+        subscribeOwner: (listener) => {
+          let previous = storageScopes.snapshot();
+          return storageScopes.subscribe(() => {
+            const next = storageScopes.snapshot();
+            if (
+              next.revision !== previous.revision ||
+              next.phase !== previous.phase ||
+              next.userId !== previous.userId ||
+              next.mode !== previous.mode
+            ) {
+              previous = next;
+              listener();
+            }
+          });
+        },
       },
     )
   : null;

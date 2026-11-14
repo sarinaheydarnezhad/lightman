@@ -11,6 +11,7 @@ import { validateEntitlements, validatePlanCatalog, validateSubscription } from 
 import { RequestCache } from './request-cache';
 import { validateMyketCheckout, validateMyketConfiguration } from './myket-payment';
 import { retryAfterDelay } from './retry-policy';
+import { RequestTransportError, withRequestDeadline } from './request-deadline';
 import {
   validateBackupMetadata,
   validateServerBackup,
@@ -144,28 +145,62 @@ export class CloudClient {
     return `${this.baseUrl}/api/v1${path}`;
   }
 
-  private async fetchWithTimeout(path: string, init: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    this.requests.add(controller);
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+  cancelRequests(): void {
+    this.requests.forEach((controller) => controller.abort());
+  }
+
+  private async fetchWithTimeout(
+    path: string,
+    init: RequestInit,
+  ): Promise<Pick<Response, 'ok' | 'status' | 'headers' | 'json'>> {
+    const epoch = this.sessionEpoch;
+    let retryAfterMs: number | undefined;
     try {
-      return await fetch(this.url(path), {
-        ...init,
-        cache: 'no-store',
-        headers: { ...init.headers, 'Cache-Control': 'no-cache, no-store' },
-        signal: controller.signal,
-      });
+      return await withRequestDeadline(
+        this.url(path),
+        {
+          ...init,
+          cache: 'no-store',
+          headers: { ...init.headers, 'Cache-Control': 'no-cache, no-store' },
+        },
+        async (response) => {
+          if (response.status === 429 || response.status === 503)
+            retryAfterMs = retryAfterDelay(response.headers?.get('Retry-After'));
+          let body: unknown = {};
+          let decodingError: unknown;
+          if (response.status !== 204 && typeof response.json === 'function') {
+            try {
+              body = await response.json();
+            } catch (error) {
+              // Preserve invalid-JSON fallback for HTTP errors, but never swallow stream failures.
+              if (!(error instanceof SyntaxError)) throw error;
+              decodingError = error;
+            }
+          }
+          return {
+            ok: response.ok,
+            status: response.status,
+            headers: response.headers,
+            json: async () => {
+              if (decodingError) throw decodingError;
+              return body;
+            },
+          };
+        },
+        this.requests,
+      );
     } catch (error) {
       if (!this.available) throw error;
+      if (epoch !== this.sessionEpoch) throw new CloudError(401);
+      if (error instanceof RequestTransportError)
+        throw new CloudError(0, undefined, error.message, error.code, retryAfterMs);
       throw new CloudError(
         0,
         undefined,
         'Network request failed. Check your connection and try again.',
         'network_error',
+        retryAfterMs,
       );
-    } finally {
-      clearTimeout(timeout);
-      this.requests.delete(controller);
     }
   }
 

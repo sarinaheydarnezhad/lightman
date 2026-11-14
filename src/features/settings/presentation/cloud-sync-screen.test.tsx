@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 import { syncEngine } from '@/core/composition/sync';
 import { CloudSyncScreen } from './cloud-sync-screen';
+import { CloudError } from '@/core/sync/cloud-client';
 
 const mockScope = { phase: 'ready', mode: 'account', userId: 'account', revision: 1 };
 
@@ -115,6 +116,17 @@ test('the same operation error can appear again after dismissal', async () => {
   fireEvent.press(screen.getByRole('button', { name: 'Sync now' }));
   expect(await screen.findByText('Connection failed.')).toBeTruthy();
   expect(engine.syncNow).toHaveBeenCalledTimes(2);
+});
+
+test('a request deadline uses the existing localized synchronization message', async () => {
+  jest
+    .mocked(engine.syncNow)
+    .mockRejectedValue(new CloudError(0, undefined, undefined, 'request_timeout'));
+  render(<CloudSyncScreen />);
+  fireEvent.press(await screen.findByRole('button', { name: 'Sync now' }));
+  expect(
+    await screen.findByText('Unable to synchronize. Your offline changes are safe.'),
+  ).toBeTruthy();
 });
 
 test('resolution failures open an error modal after closing the conflict modal', async () => {

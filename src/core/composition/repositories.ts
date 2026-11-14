@@ -5,6 +5,8 @@ import { InMemoryReviewRepository } from '@/features/study/data/development-in-m
 import { InMemoryStudySessionRepository } from '@/features/study/data/development-in-memory-study-session-repository';
 import type { Repositories } from '@/core/ports/repositories';
 import { OpSqliteDatabase } from '@/core/database/op-sqlite-database';
+import { PostCommitDatabase } from '@/core/database/post-commit-database';
+import { logger } from '@/core/infrastructure/platform';
 import { createSqliteRepositories } from './sqlite-repositories';
 import { LocalStorageScopes } from '@/core/storage/local-storage-scopes';
 import { installFreeTierGuards } from '@/core/database/free-tier-guards';
@@ -27,8 +29,11 @@ const testEnvironment = typeof process !== 'undefined' && process.env.NODE_ENV =
 const deviceLanguage = new DeviceLanguagePreference();
 export const storageScopes = new LocalStorageScopes<Repositories>(
   async (name) => {
-    const scopedDatabase = new OpSqliteDatabase(name);
-    await scopedDatabase.initialize();
+    const connection = new OpSqliteDatabase(name);
+    await connection.initialize();
+    const scopedDatabase = new PostCommitDatabase(connection, (error) =>
+      logger.error('Unable to notify synchronization after commit', error),
+    );
     await installFreeTierGuards(scopedDatabase);
     await initializeSettingsDefaults(scopedDatabase, defaultSettings());
     const value = createSqliteRepositories(scopedDatabase, deviceLanguage);

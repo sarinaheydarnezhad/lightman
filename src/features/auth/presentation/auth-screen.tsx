@@ -43,6 +43,8 @@ function errorKey(error: unknown): MessageKey {
       case 'sms_unavailable':
         return 'auth.smsUnavailable';
       case 'network_error':
+      case 'request_timeout':
+      case 'request_cancelled':
         return 'auth.network';
     }
   }

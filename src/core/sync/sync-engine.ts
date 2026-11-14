@@ -21,12 +21,44 @@ export interface LocalScopeLifecycle {
   lockAccount?(): void;
 }
 
+export interface SyncRunContext {
+  readonly store: SyncStore;
+  assertCurrent(): void;
+}
+
+export interface SyncCoordination {
+  capture?(): SyncRunContext;
+  subscribeChanges?(listener: () => void): () => void;
+  subscribeOwner?(listener: () => void): () => void;
+}
+
+interface SyncStatus {
+  userId: string;
+  cursor: number;
+  signedIn: boolean;
+  sessionError: string | null;
+  pending: number;
+  failed: number;
+  conflict: number;
+  conflicts: Awaited<ReturnType<SyncStore['conflicts']>>;
+  synchronizing?: boolean;
+  syncError?: string | null;
+}
+
 export class SyncEngine {
   private running: Promise<void> | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pullFailures = 0;
   private retryAt = 0;
   private active = false;
+  private wakeTimer: ReturnType<typeof setTimeout> | null = null;
+  private recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+  private wakePending = false;
+  private runRequested = false;
+  private automaticBlocked = false;
+  private runFailures = 0;
+  private stopObserving: (() => void) | null = null;
+  private lastError: unknown = null;
   private scopeChanging = false;
   private signOutError: string | null = null;
   private accountTaskRunning = false;
@@ -60,7 +92,31 @@ export class SyncEngine {
     private readonly afterPull: () => Promise<void> = async () => {},
     private readonly scopes?: LocalScopeLifecycle,
     private readonly afterAuthentication: () => void = () => {},
+    private readonly coordination: SyncCoordination = {},
   ) {}
+
+  private capture(): SyncRunContext {
+    return this.coordination.capture?.() ?? { store: this.store, assertCurrent: () => {} };
+  }
+
+  private cancelScheduling(): void {
+    if (this.timer) clearTimeout(this.timer);
+    if (this.wakeTimer) clearTimeout(this.wakeTimer);
+    this.timer = this.wakeTimer = null;
+    this.retryAt = 0;
+    this.wakePending = false;
+    this.runRequested = false;
+  }
+
+  private ownerChanged(): void {
+    this.operationEpoch++;
+    this.cancelScheduling();
+    this.cloud.cancelRequests?.();
+    this.runFailures = this.pullFailures = 0;
+    this.automaticBlocked = false;
+    this.lastError = null;
+    this.trigger();
+  }
 
   get available(): boolean {
     return this.cloud.available;
@@ -166,6 +222,7 @@ export class SyncEngine {
   private async finishSignOut(synchronized: boolean, backup?: ServerBackup): Promise<LogoutResult> {
     this.scopeChanging = true;
     this.operationEpoch++;
+    this.cancelScheduling();
     this.scopes?.lockAccount?.();
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
@@ -213,6 +270,8 @@ export class SyncEngine {
     this.setLogoutResult(null);
     this.scopeChanging = true;
     this.operationEpoch++;
+    this.cancelScheduling();
+    this.cloud.cancelRequests?.();
     this.scopes.lockAccount?.();
     try {
       await (this.scopes.enterEmptyGuest?.() ?? this.scopes.enterGuest());
@@ -249,6 +308,9 @@ export class SyncEngine {
       this.scopeChanging = false;
     }
     this.afterAuthentication();
+    this.automaticBlocked = false;
+    this.runFailures = this.pullFailures = 0;
+    this.trigger();
   }
 
   async withAccount<Result>(
@@ -263,15 +325,18 @@ export class SyncEngine {
     this.accountTaskRunning = true;
     let task: Promise<void> | null = null;
     try {
+      const context = this.capture();
       if (this.running) await this.running.catch(() => {});
       if (!this.cloud.available || !(await this.cloud.hasSession()))
         throw new Error('Please sign in first.');
       if (this.scopeChanging || (this.scopes && !this.scopes.isAccount()))
         throw new Error('The account session changed. Sign in again.');
-      const result = action(this.store, this.cloud, async (progress) => {
+      context.assertCurrent();
+      const result = action(context.store, this.cloud, async (progress) => {
         do {
-          await this.syncPass(true, progress);
-          const counts = await this.store.counts();
+          await this.syncPass(true, progress, context);
+          const counts = await context.store.counts();
+          context.assertCurrent();
           if (counts.failed || counts.conflict)
             throw new Error('Resolve account sync errors before continuing.');
           if (!counts.pending) break;
@@ -286,6 +351,8 @@ export class SyncEngine {
     } finally {
       if (task && this.running === task) this.running = null;
       this.accountTaskRunning = false;
+      if (this.runRequested) this.trigger();
+      else this.wake();
     }
   }
 
@@ -325,20 +392,23 @@ export class SyncEngine {
     await this.authenticate((bind) => this.cloud.loginWithOtp(challengeId, code, bind));
   }
 
-  async status() {
+  async status(): Promise<SyncStatus> {
     if (this.scopes && !this.scopes.isAccount())
       return {
         userId: '',
         cursor: 0,
         signedIn: false,
         sessionError: this.signOutError,
+        synchronizing: false,
+        syncError: null,
         pending: 0,
         failed: 0,
         conflict: 0,
         conflicts: [],
       };
-    const account = await this.store.account();
-    return {
+    const context = this.capture();
+    const account = await context.store.account();
+    const result = {
       userId: account.userId,
       cursor: account.cursor,
       signedIn:
@@ -346,18 +416,25 @@ export class SyncEngine {
         this.cloud.available &&
         (await this.cloud.hasSession()),
       sessionError: this.signOutError,
-      ...(await this.store.counts()),
-      conflicts: await this.store.conflicts(),
+      synchronizing: this.running !== null,
+      syncError: this.lastError instanceof Error ? this.lastError.message : null,
+      ...(await context.store.counts()),
+      conflicts: await context.store.conflicts(),
     };
+    context.assertCurrent();
+    return result;
   }
 
   async resolve(operationId: string, choice: 'server' | 'local'): Promise<void> {
     if (this.scopeChanging || (this.scopes && !this.scopes.isAccount()))
       throw new Error('Please sign in first.');
+    const context = this.capture();
     if (this.running) await this.running;
+    context.assertCurrent();
     if (this.scopeChanging || (this.scopes && !this.scopes.isAccount()))
       throw new Error('The account session changed.');
-    await this.store.resolve(operationId, choice);
+    await context.store.resolve(operationId, choice);
+    context.assertCurrent();
     if (choice === 'server') await this.afterPull();
     this.trigger();
   }
@@ -365,10 +442,13 @@ export class SyncEngine {
   async retryFailed(): Promise<void> {
     if (this.scopeChanging || (this.scopes && !this.scopes.isAccount()))
       throw new Error('Please sign in first.');
+    const context = this.capture();
     if (this.running) await this.running;
+    context.assertCurrent();
     if (this.scopeChanging || (this.scopes && !this.scopes.isAccount()))
       throw new Error('The account session changed.');
-    await this.store.retryFailed();
+    await context.store.retryFailed();
+    context.assertCurrent();
     await this.syncNow();
   }
 
@@ -382,8 +462,16 @@ export class SyncEngine {
 
   syncNow(): Promise<void> {
     if (!this.running) {
+      // An explicit manual run supersedes a waiting retry; automatic callers respect retryAt.
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = null;
+      this.retryAt = 0;
+      this.automaticBlocked = false;
+      this.runRequested = false;
       this.running = this.perform().finally(() => {
         this.running = null;
+        if (this.runRequested) this.trigger();
+        else if (this.wakePending) this.wake();
       });
     }
     return this.running;
@@ -392,15 +480,40 @@ export class SyncEngine {
   private async perform(): Promise<void> {
     if (this.scopeChanging || this.accountTaskRunning || (this.scopes && !this.scopes.isAccount()))
       return;
-    await this.syncPass(false);
+    const epoch = this.operationEpoch;
+    try {
+      await this.syncPass(false);
+      if (epoch === this.operationEpoch) {
+        this.runFailures = 0;
+      }
+    } catch (error) {
+      if (epoch !== this.operationEpoch) throw error;
+      this.lastError = error;
+      if (!this.timer && !this.automaticBlocked) {
+        if (this.isTransient(error) && ++this.runFailures < 5)
+          this.retry(this.runFailures, error instanceof CloudError ? error.retryAfterMs : 0);
+        else this.automaticBlocked = true;
+      }
+      throw error;
+    }
+  }
+
+  private isTransient(error: unknown): boolean {
+    return error instanceof CloudError
+      ? error.code !== 'request_cancelled' &&
+          (error.status === 0 || error.status === 429 || error.status >= 500)
+      : !(error instanceof SyntaxError);
   }
 
   private async syncPass(
     strict: boolean,
     progress: () => Promise<void> = async () => {},
+    context = this.capture(),
   ): Promise<void> {
+    const store = context.store;
     const epoch = this.operationEpoch;
     const assertSession = () => {
+      context.assertCurrent();
       if (
         epoch !== this.operationEpoch ||
         this.scopeChanging ||
@@ -408,11 +521,13 @@ export class SyncEngine {
       )
         throw new CloudError(401);
     };
+    assertSession();
     if (!this.cloud.available || !(await this.cloud.hasSession()) || !(await this.online())) {
       if (strict) throw new Error('A connection is required to verify account synchronization.');
       return;
     }
     assertSession();
+    this.lastError = null;
     if (typeof this.cloud.ensureSchedulingContract === 'function') {
       await this.cloud.ensureSchedulingContract();
       assertSession();
@@ -420,15 +535,16 @@ export class SyncEngine {
     if (typeof this.cloud.retryPendingRevocations === 'function')
       await this.cloud.retryPendingRevocations().catch(() => {});
     assertSession();
-    const account = await this.store.account();
+    const account = await store.account();
+    assertSession();
     if (!account.userId) {
       if (strict) throw new Error('The authenticated account is unavailable.');
       return;
     }
-    const pending = await this.store.pending();
+    const pending = await store.pending();
     for (const candidate of pending) {
       assertSession();
-      const operation = await this.store.prepare(candidate);
+      const operation = await store.prepare(candidate);
       assertSession();
       try {
         const response = await this.cloud.push(operation, account.deviceId, account.userId);
@@ -436,16 +552,19 @@ export class SyncEngine {
         const version = response.changes[0]?.serverVersion;
         if (!Number.isSafeInteger(version) || !version || version < 1)
           throw new Error('Invalid sync acknowledgement.');
-        await this.store.acknowledge(operation, version);
+        await store.acknowledge(operation, version);
+        assertSession();
         await progress();
       } catch (error) {
         assertSession();
+        this.lastError = error;
         if (error instanceof CloudError && error.status === 409 && error.conflict) {
-          await this.store.conflict(operation, error.conflict);
+          await store.conflict(operation, error.conflict);
           if (strict) throw error;
           continue;
         }
         if (error instanceof CloudError && error.status === 401) {
+          this.automaticBlocked = true;
           if (strict) throw error;
           return;
         }
@@ -453,15 +572,13 @@ export class SyncEngine {
           // A server upgrade is required. Keep the original operation pending and its identity stable.
           throw error;
         }
-        const retryable =
-          !(error instanceof CloudError) ||
-          error.status === 0 ||
-          error.status === 429 ||
-          error.status >= 500;
-        await this.store.failed(operation, retryable);
+        const retryable = this.isTransient(error);
+        await store.failed(operation, retryable);
+        assertSession();
         if (strict) throw error;
         if (retryable && operation.retryCount < 5)
           this.retry(operation.retryCount, error instanceof CloudError ? error.retryAfterMs : 0);
+        if (retryable && operation.retryCount >= 5) this.wakePending = true;
         if (retryable) return;
       }
     }
@@ -470,27 +587,38 @@ export class SyncEngine {
     try {
       let page;
       do {
-        const cursor = (await this.store.account()).cursor;
+        const cursor = (await store.account()).cursor;
         assertSession();
         page = await this.cloud.pull(cursor);
         assertSession();
-        await this.store.applyPage(page);
+        await store.applyPage(page);
+        assertSession();
         if (page.changes.length) await this.afterPull();
         pageCount++;
         if (strict && pageCount >= 1000 && page.hasMore)
           throw new Error('Account pull is incomplete. Retry before transferring data.');
       } while (page.hasMore && (strict || pageCount < 3));
-      if (strict && (await this.store.account()).cursor < page.latestVersion)
+      if (strict && (await store.account()).cursor < page.latestVersion)
         throw new Error(
           'Server sync cursor has not been fully pulled. Synchronization is incomplete.',
         );
       this.pullFailures = 0;
+      assertSession();
+      // Recheck durable work even when an individual notification was lost.
+      if (!strict && typeof store.counts === 'function' && (await store.counts()).pending)
+        this.wakePending = true;
       if (!strict && (page.hasMore || pending.length === 25)) this.retry(0);
     } catch (error) {
-      if (error instanceof CloudError && error.status === 401 && !strict) return;
+      assertSession();
+      this.lastError = error;
+      if (error instanceof CloudError && error.status === 401 && !strict) {
+        this.automaticBlocked = true;
+        return;
+      }
       this.pullFailures++;
-      if (!strict && this.pullFailures < 5)
+      if (!strict && this.isTransient(error) && this.pullFailures < 5)
         this.retry(this.pullFailures, error instanceof CloudError ? error.retryAfterMs : 0);
+      else if (!strict) this.automaticBlocked = true;
       throw error;
     }
   }
@@ -507,8 +635,13 @@ export class SyncEngine {
   }
 
   private trigger(): void {
+    if (this.running || this.accountTaskRunning || this.scopeChanging) {
+      this.runRequested = true;
+      return;
+    }
     if (
       this.active &&
+      !this.automaticBlocked &&
       AppState.currentState !== 'background' &&
       AppState.currentState !== 'inactive' &&
       Date.now() >= this.retryAt
@@ -516,12 +649,56 @@ export class SyncEngine {
       void this.syncNow().catch(() => {});
   }
 
+  /** Coalesce committed writes; never issue an empty sync because of an acknowledgement. */
+  private wake = (): void => {
+    this.wakePending = true;
+    if (
+      !this.active ||
+      this.running ||
+      this.accountTaskRunning ||
+      this.scopeChanging ||
+      this.automaticBlocked ||
+      this.wakeTimer ||
+      Date.now() < this.retryAt
+    )
+      return;
+    const epoch = this.operationEpoch;
+    this.wakeTimer = setTimeout(() => {
+      this.wakeTimer = null;
+      if (epoch !== this.operationEpoch || !this.active) return;
+      this.wakePending = false;
+      void this.checkPending(epoch).catch((error) => {
+        if (epoch === this.operationEpoch) this.lastError = error;
+      });
+    }, 250);
+  };
+
+  private async checkPending(epoch: number): Promise<void> {
+    if (AppState.currentState === 'background' || AppState.currentState === 'inactive') return;
+    if (this.scopeChanging || (this.scopes && !this.scopes.isAccount())) return;
+    const context = this.capture();
+    const counts = await context.store.counts();
+    context.assertCurrent();
+    if (epoch === this.operationEpoch && counts.pending) this.trigger();
+  }
+
+  private recover(): void {
+    if (!this.active) return;
+    this.recoveryTimer = setTimeout(() => {
+      this.recoveryTimer = null;
+      this.wake();
+      this.recover();
+    }, 60_000);
+  }
+
   start(): () => void {
     if (!this.cloud.available) return () => {};
+    if (this.stopObserving) return this.stopObserving;
     this.active = true;
+    const changes = this.coordination.subscribeChanges?.(this.wake);
+    const owner = this.coordination.subscribeOwner?.(() => this.ownerChanged());
     const reconnect = Network.addNetworkStateListener((state) => {
       if (state.isConnected && state.isInternetReachable !== false) {
-        this.pullFailures = 0;
         this.trigger();
       }
     });
@@ -529,13 +706,23 @@ export class SyncEngine {
       if (state === 'active') this.trigger();
     });
     this.trigger();
-    return () => {
+    this.recover();
+    let stopped = false;
+    this.stopObserving = () => {
+      if (stopped) return;
+      stopped = true;
       this.active = false;
+      this.operationEpoch++;
+      changes?.();
+      owner?.();
       reconnect.remove();
       foreground.remove();
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = null;
-      this.retryAt = 0;
+      this.cancelScheduling();
+      if (this.recoveryTimer) clearTimeout(this.recoveryTimer);
+      this.recoveryTimer = null;
+      this.cloud.cancelRequests?.();
+      this.stopObserving = null;
     };
+    return this.stopObserving;
   }
 }

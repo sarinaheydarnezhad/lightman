@@ -30,7 +30,8 @@ jest.mock('expo-network', () => ({
   getNetworkStateAsync: jest.fn(),
   addNetworkStateListener: jest.fn(),
 }));
-jest.setTimeout(40_000);
+// Includes two deliberate twelve-second Phase 4 body deadlines in the account flow.
+jest.setTimeout(80_000);
 
 const endpoint = process.env.LERONA_FLOW_API_URL!;
 const databases: RealSqliteDatabase[] = [];
@@ -279,6 +280,54 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
   expect(JSON.parse(String(recoveredUpload.payload_json))).toEqual(upload.payload);
   expect(recoveredUpload.status).toBe('synced');
   expect(Number(recoveredUpload.ack_version)).toBeGreaterThan(0);
+  // Phase 4: the real server commits, but the client cannot consume its acknowledgement.
+  // Separate native-fetch TCP tests exercise an actual stalled/terminated response stream.
+  await fixture.app.updateDeck(deck.id, { description: deck.description });
+  const uncertain = (await fixture.store.pending())[0]!;
+  const forward = globalThis.fetch;
+  let committedReceipt: unknown;
+  try {
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const response = await forward(url as string, init);
+      if (String(url).endsWith('/sync/push')) {
+        committedReceipt = await response.json();
+        return { ...response, json: () => new Promise(() => {}) } as Response;
+      }
+      return response;
+    }) as typeof fetch;
+    await expect(
+      fixture.engine.withAccount(async (_store, _cloud, sync) => sync()),
+    ).rejects.toMatchObject({ status: 0, code: 'request_timeout' });
+    expect(committedReceipt).toMatchObject({ changes: [{ status: 'applied' }] });
+    expect((await fixture.store.pending())[0]).toMatchObject({
+      operationId: uncertain.operationId,
+      payload: uncertain.payload,
+      status: 'pending',
+    });
+    let duplicateReceipt: unknown;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const response = await forward(url as string, init);
+      if (String(url).endsWith('/sync/push')) duplicateReceipt = await response.json();
+      return response;
+    }) as typeof fetch;
+    await fixture.engine.withAccount(async (_store, _cloud, sync) => sync());
+    expect(duplicateReceipt).toMatchObject({ changes: [{ status: 'duplicate' }] });
+    const cursorBeforeStall = (await fixture.store.account()).cursor;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const response = await forward(url as string, init);
+      return String(url).includes('/sync/pull?')
+        ? ({ ...response, json: () => new Promise(() => {}) } as Response)
+        : response;
+    }) as typeof fetch;
+    await expect(
+      fixture.engine.withAccount(async (_store, _cloud, sync) => sync()),
+    ).rejects.toMatchObject({ status: 0, code: 'request_timeout' });
+    expect((await fixture.store.account()).cursor).toBe(cursorBeforeStall);
+    expect((await fixture.store.counts()).pending).toBe(0);
+  } finally {
+    globalThis.fetch = forward;
+  }
+  await fixture.engine.withAccount(async (_store, _cloud, sync) => sync());
   const first = await fixture.engine.createBackup();
   expect(first.status).toBe('Completed');
   expect((await fixture.cloud.backupStatus()).lastSuccessful!.completedAtUtc).toBe(
