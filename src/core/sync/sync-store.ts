@@ -1,5 +1,10 @@
 import type { Database, DatabaseTransaction, SqlRow } from '@/core/database/database';
 import { instant } from '@/core/domain/values';
+import {
+  validateCardContent,
+  MAX_CARD_PAYLOAD_BYTES,
+  utf8Bytes,
+} from '@/features/study/domain/card';
 import { reviewResult } from '@/features/study/domain/review';
 import { createReviewEngine } from '@/features/study/domain/review-engine-impl';
 import { mergeReviewEvents } from './review-merge';
@@ -362,6 +367,34 @@ export class SyncStore {
     );
   }
 
+  /** Explicit, selected recovery for an operation rejected by the legacy card payload bound.
+   * No rejection reason was stored by older clients, so automatic bulk retries would be unsafe.
+   */
+  async retryFailedCardUpload(operationId: string): Promise<void> {
+    await this.database.transaction(async (transaction) => {
+      const found = (
+        await transaction.execute(
+          `SELECT payload_json FROM sync_operations WHERE operation_id = ? AND status = 'failed'
+         AND entity_type = 'card' AND operation = 'upsert'`,
+          [operationId],
+        )
+      ).rows[0];
+      if (!found) throw new Error('Select a failed card upload for controlled recovery.');
+      const raw = value(found, 'payload_json');
+      validateCardContent(JSON.parse(raw) as Parameters<typeof validateCardContent>[0]);
+      if (raw.length <= 16_384 || utf8Bytes(raw) > MAX_CARD_PAYLOAD_BYTES)
+        throw new Error(
+          'This operation is not eligible for legacy payload-limit recovery. Original data was retained.',
+        );
+      // Preserve operation ID, expected version, payload and dependency ordering. Only server ACK can mark it synced.
+      await transaction.execute(
+        `UPDATE sync_operations SET status = 'pending', retry_count = 1
+        WHERE operation_id = ? AND status = 'failed'`,
+        [operationId],
+      );
+    });
+  }
+
   async applyPage(page: PullPage): Promise<void> {
     await this.database.transaction(async (transaction) => {
       const cursor = await transaction.execute('SELECT cursor FROM sync_account WHERE id = 1');
@@ -406,6 +439,9 @@ export class SyncStore {
   }
 
   private async applyChange(transaction: DatabaseTransaction, change: ServerChange): Promise<void> {
+    // Validate even a conflicting/acknowledged remote snapshot before persisting any evidence or cursor.
+    if (change.entityType === 'card' && change.operation !== 'archive')
+      validateCardContent(change.payload as unknown as Parameters<typeof validateCardContent>[0]);
     if (change.entityType === 'reviewEvent') {
       await this.applyReviewEvent(transaction, change);
       return;
@@ -501,6 +537,7 @@ export class SyncStore {
         );
         if (updated.rowsAffected) return;
       }
+      validateCardContent(payload as unknown as Parameters<typeof validateCardContent>[0]);
       await transaction.execute(
         `INSERT INTO cards (id, deck_id, front_text, meaning, phonetic, category, examples_json, created_at, updated_at, archived_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

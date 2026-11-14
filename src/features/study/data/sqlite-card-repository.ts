@@ -16,7 +16,7 @@ import { validateReviewState, type CardReviewState } from '../domain/review';
 import type { CardRepository } from '../domain/card-repository';
 import type { AtomicCardCreationRepository } from '@/core/ports/repositories';
 
-function mapCard(source: ReturnType<typeof row>): Card | null {
+function readCard(source: ReturnType<typeof row>): Card | null {
   if (!source) return null;
   return validateCard({
     id: text(source, 'id'),
@@ -34,8 +34,46 @@ function mapCard(source: ReturnType<typeof row>): Card | null {
   });
 }
 
+function mapCard(source: ReturnType<typeof row>): Card | null {
+  try {
+    return readCard(source);
+  } catch (cause) {
+    throw new AppError(
+      'validation',
+      `Card integrity error for ${String(source?.id)}. Original content and learning history were retained. Controlled repair is required.`,
+      cause,
+    );
+  }
+}
+
+function readableCard(source: ReturnType<typeof row>): Card | null {
+  try {
+    return mapCard(source);
+  } catch (error) {
+    if (error instanceof AppError && error.code === 'validation') return null;
+    throw error;
+  }
+}
+
 export class SQLiteCardRepository implements CardRepository, AtomicCardCreationRepository {
   constructor(private readonly database: Database) {}
+
+  listIntegrityIssues(deckId: string): Promise<{ cardId: string; message: string }[]> {
+    return databaseOperation(async () => {
+      requiredId(deckId, 'Deck ID');
+      const result = await this.database.execute('SELECT * FROM cards WHERE deck_id = ?', [deckId]);
+      const issues: { cardId: string; message: string }[] = [];
+      for (const source of result.rows) {
+        try {
+          mapCard(source);
+        } catch (error) {
+          if (!(error instanceof AppError) || error.code !== 'validation') throw error;
+          issues.push({ cardId: text(source, 'id'), message: error.message });
+        }
+      }
+      return issues;
+    }, 'Unable to inspect card integrity.');
+  }
 
   getById(id: string): Promise<Card | null> {
     return databaseOperation(async () => {
@@ -69,7 +107,7 @@ export class SQLiteCardRepository implements CardRepository, AtomicCardCreationR
         params,
       );
       return result.rows
-        .map((source) => mapCard(source))
+        .map((source) => readableCard(source))
         .filter((card): card is Card => card !== null);
     }, 'Unable to load cards.');
   }

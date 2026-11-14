@@ -211,9 +211,14 @@ export function createTransferService(
       const decks = (await app.listDecks()).filter((deck) => !deckId || deck.id === deckId);
       if (deckId && !decks.length) throw new Error('Selected deck is unavailable.');
       const cards = [] as TransferCard[];
-      for (const deck of decks)
+      for (const deck of decks) {
+        if ((await repositories.cards.listIntegrityIssues?.(deck.id))?.length)
+          throw new Error(
+            'Export is incomplete because a card needs integrity repair. Original records and history were retained; preserve the database before controlled recovery.',
+          );
         for (const card of await app.listCardsForDeck(deck.id))
           cards.push(cardToTransfer(card, deck.name));
+      }
       return adapters[format].serialize(
         cards,
         decks.map((deck) => deck.name),

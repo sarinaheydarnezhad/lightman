@@ -1,6 +1,8 @@
 import type { Card } from './card';
 
 export interface CardRepository {
+  /** Read-only diagnostics; original rows and their learning history remain in storage. */
+  listIntegrityIssues?(deckId: string): Promise<{ cardId: string; message: string }[]>;
   getById(id: string): Promise<Card | null>;
   listByDeck(
     deckId: string,

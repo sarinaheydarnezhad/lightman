@@ -57,6 +57,12 @@ export function CardListScreen({ deckId }: { deckId: string }) {
               title={data?.deck.name ?? t('nav.cards')}
               description={t('cards.description')}
             />
+            {!!data?.integrityIssues?.length && (
+              <Text accessibilityRole="alert">
+                {t('cards.integrityWarning')}{' '}
+                {data.integrityIssues.map((issue) => issue.cardId).join(', ')}
+              </Text>
+            )}
             <Button
               label={t('cards.viewDeck')}
               variant="tertiary"

@@ -372,6 +372,14 @@ export class SyncEngine {
     await this.syncNow();
   }
 
+  async retryFailedCardUpload(operationId: string): Promise<void> {
+    await this.withAccount(async (store, cloud, synchronize) => {
+      await cloud.ensureCardContentContract();
+      await store.retryFailedCardUpload(operationId);
+      await synchronize();
+    });
+  }
+
   syncNow(): Promise<void> {
     if (!this.running) {
       this.running = this.perform().finally(() => {
@@ -440,6 +448,10 @@ export class SyncEngine {
         if (error instanceof CloudError && error.status === 401) {
           if (strict) throw error;
           return;
+        }
+        if (error instanceof CloudError && error.status === 426) {
+          // A server upgrade is required. Keep the original operation pending and its identity stable.
+          throw error;
         }
         const retryable =
           !(error instanceof CloudError) ||

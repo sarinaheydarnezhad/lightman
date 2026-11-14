@@ -1,4 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
+import {
+  MAX_CARD_PAYLOAD_BYTES,
+  MAX_SYNC_PUSH_BYTES,
+  utf8Bytes,
+  validateCardContent,
+} from '@/features/study/domain/card';
 import { Platform } from 'react-native';
 import { randomUUID } from 'expo-crypto';
 import { validateEntitlements, validatePlanCatalog, validateSubscription } from './subscription';
@@ -847,7 +853,7 @@ export class CloudClient {
     return result;
   }
 
-  push(
+  async push(
     operation: PendingOperation,
     deviceId: string,
     userId: string,
@@ -856,24 +862,66 @@ export class CloudClient {
     changes: { status: 'applied' | 'duplicate'; serverVersion: number }[];
   }> {
     const payload = operation.payload;
+    if (operation.entityType === 'card' && operation.operation === 'upsert') {
+      validateCardContent(payload as Parameters<typeof validateCardContent>[0]);
+      const serialized = JSON.stringify(payload);
+      if (utf8Bytes(serialized) > MAX_CARD_PAYLOAD_BYTES)
+        throw new CloudError(
+          400,
+          undefined,
+          'Card payload exceeds the documented transport bound. Original content was retained.',
+          'card_content_invalid',
+        );
+      if (serialized.length > 16_384) await this.ensureCardContentContract();
+    }
+    const body = JSON.stringify({
+      changes: [
+        {
+          clientChangeId: operation.operationId,
+          deviceId,
+          entityType: operation.entityType,
+          entityId: operation.entityType === 'settings' ? userId : operation.entityId,
+          operation: operation.operation,
+          clientChangedAtUtc: operation.createdAt,
+          expectedVersion: operation.expectedVersion,
+          payload,
+        },
+      ],
+    });
+    if (utf8Bytes(body) > MAX_SYNC_PUSH_BYTES)
+      throw new CloudError(
+        400,
+        undefined,
+        'Sync request exceeds the documented transport bound. Original operation was retained.',
+        'card_content_invalid',
+      );
     return this.request('/sync/push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        changes: [
-          {
-            clientChangeId: operation.operationId,
-            deviceId,
-            entityType: operation.entityType,
-            entityId: operation.entityType === 'settings' ? userId : operation.entityId,
-            operation: operation.operation,
-            clientChangedAtUtc: operation.createdAt,
-            expectedVersion: operation.expectedVersion,
-            payload,
-          },
-        ],
-      }),
+      body,
     });
+  }
+
+  async ensureCardContentContract(): Promise<void> {
+    const capability = await this.reads.get(
+      'card-content-contract',
+      () =>
+        this.request<{ cardContentContractVersion?: number; maxCardPayloadBytes?: number }>(
+          '/sync/capabilities',
+          { method: 'GET' },
+        ),
+      60_000,
+    );
+    if (
+      capability.cardContentContractVersion !== 1 ||
+      (capability.maxCardPayloadBytes ?? 0) < MAX_CARD_PAYLOAD_BYTES
+    )
+      throw new CloudError(
+        426,
+        undefined,
+        'Upgrade the server before uploading large cards. Local operations and learning history were retained.',
+        'card_content_upgrade_required',
+      );
   }
 
   pull(cursor: number): Promise<PullPage> {

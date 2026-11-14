@@ -2,6 +2,7 @@ import type { Database, DatabaseTransaction, SqlRow } from '@/core/database/data
 import { calendarDate, instant } from '@/core/domain/values';
 import { reviewResult } from '@/features/study/domain/review';
 import { mergeReviewEvents } from './review-merge';
+import { validateCardContent } from '@/features/study/domain/card';
 
 export interface GuestSnapshot {
   deviceId: string;
@@ -96,42 +97,19 @@ export function unsupportedReasons(source: GuestSnapshot): string[] {
   for (const card of source.cards) {
     instant(text(card, 'created_at'));
     instant(text(card, 'updated_at'));
-    const examples: unknown = JSON.parse(text(card, 'examples_json'));
-    if (
-      JSON.stringify({
-        deckId: '00000000-0000-0000-0000-000000000000',
+    try {
+      validateCardContent({
         frontText: card.front_text,
         meaning: card.meaning,
         phonetic: card.phonetic,
         category: card.category,
-        examples,
-      }).length > 16384
-    )
+        examples: JSON.parse(text(card, 'examples_json')) as unknown,
+      } as Parameters<typeof validateCardContent>[0]);
+    } catch {
       reasons.add(
-        'A guest card exceeds the backend sync payload size. Shorten its contents before copying.',
+        `Guest card ${text(card, 'id')} needs content integrity repair. Original data and learning history were retained.`,
       );
-    if (
-      !text(card, 'front_text').trim() ||
-      text(card, 'front_text').length > 4000 ||
-      !text(card, 'meaning').trim() ||
-      text(card, 'meaning').length > 4000 ||
-      (typeof card.phonetic === 'string' && card.phonetic.length > 500) ||
-      (typeof card.category === 'string' && card.category.length > 120) ||
-      !Array.isArray(examples) ||
-      examples.length > 20 ||
-      examples.some(
-        (example: unknown) =>
-          !example ||
-          typeof example !== 'object' ||
-          !('sentence' in example) ||
-          typeof example.sentence !== 'string' ||
-          !example.sentence.trim() ||
-          example.sentence.length > 4000,
-      )
-    )
-      reasons.add(
-        'A guest card does not meet backend text/example validation. Edit it in guest mode first.',
-      );
+    }
     const state = source.states.find((item) => item.card_id === card.id);
     const events = source.events.filter((item) => item.card_id === card.id);
     if (!state) {

@@ -99,6 +99,12 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           importantForAccessibility={confirmDelete ? 'no-hide-descendants' : 'auto'}
         >
           <ScreenHeader title={deck.name} description={deck.description} />
+          {!!data.integrityIssues?.length && (
+            <Text accessibilityRole="alert">
+              {t('cards.integrityWarning')}{' '}
+              {data.integrityIssues.map((issue) => issue.cardId).join(', ')}
+            </Text>
+          )}
           <Button
             label={t('transfer.export')}
             variant="secondary"

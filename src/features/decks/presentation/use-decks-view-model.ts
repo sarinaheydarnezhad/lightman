@@ -47,6 +47,7 @@ export function useDeckDetailsViewModel(deckId: string) {
         deck: await application.getDeck(deckId),
         cardCount: await application.countActiveCardsForDeck(deckId),
         distribution: await application.getDeckDistribution(deckId),
+        integrityIssues: await application.getCardIntegrityIssues(deckId),
       }),
       [deckId],
     ),

@@ -159,7 +159,13 @@ async function installation(phoneNumber: string, register = false, legacyDefault
 
 async function addLearning(fixture: Awaited<ReturnType<typeof installation>>) {
   const deck = await fixture.app.createDeck(makeDeck({ name: 'Persisted vocabulary' }));
-  const card = await fixture.app.createCard({ ...makeCard(), deckId: deck.id });
+  const card = await fixture.app.createCard({
+    ...makeCard(),
+    deckId: deck.id,
+    frontText: 'term',
+    meaning: 'meaning',
+    examples: Array.from({ length: 5 }, () => ({ sentence: 'a'.repeat(4000) })),
+  });
   const session = await fixture.app.startStudySession({ kind: 'all-decks' });
   const item = await fixture.app.getCurrentStudyItem(session.id);
   await fixture.app.submitStudyAnswer({
@@ -225,6 +231,54 @@ test.each(['leitner', 'sm2'])(
 test('Backup Now persists local changes; a backend 503 preserves the last successful timestamp and can be retried', async () => {
   const fixture = await installation('+989120000001', true);
   const { deck, card } = await addLearning(fixture);
+  const originalPending = await fixture.store.pending();
+  const tokens = JSON.parse(secure.get('lerona.cloud.credentials.v1')!) as { accessToken: string };
+  const malformed = await actualHttp('/api/v1/sync/push', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${tokens.accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      changes: [
+        {
+          clientChangeId: randomUUID(),
+          deviceId: randomUUID(),
+          entityType: 'card',
+          entityId: randomUUID(),
+          operation: 'upsert',
+          expectedVersion: 0,
+          clientChangedAtUtc: new Date().toISOString(),
+          payload: {
+            deckId: deck.id,
+            frontText: 'term',
+            meaning: 'meaning',
+            phonetic: null,
+            category: null,
+            examples: [{ sentence: 'valid', translation: 42, notes: ['array'] }],
+          },
+        },
+      ],
+    }),
+  });
+  expect(malformed.status).toBe(400);
+  expect(await malformed.json()).toMatchObject({ code: 'card_content_invalid' });
+  expect(await fixture.store.pending()).toEqual(originalPending);
+  // Recreate a retained legacy nonretryable size rejection, then recover only that selected ID.
+  const upload = originalPending.find((operation) => operation.entityType === 'card')!;
+  expect(JSON.stringify(upload.payload)).toHaveLength(20_213);
+  const attempted = await fixture.store.prepare(upload);
+  await fixture.store.failed(attempted, false);
+  await fixture.engine.retryFailedCardUpload(upload.operationId);
+  const recoveredUpload = (
+    await fixture.scopes
+      .current()
+      .database!.execute(
+        'SELECT operation_id,payload_json,status,ack_version FROM sync_operations WHERE operation_id=?',
+        [upload.operationId],
+      )
+  ).rows[0]!;
+  expect(recoveredUpload.operation_id).toBe(upload.operationId);
+  expect(JSON.parse(String(recoveredUpload.payload_json))).toEqual(upload.payload);
+  expect(recoveredUpload.status).toBe('synced');
+  expect(Number(recoveredUpload.ack_version)).toBeGreaterThan(0);
   const first = await fixture.engine.createBackup();
   expect(first.status).toBe('Completed');
   expect((await fixture.cloud.backupStatus()).lastSuccessful!.completedAtUtc).toBe(
@@ -233,6 +287,17 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
   await fixture.scopes
     .current()
     .value.settings.update({ ...defaultSettings(), theme: 'dark', hapticsEnabled: false });
+  const completeExamples = Array.from({ length: 20 }, () => ({
+    sentence: 'a'.repeat(4000),
+    translation: 'ی'.repeat(4000),
+    notes: '😀'.repeat(2000),
+  }));
+  const editApp = createApplication(
+    fixture.scopes.current().value,
+    { now: () => new Date(), timeZone: () => 'Asia/Tehran' },
+    { create: randomUUID },
+  );
+  await editApp.updateCard(card.id, { examples: completeExamples });
   expect((await fixture.store.pending())[0]!.payload).toMatchObject({
     theme: 'dark',
     hapticsEnabled: false,
@@ -257,6 +322,7 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
   expect(saved.cards).toEqual([
     expect.objectContaining({ id: card.id, frontText: card.frontText }),
   ]);
+  expect(JSON.parse(saved.cards[0].examplesJson)).toEqual(completeExamples);
   expect(saved.settings[0]).toMatchObject({ theme: 'dark', hapticsEnabled: false });
   expect(saved.reviewEvents).toHaveLength(1);
   expect(saved.reviewStates[0].totalReviews).toBe(1);
@@ -275,6 +341,7 @@ test('Backup Now persists local changes; a backend 503 preserves the last succes
   const fresh = await installation('+989120000001');
   expect(await fresh.scopes.current().value.cards.getById(card.id)).toMatchObject({
     frontText: card.frontText,
+    examples: completeExamples,
   });
   expect(await fresh.scopes.current().value.settings.get()).toMatchObject({
     theme: 'dark',

@@ -209,6 +209,7 @@ export function createApplication(
       if (
         selected.id !== (deck.reviewSystem ?? 'leitner') &&
         ((await persistence(() => cards.listByDeck(id, { includeArchived: true }))).length ||
+          (await cards.listIntegrityIssues?.(id))?.length ||
           (await persistence(() => reviews.countEvents({ deckId: id }))))
       )
         throw new AppError(
@@ -248,6 +249,10 @@ export function createApplication(
       return created;
     },
     getCard,
+    async getCardIntegrityIssues(deckId: string) {
+      await getDeck(deckId);
+      return cards.listIntegrityIssues?.(deckId) ?? [];
+    },
     async listCardsForDeck(
       deckId: string,
       options?: { search?: string; category?: string },
@@ -272,12 +277,13 @@ export function createApplication(
       options: { search?: string; category?: string } = {},
     ) {
       const deck = await getDeck(deckId);
-      const [cardList, categories, totalCount] = await Promise.all([
+      const [cardList, categories, totalCount, integrityIssues] = await Promise.all([
         persistence(() => cards.listByDeck(deckId, options)),
         persistence(() => cards.listCategoriesByDeck(deckId)),
         persistence(() => cards.countByDeck(deckId)),
+        cards.listIntegrityIssues?.(deckId) ?? Promise.resolve([]),
       ]);
-      return { deck, cards: cardList, categories, totalCount };
+      return { deck, cards: cardList, categories, totalCount, integrityIssues };
     },
     async updateCard(id: string, changes: UpdateCardInput): Promise<Card> {
       const card = await getCard(id);

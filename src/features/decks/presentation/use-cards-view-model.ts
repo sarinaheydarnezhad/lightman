@@ -32,6 +32,7 @@ export function useCardListViewModel(
         cards: sortCards(snapshot.cards, sort),
         categories: snapshot.categories,
         totalCount: snapshot.totalCount,
+        integrityIssues: snapshot.integrityIssues,
       };
     }, [deckId, search, category, sort]),
   );
