@@ -14,7 +14,7 @@ import { Card } from '@/shared/ui/card';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { LoadingState } from '@/shared/ui/loading-state';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { guestTransferFeedback } from './guest-transfer-feedback';
 import { AccountNameGate } from './account-name-gate';
@@ -221,8 +221,9 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
             />
           ) : null}
           {error ? (
-            <FeedbackModal
+            <FeedbackNotice
               message={error}
+              busy={busy}
               onRetry={() => void load()}
               retryLabel={t('migration.retry')}
             >
@@ -245,7 +246,7 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
                   />
                 </View>
               ) : null}
-            </FeedbackModal>
+            </FeedbackNotice>
           ) : null}
           {preview ? (
             <>
@@ -293,13 +294,14 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
                 </Card>
               ) : null}
               <Text tone="secondary">{t('migration.supported')}</Text>
-              <FeedbackModal
+              <FeedbackNotice
                 message={preview.blockers
                   .map((blocker) =>
                     guestTransferFeedback(blocker, language, t, 'migration.blocked'),
                   )
                   .join('\n\n')}
                 eventKey={preview}
+                busy={busy}
                 onRetry={() => void load()}
                 retryLabel={t('migration.retry')}
               />

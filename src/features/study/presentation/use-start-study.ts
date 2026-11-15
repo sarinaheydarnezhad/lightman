@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
 
 import { application } from '@/core/composition/application';
+import type { MessageKey } from '@/shared/localization/messages';
 import { AppError } from '@/core/errors/app-error';
 import type { StudyScope, StudySession } from '../domain/study-session';
 import type { StudyOrder } from '../domain/study-order';
@@ -23,7 +24,7 @@ export function useStartStudy() {
   const pending = useRef(false);
   const mounted = useRef(true);
   const [starting, setStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [activeSession, setActiveSession] = useState<StudySession | null>(null);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export function useStartStudy() {
             const active = await application.getActiveStudySession();
             if (mounted.current && active) {
               setActiveSession(active);
-              setError('Finish or leave your current session before starting another.');
+              setError('study.activeSession');
               return;
             }
           } catch {
@@ -70,7 +71,9 @@ export function useStartStudy() {
         }
         if (mounted.current) {
           setError(
-            cause instanceof AppError ? cause.message : 'Unable to start studying. Try again.',
+            cause instanceof AppError && cause.code === 'free-tier-limit'
+              ? 'access.restricted'
+              : 'study.startError',
           );
         }
       } finally {

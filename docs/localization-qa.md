@@ -1,6 +1,10 @@
 # Localization and RTL QA
 
-App language is a `UserSettings.language` preference (`en`, `fa`). English is the default, and unknown or untranslated UI strings use English. Changing language updates the current UI without changing `Deck.language`, `Deck.textAlignment`, speech preferences, or physical study swipe meanings (left = failure; right = success). Settings and reminders remain session local while the in-memory repository is in use. An enabled reminder is replaced with translated text when app language changes.
+App language resolves through `UserSettings.language` (`en`, `fa`). In production, `DeviceLanguageSettingsRepository` overlays a persisted device preference in guest/device SQLite storage; incoming account settings do not replace the device language. English is the default and unsupported/missing translations fall back to English. Theme and other preferences retain their existing repository scopes. In-memory repositories are test fixtures, not the production persistence model.
+
+Changing language updates UI without changing `Deck.language`, `Deck.textAlignment`, speech preferences or physical study swipe meanings (left = failure; right = success). An enabled reminder is replaced with translated text through existing scheduling. This architecture is source-confirmed; native persistence and delivery still require device verification.
+
+Refinement update, 2026-11-15: field accessibility errors, transfer help/issues, speech capability guidance and task feedback are localized. Settings/study feedback stores typed message keys; unknown guest/cloud/file exceptions do not expose raw diagnostics. Approved Persian voice uses respectful «تو». Existing outcome labels are retained pending domain clarification. See [editorial evidence](refinement/evidence/editorial-changes.json) and [UX writing guidelines](refinement/UX_WRITING_GUIDELINES.md). Both dictionaries have complete key coverage and interpolation/UTF-8 checks; these do not establish native typography or linguistic sign-off for provider/system-owned strings.
 
 ## Device checks to perform
 

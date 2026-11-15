@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, View, type PressableProps } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { Text } from './text';
 
 type ButtonProps = Omit<PressableProps, 'children'> & {
@@ -31,6 +32,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const colors = useThemeColors();
+  const { direction } = useLocalization();
   const unavailable = disabled || loading;
   const foreground = disabled
     ? colors.disabled
@@ -80,7 +82,11 @@ export function Button({
         <View
           pointerEvents="none"
           importantForAccessibility="no-hide-descendants"
-          style={iconOnly ? undefined : { position: 'absolute', right: 16 }}
+          style={
+            iconOnly
+              ? undefined
+              : { position: 'absolute', [direction === 'rtl' ? 'left' : 'right']: 16 }
+          }
         >
           <Icon color={foreground} size={22} />
         </View>

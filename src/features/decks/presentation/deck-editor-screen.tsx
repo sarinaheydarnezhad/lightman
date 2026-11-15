@@ -16,7 +16,7 @@ import { DeckForm } from './deck-form';
 import { useDeckActions } from './use-decks-view-model';
 
 export function DeckEditorScreen({ deckId }: { deckId?: string }) {
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   const { get, create, update } = useDeckActions();
   const resource = useFocusedResource(
     useCallback(async () => {
@@ -59,11 +59,7 @@ export function DeckEditorScreen({ deckId }: { deckId?: string }) {
     return (
       <FeaturePlaceholder
         title={t('details.deckUnavailable')}
-        description={
-          language === 'en'
-            ? (resource.error ?? t('details.deckUnavailableHint'))
-            : t('details.deckUnavailableHint')
-        }
+        description={t('details.deckUnavailableHint')}
         onRetry={resource.refresh}
       >
         <Button

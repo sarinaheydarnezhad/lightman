@@ -19,26 +19,18 @@ import { Chip } from '@/shared/ui/chip';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { formatTransferLocation } from './format-transfer-location';
+import { transferFeedbackKey } from './transfer-feedback';
 
 const formatHelp = [
-  [
-    'CSV',
-    'A comma-separated text file. The first row is headers; Front and Back are required. Deck, Phonetic, Category, Examples, and any other columns are optional.',
-  ],
-  [
-    'XLSX',
-    'An Excel workbook. Put headers in the first row of a sheet; Front and Back are required. Additional columns are preserved.',
-  ],
-  [
-    'Anki',
-    'An Anki .apkg or .colpkg package. Cards and available fields are extracted for review before saving.',
-  ],
+  ['CSV', 'transfer.csvHelp'],
+  ['XLSX', 'transfer.xlsxHelp'],
+  ['Anki', 'transfer.ankiHelp'],
 ] as const;
 
 export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckId, setDeckId] = useState(initialDeckId);
   const [format, setFormat] = useState<TransferFormat>('csv');
@@ -89,9 +81,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
         setError(
           cause instanceof SpreadsheetUnsafeCsvError
             ? t('transfer.csvUnsafe')
-            : language === 'en' && cause instanceof Error
-              ? cause.message
-              : t('common.genericError'),
+            : t(transferFeedbackKey(cause, 'transfer.operationError')),
         );
     } finally {
       active.current = false;
@@ -109,7 +99,7 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
           <Text variant="bodySmall">{t('transfer.requiredColumns')}</Text>
           {formatHelp.map(([name, description]) => (
             <Text key={name} variant="bodySmall" tone="secondary">
-              {name}: {description}
+              {name}: {t(description)}
             </Text>
           ))}
           <Button
@@ -197,8 +187,8 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
             }
           />
         </Card>
-        <FeedbackModal message={result} tone="success" onDismiss={() => setResult(null)} />
-        <FeedbackModal message={error} onDismiss={() => setError(null)} />
+        <FeedbackNotice message={result} tone="success" onDismiss={() => setResult(null)} />
+        <FeedbackNotice message={error} onDismiss={() => setError(null)} />
       </View>
     </Screen>
   );

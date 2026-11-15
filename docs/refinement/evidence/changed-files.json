@@ -1,0 +1,541 @@
+{
+  "date": "2026-11-15T13:28:00.844Z",
+  "baseline": "067e60cbfe38e78d06f1a084f78cfc9fed5c0423",
+  "committed": false,
+  "backendChanged": false,
+  "configurationOrDependenciesChanged": false,
+  "protectedProductionChanges": [],
+  "files": [
+    {
+      "file": "docs/accessibility-qa.md",
+      "status": "tracked edit",
+      "category": "existing product documentation"
+    },
+    {
+      "file": "docs/app-feedback.md",
+      "status": "tracked edit",
+      "category": "existing product documentation"
+    },
+    {
+      "file": "docs/localization-qa.md",
+      "status": "tracked edit",
+      "category": "existing product documentation"
+    },
+    {
+      "file": "docs/refinement/AUDIT_COVERAGE.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/BASELINE_VERIFICATION.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/DECISION_LOG.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/FEEDBACK_INVENTORY.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/FEEDBACK_LIFECYCLE.md",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/FEEDBACK_PRESENTATION_POLICY.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/IMPLEMENTATION_REPORT.md",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/LERONA_REFINEMENT_MASTER_PLAN.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/OPEN_QUESTIONS.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/PROGRAM_BRIEF.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/PROGRAM_STATUS.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/RUNTIME_VERIFICATION_PLAN.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/UX_WRITING_AUDIT.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/UX_WRITING_GUIDELINES.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/VISUAL_AUDIT.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/VISUAL_DESIGN_GUIDELINES.md",
+      "status": "pre-existing program document maintained",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/baseline/checks.json",
+      "status": "pre-existing historical artifact preserved",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/baseline/jest-results.json",
+      "status": "pre-existing historical artifact preserved",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/baseline/source-index.json",
+      "status": "pre-existing historical artifact preserved",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/baseline/token-contrast.json",
+      "status": "pre-existing historical artifact preserved",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/browser-readiness.cjs",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/browser-readiness.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/browser-software-readiness.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/changed-files.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/editorial-changes.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/feedback-lifecycle.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/implementation-checks.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/implementation-source-index.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/refinement/evidence/scoped-format.json",
+      "status": "new program artifact/source",
+      "category": "program documentation/evidence"
+    },
+    {
+      "file": "docs/visual-theme.md",
+      "status": "tracked edit",
+      "category": "existing product documentation"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "8d974e4c6693f73aaea5153ec85424bc52525c38ed21cce116e7cb066fa20f8a"
+    },
+    {
+      "file": "src/core/infrastructure/expo-notification-service.test.ts",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "457877683bb3c2610610969a5c7ac6d642910c6c0f13f3412b2a799c4f2026d0"
+    },
+    {
+      "file": "src/features/analytics/presentation/analytics-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "7926f68159ce574c9efd0a00021e78d36fc25ea2b6068af154ab46cf5a029e6f"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "567a7ae2e4b9e339f71b3957890f982cc43958d42d3534053aa6d60e5b18d5d4"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "af42fd31a6d2e22458bf27d51257a3ad9cdccb4810706b56cb04c28cced2e212"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "5620345e8d76244139e31f3fca0fad5c8d59351adf2976d305d75138e805cd08"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "7523109ef52f3f237bf987b39bf6446e2d342c746bb62afdd505b3c40450a8b0"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "6b52e6134fe596df0231ed7dcdce7ff9ea72c0ea989cc04d7ace749c2ba46215"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-transfer-feedback.test.ts",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "f8132cb57757ab274b87079ded7c46e0e5b28213e54a99124f76b4d7af33c099"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-transfer-feedback.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "8afa984a6798881e43198b6236f25d9a4c58639c127a3af57bc91d6c7015b7d4"
+    },
+    {
+      "file": "src/features/decks/presentation/card-details-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "65bb3aac02344d3f4034e1eff5c8f86d4304a96625943fe1a1e0576ba77b4c91"
+    },
+    {
+      "file": "src/features/decks/presentation/card-editor-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "52cb03969170de12c1e7f30d0617f0d951c0772c8c74e513347dfe06ef46a5ba"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "c3ec31a87094befe9c028531927f5e890de957f779e401f17303ceac8407fa22"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.vocabulary.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "193a98112d8a4dbe7adb2939656175693027540857ddf1ad2361302e02f6d584"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "ad5da8792badd74d575245ec5b43747a830dcd7037dad9db7864f383c51ccb8a"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "4da9c2e8516cb1d5a2fcb7e528118ab79d1c20c226ce063c282723d5bfb7c7e1"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-editor-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "afc970146a8629e5263b516f9931e041496a1aceee506de18a5f615d62af76c8"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "c4490c09b2a1d5e348fd6fe92d56160b743c4cb122ff8a58168453dcd9df77f0"
+    },
+    {
+      "file": "src/features/decks/presentation/decks-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "56704d37b8eca8e8368f48cf8a17e09c0c5667d6e10c9952cbe3d7328a53680e"
+    },
+    {
+      "file": "src/features/decks/presentation/editor-limits.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "46c117a8e2a3959821d721e9d983cedf0809600b174bf659c72f410d12654bfe"
+    },
+    {
+      "file": "src/features/home/presentation/home-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "fe0c5fd0d5f2edde0ea870c4c875fc9e197417fe82e296785d78c621b8f11c87"
+    },
+    {
+      "file": "src/features/settings/presentation/appearance-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "1b3ee453571f00be79d519527a6966d35127140c2ebc9b09203dd3366ce449bf"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-backup.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "b7f4c662b19d19df419adbbf20dc464c4e8b24ebccd3f14c98412234f5da6d77"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "71271380ee3251dd48713faeb650ebf97c9d839a917bd3091ab9c2585f78139f"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "fab6729ab48a6f72ba5a59be02e1d001be203ae3ed47e5d956b811f8de2008d4"
+    },
+    {
+      "file": "src/features/settings/presentation/language-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "ebfb828864941e67d4269fa2259c665482239d100d4f36d4533ba481f51e373f"
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "1a161fa94a6b73aa6828f5a73b944cba28b2a06e53b107d5707786e685f94d84"
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "38ad0c217cd5b7731f8ec2c56525a4b29cdd3fe624a4e668f4be7f4c3b6e7767"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "cce65e46a3a84a78ed34d3248826b24a574659a6d45ecdf0bc2c9a89906fe1e5"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "20379abe643107c0f1c44136968a8c2bb76f93b6c3d1b403fe757ad500b81562"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "9dcc12bb57229fccdfb5e24aa23ba1df943d2dd25b0d9dbb8a733a4a3ed14d1c"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "286aae7bc7bb02c5d14e1e271b095a7698834d92ed2e5d8bbf2e4662716bf283"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "1d0490ca71772c5fec1ecd95a3f27a25c2962e0ca56641a386ae9f0ce40221cd"
+    },
+    {
+      "file": "src/features/settings/presentation/speech-settings-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "bd63ac58d29df186230aa03997256018bf95a5a1d71dfc4f3542ccc157d95117"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "ff071b27fefed0b5b4f444dab8373bd5b2b820192d2f1c844d0a6f35bcd97530"
+    },
+    {
+      "file": "src/features/settings/presentation/use-settings-view-model.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "0425aff5155a094e3b55548625277f3a1890260e23d10db2dffd363db98240c4"
+    },
+    {
+      "file": "src/features/study/presentation/study-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "6c1f7d6f8dbc9a4fe934415247598256f521fce539387b7c5fe5d885c34ff771"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "00b594c72c20eed0cc3996c2117b2021e42400c88d0f990107c50cd93de840e3"
+    },
+    {
+      "file": "src/features/study/presentation/use-start-study.test.ts",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "27eae1771ab452df2e269804c3fa113b5397c4293e8e77038ebd9d04802e8935"
+    },
+    {
+      "file": "src/features/study/presentation/use-start-study.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "fb3fcbecc2faa64d48f17ee714520573c6298afa201f2d3be25a170fb94dbb87"
+    },
+    {
+      "file": "src/features/study/presentation/use-study-session-view-model.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "ba138a013b95fcb7fb46be520b7cd0778e8af1b549cdd630094262ef41788cf9"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "a562d22bd160c10f4104ff638537cf93af0f1c8259fb9eb26fd845a9ba27062a"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "0db8b8a0941ead64ae2d1f8ff56c132a74080b8628eabbfca6a7032609e5d184"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-feedback.test.ts",
+      "status": "new program artifact/source",
+      "category": "test",
+      "sha256": "52d9f3d2c72acd88d427ae62938ac1ded173551718ed2f5a1f28d48268bbc1fd"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-feedback.ts",
+      "status": "new program artifact/source",
+      "category": "frontend production",
+      "sha256": "7b59ce8871b6a71a1d7329d041323e9352b4da2d3eb5bb5f79b07bd101eb4214"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-screen.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "1674168c33546d4bbeccd79845d16041bfed81599f9cb66a2a0398a14951f143"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-screen.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "bbd8648e47bfe7e27ce60429183f53be091749ca68aa2140fd368d697f781022"
+    },
+    {
+      "file": "src/features/vocabulary/presentation/vocabulary-helper.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "9bc4bc308914f82ae2f1ad6afaa41ae084e4c5440c2cf96452da846dc717b493"
+    },
+    {
+      "file": "src/shared/access/free-plan-limit.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "7bcdad608fa11a9cbb25fa339562324026e1e957ca9152b9fa568a7b4612cdc0"
+    },
+    {
+      "file": "src/shared/localization/localization.test.ts",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "d85d65a68dec09c45eb7ebfe62d942a0cea646d352ba2b1cbe08891a00075c8a"
+    },
+    {
+      "file": "src/shared/localization/messages.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "112a63f1b02fcacf49b0d193cc76b73f5b57e7bd0ab3bf25bc8061a93c1fa7df"
+    },
+    {
+      "file": "src/shared/navigation/navigation.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "96ef77179865eac3d9f58310031c0b92aacf1c0f5ee6dbe3c36191acfbac1934"
+    },
+    {
+      "file": "src/shared/speech/pronunciation-button.test.tsx",
+      "status": "tracked edit",
+      "category": "test",
+      "sha256": "be2d14c9968cca48d733f92ef5b9bcc2c4c6a8602bb8fff2d50ad8c6c1aa1dd9"
+    },
+    {
+      "file": "src/shared/speech/pronunciation-button.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "9bb3bb051f4a654d494912a39d4996b560b19728e7f3acf51ad165e862df3da8"
+    },
+    {
+      "file": "src/shared/speech/use-pronunciation.ts",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "4d4622cbe116074e25c6c723d9eaba8b92b8b92f27bd4d34d40f44ad1dc5a8c2"
+    },
+    {
+      "file": "src/shared/ui/button.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "dbf717cd6021ad131d7a9dc0fb4b85492e88e977f749e95319d96a270ad9e9ee"
+    },
+    {
+      "file": "src/shared/ui/confirmation-panel.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "79e49e873a51a73512123e05592717f3292f7f77afa24bdefd19d39019a8875d"
+    },
+    {
+      "file": "src/shared/ui/error-state.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "1f5fa3936fc7759f8b032f6c3b83b01a50ae086a301b576605d497ac6680ba89"
+    },
+    {
+      "file": "src/shared/ui/feedback-notice.test.tsx",
+      "status": "new program artifact/source",
+      "category": "test",
+      "sha256": "d24eff25f653be1f72144cdee83460d7d60bfcddc52e9f5637659dac4645a59b"
+    },
+    {
+      "file": "src/shared/ui/feedback-notice.tsx",
+      "status": "new program artifact/source",
+      "category": "frontend production",
+      "sha256": "aeef883235407a4eaa5748829d35cdf0e6b5b02caff105f08f66d6b139342b0e"
+    },
+    {
+      "file": "src/shared/ui/input.tsx",
+      "status": "tracked edit",
+      "category": "frontend production",
+      "sha256": "dc94de5971ddd092be0406809f89205f100cdc2b0dfb2312efc758cf0e7f7cd4"
+    }
+  ]
+}

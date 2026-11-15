@@ -1,0 +1,2191 @@
+{
+  "date": "2026-11-15T13:23:51.689Z",
+  "baseline": "067e60cbfe38e78d06f1a084f78cfc9fed5c0423",
+  "method": "Explicit contextual edits; unchanged/legacy entries retained; AST extraction from original HEAD and current UTF-8 source. Intermediate pipeline corruption corrected before acceptance.",
+  "changes": [
+    {
+      "language": "en",
+      "key": "showcase.description",
+      "before": null,
+      "after": "Explore components in {theme} appearance. Examples do not change learning data.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.typography",
+      "before": null,
+      "after": "Typography",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.colors",
+      "before": null,
+      "after": "Semantic colors",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.actions",
+      "before": null,
+      "after": "Actions",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.primary",
+      "before": null,
+      "after": "Primary action",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.secondary",
+      "before": null,
+      "after": "Secondary action",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.ghost",
+      "before": null,
+      "after": "Quiet action",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.destructive",
+      "before": null,
+      "after": "Destructive action",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.inputs",
+      "before": null,
+      "after": "Inputs",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.example",
+      "before": null,
+      "after": "Example",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.inputHint",
+      "before": null,
+      "after": "Helpful supporting text",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.placeholder",
+      "before": null,
+      "after": "Enter text",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.disabledField",
+      "before": null,
+      "after": "Disabled field",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.withError",
+      "before": null,
+      "after": "Field with error",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.surfaces",
+      "before": null,
+      "after": "Surfaces",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.defaultSurface",
+      "before": null,
+      "after": "Default surface",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.elevatedSurface",
+      "before": null,
+      "after": "Elevated surface",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.outlinedSurface",
+      "before": null,
+      "after": "Outlined surface",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.interactiveSurface",
+      "before": null,
+      "after": "Interactive surface",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.pressedSurface",
+      "before": null,
+      "after": "Pressed surface",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.select",
+      "before": null,
+      "after": "Select example",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.states",
+      "before": null,
+      "after": "Tabs and states",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.feedback",
+      "before": null,
+      "after": "Contextual feedback",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.error",
+      "before": null,
+      "after": "Example: content could not be loaded. Retry remains available.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.info",
+      "before": null,
+      "after": "Example only. No account or learning data has changed.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.confirm",
+      "before": null,
+      "after": "Open confirmation example",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.confirmTitle",
+      "before": null,
+      "after": "Continue with this example?",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "showcase.continue",
+      "before": null,
+      "after": "Continue example",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "common.loadErrorHint",
+      "before": null,
+      "after": "Could not load this content. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "sync.sessionUnconfirmed",
+      "before": null,
+      "after": "The server session status is unconfirmed. Check account access before continuing.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "sync.pendingChanges",
+      "before": null,
+      "after": "Changes waiting to sync: {count}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.csvHelp",
+      "before": null,
+      "after": "A comma-separated text file. The first row is headers; Front and Back are required. Deck, Phonetic, Category, Examples, and other columns are optional.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.xlsxHelp",
+      "before": null,
+      "after": "An Excel workbook. Put headers in the first row of a sheet; Front and Back are required. Additional columns are preserved.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.ankiHelp",
+      "before": null,
+      "after": "An Anki .apkg or .colpkg package. Cards and available fields are previewed before saving.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.operationError",
+      "before": null,
+      "after": "The file operation could not be confirmed. Check the file and destination, then try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.invalidRow",
+      "before": null,
+      "after": "This row could not be imported. Check its required text, examples and format.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.fileSize",
+      "before": null,
+      "after": "Choose a file smaller than 50 MB.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.ankiSize",
+      "before": null,
+      "after": "The extracted Anki collection must not exceed 100 MB.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.ankiInvalid",
+      "before": null,
+      "after": "This Anki package is incomplete or unsupported. Check the source file or try CSV or XLSX.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.headersInvalid",
+      "before": null,
+      "after": "Check the first-row headers. Front and Back are required; recognized columns must not be duplicated.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.examplesInvalid",
+      "before": null,
+      "after": "Use an array of example objects. Each needs sentence; translation and notes are optional. See the sample file.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.deckDeleted",
+      "before": null,
+      "after": "The matching deck was deleted. Choose a different deck before importing.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.previewExpired",
+      "before": null,
+      "after": "Select and preview the file again before confirming.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.importBusy",
+      "before": null,
+      "after": "An import is already being saved. Wait for it to finish.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.selectFormat",
+      "before": null,
+      "after": "Choose a CSV, XLSX, XLS, or Anki .apkg/.colpkg file.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.chooseFolder",
+      "before": null,
+      "after": "Choose a folder to save the export.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.sharingUnavailable",
+      "before": null,
+      "after": "Sharing is unavailable on this device. Try saving the file instead.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.integrityError",
+      "before": null,
+      "after": "Export is blocked because a card needs data repair. Original records and history are preserved. Keep the local database and contact support before recovery.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.rowLocation",
+      "before": null,
+      "after": "Row {number}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "transfer.noteLocation",
+      "before": null,
+      "after": "Anki note {number}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.reminderCheckError",
+      "before": null,
+      "after": "Could not check your reminder. Reopen Settings to retry.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.notificationsDenied",
+      "before": null,
+      "after": "Notifications are off for this app. Allow them in device settings, then try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.themeSaveError",
+      "before": null,
+      "after": "Could not save appearance. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.languageSaveError",
+      "before": null,
+      "after": "Could not save app language. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.hapticsSaveError",
+      "before": null,
+      "after": "Could not save haptic feedback. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.reminderSaveError",
+      "before": null,
+      "after": "Could not change the daily reminder. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.timeSaveError",
+      "before": null,
+      "after": "Could not save the reminder time. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.speechSaveError",
+      "before": null,
+      "after": "Could not save speech language. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.accentSaveError",
+      "before": null,
+      "after": "Could not save English accent. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "settings.openNotificationsError",
+      "before": null,
+      "after": "Could not open device settings. Open this app in your device Settings.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "speech.unavailable",
+      "before": null,
+      "after": "Pronunciation is unavailable on this device. Check installed voices in device settings.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "form.deckNameInvalid",
+      "before": null,
+      "after": "Enter a deck name of 1–120 characters.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.startError",
+      "before": null,
+      "after": "Unable to start studying. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.activeSession",
+      "before": null,
+      "after": "Finish or leave your current session before starting another.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.saveError",
+      "before": null,
+      "after": "Unable to save your answer. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.endError",
+      "before": null,
+      "after": "Unable to end this session. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.reviewAgainError",
+      "before": null,
+      "after": "Unable to review missed cards. Try again.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "study.itemUnavailable",
+      "before": null,
+      "after": "A card or session is no longer available. Try again or leave this session.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "common.fieldError",
+      "before": null,
+      "after": "Error: {message}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "en",
+      "key": "account.purchaseLoginHint",
+      "before": "To save your purchase and track your order, please log in to your account first.",
+      "after": "Sign in to keep purchases linked to your account.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "paywall.introTitle",
+      "before": "Learning, without limits",
+      "after": "More room to learn",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "paywall.plusDecks",
+      "before": "Unlimited active decks under the current access rules",
+      "after": "Unlimited active decks",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "paywall.plusCards",
+      "before": "Unlimited active flashcards under the current access rules",
+      "after": "Unlimited active flashcards",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "paywall.statusError",
+      "before": "Could not confirm your subscription. Check your connection or sign in again. No purchase or activation has occurred.",
+      "after": "Could not confirm your subscription. Check your connection or sign in again. Activation or expiration is not confirmed.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "logout.backupFailed",
+      "before": "Logout was not completed. No backup is claimed. Retry, cancel, or explicitly log out without backing up.",
+      "after": "Logout is not complete. Verified backup details, when available, are shown separately. Retry, cancel, or explicitly log out without backing up.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "migration.blocked",
+      "before": "These guest decks cannot be copied safely yet. Refresh and retry, or explicitly discard guest data. Nothing has been deleted.",
+      "after": "These guest decks cannot be copied safely yet. Refresh and retry. Nothing has been deleted. Discarding guest data requires a separate confirmation.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "migration.reason.limits",
+      "before": "Copying would exceed your current plan limits. Upgrade your plan before retrying, or explicitly discard guest data.",
+      "after": "Copying would exceed your current plan limits and is blocked. Existing data is preserved. Review your plan limits before retrying.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "migration.unavailable",
+      "before": "Cloud transfer is unavailable on this device. Configure the backend and sign in; guest study remains available offline.",
+      "after": "Cloud transfer is unavailable in this environment. No guest data was deleted at this step. Check your connection or contact support.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "study.instructions",
+      "before": "Tap a card to flip between its front and answer, then choose Success or Failure. Missed cards get one more try at the end.",
+      "after": "Tap the card to reveal its answer, then choose Success or Failure. Each card appears once. After the session, you can choose Review again for missed cards.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "sync.description",
+      "before": "Optional backup and multi-device study. Offline always works.",
+      "after": "Synchronize account changes across devices. Server backup is a separate action. Offline study follows your current access limits.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "en",
+      "key": "settings.yourDataHint",
+      "before": "Study data is currently stored locally for this session.",
+      "after": "Learning data is saved on this device in separate guest and account spaces. Cloud sync requires a signed-in account and an available connection.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.description",
+      "before": null,
+      "after": "اجزا را در حالت {theme} ببین. نمونه‌ها داده‌های یادگیری را تغییر نمی‌دهند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.typography",
+      "before": null,
+      "after": "تایپوگرافی",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.colors",
+      "before": null,
+      "after": "رنگ‌های معنایی",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.actions",
+      "before": null,
+      "after": "عملیات",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.primary",
+      "before": null,
+      "after": "عملیات اصلی",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.secondary",
+      "before": null,
+      "after": "عملیات دوم",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.ghost",
+      "before": null,
+      "after": "عملیات کم‌تأکید",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.destructive",
+      "before": null,
+      "after": "عملیات مخرب",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.inputs",
+      "before": null,
+      "after": "ورودی‌ها",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.example",
+      "before": null,
+      "after": "نمونه",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.inputHint",
+      "before": null,
+      "after": "توضیح راهنما",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.placeholder",
+      "before": null,
+      "after": "متن را وارد کن",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.disabledField",
+      "before": null,
+      "after": "فیلد غیرفعال",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.withError",
+      "before": null,
+      "after": "فیلد دارای خطا",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.surfaces",
+      "before": null,
+      "after": "سطوح",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.defaultSurface",
+      "before": null,
+      "after": "سطح پیش‌فرض",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.elevatedSurface",
+      "before": null,
+      "after": "سطح برجسته",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.outlinedSurface",
+      "before": null,
+      "after": "سطح دورخط‌دار",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.interactiveSurface",
+      "before": null,
+      "after": "سطح تعاملی",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.pressedSurface",
+      "before": null,
+      "after": "سطح فشرده‌شده",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.select",
+      "before": null,
+      "after": "انتخاب نمونه",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.states",
+      "before": null,
+      "after": "زبانه‌ها و حالت‌ها",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.feedback",
+      "before": null,
+      "after": "بازخورد در جای مرتبط",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.error",
+      "before": null,
+      "after": "نمونه: محتوا بارگذاری نشد. گزینهٔ تلاش دوباره در دسترس می‌ماند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.info",
+      "before": null,
+      "after": "فقط یک نمونه است. داده‌های حساب و یادگیری تغییر نکرده‌اند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.confirm",
+      "before": null,
+      "after": "باز کردن نمونهٔ تأیید",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.confirmTitle",
+      "before": null,
+      "after": "این نمونه ادامه پیدا کند؟",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "showcase.continue",
+      "before": null,
+      "after": "ادامهٔ نمونه",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "common.loadErrorHint",
+      "before": null,
+      "after": "این محتوا بارگذاری نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "sync.sessionUnconfirmed",
+      "before": null,
+      "after": "وضعیت نشست در سرور تأیید نشده است. پیش از ادامه، دسترسی به حساب را بررسی کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "sync.pendingChanges",
+      "before": null,
+      "after": "تغییرات در انتظار همگام‌سازی: {count}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.csvHelp",
+      "before": null,
+      "after": "فایل متنی با ستون‌های جداشده با ویرگول. ردیف اول عنوان ستون‌هاست؛ Front و Back لازم‌اند. Deck، Phonetic، Category، Examples و ستون‌های دیگر اختیاری‌اند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.xlsxHelp",
+      "before": null,
+      "after": "فایل Excel. عنوان ستون‌ها را در ردیف اول برگه بگذار؛ Front و Back لازم‌اند. ستون‌های اضافی حفظ می‌شوند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.ankiHelp",
+      "before": null,
+      "after": "بستهٔ Anki با پسوند .apkg یا .colpkg. کارت‌ها و فیلدهای موجود پیش از ذخیره در پیش‌نمایش نشان داده می‌شوند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.operationError",
+      "before": null,
+      "after": "انجام عملیات فایل تأیید نشد. فایل و مقصد را بررسی کن و دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.invalidRow",
+      "before": null,
+      "after": "این ردیف وارد نشد. متن‌های لازم، مثال‌ها و قالب آن را بررسی کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.fileSize",
+      "before": null,
+      "after": "فایلی کوچک‌تر از ۵۰ مگابایت انتخاب کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.ankiSize",
+      "before": null,
+      "after": "حجم مجموعهٔ استخراج‌شدهٔ Anki نباید از ۱۰۰ مگابایت بیشتر باشد.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.ankiInvalid",
+      "before": null,
+      "after": "این بستهٔ Anki ناقص یا ناسازگار است. فایل اصلی را بررسی کن یا CSV و XLSX را امتحان کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.headersInvalid",
+      "before": null,
+      "after": "عنوان ستون‌های ردیف اول را بررسی کن. Front و Back لازم‌اند و ستون‌های شناخته‌شده نباید تکراری باشند.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.examplesInvalid",
+      "before": null,
+      "after": "مثال‌ها باید آرایه‌ای از نمونه‌ها باشند. فیلد sentence لازم است؛ translation و notes اختیاری‌اند. فایل نمونه را ببین.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.deckDeleted",
+      "before": null,
+      "after": "دستهٔ هم‌نام حذف شده است. پیش از ورود، دستهٔ دیگری انتخاب کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.previewExpired",
+      "before": null,
+      "after": "پیش از تأیید، فایل را دوباره انتخاب و پیش‌نمایش آن را بررسی کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.importBusy",
+      "before": null,
+      "after": "یک فایل در حال ذخیره شدن است. تا پایان آن صبر کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.selectFormat",
+      "before": null,
+      "after": "فایل CSV، XLSX، XLS یا Anki با پسوند .apkg یا .colpkg انتخاب کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.chooseFolder",
+      "before": null,
+      "after": "پوشه‌ای برای ذخیرهٔ خروجی انتخاب کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.sharingUnavailable",
+      "before": null,
+      "after": "اشتراک‌گذاری در این دستگاه در دسترس نیست. ذخیرهٔ فایل را امتحان کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.integrityError",
+      "before": null,
+      "after": "برای جلوگیری از خروجی ناقص، یک کارت به ترمیم داده نیاز دارد. محتوای اصلی و تاریخچه محفوظ‌اند. پایگاه دادهٔ محلی را نگه دار و پیش از بازیابی با پشتیبانی تماس بگیر.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.rowLocation",
+      "before": null,
+      "after": "ردیف {number}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.noteLocation",
+      "before": null,
+      "after": "یادداشت Anki شمارهٔ {number}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.reminderCheckError",
+      "before": null,
+      "after": "یادآور بررسی نشد. تنظیمات را دوباره باز کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.notificationsDenied",
+      "before": null,
+      "after": "اعلان‌های برنامه خاموش‌اند. در تنظیمات دستگاه اجازه بده، سپس دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.themeSaveError",
+      "before": null,
+      "after": "پوسته ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.languageSaveError",
+      "before": null,
+      "after": "زبان برنامه ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.hapticsSaveError",
+      "before": null,
+      "after": "بازخورد لمسی ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.reminderSaveError",
+      "before": null,
+      "after": "یادآور روزانه تغییر نکرد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.timeSaveError",
+      "before": null,
+      "after": "زمان یادآور ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.speechSaveError",
+      "before": null,
+      "after": "زبان گفتار ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.accentSaveError",
+      "before": null,
+      "after": "لهجهٔ انگلیسی ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "settings.openNotificationsError",
+      "before": null,
+      "after": "تنظیمات دستگاه باز نشد. از تنظیمات دستگاه، این برنامه را پیدا کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "speech.unavailable",
+      "before": null,
+      "after": "تلفظ در این دستگاه در دسترس نیست. صداهای نصب‌شده را در تنظیمات دستگاه بررسی کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "form.deckNameInvalid",
+      "before": null,
+      "after": "نامی با ۱ تا ۱۲۰ نویسه برای دسته وارد کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.startError",
+      "before": null,
+      "after": "مطالعه شروع نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.activeSession",
+      "before": null,
+      "after": "پیش از شروع جلسهٔ جدید، جلسهٔ فعلی را تمام کن یا از آن خارج شو.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.saveError",
+      "before": null,
+      "after": "پاسخت ذخیره نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.endError",
+      "before": null,
+      "after": "جلسه پایان نیافت. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.reviewAgainError",
+      "before": null,
+      "after": "مرور کارت‌های فراموش‌شده شروع نشد. دوباره تلاش کن.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "study.itemUnavailable",
+      "before": null,
+      "after": "کارت یا جلسه دیگر در دسترس نیست. دوباره تلاش کن یا از جلسه خارج شو.",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "common.fieldError",
+      "before": null,
+      "after": "خطا: {message}",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "common.saved",
+      "before": null,
+      "after": "ذخیره شد",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "common.selected",
+      "before": null,
+      "after": "انتخاب‌شده",
+      "kind": "new localized copy"
+    },
+    {
+      "language": "fa",
+      "key": "payment.accountUnconfirmed",
+      "before": "حساب شما به‌صورت آنلاین تأیید نشد. اتصال اینترنت را بررسی کنید و برای فعال شدن خرید دوباره تلاش کنید.",
+      "after": "حسابت آنلاین تأیید نشد. اتصال اینترنت را بررسی کن و برای فعال شدن خرید دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.appUpdateRequired",
+      "before": "برای خرید از مایکت، برنامه اندروید را به‌روزرسانی کنید.",
+      "after": "برای خرید از مایکت، برنامهٔ اندروید را به‌روزرسانی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.serverUnavailable",
+      "before": "خرید از مایکت در سرور موقتاً در دسترس نیست. بعداً دوباره تلاش کنید.",
+      "after": "خرید از مایکت موقتاً در دسترس نیست. بعداً دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.completed",
+      "before": "خرید تأیید شد. وضعیت اشتراک شما به‌روز شده است.",
+      "after": "خرید تأیید شد. وضعیت اشتراکت به‌روز شده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.pending",
+      "before": "خرید تکمیل یا تأیید نشد. دوباره پرداخت نکنید. نصب بودن مایکت و اتصال اینترنت را بررسی کنید، وارد حساب اصلی شوید و سپس «بازیابی خریدها» را بزنید.",
+      "after": "خرید هنوز تکمیل یا تأیید نشده. دوباره پرداخت نکن. نصب بودن مایکت و اتصال اینترنت را بررسی کن، وارد حساب اصلی شو و «بازیابی خریدها» را بزن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.active",
+      "before": "اشتراک فعال یا زمان‌بندی‌شده دارید. خرید مجدد مجاز نیست.",
+      "after": "اشتراک فعال یا زمان‌بندی‌شده داری. خرید دوباره مجاز نیست.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "payment.checkoutPending",
+      "before": "یک خرید در انتظار تکمیل است. ابتدا خریدها را بازیابی و سپس همان مدت را امتحان کنید. برای انتخاب مدت دیگر، یک ساعت صبر کنید یا پرداخت اصلی مایکت را لغو کنید.",
+      "after": "یک خرید در انتظار تکمیل است. اول خریدها را بازیابی کن، سپس همان مدت را امتحان کن. برای انتخاب مدت دیگر، یک ساعت صبر کن یا پرداخت اصلی مایکت را لغو کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameTitle",
+      "before": "شما را چه صدا کنیم؟",
+      "after": "چی صدات کنیم؟",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameDescription",
+      "before": "برای تکمیل حساب کاربری، لطفاً نام خود را وارد کنید.",
+      "after": "برای تکمیل حسابت، نامت را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameLabel",
+      "before": "نام شما",
+      "after": "نامت",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameInvalid",
+      "before": "نامی بین ۱ تا ۱۲۰ نویسه وارد کنید.",
+      "after": "نامی بین ۱ تا ۱۲۰ نویسه وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameLoadError",
+      "before": "بررسی نام حساب ممکن نشد. لطفاً دوباره تلاش کنید.",
+      "after": "نام حساب بررسی نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "onboarding.nameSaveError",
+      "before": "ذخیره نام ممکن نشد. لطفاً دوباره تلاش کنید.",
+      "after": "نام ذخیره نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "account.purchaseLoginHint",
+      "before": "برای ثبت خرید و پیگیری سفارش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
+      "after": "برای ثبت خرید در حسابت، اول وارد شو.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "account.guestLocal",
+      "before": "شما از حساب مهمان محلی استفاده می‌کنید. داده مهمان روی همین دستگاه می‌ماند و خودکار در فضای ابری پشتیبان‌گیری یا همگام‌سازی نمی‌شود.",
+      "after": "در حالت مهمان هستی. داده‌های مهمان روی همین دستگاه می‌مانند و خودکار در فضای ابری پشتیبان‌گیری یا همگام‌سازی نمی‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "account.error",
+      "before": "تأیید اطلاعات حساب ممکن نشد. اتصال را بررسی کنید یا دوباره وارد شوید. هیچ داده ذخیره‌شده‌ای حذف نشد.",
+      "after": "اطلاعات حساب تأیید نشد. اتصال را بررسی کن یا دوباره وارد شو. هیچ دادهٔ ذخیره‌شده‌ای حذف نشد.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "account.subscriptionUnknown",
+      "before": "وضعیت اشتراک در دسترس نیست یا توسط سرور تأیید نشده است. اتصال را بررسی و تازه‌سازی کنید؛ این وضعیت تأیید فعال‌سازی یا انقضا نیست.",
+      "after": "وضعیت اشتراک در دسترس نیست یا سرور آن را تأیید نکرده. اتصال را بررسی و وضعیت را تازه‌سازی کن؛ فعال‌سازی یا انقضا هنوز تأیید نشده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.introTitle",
+      "before": "یادگیری، بدون محدودیت",
+      "after": "فضای بیشتر برای یادگیری",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.introDescription",
+      "before": "برای دسته‌ها و فلش‌کارت‌های بیشتر و تمرین پیوسته، جا باز کنید.",
+      "after": "برای دسته‌ها و کارت‌های بیشتر و تمرین پیوسته، جا باز کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.plusDecks",
+      "before": "دسته‌های فعال نامحدود طبق قوانین فعلی دسترسی",
+      "after": "دسته‌های فعال نامحدود",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.plusCards",
+      "before": "فلش‌کارت‌های فعال نامحدود طبق قوانین فعلی دسترسی",
+      "after": "فلش‌کارت‌های فعال نامحدود",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.dataPreserved",
+      "before": "داده‌های فعلی شما حفظ می‌شوند. مشاهده، ویرایش و خروجی گرفتن همچنان ممکن است.",
+      "after": "داده‌های فعلی حفظ می‌شوند. مشاهده، ویرایش و خروجی گرفتن همچنان ممکن است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.overLimits",
+      "before": "داده‌های شما از محدوده رایگان بیشتر است. برای مطالعه و محتوای جدید به پلاس فعال نیاز دارید.",
+      "after": "داده‌ها از محدودهٔ رایگان بیشترند. برای مطالعه و محتوای جدید به پلاس فعال نیاز داری.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.reason",
+      "before": "چرا نمی‌توانید ادامه دهید",
+      "after": "دلیل محدودیت دسترسی",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.expired",
+      "before": "اشتراک شما منقضی شده است. محدودیت رایگان اعمال می‌شود؛ همه دسته‌ها، کارت‌ها و سابقه مرور حفظ می‌شوند.",
+      "after": "اشتراکت منقضی شده است. محدودیت رایگان اعمال می‌شود؛ همهٔ دسته‌ها، کارت‌ها و سابقهٔ مرور حفظ می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.choose",
+      "before": "مدت پلاس را انتخاب کنید",
+      "after": "انتخاب مدت پلاس",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.empty",
+      "before": "در حال حاضر هیچ دوره پلاس در دسترس نیست. لطفاً بعداً دوباره تلاش کنید.",
+      "after": "فعلاً هیچ دورهٔ پلاس در دسترس نیست. بعداً دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "paywall.statusError",
+      "before": "تأیید اشتراک ممکن نشد. اتصال را بررسی کنید یا دوباره وارد شوید. هیچ خرید یا فعال‌سازی انجام نشده است.",
+      "after": "اشتراکت تأیید نشد. اتصال را بررسی کن یا دوباره وارد شو. فعال‌سازی یا انقضا هنوز تأیید نشده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "access.unavailable",
+      "before": "دریافت طرح‌ها از سرور ممکن نشد. اتصال را بررسی و دوباره تلاش کنید.",
+      "after": "طرح‌ها از سرور دریافت نشدند. اتصال را بررسی کن و دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.expired",
+      "before": "پشتیبان منقضی شده؛ پشتیبان جدید بسازید.",
+      "after": "پشتیبان منقضی شده است. پشتیبان جدید بساز.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.coverage",
+      "before": "دسته‌ها، کارت‌ها، پیشرفت مرور پشتیبانی‌شده و تنظیمات همگام‌شدهٔ حساب ذخیره می‌شوند. داده‌های مهمان و جلسات مطالعهٔ محلی شامل نمی‌شوند.",
+      "after": "دسته‌ها، کارت‌ها، پیشرفت مرور پشتیبانی‌شده و تنظیمات همگام‌شدهٔ حساب ذخیره می‌شوند. داده‌های مهمان و جلسه‌های مطالعهٔ محلی شامل نمی‌شوند. بازیابی هنوز در برنامه در دسترس نیست.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.error",
+      "before": "عملیات تأیید نشد. اتصال و خطاهای همگام‌سازی حساب را بررسی کرده و دوباره پشتیبان بگیرید. داده‌ای حذف نشده است.",
+      "after": "انجام عملیات تأیید نشد. اتصال و خطاهای همگام‌سازی حساب را بررسی کن، سپس دوباره پشتیبان بگیر. داده‌ای حذف نشده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.networkError",
+      "before": "ارتباط با سرور برقرار نیست. پس از اتصال وضعیت را تازه‌سازی کرده یا عملیات را دوباره امتحان کنید.",
+      "after": "ارتباط با سرور برقرار نشد. پس از اتصال، وضعیت را تازه‌سازی کن یا عملیات را دوباره امتحان کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.authError",
+      "before": "نشست شما منقضی شده است. برای پشتیبان‌گیری دوباره وارد شوید.",
+      "after": "نشست حسابت منقضی شده است. برای پشتیبان‌گیری دوباره وارد شو.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.rateError",
+      "before": "درخواست‌های پشتیبان زیاد است. یک دقیقه صبر کنید و دوباره تلاش کنید.",
+      "after": "درخواست‌های پشتیبان زیاد است. یک دقیقه صبر کن و دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.capacityError",
+      "before": "ظرفیت پشتیبان‌ها پر است. برای پاک‌سازی پشتیبان‌های منقضی‌شده با پشتیبانی تماس بگیرید؛ داده‌های یادگیری حذف نشده‌اند.",
+      "after": "ظرفیت پشتیبان‌ها پر است. برای پاک‌سازی پشتیبان‌های منقضی‌شده با پشتیبانی تماس بگیر؛ داده‌های یادگیری حذف نشده‌اند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.unavailable",
+      "before": "پشتیبان سرور در دسترس نیست. بعداً تلاش کنید یا برای بررسی تنظیمات با پشتیبانی تماس بگیرید.",
+      "after": "پشتیبان سرور در دسترس نیست. بعداً تلاش کن یا برای بررسی تنظیمات با پشتیبانی تماس بگیر.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.configurationError",
+      "before": "پشتیبان ابری در سرور راه‌اندازی نشده است. داده‌های شما در این دستگاه باقی می‌ماند. با پشتیبانی تماس بگیرید و سپس دوباره تلاش کنید.",
+      "after": "پشتیبان ابری در سرور راه‌اندازی نشده است. داده‌ها روی این دستگاه می‌مانند. با پشتیبانی تماس بگیر و سپس دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.settingsConflict",
+      "before": "تنظیمات ذخیره‌شدهٔ حساب با این دستگاه متفاوت است. برای تکمیل اتصال، تنظیماتی را که می‌خواهید نگه دارید انتخاب کنید. داده‌های یادگیری شما حفظ می‌شود.",
+      "after": "تنظیمات ذخیره‌شدهٔ حساب با این دستگاه متفاوت است. برای تکمیل اتصال، انتخاب کن کدام تنظیمات بمانند. داده‌های یادگیری حفظ می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "backup.sizeError",
+      "before": "حجم داده‌ها از حد پشتیبان سرور بیشتر است. با پشتیبانی تماس بگیرید؛ داده‌ای حذف نشده است.",
+      "after": "حجم داده‌ها از حد پشتیبان سرور بیشتر است. با پشتیبانی تماس بگیر؛ داده‌ای حذف نشده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.title",
+      "before": "از حساب خارج می‌شوید؟",
+      "after": "از حسابت خارج می‌شوی؟",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.unavailable",
+      "before": "همگام‌سازی تأییدشده سرور در این محیط در دسترس نیست. می‌توانید لغو کنید یا بدون پشتیبان‌گیری خارج شوید.",
+      "after": "همگام‌سازی تأییدشدهٔ سرور در این محیط در دسترس نیست. می‌توانی لغو کنی یا بدون پشتیبان‌گیری خارج شوی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.backupFailed",
+      "before": "خروج کامل نشده و ایجاد پشتیبان تأیید نشده است. دوباره تلاش کنید، لغو کنید یا خروج بدون پشتیبان‌گیری را انتخاب کنید.",
+      "after": "خروج کامل نشده است. تأیید پشتیبان، در صورت وجود، جداگانه نمایش داده می‌شود. دوباره تلاش کن، لغو کن یا خروج بدون پشتیبان‌گیری را انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.success",
+      "before": "از حساب خارج شدید. فضای آموزشی خالی است و داده‌های حساب خصوصی هستند.",
+      "after": "از حسابت خارج شدی. فضای یادگیری خالی است و داده‌های حساب خصوصی‌اند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.skipped",
+      "before": "بدون ایجاد یا تأیید پشتیبان خارج شدید. داده‌های حساب جدا باقی می‌مانند و داده‌های سرور حذف نشده‌اند.",
+      "after": "بدون ایجاد یا تأیید پشتیبان خارج شدی. داده‌های حساب جدا می‌مانند و داده‌های سرور حذف نشده‌اند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "logout.clearFailed",
+      "before": "دسترسی به حساب مسدود است، اما پاک‌کردن کامل اطلاعات ورود انجام نشد. برنامه را باز نگه دارید و پیش از راه‌اندازی مجدد دوباره تلاش کنید.",
+      "after": "دسترسی به حساب مسدود است، اما پاک‌کردن کامل اطلاعات ورود انجام نشد. برنامه را باز نگه دار و پیش از راه‌اندازی مجدد دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.preserve",
+      "before": "داده‌های حساب اکنون همگام می‌شوند. داده‌های مهمان را به حساب اضافه کنید یا برای همیشه حذف کنید. داده‌های قبلی حساب جایگزین نمی‌شوند.",
+      "after": "داده‌های حسابت اکنون همگام می‌شوند. داده‌های مهمان را به حساب اضافه کن یا برای همیشه حذف کن. داده‌های قبلی حساب جایگزین نمی‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.incomplete",
+      "before": "داده‌های حساب وجود دارد اما از همگام‌سازی کامل بارگذاری نشد. انتقال متوقف است؛ وابستگی زیر را بررسی کنید.",
+      "after": "داده‌های حساب از همگام‌سازی کامل بارگذاری نشدند. انتقال متوقف است؛ دلیل و راه ادامه را بررسی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.guest-only",
+      "before": "حساب خالی است. می‌توانید دسته‌های مهمان را در حساب کپی کنید.",
+      "after": "حساب خالی است. می‌توانی دسته‌های مهمان را در حساب کپی کنی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.both",
+      "before": "هر دو محیط داده دارند. پیش از تصمیم، هر دو فهرست را بررسی کنید.",
+      "after": "هر دو فضا داده دارند. پیش از تصمیم، هر دو فهرست را بررسی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.blocked",
+      "before": "فعلاً کپی امن این دسته‌های مهمان ممکن نیست. پیش‌نمایش را تازه‌سازی و دوباره تلاش کنید یا با تأیید خودتان داده‌های مهمان را حذف کنید. هیچ داده‌ای حذف نشده است.",
+      "after": "فعلاً کپی امن این دسته‌های مهمان ممکن نیست. پیش‌نمایش را تازه‌سازی کن و دوباره تلاش کن. هیچ داده‌ای حذف نشده است. حذف داده‌های مهمان فقط با تأیید جداگانه انجام می‌شود.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.deckLanguage",
+      "before": "زبان یکی از دسته‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن دسته را در حالت مهمان ویرایش کنید.",
+      "after": "زبان یکی از دسته‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن دسته را در حالت مهمان ویرایش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.deckText",
+      "before": "نام یا توضیح یکی از دسته‌های مهمان بیش از حد طولانی است. پیش از کپی، آن را در حالت مهمان کوتاه کنید.",
+      "after": "نام یا توضیح یکی از دسته‌های مهمان بیش از حد طولانی است. پیش از کپی، آن را در حالت مهمان کوتاه کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.cardPayload",
+      "before": "حجم یکی از کارت‌های مهمان برای همگام‌سازی زیاد است. پیش از کپی، متن یا مثال‌های آن را در حالت مهمان کوتاه کنید.",
+      "after": "حجم یکی از کارت‌های مهمان برای همگام‌سازی زیاد است. پیش از کپی، متن یا مثال‌های آن را در حالت مهمان کوتاه کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.cardText",
+      "before": "متن یا مثال‌های یکی از کارت‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن را در حالت مهمان ویرایش کنید.",
+      "after": "متن یا مثال‌های یکی از کارت‌های مهمان پشتیبانی نمی‌شود. پیش از کپی، آن را در حالت مهمان ویرایش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.calendar",
+      "before": "تاریخ‌های مرور مهمان با روش مرور سرور سازگار نیست. برای حفظ پیشرفت شما، کپی متوقف شده است.",
+      "after": "تاریخ‌های مرور مهمان با روش مرور سرور سازگار نیستند. برای حفظ پیشرفتت، کپی متوقف شده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.accountSync",
+      "before": "بعضی دسته‌ها یا کارت‌های حساب در همگام‌سازی موجود نیستند. پیش‌نمایش را تازه‌سازی کنید؛ اگر مشکل باقی ماند، داده‌های همگام‌سازی سرور به ترمیم نیاز دارند.",
+      "after": "بعضی دسته‌ها یا کارت‌های حساب در همگام‌سازی موجود نیستند. پیش‌نمایش را تازه‌سازی کن؛ اگر مشکل باقی ماند، داده‌های همگام‌سازی سرور به ترمیم نیاز دارند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.accountProgress",
+      "before": "پیشرفت مرور حساب کاملاً همگام نشده است. پیش‌نمایش را تازه‌سازی کنید؛ ممکن است پیشرفت روی سرور پیش از کپی به ترمیم نیاز داشته باشد.",
+      "after": "پیشرفت مرور حساب کاملاً همگام نشده است. پیش‌نمایش را تازه‌سازی کن؛ ممکن است پیشرفت روی سرور پیش از کپی به ترمیم نیاز داشته باشد.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.permission",
+      "before": "دسترسی به حساب تأیید نشد. اتصال را برقرار و پیش‌نمایش را پیش از کپی تازه‌سازی کنید.",
+      "after": "دسترسی به حساب تأیید نشد. اتصال را برقرار کن و پیش‌نمایش را پیش از کپی تازه‌سازی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.limits",
+      "before": "با این انتقال از سقف طرح فعلی عبور می‌کنید. پیش از تلاش دوباره طرح را ارتقا دهید یا با تأیید خودتان داده‌های مهمان را حذف کنید.",
+      "after": "این کپی از سقف طرح فعلی بیشتر است و فعلاً انجام نمی‌شود. داده‌های موجود حفظ می‌شوند. پیش از تلاش دوباره، محدودیت‌های طرح را بررسی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.changed",
+      "before": "داده‌ها پس از نمایش پیش‌نمایش تغییر کرده‌اند. پیش‌نمایش را تازه‌سازی و نسخهٔ جدید را پیش از کپی تأیید کنید.",
+      "after": "داده‌ها پس از نمایش پیش‌نمایش تغییر کرده‌اند. پیش‌نمایش را تازه‌سازی کن و نسخهٔ جدید را پیش از کپی تأیید کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.conflict",
+      "before": "یکی از موارد کپی‌شده تعارض همگام‌سازی دارد. هر دو مجموعه را نگه دارید و پیش از تلاش دوباره، تعارض را در تنظیمات همگام‌سازی حل کنید.",
+      "after": "یکی از موارد کپی‌شده تعارض همگام‌سازی دارد. هر دو مجموعه را نگه دار و پیش از تلاش دوباره، تعارض را در تنظیمات همگام‌سازی حل کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.network",
+      "before": "اتصال برقرار نشد. اینترنت را بررسی و پیش‌نمایش را تازه‌سازی کنید.",
+      "after": "اتصال برقرار نشد. اینترنت را بررسی کن و پیش‌نمایش را تازه‌سازی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.reason.service",
+      "before": "سرور موقتاً در دسترس نیست. داده‌های شما محفوظ‌اند؛ بعداً دوباره تلاش کنید.",
+      "after": "سرور موقتاً در دسترس نیست. داده‌ها محفوظ‌اند؛ بعداً دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.failure",
+      "before": "پایان انتقال تأیید نشده است. نسخه‌های اصلی و کپی‌های قابل بازیابی محفوظ‌اند. اتصال را بررسی کنید، همین انتقال را دوباره ادامه دهید یا تعارض‌ها را در تنظیمات همگام‌سازی بررسی کنید.",
+      "after": "پایان انتقال تأیید نشده است. نسخه‌های اصلی و کپی‌های قابل بازیابی محفوظ‌اند. اتصال را بررسی کن، همین انتقال را دوباره ادامه بده یا تعارض‌ها را در تنظیمات همگام‌سازی بررسی کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "migration.unavailable",
+      "before": "انتقال ابری در این دستگاه در دسترس نیست. سرور را تنظیم و وارد حساب شوید؛ مطالعهٔ مهمان آفلاین در دسترس می‌ماند.",
+      "after": "انتقال ابری در این محیط در دسترس نیست. در این مرحله داده‌های مهمان حذف نشده‌اند. اتصال را بررسی کن یا با پشتیبانی تماس بگیر.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "guest.explanation",
+      "before": "داده‌های مهمان روی دستگاه می‌مانند. هنگام ورود، افزودن آن‌ها به حساب یا حذف همیشگی را انتخاب کنید. پس از خروج، فضای آموزشی خالی خواهد بود.",
+      "after": "داده‌های مهمان روی این دستگاه می‌مانند. هنگام ورود، می‌توانی آن‌ها را به حسابت اضافه یا برای همیشه حذف کنی. پس از خروج، فضای یادگیری خالی می‌شود.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "guest.deckLimit",
+      "before": "در طرح رایگان می‌توانید حداکثر ۱ دستهٔ فعال اضافه کنید. داده‌های موجود حفظ می‌شوند.",
+      "after": "در طرح رایگان می‌توانی حداکثر ۱ دستهٔ فعال اضافه کنی. داده‌های موجود حفظ می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "guest.cardLimit",
+      "before": "در طرح رایگان می‌توانید در مجموع حداکثر ۵۰ کارت فعال در همهٔ دسته‌ها اضافه کنید. داده‌های موجود حفظ می‌شوند.",
+      "after": "در طرح رایگان می‌توانی در مجموع حداکثر ۵۰ کارت فعال در همهٔ دسته‌ها اضافه کنی. داده‌های موجود حفظ می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "guest.storageErrorHint",
+      "before": "داده‌های شما حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کنید.",
+      "after": "داده‌ها حذف نشده‌اند. باز کردن فضای مهمان را دوباره امتحان کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.forgotPassword",
+      "before": "رمز عبور را فراموش کرده‌اید؟",
+      "after": "رمز عبورت را فراموش کردی؟",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.signupHint",
+      "before": "شمارهٔ موبایل را تأیید کنید، رمز عبور بسازید و سپس نام خود را وارد کنید.",
+      "after": "شمارهٔ موبایلت را تأیید کن، رمز عبور بساز و سپس نامت را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.resetHint",
+      "before": "برای انتخاب رمز جدید، شمارهٔ موبایل خود را تأیید کنید.",
+      "after": "برای انتخاب رمز جدید، شمارهٔ موبایلت را تأیید کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.phoneHint",
+      "before": "شمارهٔ ۱۱ رقمی را با ۰ وارد کنید، مانند ۰۹۱۲۱۲۳۴۵۶۷.",
+      "after": "شمارهٔ ۱۱ رقمی را با ۰ وارد کن، مانند ۰۹۱۲۱۲۳۴۵۶۷.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.invalidCodeDigits",
+      "before": "{length} رقم کد پیامک را وارد کنید.",
+      "after": "{length} رقم کد پیامک را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.verified",
+      "before": "شماره تأیید شد. اطلاعات حساب را تکمیل کنید.",
+      "after": "شماره تأیید شد. اطلاعات حسابت را تکمیل کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.passwordHint",
+      "before": "از ۸ تا ۱۲۸ نویسه شامل حروف و عدد استفاده کنید. رمز رایج انتخاب نکنید.",
+      "after": "از ۸ تا ۱۲۸ نویسه شامل حروف و عدد استفاده کن. رمز رایج انتخاب نکن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.success",
+      "before": "وارد حساب شدید.",
+      "after": "وارد حسابت شدی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.invalidCode",
+      "before": "شش رقم کد پیامک را وارد کنید.",
+      "after": "شش رقم کد پیامک را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.invalidUsername",
+      "before": "نام خود را بین ۱ تا ۱۲۰ نویسه وارد کنید.",
+      "after": "نامت را بین ۱ تا ۱۲۰ نویسه وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.invalidOtp",
+      "before": "کد نامعتبر، منقضی، استفاده‌شده یا تعداد تلاش‌ها بیش از حد است. کد جدید درخواست کنید.",
+      "after": "کد نامعتبر، منقضی یا استفاده‌شده است، یا تعداد تلاش‌ها بیش از حد است. کد جدید درخواست کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.expired",
+      "before": "اعتبار تأیید تمام شد. کد جدید درخواست کنید.",
+      "after": "اعتبار تأیید تمام شد. کد جدید درخواست کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.duplicate",
+      "before": "این شماره قبلاً ثبت شده است. وارد حساب شوید.",
+      "after": "این شماره قبلاً ثبت شده است. وارد حساب شو.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.rateLimit",
+      "before": "تعداد درخواست‌ها بیش از حد است. کمی صبر کنید.",
+      "after": "تعداد درخواست‌ها بیش از حد است. کمی صبر کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.smsUnavailable",
+      "before": "سرویس پیامک در دسترس یا تنظیم‌شده نیست. بعداً تلاش کنید.",
+      "after": "سرویس پیامک در دسترس نیست. بعداً تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.network",
+      "before": "ارتباط برقرار نشد. اینترنت را بررسی کنید. اگر ثبت‌نام قطع شد، ورود به حساب را امتحان کنید.",
+      "after": "ارتباط برقرار نشد. اینترنت را بررسی کن. اگر ثبت‌نام قطع شد، ورود به حساب را امتحان کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.unexpected",
+      "before": "ورود یا ثبت‌نام کامل نشد. دوباره تلاش کنید.",
+      "after": "ورود یا ثبت‌نام کامل نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.passwordRequired",
+      "before": "رمز عبور را وارد کنید.",
+      "after": "رمز عبورت را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "auth.sessionExpired",
+      "before": "نشست شما منقضی شد. دوباره وارد شوید.",
+      "after": "نشست حسابت منقضی شد. دوباره وارد شو.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "review.leitnerDescription",
+      "before": "وقتی کارت را به خاطر می‌آورید، یک جعبه بالاتر می‌رود و اگر در یادآوری مشکل داشته باشید، به جعبهٔ ۱ برمی‌گردد. کارت‌های جعبه‌های بالاتر با فاصلهٔ زمانی بیشتری مرور می‌شوند.",
+      "after": "وقتی کارت را به خاطر می‌آوری، یک جعبه بالاتر می‌رود. اگر در یادآوری مشکل داشته باشی، به جعبهٔ ۱ برمی‌گردد. کارت‌های جعبه‌های بالاتر با فاصلهٔ بیشتری مرور می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "review.sm2Description",
+      "before": "در سیستم SM-2، زمان مرور بعدی بر اساس میزان یادآوری شما تنظیم می‌شود. کارت‌هایی که خوب به خاطر می‌آورید، با فاصلهٔ بیشتری نمایش داده می‌شوند و کارت‌هایی که در یادآوری آن‌ها مشکل دارید، زودتر برمی‌گردند.",
+      "after": "در SM-2، زمان مرور بعدی بر اساس میزان یادآوری تنظیم می‌شود. کارت‌هایی که خوب به خاطر می‌آوری، با فاصلهٔ بیشتری نمایش داده می‌شوند. کارت‌هایی که در یادآوری‌شان مشکل داری، زودتر برمی‌گردند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.importHint",
+      "before": "پیش از ذخیره، پیش‌نمایش را بررسی کنید. کارت‌های موجود بازنویسی نمی‌شوند.",
+      "after": "پیش از ذخیره، پیش‌نمایش را بررسی کن. کارت‌های موجود بازنویسی نمی‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.previewMissing",
+      "before": "برای پیش‌نمایش کارت‌ها پیش از ورود، یک فایل انتخاب کنید.",
+      "after": "برای دیدن پیش‌نمایش کارت‌ها پیش از ورود، یک فایل انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.exportHint",
+      "before": "دسته و قالب را انتخاب و فایل تولیدشده را ذخیره یا به اشتراک بگذارید.",
+      "after": "دسته و قالب را انتخاب کن، سپس فایل را ذخیره کن یا به اشتراک بگذار.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.editHint",
+      "before": "قبل از ورود، ردیف‌ها را بررسی، ویرایش یا حذف کنید.",
+      "after": "پیش از ورود، ردیف‌ها را بررسی، ویرایش یا حذف کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "transfer.noDeck",
+      "before": "دسته‌ای انتخاب نشده است? نام فایل به‌صورت پیش‌فرض استفاده می‌شود.",
+      "after": "دسته‌ای انتخاب نشده است؛ نام فایل استفاده می‌شود.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "common.tryAgain",
+      "before": "دوباره تلاش کنید",
+      "after": "دوباره تلاش کن",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "common.genericError",
+      "before": "مشکلی پیش آمد. دوباره تلاش کنید.",
+      "after": "مشکلی پیش آمد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.welcome",
+      "before": "خوش آمدید",
+      "after": "خوش آمدی",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.greeting",
+      "before": "هر روز کمی تمرین کنید.",
+      "after": "هر روز کمی تمرین کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.collection",
+      "before": "مجموعهٔ شما",
+      "after": "مجموعه‌ات",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.readyToReview",
+      "before": "مرور کوتاه شما آماده است.",
+      "after": "کارت‌ها برای مرور آماده‌اند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.yourDecks",
+      "before": "دسته‌های شما",
+      "after": "دسته‌هایت",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "home.empty",
+      "before": "برای شروع یادگیری یک دسته بسازید.",
+      "after": "برای شروع یادگیری یک دسته بساز.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "decks.description",
+      "before": "مجموعه‌های شما برای مطالعه آماده‌اند.",
+      "after": "مجموعه‌هایت برای مطالعه آماده‌اند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "decks.empty",
+      "before": "هنوز دسته‌ای ندارید",
+      "after": "هنوز دسته‌ای نداری",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "decks.noMatchHint",
+      "before": "نام دیگری وارد کنید یا جستجو را پاک کنید.",
+      "after": "نام دیگری وارد کن یا جستجو را پاک کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "decks.emptyHint",
+      "before": "برای جمع‌آوری مطالب مورد نظرتان یک دسته بسازید.",
+      "after": "برای جمع‌آوری مطالبی که می‌خواهی یاد بگیری، یک دسته بساز.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "cards.integrityWarning",
+      "before": "برخی کارت‌ها به ترمیم داده نیاز دارند و از مطالعه کنار گذاشته شده‌اند. محتوای اصلی و سابقهٔ یادگیری محفوظ است. پایگاه دادهٔ محلی را نگه دارید و این شناسه‌ها را به پشتیبانی بدهید:",
+      "after": "بعضی کارت‌ها به ترمیم داده نیاز دارند و از مطالعه کنار گذاشته شده‌اند. محتوای اصلی و سابقهٔ یادگیری محفوظ است. پایگاه دادهٔ محلی را نگه دار و این شناسه‌ها را به پشتیبانی بده:",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "cards.empty",
+      "before": "هنوز کارتی ندارید",
+      "after": "هنوز کارتی نداری",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "cards.emptyHint",
+      "before": "برای ساخت این دسته یک کارت اضافه کنید.",
+      "after": "اولین کارت را به این دسته اضافه کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "cards.noMatchHint",
+      "before": "جستجو یا موضوع دیگری انتخاب کنید.",
+      "after": "جستجو یا موضوع دیگری انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "study.ready",
+      "before": "برای مطالعه آماده‌اید؟",
+      "after": "برای مطالعه آماده‌ای؟",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "study.instructions",
+      "before": "۱. روی کارت ضربه بزنید تا پاسخ نمایش داده شود.\n۲. گزینه «می‌دانم» یا «نمی‌دانم» را انتخاب کنید.\n۳. کارت‌های فراموش‌شده به انتهای صف منتقل می‌شوند تا دوباره تکرار شوند.",
+      "after": "روی کارت بزن تا پاسخ را ببینی، سپس «می‌دانم» یا «نمی‌دانم» را انتخاب کن. هر کارت یک بار نمایش داده می‌شود. پس از پایان جلسه، می‌توانی کارت‌های فراموش‌شده را با «مرور دوباره» تمرین کنی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "study.completeHint",
+      "before": "همهٔ کارت‌های این جلسه را مرور کردید.",
+      "after": "همهٔ کارت‌های این جلسه را مرور کردی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "study.noneDue",
+      "before": "امروز کارتی برای مرور ندارید",
+      "after": "امروز کارتی برای مرور نداری",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "study.noneDueHint",
+      "before": "فعلاً همهٔ کارت‌ها را مرور کرده‌اید. یک کارت اضافه کنید یا دستهٔ دیگری را امتحان کنید.",
+      "after": "فعلاً کارت موعدداری برای مرور نیست. یک کارت اضافه کن یا دستهٔ دیگری را امتحان کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "analytics.noHistory",
+      "before": "هنوز سابقهٔ مطالعه ندارید",
+      "after": "هنوز سابقهٔ مطالعه نداری",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "analytics.noHistoryHint",
+      "before": "برای دیدن پیشرفت، نخستین مرور را انجام دهید.",
+      "after": "برای دیدن پیشرفت، اولین مرور را انجام بده.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "analytics.noReviews",
+      "before": "در این بازه مروری انجام نشده است. روزهای پیشین همچنان در بهترین روند شما حساب می‌شوند.",
+      "after": "در این بازه مروری ثبت نشده. روزهای پیشین همچنان در بهترین روندت حساب می‌شوند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "notification.body",
+      "before": "{count} کارت برای مطالعه دارید.",
+      "after": "{count} کارت برای مرور آماده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "notification.singleBody",
+      "before": "{count} کارت برای مطالعه دارید.",
+      "after": "{count} کارت برای مرور آماده است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.description",
+      "before": "تنظیمات را برای مطالعهٔ راحت‌تر انتخاب کنید.",
+      "after": "تنظیمات را برای مطالعهٔ راحت‌تر انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.timeFormat",
+      "before": "زمان را با قالب ۲۴ ساعته وارد کنید (HH:mm).",
+      "after": "زمان را با قالب ۲۴ ساعته وارد کن (HH:mm).",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.timeInvalid",
+      "before": "زمانی معتبر بین ۰۰:۰۰ و ۲۳:۵۹ وارد کنید.",
+      "after": "زمانی بین ۰۰:۰۰ و ۲۳:۵۹ وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.yourData",
+      "before": "داده‌های شما",
+      "after": "داده‌هایت",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "sync.description",
+      "before": "پشتیبان‌گیری اختیاری؛ مطالعهٔ آفلاین همیشه فعال است.",
+      "after": "تغییرات حسابت را بین دستگاه‌ها همگام کن. پشتیبان‌گیری سرور جداگانه است. مطالعهٔ آفلاین تابع محدودیت‌های دسترسی فعلی است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.yourDataHint",
+      "before": "داده‌های مطالعه فعلاً فقط در این نشست به‌صورت محلی نگهداری می‌شوند.",
+      "after": "داده‌های یادگیری روی همین دستگاه، در فضای جداگانهٔ مهمان و حساب ذخیره می‌شوند. همگام‌سازی ابری به ورود به حساب و اتصال در دسترس نیاز دارد.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.themeHint",
+      "before": "پوستهٔ دلخواهتان را انتخاب کنید.",
+      "after": "پوستهٔ دلخواهت را انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.themeLifetime",
+      "before": "حالت روشن یا تاریک را انتخاب کنید. انتخاب شما در سراسر برنامه اعمال و روی این دستگاه ذخیره می‌شود.",
+      "after": "حالت روشن یا تاریک را انتخاب کن. انتخابت در سراسر برنامه اعمال و روی این دستگاه ذخیره می‌شود.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.languageHint",
+      "before": "زبان منوها و مسیریابی را انتخاب کنید.",
+      "after": "زبان منوها و مسیریابی را انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.speechHint",
+      "before": "زبان صدای جایگزین را انتخاب کنید. زبان هر دسته اولویت دارد.",
+      "after": "زبان صدای جایگزین را انتخاب کن. زبان هر دسته اولویت دارد.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "settings.voices",
+      "before": "صداهای موجود به دستگاه شما بستگی دارند.",
+      "after": "صداهای موجود به دستگاهت بستگی دارند.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.deckHint",
+      "before": "برای دسته نام بگذارید و جهت محتوای آن را انتخاب کنید.",
+      "after": "برای دسته نام بگذار و جهت محتوای آن را انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.deckNameRequired",
+      "before": "نام دسته را وارد کنید.",
+      "after": "نام دسته را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.descriptionPlaceholder",
+      "before": "در این دسته چه می‌گذارید؟",
+      "after": "در این دسته چه می‌گذاری؟",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.deckSaveError",
+      "before": "ذخیرهٔ دسته انجام نشد. دوباره تلاش کنید.",
+      "after": "دسته ذخیره نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.cardHint",
+      "before": "واژه و معنی آن را به {name} اضافه کنید.",
+      "after": "واژه و معنی‌اش را به {name} اضافه کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.termRequired",
+      "before": "واژه را وارد کنید.",
+      "after": "واژه را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.meaningRequired",
+      "before": "معنی را وارد کنید.",
+      "after": "معنی را وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.sentenceRequired",
+      "before": "جمله وارد کنید یا این مثال را حذف کنید.",
+      "after": "جمله را وارد کن یا این مثال را حذف کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.cardCreated",
+      "before": "کارت با موفقیت اضافه شد. می‌توانید کارت دیگری اضافه کنید.",
+      "after": "کارت اضافه شد. می‌توانی کارت دیگری اضافه کنی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.cardInvalid",
+      "before": "محتوای کارت را بررسی کنید و دوباره تلاش کنید.",
+      "after": "محتوای کارت را بررسی کن و دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.termPreview",
+      "before": "واژهٔ شما اینجا نمایش داده می‌شود",
+      "after": "واژه‌ات اینجا نمایش داده می‌شود",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.meaningPreview",
+      "before": "معنی شما اینجا نمایش داده می‌شود",
+      "after": "معنی اینجا نمایش داده می‌شود",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.cardSaveError",
+      "before": "ذخیرهٔ کارت انجام نشد. دوباره تلاش کنید.",
+      "after": "کارت ذخیره نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.meaningConflict",
+      "before": "نحوهٔ برخورد با معنی فعلی را انتخاب کنید.",
+      "after": "انتخاب کن با معنی فعلی چه کنیم.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.phoneticConflict",
+      "before": "آوانویسی مورد نظر را انتخاب کنید.",
+      "after": "آوانویسی دلخواهت را انتخاب کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "form.suggestionAdded",
+      "before": "پیشنهاد اضافه شد. بررسی کنید و ذخیره کنید.",
+      "after": "پیشنهاد اضافه شد. بررسی و ذخیره کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "details.browseHint",
+      "before": "کارت‌های این دسته را ببینید یا کارت جدید اضافه کنید.",
+      "after": "کارت‌های این دسته را ببین یا کارت جدید اضافه کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "details.deckDeleteError",
+      "before": "حذف دسته انجام نشد. دوباره تلاش کنید.",
+      "after": "دسته حذف نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "details.cardDeleteError",
+      "before": "حذف کارت انجام نشد. دوباره تلاش کنید.",
+      "after": "کارت حذف نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "vocab.routeHint",
+      "before": "برای یافتن پیشنهادهای اختیاری به زبان همان دسته، فرم کارت را باز کنید.",
+      "after": "برای پیشنهادهای اختیاری به زبان دسته، فرم کارت را باز کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "vocab.invalid",
+      "before": "برای دریافت پیشنهاد، واژه‌ای با حداکثر ۱۲۰ نویسه وارد کنید.",
+      "after": "برای دریافت پیشنهاد، واژه‌ای با حداکثر ۱۲۰ نویسه وارد کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "vocab.offline",
+      "before": "به نظر می‌رسد آفلاین هستید. ورود دستی همچنان ممکن است.",
+      "after": "به نظر می‌رسد آفلاین هستی. ورود دستی همچنان ممکن است.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "vocab.rateLimited",
+      "before": "سرویس فرهنگ لغت مشغول است. بعداً تلاش کنید.",
+      "after": "سرویس فرهنگ لغت شلوغ است. بعداً دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "vocab.hint",
+      "before": "اختیاری است. جست‌وجوی پیشنهاد، این واژه را به Free Dictionary API می‌فرستد. بدون آن هم می‌توانید کارت را ذخیره کنید.",
+      "after": "اختیاری است. برای یافتن پیشنهاد، این واژه به Free Dictionary API فرستاده می‌شود. بدون آن هم می‌توانی کارت را بنویسی و ذخیره کنی.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "common.errorHint",
+      "before": "نمایش این صفحه ممکن نشد. دوباره تلاش کنید.",
+      "after": "این صفحه نمایش داده نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "common.notFoundHint",
+      "before": "صفحهٔ درخواستی اینجا نیست. به محیط مطالعه برگردید.",
+      "after": "صفحهٔ درخواستی اینجا نیست. به محیط مطالعه برگرد.",
+      "kind": "contextual edit"
+    },
+    {
+      "language": "fa",
+      "key": "common.bootstrapHint",
+      "before": "در راه‌اندازی برنامه مشکلی پیش آمد. دوباره تلاش کنید.",
+      "after": "برنامه راه‌اندازی نشد. دوباره تلاش کن.",
+      "kind": "contextual edit"
+    }
+  ]
+}

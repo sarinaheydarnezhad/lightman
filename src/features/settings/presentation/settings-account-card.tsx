@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { View } from 'react-native';
 import { router } from 'expo-router';
 import { storageScopes } from '@/core/composition/repositories';
@@ -66,6 +66,7 @@ function AccountNameEditor({ profile }: { profile: AccountProfile }) {
         <>
           <Input
             label={t('onboarding.nameLabel')}
+            error={error === 'invalid' ? t('onboarding.nameInvalid') : undefined}
             value={name}
             onChangeText={(value) => {
               setName(value);
@@ -100,11 +101,8 @@ function AccountNameEditor({ profile }: { profile: AccountProfile }) {
           />
         </>
       )}
-      {error ? (
-        <FeedbackModal
-          message={t(error === 'invalid' ? 'onboarding.nameInvalid' : 'onboarding.nameSaveError')}
-          onDismiss={() => setError(null)}
-        />
+      {error === 'save' ? (
+        <FeedbackNotice message={t('onboarding.nameSaveError')} onDismiss={() => setError(null)} />
       ) : null}
     </View>
   );
@@ -132,7 +130,7 @@ function AccountDetails({ userId }: { userId: string }) {
         </>
       ) : null}
       {profile.error ? (
-        <FeedbackModal
+        <FeedbackNotice
           message={t('account.error')}
           onRetry={profile.refresh}
           retryLabel={t('account.retry')}
@@ -172,7 +170,7 @@ export function SettingsAccountCard() {
           <Button label={t('account.loginSignup')} onPress={() => router.push('/auth')} />
           <Button
             label={t('subscription.title')}
-            variant="primary"
+            variant="secondary"
             onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
           />
         </View>

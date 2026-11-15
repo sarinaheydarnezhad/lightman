@@ -1,6 +1,4 @@
-import { View } from 'react-native';
-
-import { FeedbackModal } from './feedback-modal';
+import { FeedbackNotice } from './feedback-notice';
 
 /** Retryable resource errors share the same message hierarchy and action. */
 export function ErrorState({
@@ -12,9 +10,5 @@ export function ErrorState({
   description: string;
   onRetry: () => void;
 }) {
-  return (
-    <View className="gap-md">
-      <FeedbackModal title={title} message={description} onRetry={onRetry} />
-    </View>
-  );
+  return <FeedbackNotice title={title} message={description} onRetry={onRetry} />;
 }

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { View } from 'react-native';
 
 import { tabScreenEdges } from '@/shared/navigation/safe-area';
@@ -13,7 +13,7 @@ import { useStartStudy, openStudySession } from './use-start-study';
 import { StudyOrderButton } from './study-order-button';
 
 export function StudyScreen() {
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   const study = useStartStudy();
 
   return (
@@ -35,7 +35,7 @@ export function StudyScreen() {
           </Text>
         </Card>
         {study.error ? (
-          <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
+          <FeedbackNotice message={t(study.error)}>
             {study.activeSession ? (
               <Button
                 label={t('study.resume')}
@@ -43,7 +43,7 @@ export function StudyScreen() {
                 onPress={() => openStudySession(study.activeSession!)}
               />
             ) : null}
-          </FeedbackModal>
+          </FeedbackNotice>
         ) : null}
         <Button
           label={t('common.browseDecks')}

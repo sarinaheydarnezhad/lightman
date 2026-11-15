@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { router, type Href } from 'expo-router';
 import { View } from 'react-native';
 
@@ -22,7 +22,7 @@ import { ReviewDistribution } from '@/features/study/presentation/review-distrib
 import { StudyOrderButton } from '@/features/study/presentation/study-order-button';
 
 export function DeckDetailsScreen({ deckId }: { deckId: string }) {
-  const { t, number, language } = useLocalization();
+  const { t, number } = useLocalization();
   const { data, loading, error, refresh } = useDeckDetailsViewModel(deckId);
   const actions = useDeckActions();
   const study = useStartStudy();
@@ -71,11 +71,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
     return (
       <FeaturePlaceholder
         title={t('details.deckUnavailable')}
-        description={
-          language === 'en'
-            ? (error ?? t('details.deckUnavailableHint'))
-            : t('details.deckUnavailableHint')
-        }
+        description={t('details.deckUnavailableHint')}
         onRetry={refresh}
       >
         <Button
@@ -161,7 +157,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
           </View>
           <View className="gap-sm">
             {study.error ? (
-              <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
+              <FeedbackNotice message={t(study.error)}>
                 {study.activeSession ? (
                   <Button
                     label={t('study.resume')}
@@ -169,7 +165,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
                     onPress={() => study.activeSession && openStudySession(study.activeSession)}
                   />
                 ) : null}
-              </FeedbackModal>
+              </FeedbackNotice>
             ) : null}
             <Button
               label={t('cards.add')}

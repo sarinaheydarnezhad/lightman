@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Settings2 } from 'lucide-react-native';
 
 import { application } from '@/core/composition/application';
+import { useLocalization } from '@/shared/localization/localization-provider';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
 import {
@@ -25,6 +26,8 @@ import { Screen } from '@/shared/ui/screen';
 import { PageTitle } from '@/shared/ui/screen-header';
 import { Tab } from '@/shared/ui/tab';
 import { Text } from '@/shared/ui/text';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
+import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 
 const preferences: ThemePreference[] = ['light', 'dark'];
 const variants: TypographyVariant[] = [
@@ -42,6 +45,7 @@ const variants: TypographyVariant[] = [
 const colorNames = Object.keys(palette.light) as SemanticColor[];
 
 export default function DesignSystemDemo() {
+  const { t } = useLocalization();
   const preference =
     useSyncExternalStore(application.settings.subscribe, application.settings.snapshot)?.theme ??
     'light';
@@ -54,22 +58,26 @@ export default function DesignSystemDemo() {
   const [selectedChip, setSelectedChip] = useState(false);
   const [pressedCard, setPressedCard] = useState(false);
   const [sample, setSample] = useState('');
+  const [confirmation, setConfirmation] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   return (
     <Screen scroll keyboardAware edges={stackScreenEdges} testID="design-system-demo">
       <View className="gap-2xl">
         <View className="gap-sm">
-          <PageTitle>Design system</PageTitle>
-          <Text tone="secondary">Explore the foundation in {mode} appearance.</Text>
+          <PageTitle>{t('nav.designSystem')}</PageTitle>
+          <Text tone="secondary">
+            {t('showcase.description', { theme: t(`settings.theme.${mode}`) })}
+          </Text>
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Appearance</Text>
+          <Text variant="headingSmall">{t('settings.appearance')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {preferences.map((option) => (
               <Chip
                 key={option}
-                label={option}
+                label={t(`settings.theme.${option}`)}
                 selected={preference === option}
                 onPress={() => setPreference(option)}
               />
@@ -78,20 +86,20 @@ export default function DesignSystemDemo() {
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Typography</Text>
+          <Text variant="headingSmall">{t('showcase.typography')}</Text>
           {variants.map((variant) => (
             <Text key={variant} variant={variant}>
               {variant}
             </Text>
           ))}
-          <Text tone="secondary">Secondary text stays quiet and readable.</Text>
+          <Text tone="secondary">{t('showcase.inputHint')}</Text>
           <Text tone="tertiary" variant="caption">
-            Tertiary caption for supporting details.
+            {t('showcase.inputHint')}
           </Text>
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Semantic colors</Text>
+          <Text variant="headingSmall">{t('showcase.colors')}</Text>
           <View className="flex-row flex-wrap gap-sm">
             {colorNames.map((name) => (
               <View key={name} className="w-listItem items-center gap-xs">
@@ -108,47 +116,53 @@ export default function DesignSystemDemo() {
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Actions</Text>
-          <Button label="Primary" />
-          <Button label="Secondary" variant="secondary" />
-          <Button label="Ghost" variant="ghost" />
-          <Button label="Destructive" variant="destructive" />
-          <Button label="Loading" loading />
-          <Button label="Disabled" disabled />
-          <IconButton icon={Settings2} label="Open settings example" />
+          <Text variant="headingSmall">{t('showcase.actions')}</Text>
+          <Button label={t('showcase.primary')} />
+          <Button label={t('showcase.secondary')} variant="secondary" />
+          <Button label={t('showcase.ghost')} variant="ghost" />
+          <Button label={t('showcase.destructive')} variant="destructive" />
+          <Button label={t('common.loading')} loading />
+          <Button label={t('common.unavailable')} disabled />
+          <IconButton icon={Settings2} label={t('nav.settings')} />
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Inputs</Text>
+          <Text variant="headingSmall">{t('showcase.inputs')}</Text>
           <Input
-            label="Example"
-            placeholder="Enter text"
-            helperText="Helpful supporting text"
+            label={t('showcase.example')}
+            placeholder={t('showcase.placeholder')}
+            helperText={t('showcase.inputHint')}
             value={sample}
             onChangeText={setSample}
           />
-          <Input label="With error" error="Please check this entry" />
-          <Input label="Disabled field" disabled placeholder="Unavailable" />
-          <Input label="Notes" multiline placeholder="Write a few lines" />
+          <Input label={t('showcase.withError')} error={t('form.termRequired')} />
+          <Input
+            label={t('showcase.disabledField')}
+            disabled
+            placeholder={t('common.unavailable')}
+          />
+          <Input label={t('showcase.example')} multiline placeholder={t('showcase.placeholder')} />
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Surfaces</Text>
+          <Text variant="headingSmall">{t('showcase.surfaces')}</Text>
           <Card>
-            <Text>Default surface</Text>
+            <Text>{t('showcase.defaultSurface')}</Text>
           </Card>
           <Card variant="elevated">
-            <Text>Elevated surface</Text>
+            <Text>{t('showcase.elevatedSurface')}</Text>
           </Card>
           <Card variant="outlined">
-            <Text>Outlined surface</Text>
+            <Text>{t('showcase.outlinedSurface')}</Text>
           </Card>
           <Card
             variant="interactive"
-            accessibilityLabel="Interactive surface example"
+            accessibilityLabel={t('showcase.interactiveSurface')}
             onPress={() => setPressedCard(!pressedCard)}
           >
-            <Text>{pressedCard ? 'Pressed surface' : 'Interactive surface'}</Text>
+            <Text>
+              {t(pressedCard ? 'showcase.pressedSurface' : 'showcase.interactiveSurface')}
+            </Text>
           </Card>
           <Divider />
           <View className="flex-row flex-wrap gap-sm">
@@ -160,33 +174,67 @@ export default function DesignSystemDemo() {
             <Badge label="Info" variant="info" />
           </View>
           <Chip
-            label="Select example"
+            label={t('showcase.select')}
             selected={selectedChip}
             onPress={() => setSelectedChip(!selectedChip)}
           />
         </View>
 
         <View className="gap-md">
-          <Text variant="headingSmall">Tabs and states</Text>
+          <Text variant="headingSmall">{t('showcase.states')}</Text>
           <View className="flex-row" accessibilityRole="tablist">
             <Tab
-              label="Meaning"
+              label={t('study.meaning')}
               active={selectedTab === 'meaning'}
               onPress={() => setSelectedTab('meaning')}
             />
             <Tab
-              label="Examples"
+              label={t('study.examples')}
               active={selectedTab === 'examples'}
               onPress={() => setSelectedTab('examples')}
             />
-            <Tab label="Disabled" disabled />
+            <Tab label={t('common.unavailable')} disabled />
           </View>
           <View className="gap-sm">
-            <Text variant="labelMedium">Study progress · 62%</Text>
-            <Progress value={0.62} label="Study progress" />
+            <Text variant="labelMedium">{t('showcase.example')} · 62%</Text>
+            <Progress value={0.62} label={t('showcase.example')} />
           </View>
-          <LoadingState label="Loading preview" />
-          <EmptyState title="Nothing here yet" description="A quiet place for future content." />
+          <LoadingState label={t('common.loading')} />
+          <EmptyState title={t('decks.empty')} description={t('decks.emptyHint')} />
+        </View>
+        <View className="gap-md">
+          <Text variant="headingSmall" accessibilityRole="header">
+            {t('showcase.feedback')}
+          </Text>
+          <FeedbackNotice
+            message={t('showcase.error')}
+            onRetry={() => setRetrying((value) => !value)}
+            busy={retrying}
+          />
+          {retrying ? (
+            <Button
+              label={t('common.cancel')}
+              variant="secondary"
+              onPress={() => setRetrying(false)}
+            />
+          ) : null}
+          <FeedbackNotice message={t('showcase.info')} tone="info" />
+          <Button
+            label={t('showcase.confirm')}
+            variant="secondary"
+            onPress={() => setConfirmation(true)}
+          />
+          {confirmation ? (
+            <ConfirmationPanel
+              title={t('showcase.confirmTitle')}
+              description={t('showcase.info')}
+              cancelLabel={t('common.cancel')}
+              confirmLabel={t('showcase.continue')}
+              destructive={false}
+              onCancel={() => setConfirmation(false)}
+              onConfirm={() => setConfirmation(false)}
+            />
+          ) : null}
         </View>
       </View>
     </Screen>

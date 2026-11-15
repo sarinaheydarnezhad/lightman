@@ -1,5 +1,11 @@
 # Visual theme
 
+## Refinement update — 2026-11-15
+
+Owner-approved direction is Modern Calm Minimalism, preserving purple, neutral charcoal dark surfaces and Vazirmatn. Existing color, typography, spacing and surface tokens remain unchanged in this implementation. Source-confirmed action roles now distinguish guest subscription navigation from sign-in and duration selection from purchase submission; icon placement follows interface direction. The showcase includes localized contextual feedback and confirmation roles. Inline validation/resource/recovery states replace many modal notices; see [app-feedback](app-feedback.md).
+
+No current app rendering was obtained: ADB initialization and an isolated browser readiness probe are blocked. No optical/spacing/hero/enclosure redesign or historical modal-theme correction is claimed without rendered validation. The older design reference and verification counts below are historical context, not current acceptance or the approved visual target. Exact current automated results and deferred visual work are recorded in [IMPLEMENTATION_REPORT](refinement/IMPLEMENTATION_REPORT.md).
+
 Light mode follows `New.png`: a soft lavender canvas, subtle waves, rounded white surfaces, purple primary actions, quiet shadows, illustrated study artwork, and deck monograms. The home screen keeps live due counts, review totals, streaks, and existing navigation; the decorative flame ring does not claim to measure study progress.
 
 Shared colors and dimensions live in `src/shared/theme/values.json`. Screens, cards, buttons, inputs, lists, charts, tab navigation, and stack headers use the active semantic palette. The book-and-plant artwork and flame are scalable React Native SVG components, not screenshots containing baked-in interface text. The layout adapts to English/Persian and hides decorative header artwork at narrow widths or larger font scales to leave room for content.

@@ -44,9 +44,7 @@ export function LogoutScreen() {
         setError(
           failure instanceof CloudError
             ? t(backupFailureMessage(failure))
-            : failure instanceof Error
-              ? failure.message
-              : t('logout.backupFailed'),
+            : t('logout.backupFailed'),
         );
     } finally {
       submitting.current = false;
@@ -65,10 +63,25 @@ export function LogoutScreen() {
       <Stack.Screen options={{ gestureEnabled: !busy, headerBackVisible: !busy }} />
       <Modal visible transparent animationType="fade" onRequestClose={cancel}>
         <Screen scroll testID="logout-confirmation">
-          <Card className="gap-md">
+          <Card className="gap-md" accessibilityViewIsModal importantForAccessibility="yes">
+            <Text variant="headingSmall" accessibilityRole="header">
+              {t('logout.title')}
+            </Text>
+            <Text>{t('logout.confirm')}</Text>
+            <Text variant="bodySmall" tone="secondary">
+              {t('logout.coverage')}
+            </Text>
+            <Text variant="bodySmall" tone="secondary">
+              {t('logout.retention')}
+            </Text>
+            {!syncEngine?.available ? (
+              <Text tone="secondary">{t('logout.unavailable')}</Text>
+            ) : null}
             {error ? (
               <Text tone="error" accessibilityRole="alert">
-                {t('logout.backupFailed')} {error}
+                {error === t('logout.backupFailed')
+                  ? error
+                  : `${t('logout.backupFailed')} ${error}`}
               </Text>
             ) : null}
             {busy ? (

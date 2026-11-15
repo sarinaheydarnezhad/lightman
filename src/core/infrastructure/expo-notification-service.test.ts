@@ -317,13 +317,13 @@ test('schedules distinct dates with their own exact counts and Persian numerals'
   expect(schedule).toHaveBeenNthCalledWith(
     1,
     expect.objectContaining({
-      content: expect.objectContaining({ body: '\u2068۱\u2069 کارت برای مطالعه دارید.' }),
+      content: expect.objectContaining({ body: '\u2068۱\u2069 کارت برای مرور آماده است.' }),
     }),
   );
   expect(schedule).toHaveBeenNthCalledWith(
     2,
     expect.objectContaining({
-      content: expect.objectContaining({ body: '\u2068۱۲\u2069 کارت برای مطالعه دارید.' }),
+      content: expect.objectContaining({ body: '\u2068۱۲\u2069 کارت برای مرور آماده است.' }),
     }),
   );
 });

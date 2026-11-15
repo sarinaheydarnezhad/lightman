@@ -79,7 +79,7 @@ test('an incompatible request exposes the existing resume workflow', async () =>
   const hook = renderHook(useStartStudy);
   await act(() => hook.result.current.start({ kind: 'all-decks' }));
   expect(hook.result.current.activeSession?.id).toBe('session');
-  expect(hook.result.current.error).toMatch(/Finish or leave/);
+  expect(hook.result.current.error).toBe('study.activeSession');
   expect(router.push).not.toHaveBeenCalled();
 });
 
@@ -116,7 +116,7 @@ test('storage switching during command lookup returns a controlled error and cle
     });
     await act(() => hook.result.current.start(scope));
     expect(hook.result.current.starting).toBe(false);
-    expect(hook.result.current.error).toBe('Storage is switching');
+    expect(hook.result.current.error).toBe('study.startError');
   } finally {
     Object.defineProperty(application, 'startStudySession', original);
   }

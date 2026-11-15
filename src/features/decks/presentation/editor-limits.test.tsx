@@ -71,7 +71,7 @@ test.each([
       ),
     ).toBeTruthy();
     expect(application.assertLearningAccess).toHaveBeenCalledWith(operation);
-    expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+    expect(screen.getByTestId('feedback-notice')).toBeTruthy();
     expect(
       screen.queryByText(
         translate(
@@ -80,9 +80,9 @@ test.each([
         ),
       ),
     ).toBeNull();
-    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.close') }));
     expect(screen.queryByTestId('feedback-modal')).toBeNull();
-    expect(screen.queryByText(translate(language, 'guest.limitTitle'))).toBeNull();
+    expect(screen.getByText(translate(language, 'guest.limitTitle'))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: translate(language, 'common.close') })).toBeNull();
     expect(
       screen.queryByRole('button', { name: translate(language, 'common.tryAgain') }),
     ).toBeNull();

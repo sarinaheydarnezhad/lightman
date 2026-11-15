@@ -3,11 +3,11 @@ import { View } from 'react-native';
 
 import { IconButton } from '@/shared/ui/icon-button';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { usePronunciation } from './use-pronunciation';
 
 export function PronunciationButton({ text, language }: { text: string; language: string }) {
-  const { t, language: uiLanguage } = useLocalization();
+  const { t } = useLocalization();
   const pronunciation = usePronunciation(text, language);
   const speaking = pronunciation.status === 'speaking';
   return (
@@ -20,11 +20,7 @@ export function PronunciationButton({ text, language }: { text: string; language
         disabled={pronunciation.status === 'stopping' || !text.trim()}
         onPress={() => void pronunciation.press()}
       />
-      {pronunciation.error ? (
-        <FeedbackModal
-          message={uiLanguage === 'en' ? pronunciation.error : t('common.genericError')}
-        />
-      ) : null}
+      {pronunciation.error ? <FeedbackNotice message={t('speech.unavailable')} /> : null}
     </View>
   );
 }

@@ -254,5 +254,5 @@ test('Persian login keeps password and recovery controls', () => {
   mount();
   expect(screen.getByLabelText('شماره موبایل')).toBeTruthy();
   expect(screen.getByLabelText('گذرواژه')).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'رمز عبور را فراموش کرده‌اید؟' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'رمز عبورت را فراموش کردی؟' })).toBeTruthy();
 });

@@ -1,0 +1,22 @@
+# Approved visual design guidelines
+
+Approval update, 2026-11-15: owner decision D-28 approves these standards, subject to the integrated implementation requirements. Whole-screen composition must be evaluated; make the smallest effective changes. Runtime-dependent optical/layout hypotheses need rendered validation before implementation. The draft wording below records the original proposal and its evidence limits. Accessibility references are approved working criteria; exact native device/OS coverage remains open.
+
+2026-11-15. Draft, awaiting owner approval; no implementation. Direction: Modern Calm Minimalism in the service of “Learn intelligently, progress calmly.” Preserve purple identity, intentional neutral charcoal dark theme, Vazirmatn and semantic token architecture.
+
+1. Give each screen a task hierarchy: purpose, current state, primary next action, supporting information and secondary navigation. One dominant action per task region; multiple independent tasks may each have an action without all becoming equally filled buttons.
+2. Use proximity and spacing before borders/cards. Enclose information only where it represents a coherent interactive group, comparison unit or elevated layer. Avoid card-within-card without distinct purpose. Preserve usable separation in charcoal dark surfaces.
+3. Use existing spacing scale 4/8/12/16/24/32/48/64 as the starting rhythm. Page gutters, section gaps and intra-group gaps express different relationships. Local overrides require a documented optical/layout reason; no mass token rewrite.
+4. Keep title, section, label and body roles distinct. Use weight/size/spacing together, not large bold text everywhere. Do not shrink Persian text to fit English geometry. Allow wrapping, growth and scrolling; preserve full learning content.
+5. Purple indicates brand/primary action/active selection; success/error/warning/info describe semantics, never decoration alone. Neutral surfaces dominate dark theme; do not add a global purple cast. Review effective contrast on actual rendered backgrounds and overlays before changing colors.
+6. Separate selection from submission. Duration options should communicate selected state without impersonating a completed purchase. Keep actual total and duration obvious, with comparable monthly information and non-renewal terms. Eligibility and unavailable reasons stay adjacent to actions.
+7. Use logical start/end for UI layout and optical alignment. Mirror directional navigation only where appropriate. Preserve physical study left-failure/right-success and chronological LTR chart behavior. Test mixed scripts and centered deck content independently of UI direction.
+8. Decoration is secondary to learning/task content. Keep scalable illustration where it supports identity; reduce its priority/space at narrow widths or large text. Never turn decoration into a fictional progress measure.
+9. Loading, disabled, selected, focus, pressed, error and empty states are designed states. Explain disabled financial/security actions rather than using opacity as the explanation. Avoid layout jumps that move active controls during async updates.
+10. Honor safe areas, system bars, keyboard, native Back and scroll reachability. Do not draw fake device chrome. Nominal token heights do not prove physical target size.
+
+## Proposed acceptance references
+
+Apply [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/) principles with native Android guidance, rather than claiming web conformance for a native app. Text contrast 4.5:1 ordinary and 3:1 qualifying large text; applicable essential non-text contrast 3:1, including effective opacity/backgrounds and state indicators. Disabled controls have applicability exceptions but still need readable explanation. Proposed native targets are at least 48dp per [Android guidance](https://developer.android.com/guide/topics/ui/accessibility/apps). WCAG's 24 CSS-pixel target criterion has exceptions and is not the same unit or target as 48dp.
+
+Verify default, 1.3×, 1.5× and 2× font settings where supported plus maximum device setting and larger display size. Record actual device settings rather than assuming exact system slider ratios. TalkBack, reading order, focus restoration, announcements, reduce-motion, gesture alternatives, RTL and dialogs require physical Android evidence. Owner approval is needed for device/OS matrix, acceptance ranges and any exception. No compliance is established by these guidelines.

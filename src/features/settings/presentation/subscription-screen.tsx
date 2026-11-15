@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { View } from 'react-native';
 import { BookOpen, Crown, Layers, RectangleHorizontal, type LucideIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
@@ -255,7 +255,7 @@ export function SubscriptionScreen() {
             </Text>
             {catalog.loading ? <LoadingState label={t('paywall.loading')} /> : null}
             {catalog.error ? (
-              <FeedbackModal message={t('access.unavailable')} onRetry={catalog.refresh} />
+              <FeedbackNotice message={t('access.unavailable')} onRetry={catalog.refresh} />
             ) : null}
             {!catalog.loading && !catalog.error && !prices.length ? (
               <View className="gap-sm">
@@ -293,8 +293,11 @@ export function SubscriptionScreen() {
                       key={price.durationMonths}
                       testID={`plus-plan-${price.durationMonths}`}
                       label={price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`}
-                      variant={
-                        selected?.durationMonths === price.durationMonths ? 'primary' : 'secondary'
+                      variant="secondary"
+                      style={
+                        selected?.durationMonths === price.durationMonths
+                          ? { borderColor: colors.primary }
+                          : undefined
                       }
                       accessibilityState={{
                         selected: selected?.durationMonths === price.durationMonths,
@@ -376,7 +379,17 @@ export function SubscriptionScreen() {
           />
         ) : null}
         {paymentNotice ? (
-          <FeedbackModal message={t(paymentNotice)} onDismiss={() => setPaymentNotice(null)} />
+          <FeedbackNotice
+            message={t(paymentNotice)}
+            busy={paymentBusy}
+            tone={
+              paymentNotice === 'payment.completed'
+                ? 'success'
+                : paymentNotice === 'payment.none' || paymentNotice === 'payment.cancelled'
+                  ? 'info'
+                  : 'warning'
+            }
+          />
         ) : null}
 
         <Card
@@ -397,7 +410,7 @@ export function SubscriptionScreen() {
         </Card>
 
         {restriction ? (
-          <FeedbackModal
+          <FeedbackNotice
             title={t('paywall.reason')}
             tone="warning"
             message={[
@@ -410,18 +423,14 @@ export function SubscriptionScreen() {
           />
         ) : null}
         {subscription?.status === 'Expired' ? (
-          <FeedbackModal message={t('paywall.expired')} tone="info" />
+          <FeedbackNotice message={t('paywall.expired')} tone="info" />
         ) : null}
         {details.loading ? <LoadingState label={t('subscription.loading')} /> : null}
         {details.error ? (
-          <FeedbackModal message={t('paywall.statusError')} onRetry={details.refresh} />
+          <FeedbackNotice message={t('paywall.statusError')} onRetry={details.refresh} />
         ) : null}
         {!access.isAccount ? (
-          <Button
-            label={t('sync.signIn')}
-            variant="primary"
-            onPress={() => router.push('/auth')}
-          />
+          <Button label={t('sync.signIn')} variant="primary" onPress={() => router.push('/auth')} />
         ) : null}
       </View>
     </Screen>

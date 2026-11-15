@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Text } from '@/shared/ui/text';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { backupFailureMessage } from './backup-failure';
 
 export function SettingsBackupCard() {
@@ -143,22 +143,17 @@ export function SettingsBackupCard() {
           </Text>
         </>
       ) : null}
-      {operation === 'completed' ? (
-        <FeedbackModal
-          message={t('backup.verified')}
-          tone="success"
-          onDismiss={() => setOperation(null)}
-        />
-      ) : null}
+      {operation === 'completed' ? <Text tone="success">{t('backup.verified')}</Text> : null}
       {error ? (
-        <FeedbackModal
+        <FeedbackNotice
           message={t(error)}
+          busy={busy || loading}
           onRetry={() => void refresh()}
           retryLabel={t('backup.refresh')}
         />
       ) : null}
       {latest?.status === 'Failed' && !error && !busy ? (
-        <FeedbackModal message={t('backup.error')} eventKey={latest} />
+        <FeedbackNotice message={t('backup.error')} eventKey={latest} />
       ) : null}
       <Text tone="secondary">{t('backup.coverage')}</Text>
       <Button

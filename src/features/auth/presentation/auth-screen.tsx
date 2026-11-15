@@ -10,7 +10,7 @@ import {
 } from '@/core/sync/phone-auth';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Input } from '@/shared/ui/input';
@@ -238,15 +238,11 @@ export function AuthScreen() {
       <View className="gap-lg">
         <ScreenHeader title={t(mode === 'reset' ? 'auth.forgotPassword' : 'auth.title')} />
         {!syncEngine?.available ? (
-          <FeedbackModal message={t('sync.unavailable')} tone="info" />
+          <FeedbackNotice message={t('sync.unavailable')} tone="info" />
         ) : success ? (
-          <FeedbackModal
-            message={t('auth.success')}
-            tone="success"
-            onDismiss={() => router.replace('/settings/cloud')}
-          >
+          <FeedbackNotice message={t('auth.success')} tone="success">
             <Button label={t('auth.done')} onPress={() => router.replace('/settings/cloud')} />
-          </FeedbackModal>
+          </FeedbackNotice>
         ) : (
           <>
             <View className="gap-sm">
@@ -417,7 +413,7 @@ export function AuthScreen() {
             )}
           </>
         )}
-        {!!error && <FeedbackModal message={error} onDismiss={() => setError('')} />}
+        {!!error && <FeedbackNotice message={error} onDismiss={() => setError('')} />}
       </View>
     </Screen>
   );

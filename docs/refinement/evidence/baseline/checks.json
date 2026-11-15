@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-15",
+  "cwd": "D:/Lerona/Frontend",
+  "frontend": "067e60cbfe38e78d06f1a084f78cfc9fed5c0423",
+  "backend": "2fd5889fc4e4795f9d587c744fcbe5dd28c5e7ea",
+  "checks": [
+    {
+      "command": "pnpm.cmd typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "pnpm.cmd lint",
+      "exitCode": 0,
+      "warnings": 1,
+      "errors": 0
+    },
+    {
+      "command": "pnpm.cmd format:check",
+      "exitCode": 1,
+      "underlyingReportedExit": 2,
+      "blocker": "EPERM scandir .secrets; no full formatting pass"
+    },
+    {
+      "command": "pnpm.cmd test --json --outputFile=docs/refinement/evidence/baseline/jest-results.json",
+      "exitCode": 1,
+      "suitesPassed": 141,
+      "suitesFailed": 2,
+      "testsPassed": 1510,
+      "testsFailed": 2,
+      "skipped": 0,
+      "durationSeconds": 1152.603
+    },
+    {
+      "command": "C:/Android/Sdk/platform-tools/adb.exe version",
+      "exitCode": -1073740791,
+      "blocker": "Cannot mkdir root .android: Permission denied"
+    }
+  ]
+}

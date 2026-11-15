@@ -17,7 +17,7 @@ import { useAnalyticsViewModel } from './use-analytics-view-model';
 const windows: AnalyticsWindow[] = [7, 30, 90];
 
 export function AnalyticsScreen() {
-  const { t, number, language } = useLocalization();
+  const { t, number } = useLocalization();
   const { fontScale, width } = useWindowDimensions();
   const stackMetrics = fontScale >= 1.4 || width < 360;
   const analytics = useAnalyticsViewModel();
@@ -45,7 +45,7 @@ export function AnalyticsScreen() {
         ) : analytics.error ? (
           <ErrorState
             title={t('common.errorTitle')}
-            description={language === 'en' ? analytics.error : t('common.genericError')}
+            description={t('common.loadErrorHint')}
             onRetry={analytics.refresh}
           />
         ) : data ? (

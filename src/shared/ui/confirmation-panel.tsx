@@ -11,6 +11,7 @@ export function ConfirmationPanel({
   description,
   cancelLabel,
   confirmLabel,
+  destructive = true,
   busy = false,
   error,
   onCancel,
@@ -20,6 +21,7 @@ export function ConfirmationPanel({
   description: string;
   cancelLabel: string;
   confirmLabel: string;
+  destructive?: boolean;
   busy?: boolean;
   error?: string | null;
   onCancel: () => void;
@@ -72,7 +74,12 @@ export function ConfirmationPanel({
               </Text>
             ) : null}
             <Button label={cancelLabel} variant="secondary" disabled={busy} onPress={onCancel} />
-            <Button label={confirmLabel} variant="destructive" loading={busy} onPress={onConfirm} />
+            <Button
+              label={confirmLabel}
+              variant={destructive ? 'destructive' : 'primary'}
+              loading={busy}
+              onPress={onConfirm}
+            />
           </Card>
         </ScrollView>
       </SafeAreaView>

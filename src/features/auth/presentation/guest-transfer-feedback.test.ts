@@ -57,7 +57,7 @@ test('unrecognized Persian errors and blockers show safe localized fallback text
   ).toBe(fa['migration.blocked']);
 });
 
-test('English diagnostic feedback remains available without changing transfer behavior', () => {
+test('English unknown failures use safe recovery copy without exposing diagnostics', () => {
   expect(
     guestTransferFeedback(
       new Error('Backup offline'),
@@ -65,7 +65,7 @@ test('English diagnostic feedback remains available without changing transfer be
       (key) => translate('en', key),
       'migration.failure',
     ),
-  ).toBe('Backup offline');
+  ).toBe(en['migration.failure']);
   expect(
     guestTransferFeedback(null, 'en', (key) => translate('en', key), 'migration.failure'),
   ).toBe(en['migration.failure']);

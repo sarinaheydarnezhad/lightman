@@ -20,7 +20,7 @@ import { useDecksViewModel } from './use-decks-view-model';
 type ListedDeck = Deck & { cardCount: number };
 
 export function DecksScreen() {
-  const { t, number, language } = useLocalization();
+  const { t, number } = useLocalization();
   const [search, setSearch] = useState('');
   const { decks, totalCount, error, loading, refresh } = useDecksViewModel(search);
   const openDeck = useCallback(
@@ -74,7 +74,7 @@ export function DecksScreen() {
           ) : error ? (
             <ErrorState
               title={t('decks.error')}
-              description={language === 'en' ? error : t('common.genericError')}
+              description={t('common.loadErrorHint')}
               onRetry={refresh}
             />
           ) : (

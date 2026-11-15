@@ -6,6 +6,7 @@ import {
   NotificationPermissionDenied,
   type NotificationPermissionState,
 } from '@/core/ports/notification';
+import type { MessageKey } from '@/shared/localization/messages';
 import type { UserSettings } from '../domain/user-settings';
 
 type SettingKey = 'theme' | 'language' | 'haptics' | 'reminder' | 'time' | 'speech';
@@ -19,7 +20,7 @@ export function useSettingsViewModel() {
   const [loading, setLoading] = useState(!settings);
   const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState<Partial<Record<SettingKey, boolean>>>({});
-  const [errors, setErrors] = useState<Partial<Record<SettingKey, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<SettingKey, MessageKey>>>({});
   const [reminderPermission, setReminderPermission] = useState<NotificationPermissionState | null>(
     null,
   );
@@ -60,13 +61,13 @@ export function useSettingsViewModel() {
       if (active.current)
         setErrors((old) => ({
           ...old,
-          reminder: 'Could not check your reminder. Please reopen Settings to retry.',
+          reminder: 'settings.reminderCheckError',
         }));
     }
   }, []);
 
   const execute = useCallback(
-    async (key: SettingKey, action: () => Promise<UserSettings>, message: string) => {
+    async (key: SettingKey, action: () => Promise<UserSettings>, message: MessageKey) => {
       if (pending.current.has(key)) return;
       pending.current.add(key);
       setBusy((old) => ({ ...old, [key]: true }));
@@ -84,7 +85,7 @@ export function useSettingsViewModel() {
           ...old,
           [key]:
             error instanceof NotificationPermissionDenied
-              ? 'Notifications are turned off for this app. Allow them in device settings, then try again.'
+              ? 'settings.notificationsDenied'
               : message,
         }));
         return false;
@@ -106,52 +107,44 @@ export function useSettingsViewModel() {
     reminderPermission,
     refreshReminder,
     setTheme: (theme: UserSettings['theme']) =>
-      execute(
-        'theme',
-        () => application.settings.setTheme(theme),
-        'Could not save appearance. Please try again.',
-      ),
+      execute('theme', () => application.settings.setTheme(theme), 'settings.themeSaveError'),
     setLanguage: (language: UserSettings['language']) =>
       execute(
         'language',
         () => application.settings.setLanguage(language),
-        'Could not save app language. Please try again.',
+        'settings.languageSaveError',
       ),
     setHaptics: (enabled: boolean) =>
       execute(
         'haptics',
         () => application.settings.setHaptics(enabled),
-        'Could not save haptic feedback. Please try again.',
+        'settings.hapticsSaveError',
       ),
     setReminder: (enabled: boolean) =>
       execute(
         'reminder',
         () => application.settings.setReminderEnabled(enabled),
-        'Could not change the daily reminder. Please try again.',
+        'settings.reminderSaveError',
       ),
     setReminderTime: (time: NonNullable<UserSettings['dailyReminderTime']>) =>
-      execute(
-        'time',
-        () => application.settings.setReminderTime(time),
-        'Could not save the reminder time. Please try again.',
-      ),
+      execute('time', () => application.settings.setReminderTime(time), 'settings.timeSaveError'),
     setSpeechLanguage: (language: UserSettings['preferredSpeechLanguage']) =>
       execute(
         'speech',
         () => application.settings.setSpeechLanguage(language),
-        'Could not save speech language. Please try again.',
+        'settings.speechSaveError',
       ),
     setSpeechAccent: (accent: UserSettings['preferredSpeechAccent']) =>
       execute(
         'speech',
         () => application.settings.setSpeechAccent(accent),
-        'Could not save English accent. Please try again.',
+        'settings.accentSaveError',
       ),
     openNotificationSettings: () =>
       application.settings.openNotificationSettings().catch(() => {
         setErrors((old) => ({
           ...old,
-          reminder: 'Could not open device settings. Open this app in your device Settings.',
+          reminder: 'settings.openNotificationsError',
         }));
       }),
   };

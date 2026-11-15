@@ -1,5 +1,5 @@
-import { useCallback, useState, useSyncExternalStore } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 import { syncEngine } from '@/core/composition/sync';
@@ -11,6 +11,8 @@ import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { SettingsBackupCard } from './settings-backup-card';
+import type { StorageState } from '@/core/storage/local-storage-scopes';
+import type { MessageKey } from '@/shared/localization/messages';
 
 type Status =
   NonNullable<typeof syncEngine> extends { status(): Promise<infer Result> } ? Result : never;
@@ -25,18 +27,9 @@ function ConflictNotice({
   resolve: (choice: 'server' | 'local') => void;
 }) {
   const { t } = useLocalization();
-  const [open, setOpen] = useState(true);
   const message = t('sync.conflict', { type: conflict.entityType, id: conflict.entityId });
-  if (!open)
-    return (
-      <Button label={message} variant="secondary" disabled={busy} onPress={() => setOpen(true)} />
-    );
-  const choose = (choice: 'server' | 'local') => {
-    setOpen(false);
-    resolve(choice);
-  };
   return (
-    <FeedbackModal message={message} tone="warning" onDismiss={() => setOpen(false)}>
+    <FeedbackNotice message={message} tone="warning" eventKey={conflict.operationId}>
       {conflict.entityType === 'reviewState' || conflict.entityType === 'reviewEvent' ? (
         <Text>{t('sync.reviewConflict')}</Text>
       ) : (
@@ -45,7 +38,7 @@ function ConflictNotice({
             label={t('sync.keepServer')}
             variant="secondary"
             disabled={busy}
-            onPress={() => choose('server')}
+            onPress={() => resolve('server')}
           />
           {conflict.archived ? (
             <Text>{t('sync.deleted')}</Text>
@@ -54,53 +47,74 @@ function ConflictNotice({
               label={t('sync.keepLocal')}
               variant="secondary"
               disabled={busy}
-              onPress={() => choose('local')}
+              onPress={() => resolve('local')}
             />
           )}
         </View>
       )}
-    </FeedbackModal>
+    </FeedbackNotice>
   );
 }
 
 export function CloudSyncScreen() {
-  const { t, number } = useLocalization();
   const scope = useSyncExternalStore(storageScopes.subscribe, storageScopes.snapshot);
+  return (
+    <CloudSyncContent
+      key={`${scope.phase}:${scope.mode}:${scope.mode === 'account' ? scope.userId : ''}:${scope.revision}`}
+      scope={scope}
+    />
+  );
+}
+
+function CloudSyncContent({ scope }: { scope: StorageState }) {
+  const { t, number } = useLocalization();
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<MessageKey | null>(null);
+  const active = useRef(true);
+  const pending = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (syncEngine) {
       const next = await syncEngine.status();
+      if (!active.current) return;
       setStatus(next);
-      if (next.sessionError) setError(next.sessionError);
+      if (next.sessionError) setError('sync.sessionUnconfirmed');
     }
   }, []);
   useFocusEffect(
     useCallback(() => {
-      void refresh().catch(() => setError(t('sync.error')));
-    }, [refresh, t]),
+      void refresh().catch(() => {
+        if (active.current) setError('sync.error');
+      });
+    }, [refresh]),
   );
 
   async function perform(action: () => Promise<void>): Promise<void> {
-    if (!syncEngine || busy) return;
+    if (!syncEngine || pending.current) return;
+    pending.current = true;
     setBusy(true);
-    setError('');
+    setError(null);
     try {
       await action();
       await refresh();
     } catch (failure) {
+      if (!active.current) return;
       setError(
-        failure instanceof CloudError && failure.status === 0
-          ? t('sync.error')
-          : failure instanceof Error
-            ? failure.message
-            : t('sync.error'),
+        failure instanceof CloudError && failure.status === 401
+          ? 'auth.sessionExpired'
+          : 'sync.error',
       );
       await refresh().catch(() => {});
     } finally {
-      setBusy(false);
+      pending.current = false;
+      if (active.current) setBusy(false);
     }
   }
 
@@ -111,15 +125,14 @@ export function CloudSyncScreen() {
         <Text tone="secondary">{t('sync.description')}</Text>
         {scope.mode === 'guest' && <Text tone="secondary">{t('guest.explanation')}</Text>}
         {!syncEngine?.available ? (
-          <FeedbackModal message={t('sync.unavailable')} tone="info" />
+          <FeedbackNotice message={t('sync.unavailable')} tone="info" />
         ) : (
           <>
             {scope.mode === 'account' && status?.signedIn && status.userId === scope.userId ? (
               <>
-                <Text>{t('sync.account', { id: status.userId })}</Text>
+                <Text>{t('account.signedIn')}</Text>
                 <Text>
-                  {t('sync.progress', {
-                    cursor: number(status.cursor),
+                  {t('sync.pendingChanges', {
                     count: number(status.pending),
                   })}
                 </Text>
@@ -141,9 +154,10 @@ export function CloudSyncScreen() {
               </>
             )}
             {!!status?.failed && (
-              <FeedbackModal
+              <FeedbackNotice
                 message={t('sync.failed', { count: number(status.failed) })}
                 tone="warning"
+                busy={busy}
                 onRetry={() => void perform(() => syncEngine!.retryFailed())}
                 retryLabel={t('sync.retry')}
               />
@@ -163,7 +177,13 @@ export function CloudSyncScreen() {
         {scope.phase === 'ready' && scope.mode === 'account' ? (
           <SettingsBackupCard key={`${scope.userId}:${scope.revision}`} />
         ) : null}
-        {error ? <FeedbackModal message={error} onDismiss={() => setError('')} /> : null}
+        {error ? (
+          <FeedbackNotice
+            message={t(error)}
+            busy={busy}
+            onRetry={() => void perform(() => syncEngine!.syncNow())}
+          />
+        ) : null}
       </View>
     </Screen>
   );

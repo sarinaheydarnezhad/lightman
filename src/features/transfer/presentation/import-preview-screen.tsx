@@ -10,14 +10,15 @@ import { spacing } from '@/shared/theme/tokens';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Input } from '@/shared/ui/input';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
+import { transferFeedbackKey, transferLocation } from './transfer-feedback';
 
 export function ImportPreviewScreen() {
-  const { t, language, direction } = useLocalization();
+  const { t, direction } = useLocalization();
   const [{ preview, confirm, cancel }] = useState(() => ({
     preview: transferService.pendingPreview(),
     confirm: transferService.confirm,
@@ -69,10 +70,7 @@ export function ImportPreviewScreen() {
       finalized.current = true;
       if (mounted.current) setSummary(result);
     } catch (cause) {
-      if (mounted.current)
-        setError(
-          language === 'en' && cause instanceof Error ? cause.message : t('common.genericError'),
-        );
+      if (mounted.current) setError(t(transferFeedbackKey(cause, 'transfer.operationError')));
     } finally {
       submitting.current = false;
       if (mounted.current) setBusy(false);
@@ -100,6 +98,32 @@ export function ImportPreviewScreen() {
       <Screen edges={stackScreenEdges}>
         <EmptyState title={t('transfer.preview')} description={t('transfer.previewMissing')} />
         <Button label={t('transfer.select')} onPress={leave} />
+      </Screen>
+    );
+
+  if (summary)
+    return (
+      <Screen scroll edges={stackScreenEdges} testID="import-result-screen">
+        <View className="gap-lg">
+          <ScreenHeader title={t('transfer.preview')} />
+          <FeedbackNotice
+            tone="info"
+            eventKey={summary}
+            message={t('transfer.summary', {
+              imported: summary.imported,
+              duplicates: summary.duplicatesSkipped,
+              invalid: summary.invalidSkipped,
+            })}
+          >
+            {summary.issues.slice(0, 20).map((issue, index) => (
+              <Text key={index} variant="bodySmall" tone="error">
+                {transferLocation(issue.location, t)}:{' '}
+                {t(transferFeedbackKey(issue.message, 'transfer.invalidRow'))}
+              </Text>
+            ))}
+          </FeedbackNotice>
+          <Button label={t('common.close')} onPress={leave} />
+        </View>
       </Screen>
     );
 
@@ -136,7 +160,8 @@ export function ImportPreviewScreen() {
                 <Text tone="secondary">{t('transfer.confirmHint')}</Text>
                 {preview.issues.slice(0, 20).map((issue, index) => (
                   <Text key={index} variant="bodySmall" tone="warning">
-                    {issue.location}: {issue.message}
+                    {transferLocation(issue.location, t)}:{' '}
+                    {t(transferFeedbackKey(issue.message, 'transfer.invalidRow'))}
                   </Text>
                 ))}
               </Card>
@@ -144,7 +169,7 @@ export function ImportPreviewScreen() {
           }
           renderItem={({ item: row }) => (
             <Card className="gap-sm">
-              <Text variant="labelMedium">{row.location}</Text>
+              <Text variant="labelMedium">{transferLocation(row.location, t)}</Text>
               <Input
                 label={t('form.deckName')}
                 value={row.card.deckName}
@@ -207,25 +232,7 @@ export function ImportPreviewScreen() {
           />
         </View>
       </View>
-      {summary ? (
-        <FeedbackModal
-          tone="info"
-          eventKey={summary}
-          message={t('transfer.summary', {
-            imported: summary.imported,
-            duplicates: summary.duplicatesSkipped,
-            invalid: summary.invalidSkipped,
-          })}
-          onDismiss={leave}
-        >
-          {summary.issues.slice(0, 20).map((issue, index) => (
-            <Text key={index} variant="bodySmall" tone="error">
-              {issue.location}: {issue.message}
-            </Text>
-          ))}
-        </FeedbackModal>
-      ) : null}
-      <FeedbackModal message={error} onDismiss={() => setError(null)} />
+      <FeedbackNotice message={error} onDismiss={() => setError(null)} />
     </Screen>
   );
 }

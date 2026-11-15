@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { languageTag, supportedLanguages } from '@/core/domain/values';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -16,7 +16,7 @@ const accents = [null, 'us', 'uk'] as const;
 
 export function SpeechSettingsScreen() {
   const vm = useSettingsViewModel();
-  const { t, language: uiLanguage } = useLocalization();
+  const { t } = useLocalization();
   const language = vm.settings?.preferredSpeechLanguage
     .toLowerCase()
     .replaceAll('_', '-')
@@ -97,9 +97,7 @@ export function SpeechSettingsScreen() {
             ) : null}
           </>
         ) : null}
-        {vm.errors.speech ? (
-          <FeedbackModal message={uiLanguage === 'en' ? vm.errors.speech : t('common.genericError')} />
-        ) : null}
+        {vm.errors.speech ? <FeedbackNotice message={t(vm.errors.speech)} /> : null}
       </View>
     </Screen>
   );

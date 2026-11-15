@@ -1,5 +1,7 @@
 # Accessibility device checklist
 
+Refinement update, 2026-11-15: source changes add localized inline field errors/hints, focus for required card/deck fields, disabled setting semantics, persistent recovery controls and task announcements without modal focus theft. Existing modal/confirmation focus entry, study gesture alternatives and reduced-motion behavior remain. These are source/automated checks, not a TalkBack, rendered contrast, target-size or compliance pass. Use the approved WCAG 2.2 AA/Android working criteria and device matrix in [RUNTIME_VERIFICATION_PLAN](refinement/RUNTIME_VERIFICATION_PLAN.md). ADB still fails before device enumeration; run the following on a separately approved synthetic native environment before release review.
+
 Run this checklist on a small phone and a larger phone or tablet in light and dark themes. Use a real device: automated tests cannot confirm operating-system focus, speech output, or text layout at the largest display settings.
 
 ## iOS — VoiceOver

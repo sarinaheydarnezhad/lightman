@@ -51,7 +51,6 @@ export function guestTransferFeedback(
 ): string {
   const message =
     typeof failure === 'string' ? failure : failure instanceof Error ? failure.message : '';
-  if (language === 'en') return message || translate(fallback);
   if (failure instanceof CloudError) {
     if (failure.code === 'network_error' || failure.status === 0)
       return translate('migration.reason.network');

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { View } from 'react-native';
 
-import { AppError } from '@/core/errors/app-error';
 import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { speech } from '@/core/composition/speech';
@@ -18,7 +17,7 @@ import { CardContent } from './card-content';
 import { useCardActions, useCardDetailsViewModel } from './use-cards-view-model';
 
 export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: string }) {
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { data, loading, error, refresh } = useCardDetailsViewModel(cardId, deckId);
   const { remove: deleteCard } = useCardActions();
@@ -45,13 +44,9 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
       if (!mounted.current) return;
       void haptics.actionConfirmed();
       router.dismissTo({ pathname: '/decks/[deckId]/cards', params: { deckId } });
-    } catch (cause) {
+    } catch {
       if (mounted.current) {
-        setActionError(
-          language === 'en' && cause instanceof AppError
-            ? cause.message
-            : t('details.cardDeleteError'),
-        );
+        setActionError(t('details.cardDeleteError'));
       }
       void haptics.actionRejected();
       submitting.current = false;
@@ -69,11 +64,7 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
     return (
       <FeaturePlaceholder
         title={t('details.cardUnavailable')}
-        description={
-          language === 'en'
-            ? (error ?? t('details.cardUnavailableHint'))
-            : t('details.cardUnavailableHint')
-        }
+        description={t('details.cardUnavailableHint')}
         onRetry={refresh}
       >
         <Button

@@ -491,7 +491,7 @@ test('analytics allows retry after a repository error and refreshes when navigat
     .mockResolvedValueOnce(analyticsFixture())
     .mockResolvedValue(analyticsFixture(30, 3));
   renderRouter(routes, { initialUrl: '/analytics' });
-  expect(await screen.findByText('Unable to load this screen.')).toBeTruthy();
+  expect(await screen.findByText(translate('en', 'common.loadErrorHint'))).toBeTruthy();
   expect(screen.queryByText('private details')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
   expect(await screen.findByRole('header', { name: 'No study data yet' })).toBeTruthy();
@@ -1863,7 +1863,9 @@ test('session start failure shows a recoverable error', async () => {
     renderRouter(routes, { initialUrl: '/study' });
     await screen.findByRole('header', { name: 'Study' });
     fireEvent.press(screen.getByRole('button', { name: 'Start study' }));
-    expect(await screen.findByText('Unable to load study.')).toBeTruthy();
+    expect(await screen.findByText(translate('en', 'study.startError'))).toBeTruthy();
+    expect(screen.queryByText('Unable to load study.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start study' })).toBeTruthy();
   } finally {
     failure.mockRestore();
   }
@@ -1896,7 +1898,7 @@ test('answer failure keeps the current card available for a safe retry', async (
     await screen.findByRole('header', { name: cards[0]!.frontText });
     fireEvent.press(screen.getByTestId('study-flip-card'));
     fireEvent.press(screen.getByRole('button', { name: 'Success' }));
-    expect(await screen.findByText('Could not save your answer.')).toBeTruthy();
+    expect(await screen.findByText(translate('en', 'study.saveError'))).toBeTruthy();
     expect(screen.getByTestId('study-correct-answers')).toHaveTextContent('Correct Answers: 0');
     expect(feedback).not.toHaveBeenCalled();
     expect(screen.getByText(cards[0]!.meaning)).toBeTruthy();

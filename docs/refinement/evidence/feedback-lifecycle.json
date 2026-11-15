@@ -1,0 +1,2068 @@
+{
+  "date": "2026-11-15T13:23:55.000Z",
+  "count": 156,
+  "scope": "Direct components, announcements, semantic live regions/alerts and reminder producer. Indirect/dynamic/provider events follow family contracts; not exhaustive runtime coverage.",
+  "records": [
+    {
+      "file": "src/app/+not-found.tsx",
+      "line": 15,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('common.notFound')}",
+        "description": "{t('common.notFoundHint')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 131,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('showcase.example')}",
+      "attributes": {
+        "label": "{t('showcase.example')}",
+        "placeholder": "{t('showcase.placeholder')}",
+        "helperText": "{t('showcase.inputHint')}",
+        "value": "{sample}",
+        "onChangeText": "{setSample}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 138,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.termRequired')}",
+      "attributes": {
+        "label": "{t('showcase.withError')}",
+        "error": "{t('form.termRequired')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 139,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('showcase.disabledField')}",
+      "attributes": {
+        "label": "{t('showcase.disabledField')}",
+        "disabled": "true",
+        "placeholder": "{t('common.unavailable')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 144,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('showcase.example')}",
+      "attributes": {
+        "label": "{t('showcase.example')}",
+        "multiline": "true",
+        "placeholder": "{t('showcase.placeholder')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 200,
+      "component": "Progress",
+      "profile": "status",
+      "trigger": "{t('showcase.example')}",
+      "attributes": {
+        "value": "{0.62}",
+        "label": "{t('showcase.example')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 202,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('common.loading')}",
+      "attributes": {
+        "label": "{t('common.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 203,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('decks.empty')}",
+        "description": "{t('decks.emptyHint')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 209,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('showcase.error')}",
+      "attributes": {
+        "message": "{t('showcase.error')}",
+        "onRetry": "{() => setRetrying((value) => !value)}",
+        "busy": "{retrying}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 221,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('showcase.info')}",
+      "attributes": {
+        "message": "{t('showcase.info')}",
+        "tone": "\"info\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/design-system.tsx",
+      "line": 228,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('showcase.confirmTitle')}",
+        "description": "{t('showcase.info')}",
+        "cancelLabel": "{t('common.cancel')}",
+        "confirmLabel": "{t('showcase.continue')}",
+        "destructive": "{false}",
+        "onCancel": "{() => setConfirmation(false)}",
+        "onConfirm": "{() => setConfirmation(false)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/app/_layout.tsx",
+      "line": 45,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('common.errorTitle')}",
+        "description": "{t('common.errorHint')}",
+        "onRetry": "{() => void retry()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/analytics/presentation/activity-chart.tsx",
+      "line": 85,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "tone": "\"secondary\"",
+        "variant": "\"bodySmall\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/analytics/presentation/analytics-screen.tsx",
+      "line": 44,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('analytics.loading')}",
+      "attributes": {
+        "label": "{t('analytics.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/analytics/presentation/analytics-screen.tsx",
+      "line": 46,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('common.errorTitle')}",
+        "description": "{t('common.loadErrorHint')}",
+        "onRetry": "{analytics.refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/analytics/presentation/analytics-screen.tsx",
+      "line": 54,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('analytics.noHistory')}",
+        "description": "{t('analytics.noHistoryHint')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 95,
+      "component": "Modal",
+      "profile": "gate",
+      "trigger": "true",
+      "attributes": {
+        "visible": "true",
+        "animationType": "\"slide\"",
+        "onRequestClose": "{() => {}}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 102,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('account.loading')}",
+      "attributes": {
+        "label": "{t('account.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 104,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('common.errorTitle')}",
+        "description": "{t('onboarding.nameLoadError')}",
+        "onRetry": "{() => void load()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 112,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{error === 'invalid' ? t('onboarding.nameInvalid') : undefined}",
+      "attributes": {
+        "label": "{t('onboarding.nameLabel')}",
+        "error": "{error === 'invalid' ? t('onboarding.nameInvalid') : undefined}",
+        "value": "{name}",
+        "onChangeText": "{(value) => {\r\n                  setName(value);\r\n                  setError(null);\r\n                }}",
+        "disabled": "{busy}",
+        "maxLength": "{120}",
+        "autoComplete": "\"name\"",
+        "autoCapitalize": "\"words\"",
+        "returnKeyType": "\"done\"",
+        "onSubmitEditing": "{() => void save()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 131,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(error === 'save' ? 'onboarding.nameSaveError' : 'common.genericError')}",
+      "attributes": {
+        "message": "{t(error === 'save' ? 'onboarding.nameSaveError' : 'common.genericError')}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/account-name-gate.tsx",
+      "line": 143,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('logout.title')}",
+        "description": "{t('logout.confirm')}",
+        "cancelLabel": "{t('common.cancel')}",
+        "confirmLabel": "{t('logout.withoutBackup')}",
+        "busy": "{busy}",
+        "onCancel": "{() => setConfirmLogout(false)}",
+        "onConfirm": "{() => void logout()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 241,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('sync.unavailable')}",
+      "attributes": {
+        "message": "{t('sync.unavailable')}",
+        "tone": "\"info\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 243,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('auth.success')}",
+      "attributes": {
+        "message": "{t('auth.success')}",
+        "tone": "\"success\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 265,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('auth.phone')}",
+      "attributes": {
+        "label": "{t('auth.phone')}",
+        "helperText": "{t('auth.phoneHint')}",
+        "placeholder": "\"09121234567\"",
+        "value": "{phone}",
+        "onChangeText": "{(value) => {\r\n                  setPhone(value);\r\n                  setChallenge(null);\r\n                  setProof(null);\r\n                  setProofExpiry(0);\r\n                  setCode('');\r\n                  if (mode !== 'login') setStep('phone');\r\n                  setError('');\r\n                }}",
+        "disabled": "{!!busy}",
+        "maxLength": "{32}",
+        "keyboardType": "\"phone-pad\"",
+        "autoComplete": "\"tel\"",
+        "autoCapitalize": "\"none\"",
+        "textAlign": "\"left\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 302,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('auth.code')}",
+      "attributes": {
+        "label": "{t('auth.code')}",
+        "value": "{code}",
+        "onChangeText": "{(value) =>\r\n                    setCode(\r\n                      value.replace(/[\\u06f0-\\u06f9\\u0660-\\u0669]/g, (digit) =>\r\n                        String(digit.charCodeAt(0) - (digit >= '\\u06f0' ? 0x06f0 : 0x0660)),\r\n                      ),\r\n                    )\r\n                  }",
+        "disabled": "{!!busy}",
+        "maxLength": "{6}",
+        "keyboardType": "\"number-pad\"",
+        "autoComplete": "\"sms-otp\"",
+        "textAlign": "\"left\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 329,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('sync.password')}",
+      "attributes": {
+        "label": "{t('sync.password')}",
+        "helperText": "{mode !== 'login' ? t('auth.passwordHint') : undefined}",
+        "value": "{password}",
+        "onChangeText": "{setPassword}",
+        "disabled": "{!!busy}",
+        "secureTextEntry": "true",
+        "maxLength": "{128}",
+        "autoCapitalize": "\"none\"",
+        "autoComplete": "{mode === 'login' ? 'current-password' : 'new-password'}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 341,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('auth.confirmPassword')}",
+      "attributes": {
+        "label": "{t('auth.confirmPassword')}",
+        "value": "{confirmation}",
+        "onChangeText": "{setConfirmation}",
+        "disabled": "{!!busy}",
+        "secureTextEntry": "true",
+        "maxLength": "{128}",
+        "autoCapitalize": "\"none\"",
+        "autoComplete": "\"new-password\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 380,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('auth.name')}",
+      "attributes": {
+        "label": "{t('auth.name')}",
+        "value": "{name}",
+        "onChangeText": "{setName}",
+        "disabled": "{!!busy}",
+        "maxLength": "{120}",
+        "autoComplete": "\"name\"",
+        "autoCapitalize": "\"words\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "line": 416,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "onDismiss": "{() => setError('')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 198,
+      "component": "Modal",
+      "profile": "gate",
+      "trigger": "true",
+      "attributes": {
+        "visible": "true",
+        "animationType": "\"slide\"",
+        "onRequestClose": "{() => {}}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 212,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{\r\n                progress\r\n                  ? t('migration.progress', {\r\n                      acknowledged: number(progress.acknowledged),\r\n                      total: number(progress.total),\r\n                    })\r\n                  : t('migration.checking')\r\n              }",
+      "attributes": {
+        "label": "{\r\n                progress\r\n                  ? t('migration.progress', {\r\n                      acknowledged: number(progress.acknowledged),\r\n                      total: number(progress.total),\r\n                    })\r\n                  : t('migration.checking')\r\n              }"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 224,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "busy": "{busy}",
+        "onRetry": "{() => void load()}",
+        "retryLabel": "{t('migration.retry')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 297,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{preview.blockers\r\n                  .map((blocker) =>\r\n                    guestTransferFeedback(blocker, language, t, 'migration.blocked'),\r\n                  )\r\n                  .join('\\n\\n')}",
+      "attributes": {
+        "message": "{preview.blockers\r\n                  .map((blocker) =>\r\n                    guestTransferFeedback(blocker, language, t, 'migration.blocked'),\r\n                  )\r\n                  .join('\\n\\n')}",
+        "eventKey": "{preview}",
+        "busy": "{busy}",
+        "onRetry": "{() => void load()}",
+        "retryLabel": "{t('migration.retry')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 345,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('migration.discardTitle')}",
+        "description": "{t('migration.discardHint')}",
+        "cancelLabel": "{t('common.cancel')}",
+        "confirmLabel": "{t('migration.discardConfirm')}",
+        "busy": "{busy}",
+        "onCancel": "{() => setConfirmDiscard(false)}",
+        "onConfirm": "{() => void discard()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "line": 364,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('logout.title')}",
+        "description": "{t('logout.confirm')}",
+        "cancelLabel": "{t('common.cancel')}",
+        "confirmLabel": "{t('logout.withoutBackup')}",
+        "busy": "{busy}",
+        "onCancel": "{() => setConfirmLogout(false)}",
+        "onConfirm": "{() => void logout()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/auth/presentation/logout-notice.tsx",
+      "line": 40,
+      "component": "FeedbackModal",
+      "profile": "receipt-modal",
+      "trigger": "{t(result.credentialsCleared ? 'logout.success' : 'logout.clearFailed')}",
+      "attributes": {
+        "message": "{t(result.credentialsCleared ? 'logout.success' : 'logout.clearFailed')}",
+        "tone": "{result.credentialsCleared ? 'info' : 'error'}",
+        "eventKey": "{result}",
+        "enabled": "{accountRoute}",
+        "onRetry": "{\r\n        result.credentialsCleared ? undefined : () => void syncEngine?.signOut().catch(() => {})\r\n      }",
+        "retryLabel": "{t('logout.retryClear')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-details-screen.tsx",
+      "line": 60,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('details.cardLoading')}",
+      "attributes": {
+        "label": "{t('details.cardLoading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-details-screen.tsx",
+      "line": 116,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "{actionError}",
+      "attributes": {
+        "title": "{t('details.deleteCardTitle')}",
+        "description": "{t('details.deleteCardHint')}",
+        "cancelLabel": "{t('details.keepCard')}",
+        "confirmLabel": "{t('details.confirmDelete')}",
+        "busy": "{deleting}",
+        "error": "{actionError}",
+        "onCancel": "{() => {\r\n              setConfirmDelete(false);\r\n              setActionError(null);\r\n            }}",
+        "onConfirm": "{() => void remove()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-editor-screen.tsx",
+      "line": 56,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('details.cardLoading')}",
+      "attributes": {
+        "label": "{t('details.cardLoading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 164,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "variant": "\"bodySmall\"",
+        "weight": "\"medium\"",
+        "tone": "\"success\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 174,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 183,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{frontError ?? undefined}",
+      "attributes": {
+        "ref": "{frontRef}",
+        "label": "{t('form.frontText')}",
+        "style": "{deckContentStyle(frontText || language, deck.textAlignment)}",
+        "value": "{frontText}",
+        "onChangeText": "{(value) => {\r\n              setFrontText(value);\r\n              setFrontError(null);\r\n            }}",
+        "error": "{frontError ?? undefined}",
+        "placeholder": "{t('form.frontPlaceholder')}",
+        "maxLength": "{MAX_CARD_TEXT_LENGTH}",
+        "returnKeyType": "\"next\"",
+        "onSubmitEditing": "{() => meaningRef.current?.focus()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 203,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{meaningError ?? undefined}",
+      "attributes": {
+        "ref": "{meaningRef}",
+        "label": "{t('form.meaning')}",
+        "style": "{deckContentStyle(meaning || language, deck.textAlignment)}",
+        "value": "{meaning}",
+        "onChangeText": "{(value) => {\r\n              setMeaning(value);\r\n              setMeaningError(null);\r\n            }}",
+        "error": "{meaningError ?? undefined}",
+        "multiline": "true",
+        "numberOfLines": "{4}",
+        "maxLength": "{MAX_CARD_TEXT_LENGTH}",
+        "placeholder": "{t('form.meaningPlaceholder')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 223,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.phonetic')}",
+      "attributes": {
+        "ref": "{phoneticRef}",
+        "label": "{t('form.phonetic')}",
+        "style": "{deckContentStyle(phonetic || deck.language, deck.textAlignment)}",
+        "value": "{phonetic}",
+        "onChangeText": "{setPhonetic}",
+        "maxLength": "{500}",
+        "returnKeyType": "\"next\"",
+        "onSubmitEditing": "{() => categoryRef.current?.focus()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 233,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.category')}",
+      "attributes": {
+        "ref": "{categoryRef}",
+        "label": "{t('form.category')}",
+        "style": "{deckContentStyle(category || deck.language, deck.textAlignment)}",
+        "value": "{category}",
+        "onChangeText": "{setCategory}",
+        "maxLength": "{120}",
+        "returnKeyType": "\"done\"",
+        "onSubmitEditing": "{() => Keyboard.dismiss()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 249,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{exampleError === index ? t('form.sentenceRequired') : undefined}",
+      "attributes": {
+        "label": "{t('form.sentence', { number: number(index + 1) })}",
+        "style": "{deckContentStyle(example.sentence || deck.language, deck.textAlignment)}",
+        "value": "{example.sentence}",
+        "onChangeText": "{(value) => changeExample(index, { sentence: value })}",
+        "error": "{exampleError === index ? t('form.sentenceRequired') : undefined}",
+        "maxLength": "{MAX_CARD_TEXT_LENGTH}",
+        "multiline": "true",
+        "numberOfLines": "{3}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 259,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.translation', { number: number(index + 1) })}",
+      "attributes": {
+        "label": "{t('form.translation', { number: number(index + 1) })}",
+        "style": "{deckContentStyle(\r\n                  (example.translation ?? '') || deck.language,\r\n                  deck.textAlignment,\r\n                )}",
+        "value": "{example.translation ?? ''}",
+        "onChangeText": "{(value) => changeExample(index, { translation: value })}",
+        "multiline": "true",
+        "numberOfLines": "{2}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-form.tsx",
+      "line": 270,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.notes', { number: number(index + 1) })}",
+      "attributes": {
+        "label": "{t('form.notes', { number: number(index + 1) })}",
+        "style": "{deckContentStyle((example.notes ?? '') || deck.language, deck.textAlignment)}",
+        "value": "{example.notes ?? ''}",
+        "onChangeText": "{(value) => changeExample(index, { notes: value })}",
+        "multiline": "true",
+        "numberOfLines": "{2}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "line": 61,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityRole": "\"alert\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "line": 88,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('cards.search')}",
+      "attributes": {
+        "label": "{t('cards.search')}",
+        "placeholder": "{t('cards.searchHint')}",
+        "value": "{search}",
+        "onChangeText": "{setSearch}",
+        "returnKeyType": "\"search\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "line": 124,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('cards.loading')}",
+      "attributes": {
+        "label": "{t('cards.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "line": 127,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('cards.error')}",
+        "description": "{t('common.loadErrorHint')}",
+        "onRetry": "{refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/card-list-screen.tsx",
+      "line": 140,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t(totalCount === 0 ? 'cards.empty' : 'cards.noMatch')}",
+        "description": "{t(totalCount === 0 ? 'cards.emptyHint' : 'cards.noMatchHint')}",
+        "icon": "{totalCount === 0 ? BookOpen : Search}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "line": 66,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('details.deckLoading')}",
+      "attributes": {
+        "label": "{t('details.deckLoading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "line": 99,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityRole": "\"alert\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "line": 160,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.error)}",
+      "attributes": {
+        "message": "{t(study.error)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "line": 190,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "{actionError}",
+      "attributes": {
+        "title": "{t('details.deleteDeckTitle')}",
+        "description": "{t('details.deleteDeckHint')}",
+        "cancelLabel": "{t('details.keepDeck')}",
+        "confirmLabel": "{t('details.confirmDelete')}",
+        "busy": "{deleting}",
+        "error": "{actionError}",
+        "onCancel": "{() => {\r\n              setConfirmDelete(false);\r\n              setActionError(null);\r\n            }}",
+        "onConfirm": "{() => void remove()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-editor-screen.tsx",
+      "line": 54,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('details.deckLoading')}",
+      "attributes": {
+        "label": "{t('details.deckLoading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "line": 127,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{nameError ?? undefined}",
+      "attributes": {
+        "ref": "{nameRef}",
+        "label": "{t('form.deckName')}",
+        "value": "{name}",
+        "onChangeText": "{(value) => {\r\n              setName(value);\r\n              setNameError(null);\r\n            }}",
+        "error": "{nameError ?? undefined}",
+        "maxLength": "{121}",
+        "returnKeyType": "\"next\"",
+        "onSubmitEditing": "{() => descriptionRef.current?.focus()}",
+        "autoFocus": "{!existing}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "line": 141,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.description')}",
+      "attributes": {
+        "ref": "{descriptionRef}",
+        "label": "{t('form.description')}",
+        "value": "{description}",
+        "onChangeText": "{setDescription}",
+        "multiline": "true",
+        "numberOfLines": "{3}",
+        "maxLength": "{1000}",
+        "placeholder": "{t('form.descriptionPlaceholder')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "line": 202,
+      "component": "Modal",
+      "profile": "choice-modal",
+      "trigger": "{reviewInfoVisible}",
+      "attributes": {
+        "visible": "{reviewInfoVisible}",
+        "transparent": "true",
+        "animationType": "\"fade\"",
+        "onRequestClose": "{() => setReviewInfoVisible(false)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "line": 231,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/decks-screen.tsx",
+      "line": 57,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('decks.search')}",
+      "attributes": {
+        "label": "{t('decks.search')}",
+        "placeholder": "{t('decks.searchHint')}",
+        "value": "{search}",
+        "onChangeText": "{setSearch}",
+        "returnKeyType": "\"search\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/decks-screen.tsx",
+      "line": 73,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('decks.loading')}",
+      "attributes": {
+        "label": "{t('decks.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/decks-screen.tsx",
+      "line": 75,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('decks.error')}",
+        "description": "{t('common.loadErrorHint')}",
+        "onRetry": "{refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/decks/presentation/decks-screen.tsx",
+      "line": 82,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t(search.trim() ? 'decks.noMatch' : 'decks.empty')}",
+        "description": "{t(search.trim() ? 'decks.noMatchHint' : 'decks.emptyHint')}",
+        "icon": "{search.trim() ? Search : Layers3}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/home/presentation/home-screen.tsx",
+      "line": 60,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('home.loading')}",
+      "attributes": {
+        "label": "{t('home.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/home/presentation/home-screen.tsx",
+      "line": 62,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('home.loadError')}",
+        "description": "{t('common.loadErrorHint')}",
+        "onRetry": "{home.refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/home/presentation/home-screen.tsx",
+      "line": 110,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.error)}",
+      "attributes": {
+        "message": "{t(study.error)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/home/presentation/home-screen.tsx",
+      "line": 189,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('decks.empty')}",
+        "description": "{t('home.empty')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/appearance-screen.tsx",
+      "line": 25,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('settings.loading')}",
+      "attributes": {
+        "label": "{t('settings.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/appearance-screen.tsx",
+      "line": 27,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('settings.loadError')}",
+        "description": "{t('common.genericError')}",
+        "onRetry": "{vm.reload}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/appearance-screen.tsx",
+      "line": 118,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(vm.errors.theme)}",
+      "attributes": {
+        "message": "{t(vm.errors.theme)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "line": 32,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{message}",
+      "attributes": {
+        "message": "{message}",
+        "tone": "\"warning\"",
+        "eventKey": "{conflict.operationId}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "line": 128,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('sync.unavailable')}",
+      "attributes": {
+        "message": "{t('sync.unavailable')}",
+        "tone": "\"info\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "line": 157,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('sync.failed', { count: number(status.failed) })}",
+      "attributes": {
+        "message": "{t('sync.failed', { count: number(status.failed) })}",
+        "tone": "\"warning\"",
+        "busy": "{busy}",
+        "onRetry": "{() => void perform(() => syncEngine!.retryFailed())}",
+        "retryLabel": "{t('sync.retry')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "line": 181,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(error)}",
+      "attributes": {
+        "message": "{t(error)}",
+        "busy": "{busy}",
+        "onRetry": "{() => void perform(() => syncEngine!.syncNow())}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/language-screen.tsx",
+      "line": 24,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('settings.loading')}",
+      "attributes": {
+        "label": "{t('settings.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/language-screen.tsx",
+      "line": 26,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('settings.loadError')}",
+        "description": "{t('common.genericError')}",
+        "onRetry": "{vm.reload}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/language-screen.tsx",
+      "line": 56,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(vm.errors.language)}",
+      "attributes": {
+        "message": "{t(vm.errors.language)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.tsx",
+      "line": 64,
+      "component": "Modal",
+      "profile": "gate",
+      "trigger": "true",
+      "attributes": {
+        "visible": "true",
+        "transparent": "true",
+        "animationType": "\"fade\"",
+        "onRequestClose": "{cancel}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.tsx",
+      "line": 81,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "tone": "\"error\"",
+        "accessibilityRole": "\"alert\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.tsx",
+      "line": 88,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t(backingUp ? 'logout.syncing' : 'logout.signingOut')}",
+      "attributes": {
+        "label": "{t(backingUp ? 'logout.syncing' : 'logout.signingOut')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "line": 67,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{error === 'invalid' ? t('onboarding.nameInvalid') : undefined}",
+      "attributes": {
+        "label": "{t('onboarding.nameLabel')}",
+        "error": "{error === 'invalid' ? t('onboarding.nameInvalid') : undefined}",
+        "value": "{name}",
+        "onChangeText": "{(value) => {\r\n              setName(value);\r\n              setError(null);\r\n            }}",
+        "disabled": "{saving}",
+        "maxLength": "{120}",
+        "autoComplete": "\"name\"",
+        "autoCapitalize": "\"words\"",
+        "returnKeyType": "\"done\"",
+        "onSubmitEditing": "{() => void save()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "line": 105,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('onboarding.nameSaveError')}",
+      "attributes": {
+        "message": "{t('onboarding.nameSaveError')}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "line": 123,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('account.loading')}",
+      "attributes": {
+        "label": "{t('account.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "line": 133,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('account.error')}",
+      "attributes": {
+        "message": "{t('account.error')}",
+        "onRetry": "{profile.refresh}",
+        "retryLabel": "{t('account.retry')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "line": 162,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('guest.switching')}",
+      "attributes": {
+        "label": "{t('guest.switching')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "line": 130,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('backup.loading')}",
+      "attributes": {
+        "label": "{t('backup.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "line": 131,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "line": 132,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('backup.progress')}",
+      "attributes": {
+        "label": "{t('backup.progress')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "line": 148,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(error)}",
+      "attributes": {
+        "message": "{t(error)}",
+        "busy": "{busy || loading}",
+        "onRetry": "{() => void refresh()}",
+        "retryLabel": "{t('backup.refresh')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "line": 156,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('backup.error')}",
+      "attributes": {
+        "message": "{t('backup.error')}",
+        "eventKey": "{latest}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 199,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('settings.loading')}",
+      "attributes": {
+        "label": "{t('settings.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 201,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('settings.loadError')}",
+        "description": "{t('common.genericError')}",
+        "onRetry": "{vm.reload}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 230,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "variant": "\"bodySmall\"",
+        "tone": "\"secondary\"",
+        "accessibilityLiveRegion": "\"polite\"",
+        "accessibilityLabel": "{t('settings.permission', { value: permissionLabel })}"
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 251,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{timeInvalid ? t('settings.timeInvalid') : undefined}",
+      "attributes": {
+        "label": "{t('settings.reminderTime')}",
+        "value": "{draftTime}",
+        "placeholder": "\"HH:mm\"",
+        "helperText": "{t('settings.timeFormat')}",
+        "error": "{timeInvalid ? t('settings.timeInvalid') : undefined}",
+        "disabled": "{!!vm.busy.time || !!vm.busy.reminder}",
+        "autoFocus": "true",
+        "selectTextOnFocus": "true",
+        "autoCorrect": "{false}",
+        "autoCapitalize": "\"none\"",
+        "returnKeyType": "\"done\"",
+        "textAlign": "\"left\"",
+        "style": "{{ writingDirection: 'ltr' }}",
+        "onChangeText": "{(value) => {\r\n                          setDraftTime(value);\r\n                          setTimeInvalid(false);\r\n                        }}",
+        "onSubmitEditing": "{() => void saveTime()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 290,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t((vm.errors.reminder ?? vm.errors.time)!)}",
+      "attributes": {
+        "message": "{t((vm.errors.reminder ?? vm.errors.time)!)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "line": 318,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(vm.errors.haptics)}",
+      "attributes": {
+        "message": "{t(vm.errors.haptics)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/speech-settings-screen.tsx",
+      "line": 28,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('settings.loading')}",
+      "attributes": {
+        "label": "{t('settings.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/speech-settings-screen.tsx",
+      "line": 30,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('settings.loadError')}",
+        "description": "{t('common.genericError')}",
+        "onRetry": "{vm.reload}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/speech-settings-screen.tsx",
+      "line": 100,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(vm.errors.speech)}",
+      "attributes": {
+        "message": "{t(vm.errors.speech)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 232,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 256,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('paywall.loading')}",
+      "attributes": {
+        "label": "{t('paywall.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 258,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('access.unavailable')}",
+      "attributes": {
+        "message": "{t('access.unavailable')}",
+        "onRetry": "{catalog.refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 382,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(paymentNotice)}",
+      "attributes": {
+        "message": "{t(paymentNotice)}",
+        "busy": "{paymentBusy}",
+        "tone": "{\r\n              paymentNotice === 'payment.completed'\r\n                ? 'success'\r\n                : paymentNotice === 'payment.none' || paymentNotice === 'payment.cancelled'\r\n                  ? 'info'\r\n                  : 'warning'\r\n            }"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 413,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{[\r\n              restriction.operation === 'study' ? t('paywall.studyReason') : null,\r\n              restriction.decks ? t('paywall.deckReason') : null,\r\n              restriction.cards ? t('paywall.cardReason') : null,\r\n            ]\r\n              .filter(Boolean)\r\n              .join('\\n')}",
+      "attributes": {
+        "title": "{t('paywall.reason')}",
+        "tone": "\"warning\"",
+        "message": "{[\r\n              restriction.operation === 'study' ? t('paywall.studyReason') : null,\r\n              restriction.decks ? t('paywall.deckReason') : null,\r\n              restriction.cards ? t('paywall.cardReason') : null,\r\n            ]\r\n              .filter(Boolean)\r\n              .join('\\n')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 426,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('paywall.expired')}",
+      "attributes": {
+        "message": "{t('paywall.expired')}",
+        "tone": "\"info\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 428,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('subscription.loading')}",
+      "attributes": {
+        "label": "{t('subscription.loading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "line": 430,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('paywall.statusError')}",
+      "attributes": {
+        "message": "{t('paywall.statusError')}",
+        "onRetry": "{details.refresh}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-order-button.tsx",
+      "line": 164,
+      "component": "Modal",
+      "profile": "choice-modal",
+      "trigger": "{open && !unavailable}",
+      "attributes": {
+        "visible": "{open && !unavailable}",
+        "transparent": "true",
+        "animationType": "\"fade\"",
+        "onRequestClose": "{() => setOpen(false)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-screen.tsx",
+      "line": 38,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.error)}",
+      "attributes": {
+        "message": "{t(study.error)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 34,
+      "component": "explicit announcement",
+      "profile": "status",
+      "trigger": "empty ? t('study.noneDue') : t('study.completeHint')",
+      "verification": "source indexed; actual speech unverified"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 43,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('study.session')}",
+      "attributes": {
+        "label": "{t('study.session')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 59,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('study.unavailable')}",
+        "description": "{t(study.error ?? 'study.unavailableHint')}",
+        "onRetry": "{() => void study.load()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 67,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "{study.actionError ? t(study.actionError) : null}",
+      "attributes": {
+        "title": "{t('study.exitTitle')}",
+        "description": "{t('study.exitHint')}",
+        "cancelLabel": "{t('study.keep')}",
+        "confirmLabel": "{t('study.end')}",
+        "busy": "{study.cancelling}",
+        "error": "{study.actionError ? t(study.actionError) : null}",
+        "onCancel": "{study.dismissExit}",
+        "onConfirm": "{() => void study.cancel()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 86,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t(empty ? 'study.noneDue' : 'study.ended')}",
+        "description": "{t(empty ? 'study.noneDueHint' : 'study.endedHint')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 104,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('study.complete')}",
+        "description": "{t('study.completeHint')}",
+        "icon": "{CircleCheck}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 110,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.actionError)}",
+      "attributes": {
+        "message": "{t(study.actionError)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 118,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.start.error)}",
+      "attributes": {
+        "message": "{t(study.start.error)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 162,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "testID": "\"study-correct-answers\"",
+        "variant": "\"labelMedium\"",
+        "tone": "\"success\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 196,
+      "component": "Progress",
+      "profile": "status",
+      "trigger": "{t('study.progress', {\r\n                position: number(progress.currentPosition ?? 0),\r\n                total: number(total),\r\n                completed: number(progress.completed),\r\n              })}",
+      "attributes": {
+        "value": "{total ? progress.completed / total : 0}",
+        "label": "{t('study.progress', {\r\n                position: number(progress.currentPosition ?? 0),\r\n                total: number(total),\r\n                completed: number(progress.completed),\r\n              })}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 206,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityRole": "\"alert\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 221,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(study.actionError)}",
+      "attributes": {
+        "message": "{t(study.actionError)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/study-session-screen.tsx",
+      "line": 231,
+      "component": "ConfirmationPanel",
+      "profile": "confirmation",
+      "trigger": "{study.actionError ? t(study.actionError) : null}",
+      "attributes": {
+        "title": "{t('study.exitTitle')}",
+        "description": "{t('study.exitHint')}",
+        "cancelLabel": "{t('study.keep')}",
+        "confirmLabel": "{t('study.end')}",
+        "busy": "{study.cancelling}",
+        "error": "{study.actionError ? t(study.actionError) : null}",
+        "onCancel": "{study.dismissExit}",
+        "onConfirm": "{() => void study.cancel()}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/study/presentation/use-study-session-view-model.ts",
+      "line": 145,
+      "component": "explicit announcement",
+      "profile": "status",
+      "trigger": "t('study.answerSaved', {\r\n            result: t(result === 'success' ? 'study.success' : 'study.failure'),\r\n          })",
+      "verification": "source indexed; actual speech unverified"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 99,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('transfer.preview')}",
+        "description": "{t('transfer.previewMissing')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 109,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('transfer.summary', {\r\n              imported: summary.imported,\r\n              duplicates: summary.duplicatesSkipped,\r\n              invalid: summary.invalidSkipped,\r\n            })}",
+      "attributes": {
+        "tone": "\"info\"",
+        "eventKey": "{summary}",
+        "message": "{t('transfer.summary', {\r\n              imported: summary.imported,\r\n              duplicates: summary.duplicatesSkipped,\r\n              invalid: summary.invalidSkipped,\r\n            })}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 173,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{t('form.deckName')}",
+      "attributes": {
+        "label": "{t('form.deckName')}",
+        "value": "{row.card.deckName}",
+        "disabled": "{busy || !!summary}",
+        "onChangeText": "{(value) => updateRow(row.location, 'deckName', value)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 179,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{`${t('form.front')} *`}",
+      "attributes": {
+        "label": "{`${t('form.front')} *`}",
+        "value": "{row.card.frontText}",
+        "disabled": "{busy || !!summary}",
+        "onChangeText": "{(value) => updateRow(row.location, 'frontText', value)}",
+        "multiline": "true"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 186,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{`${t('form.back')} *`}",
+      "attributes": {
+        "label": "{`${t('form.back')} *`}",
+        "value": "{row.card.meaning}",
+        "disabled": "{busy || !!summary}",
+        "onChangeText": "{(value) => updateRow(row.location, 'meaning', value)}",
+        "multiline": "true"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 194,
+      "component": "Input",
+      "profile": "field",
+      "trigger": "{column}",
+      "attributes": {
+        "key": "{column}",
+        "label": "{column}",
+        "value": "{row.card.extra?.[column] ?? ''}",
+        "disabled": "{busy || !!summary}",
+        "onChangeText": "{(value) => updateRow(row.location, column, value)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/import-preview-screen.tsx",
+      "line": 235,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-screen.tsx",
+      "line": 190,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{result}",
+      "attributes": {
+        "message": "{result}",
+        "tone": "\"success\"",
+        "onDismiss": "{() => setResult(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/transfer/presentation/transfer-screen.tsx",
+      "line": 191,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{error}",
+      "attributes": {
+        "message": "{error}",
+        "onDismiss": "{() => setError(null)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/features/vocabulary/presentation/vocabulary-helper.tsx",
+      "line": 104,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "accessibilityLiveRegion": "\"polite\"",
+        "accessibilityRole": "\"text\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/vocabulary/presentation/vocabulary-helper.tsx",
+      "line": 108,
+      "component": "View semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "className": "\"gap-md\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/features/vocabulary/presentation/vocabulary-helper.tsx",
+      "line": 130,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(messages[result.status])}",
+      "attributes": {
+        "message": "{t(messages[result.status])}",
+        "tone": "\"info\"",
+        "eventKey": "{result}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/access/free-plan-limit.tsx",
+      "line": 13,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t(operation === 'deck' ? 'guest.deckLimit' : 'guest.cardLimit')}",
+      "attributes": {
+        "title": "{t('guest.limitTitle')}",
+        "message": "{t(operation === 'deck' ? 'guest.deckLimit' : 'guest.cardLimit')}",
+        "tone": "\"warning\""
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/bootstrap/bootstrap-gate.tsx",
+      "line": 54,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('common.bootstrapError')}",
+        "description": "{t('common.bootstrapHint')}",
+        "onRetry": "{() => setAttempt((previous) => previous + 1)}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/bootstrap/bootstrap-gate.tsx",
+      "line": 60,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('common.bootstrapLoading')}",
+      "attributes": {
+        "label": "{t('common.bootstrapLoading')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/bootstrap/data-scope-boundary.tsx",
+      "line": 30,
+      "component": "LoadingState",
+      "profile": "status",
+      "trigger": "{t('guest.switching')}",
+      "attributes": {
+        "label": "{t('guest.switching')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/bootstrap/data-scope-boundary.tsx",
+      "line": 32,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{t('guest.storageError')}",
+        "description": "{t('guest.storageErrorHint')}",
+        "onRetry": "{() => {\r\n              void (syncEngine ? syncEngine.signOut() : storageScopes.enterGuest()).catch(() => {});\r\n            }}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/speech/pronunciation-button.tsx",
+      "line": 23,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{t('speech.unavailable')}",
+      "attributes": {
+        "message": "{t('speech.unavailable')}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/confirmation-panel.tsx",
+      "line": 33,
+      "component": "Modal",
+      "profile": "choice-modal",
+      "trigger": "true",
+      "attributes": {
+        "visible": "true",
+        "transparent": "true",
+        "animationType": "\"fade\"",
+        "onRequestClose": "{() => {\r\n        if (!busy) onCancel();\r\n      }}",
+        "onShow": "{() => {\r\n        if (Platform.OS === 'web') {\r\n          heading.current?.focus();\r\n          return;\r\n        }\r\n        const target = findNodeHandle(heading.current);\r\n        if (target) AccessibilityInfo.setAccessibilityFocus(target);\r\n      }}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/confirmation-panel.tsx",
+      "line": 72,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "tone": "\"error\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/shared/ui/error-state.tsx",
+      "line": 13,
+      "component": "FeedbackNotice",
+      "profile": "task",
+      "trigger": "{description}",
+      "attributes": {
+        "title": "{title}",
+        "message": "{description}",
+        "onRetry": "{onRetry}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/feature-placeholder.tsx",
+      "line": 19,
+      "component": "ErrorState",
+      "profile": "resource",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{title}",
+        "description": "{description}",
+        "onRetry": "{onRetry}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/feature-placeholder.tsx",
+      "line": 21,
+      "component": "EmptyState",
+      "profile": "status",
+      "trigger": "Parent condition/state; inspect source",
+      "attributes": {
+        "title": "{title}",
+        "description": "{description}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/feedback-modal.tsx",
+      "line": 87,
+      "component": "Modal",
+      "profile": "choice-modal",
+      "trigger": "true",
+      "attributes": {
+        "visible": "true",
+        "transparent": "true",
+        "animationType": "\"fade\"",
+        "onRequestClose": "{close}",
+        "onShow": "{() => {\r\n        if (Platform.OS === 'web') {\r\n          heading.current?.focus();\r\n          return;\r\n        }\r\n        const target = findNodeHandle(heading.current);\r\n        if (target) AccessibilityInfo.setAccessibilityFocus(target);\r\n      }}"
+      },
+      "verification": "source indexed; FEEDBACK_LIFECYCLE.md contract; native/rendered pending"
+    },
+    {
+      "file": "src/shared/ui/feedback-modal.tsx",
+      "line": 130,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "tone": "{tone === 'info' ? 'primary' : tone}",
+        "accessibilityRole": "\"alert\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/shared/ui/feedback-notice.tsx",
+      "line": 42,
+      "component": "explicit announcement",
+      "profile": "status",
+      "trigger": "message",
+      "verification": "source indexed; actual speech unverified"
+    },
+    {
+      "file": "src/shared/ui/feedback-notice.tsx",
+      "line": 53,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "tone": "{tone}",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/shared/ui/input.tsx",
+      "line": 88,
+      "component": "Text semantic feedback",
+      "profile": "status",
+      "trigger": "Existing parent/state branch",
+      "attributes": {
+        "variant": "\"bodySmall\"",
+        "tone": "\"error\"",
+        "accessibilityLiveRegion": "\"polite\""
+      },
+      "verification": "source indexed; actual speech/rendered behavior pending"
+    },
+    {
+      "file": "src/core/infrastructure/expo-notification-service.ts",
+      "line": 119,
+      "component": "OS reminder content/scheduling",
+      "profile": "status",
+      "trigger": "Existing due-card plan/permission/scheduling; notification.title/body/singleBody",
+      "verification": "Source and mocked scheduling tests; no OS delivery executed"
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { application } from '@/core/composition/application';
 import { haptics } from '@/core/composition/haptics';
 import { useLocalization } from '@/shared/localization/localization-provider';
+import type { MessageKey } from '@/shared/localization/messages';
 import { AppError } from '@/core/errors/app-error';
 import type { Deck } from '@/features/decks/domain/deck';
 import type { Card } from '../domain/card';
@@ -17,13 +18,10 @@ import type { StudyOrder } from '../domain/study-order';
 type Phase = 'loading' | 'ready' | 'completed' | 'cancelled' | 'error';
 type BackTab = 'meaning' | 'examples';
 
-function safeError(cause: unknown, fallback: string): string {
-  if (cause instanceof AppError) {
-    if (cause.code === 'not-found')
-      return 'A card or session is no longer available. Try again or leave this session.';
-    return cause.message;
-  }
-  return fallback;
+function safeError(cause: unknown, fallback: MessageKey): MessageKey {
+  return cause instanceof AppError && cause.code === 'not-found'
+    ? 'study.itemUnavailable'
+    : fallback;
 }
 
 export function useStudySessionViewModel(sessionId: string) {
@@ -42,8 +40,8 @@ export function useStudySessionViewModel(sessionId: string) {
   const [cancelling, setCancelling] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [reviewingAgain, setReviewingAgain] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
+  const [actionError, setActionError] = useState<MessageKey | null>(null);
   const inFlight = useRef(false);
   const mounted = useRef(false);
   const revealedRef = useRef(false);
@@ -88,7 +86,7 @@ export function useStudySessionViewModel(sessionId: string) {
       setPhase('ready');
     } catch (cause) {
       if (version === request.current) {
-        setError(safeError(cause, 'Unable to load this study session. Try again.'));
+        setError(safeError(cause, 'study.unavailableHint'));
         setPhase('error');
       }
     }
@@ -154,7 +152,7 @@ export function useStudySessionViewModel(sessionId: string) {
         await load();
       } catch (cause) {
         if (mounted.current) {
-          setActionError(safeError(cause, 'Unable to save your answer. Try again.'));
+          setActionError(safeError(cause, 'study.saveError'));
           // Remount only the card surface; the revealed answer stays available for retry.
           setSwipeResetKey((key) => key + 1);
         }
@@ -207,7 +205,7 @@ export function useStudySessionViewModel(sessionId: string) {
       router.dismissTo('/');
     } catch (cause) {
       if (mounted.current) {
-        setActionError(safeError(cause, 'Unable to end this session. Try again.'));
+        setActionError(safeError(cause, 'study.endError'));
         setConfirmExit(false);
         setCancelling(false);
       }
@@ -235,8 +233,7 @@ export function useStudySessionViewModel(sessionId: string) {
         if (mounted.current)
           router.replace({ pathname: '/study/[sessionId]', params: { sessionId: retry.id } });
       } catch (cause) {
-        if (mounted.current)
-          setActionError(safeError(cause, 'Unable to review missed cards. Try again.'));
+        if (mounted.current) setActionError(safeError(cause, 'study.reviewAgainError'));
       } finally {
         inFlight.current = false;
         if (mounted.current) setReviewingAgain(false);

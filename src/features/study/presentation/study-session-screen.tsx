@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { router, useFocusEffect } from 'expo-router';
 import { AccessibilityInfo, View } from 'react-native';
 import { CircleCheck, X } from 'lucide-react-native';
@@ -24,7 +24,7 @@ import { StudyOrderButton } from './study-order-button';
 import { useLocalization } from '@/shared/localization/localization-provider';
 
 export function StudySessionScreen({ sessionId }: { sessionId: string }) {
-  const { t, number, language } = useLocalization();
+  const { t, number } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const study = useStudySessionViewModel(sessionId);
   const { session, progress, item, card, deck } = study;
@@ -35,12 +35,6 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
         empty ? t('study.noneDue') : t('study.completeHint'),
       );
   }, [study.phase, session, empty, t]);
-  useEffect(() => {
-    if (study.actionError)
-      AccessibilityInfo.announceForAccessibility(
-        language === 'en' ? study.actionError : t('common.genericError'),
-      );
-  }, [study.actionError, language, t]);
 
   if (study.phase === 'loading') {
     return (
@@ -64,11 +58,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
           >
             <ErrorState
               title={t('study.unavailable')}
-              description={
-                language === 'en'
-                  ? (study.error ?? t('study.unavailableHint'))
-                  : t('study.unavailableHint')
-              }
+              description={t(study.error ?? 'study.unavailableHint')}
               onRetry={() => void study.load()}
             />
             <Button label={t('study.leave')} variant="secondary" onPress={study.leave} />
@@ -80,11 +70,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               cancelLabel={t('study.keep')}
               confirmLabel={t('study.end')}
               busy={study.cancelling}
-              error={
-                language === 'en'
-                  ? study.actionError
-                  : study.actionError && t('common.genericError')
-              }
+              error={study.actionError ? t(study.actionError) : null}
               onCancel={study.dismissExit}
               onConfirm={() => void study.cancel()}
             />
@@ -121,11 +107,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             icon={CircleCheck}
           />
           <StudyResultSummary progress={progress} />
-          {study.actionError ? (
-            <FeedbackModal
-              message={language === 'en' ? study.actionError : t('common.genericError')}
-            />
-          ) : null}
+          {study.actionError ? <FeedbackNotice message={t(study.actionError)} /> : null}
           {progress.canReviewAgain ? (
             <StudyOrderButton
               label={t('review.again')}
@@ -133,11 +115,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
               onStart={(order) => void study.reviewAgain(order)}
             />
           ) : null}
-          {study.start.error ? (
-            <FeedbackModal
-              message={language === 'en' ? study.start.error : t('common.genericError')}
-            />
-          ) : null}
+          {study.start.error ? <FeedbackNotice message={t(study.start.error)} /> : null}
           {study.start.activeSession ? (
             <Button
               label={t('study.resume')}
@@ -240,9 +218,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             onSwipeAnswer={study.submitSwipe}
           />
           {study.actionError && !study.confirmExit ? (
-            <FeedbackModal
-              message={language === 'en' ? study.actionError : t('common.genericError')}
-            />
+            <FeedbackNotice message={t(study.actionError)} />
           ) : null}
           <StudyControls
             revealed={study.revealed}
@@ -258,9 +234,7 @@ export function StudySessionScreen({ sessionId }: { sessionId: string }) {
             cancelLabel={t('study.keep')}
             confirmLabel={t('study.end')}
             busy={study.cancelling}
-            error={
-              language === 'en' ? study.actionError : study.actionError && t('common.genericError')
-            }
+            error={study.actionError ? t(study.actionError) : null}
             onCancel={study.dismissExit}
             onConfirm={() => void study.cancel()}
           />

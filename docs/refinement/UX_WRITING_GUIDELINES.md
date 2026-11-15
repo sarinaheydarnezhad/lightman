@@ -1,0 +1,18 @@
+# Approved UX writing guidelines
+
+Approval update, 2026-11-15: D-28 authorizes contextual implementation. Preserve accurate existing copy; do not rewrite keys mechanically. The glossary below is the approved working terminology. Proposed learning-outcome renaming remains dependent on domain clarification, so existing Success/Failure and می‌دانم/نمی‌دانم labels are retained. Contextual edits and their exact before/after values are recorded in `evidence/editorial-changes.json`; newly added translations remain traceable to source and tests. Original draft language below is historical.
+
+2026-11-15. Draft for approval. Brand authority remains `information/Lerona-brand-personality(1).pdf`, §§1–13; PROGRAM_BRIEF.md preserves its terminology and page references. These rules operationalize the approved brand, not replace it.
+
+- Persian: address «تو» with respectful controlled conversational language; natural verbs and everyday precise words, no exaggerated slang or bureaucratic imperatives. English: natural conversational writing, not Persian sentence structure translated literally. Keep sentences short or medium and direct.
+- Competence dominates complex/financial/security/dense interactions. Sincerity leads support, mistakes, recovery and onboarding. Use excitement sparingly for discovery and meaningful real progress. Do not insert all traits into every message.
+- State what happened, what remains safe/unknown, and the next useful action. Only assert a cause if confirmed. Never expose raw stack traces, tokens, provider payloads or implementation jargon as the user's explanation.
+- Label buttons with the action/outcome: “Save card”, “Retry backup”, “Recover purchases”; use Cancel for abandoning a choice, Close for dismissing information. Distinguish retry from repeat purchase. Avoid generic OK for consequential decisions.
+- Preserve factual precision: account sync ≠ server backup ≠ restore; code requested ≠ delivered ≠ verified ≠ signed in; plan selected ≠ paid ≠ server-verified entitlement. Unknown/pending outcomes must remain explicitly unknown/pending.
+- Keep amount/currency/duration/non-renewal and recovery restrictions visible. Use actual server catalog values and confirmed receipts. Do not promise unavailable Premium, cloud guarantees or app restore merely because backend endpoints exist.
+- Learning mistakes are normal. Encourage actual progress without manufactured achievement, guarantees, guilt, streak pressure or subscription coercion. No jokes in errors, security or payments; emoji/exclamation marks are scarce and purposeful.
+- Adopt a glossary by concept: دسته/deck, کارت/card, مرور/review, اشتراک/subscription, طرح/plan, همگام‌سازی/sync, پشتیبان‌گیری/backup, بازیابی خرید/recover purchases. Validate distinctions with product/domain owners; don't rename data enums or learning outcomes implicitly.
+- Translate screen-reader labels, hints, error prefixes and announcements as first-class copy. Keep accessible meaning equivalent to visible text and avoid duplicate announcements.
+- Preserve placeholders and bidi isolation; format numbers/dates intentionally. Do not normalize or rewrite user learning content as a side effect of editorial changes. Menu language must not change deck language or speech preference.
+
+Editorial acceptance per key: correct active context and reachability; accurate contract/state; natural Persian/English pair; terminology; concise action; complete safety caveat; placeholders; screen-reader treatment; long-label rendering in both themes. Legacy keys need reachability/compatibility review before deletion. Proposed replacements in UX_WRITING_AUDIT.md require context review, not automated global replacement.

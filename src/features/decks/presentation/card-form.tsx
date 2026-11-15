@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Keyboard, TextInput, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 
@@ -50,6 +50,7 @@ export function CardForm({
   const submitting = useRef(false);
   const mounted = useRef(true);
   const phoneticRef = useRef<TextInput>(null);
+  const frontRef = useRef<TextInput>(null);
   const categoryRef = useRef<TextInput>(null);
   const meaningRef = useRef<TextInput>(null);
 
@@ -76,11 +77,13 @@ export function CardForm({
     setError(null);
     if (!frontText.trim()) {
       setFrontError(t('form.termRequired'));
+      frontRef.current?.focus();
       void haptics.actionRejected();
       return;
     }
     if (!meaning.trim()) {
       setMeaningError(t('form.meaningRequired'));
+      meaningRef.current?.focus();
       void haptics.actionRejected();
       return;
     }
@@ -93,10 +96,8 @@ export function CardForm({
     let content: ReturnType<typeof validateCardContent>;
     try {
       content = validateCardContent({ frontText, phonetic, category, meaning, examples });
-    } catch (cause) {
-      setError(
-        language === 'en' && cause instanceof AppError ? cause.message : t('form.cardInvalid'),
-      );
+    } catch {
+      setError(t('form.cardInvalid'));
       void haptics.actionRejected();
       return;
     }
@@ -119,9 +120,7 @@ export function CardForm({
         setError(
           cause instanceof AppError && cause.code === 'free-tier-limit'
             ? t('guest.cardLimit')
-            : language === 'en' && cause instanceof AppError
-              ? cause.message
-              : t('form.cardSaveError'),
+            : t('form.cardSaveError'),
         );
       }
       void haptics.actionRejected();
@@ -172,9 +171,7 @@ export function CardForm({
               </Text>
             </View>
           ) : null}
-          {error ? (
-            <FeedbackModal message={error} onDismiss={() => setError(null)} />
-          ) : null}
+          {error ? <FeedbackNotice message={error} onDismiss={() => setError(null)} /> : null}
         </View>
       }
     >
@@ -184,6 +181,7 @@ export function CardForm({
             {t('form.front')}
           </Text>
           <Input
+            ref={frontRef}
             label={t('form.frontText')}
             style={deckContentStyle(frontText || language, deck.textAlignment)}
             value={frontText}
@@ -192,7 +190,6 @@ export function CardForm({
               setFrontError(null);
             }}
             error={frontError ?? undefined}
-            onDismissError={() => setFrontError(null)}
             placeholder={t('form.frontPlaceholder')}
             maxLength={MAX_CARD_TEXT_LENGTH}
             returnKeyType="next"
@@ -213,7 +210,6 @@ export function CardForm({
               setMeaningError(null);
             }}
             error={meaningError ?? undefined}
-            onDismissError={() => setMeaningError(null)}
             multiline
             numberOfLines={4}
             maxLength={MAX_CARD_TEXT_LENGTH}
@@ -256,7 +252,6 @@ export function CardForm({
                 value={example.sentence}
                 onChangeText={(value) => changeExample(index, { sentence: value })}
                 error={exampleError === index ? t('form.sentenceRequired') : undefined}
-                onDismissError={() => setExampleError(null)}
                 maxLength={MAX_CARD_TEXT_LENGTH}
                 multiline
                 numberOfLines={3}

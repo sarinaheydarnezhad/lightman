@@ -89,7 +89,10 @@ test('a parsing failure stays on the upload page', async () => {
   jest.mocked(transferService.preview).mockRejectedValueOnce(new Error('Invalid file'));
   render(<TransferScreen />);
   fireEvent.press(screen.getByText('Select file'));
-  await screen.findByText('Invalid file');
+  await screen.findByText(
+    'The file operation could not be confirmed. Check the file and destination, then try again.',
+  );
+  expect(screen.queryByText('Invalid file')).toBeNull();
   expect(router.push).not.toHaveBeenCalled();
   expect(transferService.confirm).not.toHaveBeenCalled();
 });

@@ -37,9 +37,7 @@ test('card creation confirmation is localized in English and Persian', () => {
   expect(translate('en', 'form.cardCreated')).toBe(
     'Card added successfully. You can add another card.',
   );
-  expect(translate('fa', 'form.cardCreated')).toBe(
-    'کارت با موفقیت اضافه شد. می‌توانید کارت دیگری اضافه کنید.',
-  );
+  expect(translate('fa', 'form.cardCreated')).toBe('کارت اضافه شد. می‌توانی کارت دیگری اضافه کنی.');
 });
 
 test('resolves explicit UI language and direction independently of deck content', () => {
@@ -62,11 +60,29 @@ test('uses readable translated labels and falls back to English for missing keys
   expect(translate('fa', 'study.flashcard', { term: 'English port' })).toContain(
     isolate('English port', 'fa'),
   );
-  const key = Object.keys(en).find((value) => !Object.hasOwn(fa, value)) as keyof typeof en;
-  expect(key).toBeTruthy();
-  expect(translate('fa', key)).toBe(en[key]);
+  const key = 'common.saved';
+  const value = fa[key];
+  try {
+    delete fa[key];
+    expect(translate('fa', key)).toBe(en[key]);
+  } finally {
+    fa[key] = value;
+  }
   expect(translate('es', 'nav.study')).toBe('Study');
   warn.mockRestore();
+});
+
+test('both dictionaries are complete UTF-8 and preserve interpolation contracts', () => {
+  const explicitCardUnits = new Set(['review.sectionA11y', 'analytics.boxA11y']);
+  for (const key of Object.keys(en) as (keyof typeof en)[]) {
+    expect(fa[key]).toBeTruthy();
+    expect(fa[key]).not.toMatch(/\?{2,}|\uFFFD/);
+    const placeholders = (value: string) =>
+      [...value.matchAll(/\{[a-zA-Z]+\}/g)].map((match) => match[0]).sort();
+    const expected = placeholders(en[key]);
+    if (explicitCardUnits.has(key)) expected.splice(expected.indexOf('{unit}'), 1);
+    expect(placeholders(fa[key]!)).toEqual(expected);
+  }
 });
 
 test('numbers remain coherent inside an RTL sentence', () => {

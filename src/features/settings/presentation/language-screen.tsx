@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 
 import { languageTag, supportedLanguages } from '@/core/domain/values';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -16,7 +16,7 @@ const languages = supportedLanguages;
 
 export function LanguageScreen() {
   const vm = useSettingsViewModel();
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-xl">
@@ -53,9 +53,7 @@ export function LanguageScreen() {
             ))}
           </View>
         ) : null}
-        {vm.errors.language ? (
-          <FeedbackModal message={language === 'en' ? vm.errors.language : t('common.genericError')} />
-        ) : null}
+        {vm.errors.language ? <FeedbackNotice message={t(vm.errors.language)} /> : null}
         <Text variant="bodySmall" tone="secondary">
           {t('settings.appLanguageHint')}
         </Text>

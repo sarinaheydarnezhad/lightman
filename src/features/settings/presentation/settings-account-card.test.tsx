@@ -147,10 +147,21 @@ test.each([
   const subscription = screen.getByRole('button', {
     name: translate(language, 'subscription.title'),
   });
-  expect(subscription.props.className.split(' ')).toContain('bg-primary');
+  expect(subscription.props.className.split(' ')).toContain(
+    mode === 'guest' ? 'bg-surface' : 'bg-primary',
+  );
+  if (mode === 'guest') {
+    expect(
+      screen
+        .getByRole('button', { name: translate(language, 'account.loginSignup') })
+        .props.className.split(' '),
+    ).toContain('bg-primary');
+  }
   expect(
-    within(subscription).getByText(translate(language, 'subscription.title')).props.className.split(' '),
-  ).toContain('text-primaryForeground');
+    within(subscription)
+      .getByText(translate(language, 'subscription.title'))
+      .props.className.split(' '),
+  ).toContain(mode === 'guest' ? 'text-primaryText' : 'text-primaryForeground');
   fireEvent.press(subscription);
   expect(router.push).toHaveBeenCalledWith('/settings/subscription');
   expect(
@@ -245,12 +256,13 @@ test('legacy accounts show their email when there is no phone', async () => {
   expect(screen.getByText(account.displayName)).toBeTruthy();
 });
 
-test('profile failures use a modal and preserve subscription navigation and logout', async () => {
+test('profile failures remain in the account section and preserve subscription navigation and logout', async () => {
   mockState = { phase: 'ready', mode: 'account', userId: account.id, revision: 1 };
   jest.mocked(engine.accountProfile).mockRejectedValueOnce(new Error('secret connection details'));
   render(<SettingsAccountCard />);
   await screen.findByText(translate('en', 'account.error'));
-  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+  expect(screen.getByTestId('feedback-notice')).toBeTruthy();
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
   expect(screen.queryByText('secret connection details')).toBeNull();
   expect(screen.getByRole('button', { name: 'Subscription' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Log Out' })).toBeTruthy();

@@ -167,7 +167,8 @@ test('backup failure makes no success claim; proceeding requires the explicit wi
   jest.mocked(engine.signOut).mockRejectedValueOnce(new Error('Network unavailable'));
   mount();
   fireEvent.press(screen.getByRole('button', { name: 'Back Up and Log Out' }));
-  expect(await screen.findByText(/No backup is claimed/)).toBeTruthy();
+  expect(await screen.findByText(translate('en', 'logout.backupFailed'))).toBeTruthy();
+  expect(screen.queryByText(translate('en', 'backup.verified'))).toBeNull();
   expect(router.replace).not.toHaveBeenCalled();
   expect(mockScope.mode).toBe('account');
   fireEvent.press(screen.getByRole('button', { name: 'Log Out Without Backing Up' }));

@@ -1,0 +1,32 @@
+# Approved feedback presentation policy
+
+Approval update, 2026-11-15: D-28 approves this decision framework, with explicit per-producer lifecycle requirements. It is not a rigid AppError-to-surface mapping. Current implementation and lifecycle contracts are in [app-feedback](../app-feedback.md), [FEEDBACK_LIFECYCLE.md](FEEDBACK_LIFECYCLE.md) and the implementation report. Select surfaces by task, certainty, content and recovery; preserve operation identities, scope and queue guarantees. Original draft wording below is retained as history, not a pending approval gate.
+
+2026-11-15. Draft for product-owner approval; supersedes no current implementation until approved. Current modal policy in `docs/app-feedback.md` describes existing behavior, not the desired default. Preserve operation IDs, event ownership, queue lifecycle, scope epochs, recovery choices and confirmed-success criteria.
+
+## Decision procedure
+
+Identify the triggering user task; outcome certainty; impact/urgency; whether work is blocked; persistence; required decision; available recovery; and where attention already is. Choose the least interrupting surface that preserves comprehension and safe action. Color/tone is independent of presentation. Do not create a message if the changed content already communicates a routine successful operation.
+
+| Context                                                              | Preferred presentation                                                            | Persistence / action                                                                                |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Correctable field validation                                         | Inline beside field plus form summary for multiple issues                         | Remain until corrected; focus first invalid field on submit; localize and associate hints           |
+| Whole resource unavailable, no usable content                        | Full-screen/section error state                                                   | Explicit Retry; safe Back; keep explanation visible after dismissal of any ancillary notice         |
+| Existing content with refresh/offline problem                        | Persistent contextual banner/status                                               | Keep last-known content labeled stale; Retry; do not falsely declare no data                        |
+| Ordinary setting saved or navigation completed                       | Updated selection/content, no extra message                                       | Announce state change where needed; no success modal                                                |
+| Export/save completed with useful location                           | Inline receipt/status, optional brief snackbar                                    | Location/share/retry discoverable; no timed-only essential information                              |
+| Destructive choice or consequential consent                          | Dialog or dedicated confirmation screen                                           | Specific consequences, cancel and named action; errors stay inside; block duplicate submission      |
+| Payment uncertain/pending, credential cleanup failure, sync conflict | Persistent contextual recovery panel; dialog only for immediate required decision | Never disappear behind a timer; preserve original IDs/account requirements and all recovery options |
+| Verified financial/backup result                                     | Persistent receipt/status, optional announcement                                  | Distinguish success from subsequent status-refresh error; show relevant time/expiry                 |
+| Background sync/progress                                             | Nonblocking status indicator                                                      | Reassure without per-item notices; expose failure/recovery at task level                            |
+| Meaningful study completion                                          | Existing results screen                                                           | Real metrics only; no extra success overlay                                                         |
+| Due-card reminder outside app                                        | OS local notification, with consent                                               | Relevant count/time/language; tap to valid study; never guilt or imply guaranteed delivery          |
+| Informational limitation affecting current action                    | Adjacent explanatory text/banner                                                  | Reason and available next action; don't make disabled control the sole explanation                  |
+
+## Behavioral safeguards and accessibility
+
+Dismissal never acknowledges a sync operation, verifies payment, completes backup, clears credentials or discards errors needed for recovery. Maintain repeat-event identity and ignore stale cross-account responses. Removing a global modal queue must not lose event ordering or duplicate critical events; classify producers before migrating. Preserve inline confirmation errors and busy/back behavior. Do not create nested dialogs for validation within dialogs. User cancellation normally needs no additional warning; uncertain financial outcome is not ordinary cancellation.
+
+Dialogs require named purpose, accessible focus entry, background exclusion, reachable actions, Android Back policy and focus restoration. Announce changes once, with urgency proportional to impact; prevent duplicate live-region/modal announcements. Snackbars must never contain the only critical recovery action or require a fast response. Screen readers and large text must reach every persistent recovery control. Deduplicate at operation level, not by matching message text. No raw exception strings, credentials or provider payloads in user-facing feedback.
+
+Acceptance: each producer in FEEDBACK_INVENTORY.md has explicit presentation, certainty and recovery contract; both languages/themes; repeated/concurrent events; background/foreground; large text/TalkBack; dismissal then recovery; account switch; confirmed success versus unknown outcome. All contracts remain unchanged unless separately approved.

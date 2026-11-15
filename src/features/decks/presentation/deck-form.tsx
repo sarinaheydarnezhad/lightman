@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Keyboard, Modal, TextInput, View } from 'react-native';
 import { Info } from 'lucide-react-native';
 
@@ -50,6 +50,7 @@ export function DeckForm({
   const submitting = useRef(false);
   const mounted = useRef(true);
   const descriptionRef = useRef<TextInput>(null);
+  const nameRef = useRef<TextInput>(null);
 
   useEffect(
     () => () => {
@@ -64,16 +65,16 @@ export function DeckForm({
     setError(null);
     if (!name.trim()) {
       setNameError(t('form.deckNameRequired'));
+      nameRef.current?.focus();
       void haptics.actionRejected();
       return;
     }
     let validName: string;
     try {
       validName = validateDeckTitle(name);
-    } catch (cause) {
-      setNameError(
-        language === 'en' && cause instanceof AppError ? cause.message : t('form.deckNameRequired'),
-      );
+    } catch {
+      setNameError(t('form.deckNameInvalid'));
+      nameRef.current?.focus();
       void haptics.actionRejected();
       return;
     }
@@ -94,9 +95,7 @@ export function DeckForm({
         setError(
           cause instanceof AppError && cause.code === 'free-tier-limit'
             ? t('guest.deckLimit')
-            : language === 'en' && cause instanceof AppError
-              ? cause.message
-              : t('form.deckSaveError'),
+            : t('form.deckSaveError'),
         );
       }
       void haptics.actionRejected();
@@ -126,6 +125,7 @@ export function DeckForm({
         ) : null}
         <View className="gap-md">
           <Input
+            ref={nameRef}
             label={t('form.deckName')}
             value={name}
             onChangeText={(value) => {
@@ -133,7 +133,6 @@ export function DeckForm({
               setNameError(null);
             }}
             error={nameError ?? undefined}
-            onDismissError={() => setNameError(null)}
             maxLength={121}
             returnKeyType="next"
             onSubmitEditing={() => descriptionRef.current?.focus()}
@@ -229,7 +228,7 @@ export function DeckForm({
             </Card>
           </View>
         </Modal>
-        {error ? <FeedbackModal message={error} onDismiss={() => setError(null)} /> : null}
+        {error ? <FeedbackNotice message={error} onDismiss={() => setError(null)} /> : null}
         <Button
           label={t(existing ? 'form.saveDeck' : 'form.createDeckAction')}
           loading={saving}

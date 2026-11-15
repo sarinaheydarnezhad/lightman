@@ -238,8 +238,9 @@ test.each(['', '24:00', '12:60', '9:3', 'not a time'])(
     fireEvent.press(screen.getByRole('button', { name: 'Save time' }));
     expect(await screen.findByText(translate('en', 'settings.timeInvalid'))).toBeTruthy();
     expect(vm.setReminderTime).not.toHaveBeenCalled();
-    fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.close') }));
+    expect(screen.queryByRole('button', { name: translate('en', 'common.close') })).toBeNull();
     fireEvent.changeText(screen.getByLabelText('Reminder time'), '18:45');
+    expect(screen.queryByText(translate('en', 'settings.timeInvalid'))).toBeNull();
     expect(screen.getByLabelText('Reminder time').props.value).toBe('18:45');
     await act(async () => {
       fireEvent(screen.getByLabelText('Reminder time'), 'submitEditing');

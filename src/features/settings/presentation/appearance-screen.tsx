@@ -1,5 +1,5 @@
 import { Pressable, View } from 'react-native';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { CheckCircle2, Moon, Sun } from 'lucide-react-native';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { useLocalization } from '@/shared/localization/localization-provider';
@@ -16,7 +16,7 @@ import { useSettingsViewModel } from './use-settings-view-model';
 
 export function AppearanceScreen() {
   const vm = useSettingsViewModel();
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   const colors = useThemeColors();
   return (
     <Screen scroll edges={stackScreenEdges}>
@@ -115,9 +115,7 @@ export function AppearanceScreen() {
             })}
           </View>
         ) : null}
-        {vm.errors.theme ? (
-          <FeedbackModal message={language === 'en' ? vm.errors.theme : t('common.genericError')} />
-        ) : null}
+        {vm.errors.theme ? <FeedbackNotice message={t(vm.errors.theme)} /> : null}
         <Text variant="bodySmall" tone="secondary">
           {t('settings.themeLifetime')}
         </Text>

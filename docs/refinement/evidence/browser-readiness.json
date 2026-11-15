@@ -1,0 +1,9 @@
+{
+  "started": "2026-11-15T10:49:16.054Z",
+  "profile": "D:\\Lerona\\Frontend\\docs\\refinement\\evidence\\browser-profile-u0h9eT",
+  "rendered": false,
+  "error": "No CDP endpoint after 10 seconds",
+  "finished": "2026-11-15T10:49:26.512Z",
+  "profileRetainedAt": "D:/Lerona/Frontend/.tools/refinement-browser-profile-u0h9eT",
+  "notes": "Original probe profile moved into ignored tool artifacts; no application render or screenshot completed."
+}

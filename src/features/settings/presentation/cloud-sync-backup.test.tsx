@@ -327,10 +327,10 @@ test('metadata refresh failure after a verified manual backup does not invent a 
   fireEvent.press(screen.getByRole('button', { name: 'Back Up Now' }));
   await screen.findByText('The server confirmed and verified the backup.');
   expect(screen.getByText('Backup completed')).toBeTruthy();
-  expect(screen.queryByText(/The server cannot be reached/)).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
   expect(await screen.findByText(/The server cannot be reached/)).toBeTruthy();
-  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
+  expect(screen.getByRole('button', { name: 'Refresh backup status' })).toBeTruthy();
+  expect(screen.getByText('Backup completed')).toBeTruthy();
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
 });
 
 test.each(['en', 'fa'] as const)(
@@ -350,11 +350,9 @@ test.each(['en', 'fa'] as const)(
     });
     authenticated();
     await screen.findByText(translate(language, 'backup.error'));
-    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.close') }));
     jest.mocked(engine.createBackup).mockRejectedValueOnce(new CloudError(503));
     fireEvent.press(screen.getByRole('button', { name: translate(language, 'backup.now') }));
     await screen.findByText(translate(language, 'backup.unavailable'));
-    fireEvent.press(screen.getByRole('button', { name: translate(language, 'common.close') }));
     let finish!: (value: Awaited<ReturnType<typeof engine.createBackup>>) => void;
     jest.mocked(engine.createBackup).mockReturnValue(
       new Promise((resolve) => {

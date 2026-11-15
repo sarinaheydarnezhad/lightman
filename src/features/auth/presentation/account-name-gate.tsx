@@ -6,7 +6,7 @@ import { useLocalization } from '@/shared/localization/localization-provider';
 import { Button } from '@/shared/ui/button';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { ErrorState } from '@/shared/ui/error-state';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Input } from '@/shared/ui/input';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
@@ -111,6 +111,7 @@ export function AccountNameGate({ children }: PropsWithChildren) {
             <>
               <Input
                 label={t('onboarding.nameLabel')}
+                error={error === 'invalid' ? t('onboarding.nameInvalid') : undefined}
                 value={name}
                 onChangeText={(value) => {
                   setName(value);
@@ -126,15 +127,9 @@ export function AccountNameGate({ children }: PropsWithChildren) {
               <Button label={t('onboarding.nameSave')} loading={busy} onPress={() => void save()} />
             </>
           ) : null}
-          {error ? (
-            <FeedbackModal
-              message={t(
-                error === 'invalid'
-                  ? 'onboarding.nameInvalid'
-                  : error === 'save'
-                    ? 'onboarding.nameSaveError'
-                    : 'common.genericError',
-              )}
+          {error && error !== 'invalid' ? (
+            <FeedbackNotice
+              message={t(error === 'save' ? 'onboarding.nameSaveError' : 'common.genericError')}
               onDismiss={() => setError(null)}
             />
           ) : null}

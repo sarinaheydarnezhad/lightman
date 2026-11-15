@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { ChevronLeft, ChevronRight, Clock3, Layers3 } from 'lucide-react-native';
 import { Pressable, useWindowDimensions, View } from 'react-native';
 
@@ -21,7 +21,7 @@ import { useStartStudy, openStudySession } from '@/features/study/presentation/u
 import { StudyOrderButton } from '@/features/study/presentation/study-order-button';
 
 export function HomeScreen() {
-  const { t, number, language, direction } = useLocalization();
+  const { t, number, direction } = useLocalization();
   const colors = useThemeColors();
   const { fontScale, width } = useWindowDimensions();
   const spaciousText = fontScale > 1.3 || width < 350;
@@ -61,7 +61,7 @@ export function HomeScreen() {
         {home.error ? (
           <ErrorState
             title={t('home.loadError')}
-            description={language === 'en' ? home.error : t('common.genericError')}
+            description={t('common.loadErrorHint')}
             onRetry={home.refresh}
           />
         ) : null}
@@ -107,7 +107,7 @@ export function HomeScreen() {
               )}
             </Card>
             {study.error ? (
-              <FeedbackModal message={language === 'en' ? study.error : t('common.genericError')}>
+              <FeedbackNotice message={t(study.error)}>
                 {study.activeSession ? (
                   <Button
                     label={t('study.resume')}
@@ -115,7 +115,7 @@ export function HomeScreen() {
                     onPress={() => study.activeSession && openStudySession(study.activeSession)}
                   />
                 ) : null}
-              </FeedbackModal>
+              </FeedbackNotice>
             ) : null}
             <Card style={{ padding: 18 }}>
               <View className="gap-lg" style={{ flexDirection: spaciousText ? 'column' : 'row' }}>

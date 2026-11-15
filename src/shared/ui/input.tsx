@@ -1,5 +1,4 @@
 import { forwardRef, useState } from 'react';
-import { FeedbackModal } from './feedback-modal';
 import { TextInput, type TextInputProps, View } from 'react-native';
 
 import { useThemeColors, useThemeMode } from '@/shared/theme/theme-provider';
@@ -12,7 +11,6 @@ import { Text } from './text';
 type InputProps = TextInputProps & {
   label: string;
   error?: string;
-  onDismissError?: () => void;
   helperText?: string;
   disabled?: boolean;
 };
@@ -21,7 +19,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   {
     label,
     error,
-    onDismissError,
     helperText,
     disabled,
     editable = true,
@@ -40,7 +37,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 ) {
   const colors = useThemeColors();
   const mode = useThemeMode();
-  const { direction: fallbackDirection } = useLocalization();
+  const { t, direction: fallbackDirection } = useLocalization();
   const content = props.value || props.defaultValue || props.placeholder || '';
   const direction = /[\p{Letter}\u200e\u200f]/u.test(content)
     ? getTextDirection(content)
@@ -56,7 +53,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         accessibilityLabel={accessibilityLabel ?? label}
         accessibilityHint={
           error
-            ? `Error: ${error}${accessibilityHint ? ` ${accessibilityHint}` : ''}`
+            ? `${t('common.fieldError', { message: error })}${accessibilityHint ? ` ${accessibilityHint}` : ''}`
             : (accessibilityHint ?? helperText)
         }
         accessibilityState={{ disabled: unavailable }}
@@ -76,7 +73,11 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         }}
         className={`min-h-input rounded-md border bg-surface px-lg py-md text-bodyMedium text-primaryText ${error ? 'border-error' : focused ? 'border-primary' : 'border-border'} ${className ?? ''}`}
         style={[
-          { fontFamily: fontFamilyForWeight('regular'), writingDirection: direction, textAlign: textAlign ?? (direction === 'rtl' ? 'right' : 'left') },
+          {
+            fontFamily: fontFamilyForWeight('regular'),
+            writingDirection: direction,
+            textAlign: textAlign ?? (direction === 'rtl' ? 'right' : 'left'),
+          },
           style,
           unavailable && { opacity: interaction.disabledOpacity },
         ]}
@@ -84,9 +85,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         selectionColor={colors.primary}
       />
       {error ? (
-        <FeedbackModal message={error} onDismiss={onDismissError}>
-          <Text variant="labelMedium">{label}</Text>
-        </FeedbackModal>
+        <Text variant="bodySmall" tone="error" accessibilityLiveRegion="polite">
+          {error}
+        </Text>
       ) : helperText ? (
         <Text variant="bodySmall" tone="secondary">
           {helperText}

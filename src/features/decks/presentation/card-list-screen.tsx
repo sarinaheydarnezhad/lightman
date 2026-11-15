@@ -19,7 +19,7 @@ import { CardListItem } from './card-list-item';
 import { useCardListViewModel } from './use-cards-view-model';
 
 export function CardListScreen({ deckId }: { deckId: string }) {
-  const { t, number, language } = useLocalization();
+  const { t, number } = useLocalization();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const { data, cards, categories, totalCount, loading, error, refresh } = useCardListViewModel(
@@ -126,7 +126,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
             <View className="gap-md">
               <ErrorState
                 title={t('cards.error')}
-                description={language === 'en' ? error : t('common.genericError')}
+                description={t('common.loadErrorHint')}
                 onRetry={refresh}
               />
               <Button

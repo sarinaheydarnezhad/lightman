@@ -60,19 +60,16 @@ beforeEach(() => {
     email: null,
   });
   jest.mocked(syncEngine!.updateAccountName).mockReset();
-  jest
-    .mocked(syncEngine!.status)
-    .mockReset()
-    .mockResolvedValue({
-      userId: 'account',
-      cursor: 0,
-      signedIn: true,
-      sessionError: null,
-      pending: 0,
-      failed: 0,
-      conflict: 0,
-      conflicts: [],
-    });
+  jest.mocked(syncEngine!.status).mockReset().mockResolvedValue({
+    userId: 'account',
+    cursor: 0,
+    signedIn: true,
+    sessionError: null,
+    pending: 0,
+    failed: 0,
+    conflict: 0,
+    conflicts: [],
+  });
   jest.mocked(syncEngine!.resolve).mockReset().mockResolvedValue();
   jest.mocked(service.preview).mockReset().mockResolvedValue(preview);
   jest.mocked(service.transfer).mockReset().mockResolvedValue();
@@ -101,26 +98,24 @@ test.each([
   async (language, choice) => {
     mockRouteParams = { language };
     jest.mocked(service.preview).mockRejectedValueOnce(new CloudError(409));
-    jest
-      .mocked(syncEngine!.status)
-      .mockResolvedValue({
-        userId: 'account',
-        cursor: 0,
-        signedIn: true,
-        sessionError: null,
-        pending: 0,
-        failed: 0,
-        conflict: 1,
-        conflicts: [
-          {
-            operationId: 'saved-edit',
-            entityType: 'settings',
-            entityId: '',
-            serverVersion: 5,
-            archived: false,
-          },
-        ],
-      });
+    jest.mocked(syncEngine!.status).mockResolvedValue({
+      userId: 'account',
+      cursor: 0,
+      signedIn: true,
+      sessionError: null,
+      pending: 0,
+      failed: 0,
+      conflict: 1,
+      conflicts: [
+        {
+          operationId: 'saved-edit',
+          entityType: 'settings',
+          entityId: '',
+          serverVersion: 5,
+          archived: false,
+        },
+      ],
+    });
     mount();
     await screen.findByText(translate(language, 'migration.settingsConflict'));
     expect(syncEngine!.resolve).not.toHaveBeenCalled();
@@ -246,7 +241,8 @@ test('discard failure preserves the decision gate and does not open account scre
   fireEvent.press(
     screen.getByRole('button', { name: translate('en', 'migration.discardConfirm') }),
   );
-  await screen.findByText('Disk full');
+  await screen.findByText(translate('en', 'migration.failure'));
+  expect(screen.queryByText('Disk full')).toBeNull();
   expect(router.replace).not.toHaveBeenCalled();
   expect(storageScopes.completeAccountEntry).not.toHaveBeenCalled();
 });
@@ -372,7 +368,7 @@ test('an interrupted transfer retries the same approved snapshot and cannot be d
     .mockRejectedValueOnce(new Error('Network interrupted after server write'));
   mount();
   fireEvent.press(await screen.findByRole('button', { name: translate('en', 'migration.add') }));
-  await screen.findByText('Network interrupted after server write');
+  await screen.findByText(translate('en', 'migration.failure'));
   expect(router.replace).not.toHaveBeenCalled();
   jest.mocked(service.preview).mockResolvedValue({ ...preview, journal: 'pending' });
   fireEvent.press(screen.getByRole('button', { name: translate('en', 'migration.retry') }));
@@ -388,7 +384,7 @@ test('cleanup failures after a completed transfer retry cleanup without starting
   jest.mocked(service.preview).mockResolvedValue({ ...preview, journal: 'complete' });
   jest.mocked(service.finish).mockRejectedValueOnce(new Error('Disk full'));
   mount();
-  await screen.findByText('Disk full');
+  await screen.findByText(translate('en', 'migration.failure'));
   expect(router.replace).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: translate('en', 'migration.retry') }));
   await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'));
@@ -415,8 +411,8 @@ test('a transfer finishing after unmount never navigates or opens a different ac
 test('failed initial sync still allows an explicitly confirmed logout without claiming a merge', async () => {
   jest.mocked(service.preview).mockRejectedValueOnce(new Error('Offline'));
   mount();
-  await screen.findByText('Offline');
-  fireEvent.press(screen.getByRole('button', { name: translate('en', 'common.close') }));
+  await screen.findByText(translate('en', 'migration.failure'));
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
   fireEvent.press(screen.getByRole('button', { name: translate('en', 'account.logout') }));
   expect(syncEngine!.signOut).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: translate('en', 'logout.withoutBackup') }));

@@ -1,5 +1,5 @@
 import { Link, router, useFocusEffect, type Href } from 'expo-router';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { useCallback, useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -76,6 +76,7 @@ function SettingsRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={t('settings.choose', { label, detail })}
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
@@ -117,7 +118,7 @@ function SettingsSwitch({
       accessibilityRole="switch"
       accessibilityLabel={label}
       accessibilityHint={description}
-      accessibilityState={{ checked: value, busy }}
+      accessibilityState={{ checked: value, busy, disabled: busy || disabled }}
       disabled={busy || disabled}
       onPress={onChange}
       className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
@@ -253,7 +254,6 @@ export function SettingsScreen() {
                         placeholder="HH:mm"
                         helperText={t('settings.timeFormat')}
                         error={timeInvalid ? t('settings.timeInvalid') : undefined}
-                        onDismissError={() => setTimeInvalid(false)}
                         disabled={!!vm.busy.time || !!vm.busy.reminder}
                         autoFocus
                         selectTextOnFocus
@@ -287,9 +287,7 @@ export function SettingsScreen() {
                 </>
               ) : null}
               {vm.errors.reminder || vm.errors.time ? (
-                <FeedbackModal message={language === 'en'
-                    ? (vm.errors.reminder ?? vm.errors.time)
-                    : t('common.genericError')} />
+                <FeedbackNotice message={t((vm.errors.reminder ?? vm.errors.time)!)} />
               ) : null}
               {vm.reminderPermission === 'denied' ? (
                 <Button
@@ -317,9 +315,7 @@ export function SettingsScreen() {
                   busy={!!vm.busy.haptics}
                   onChange={() => void vm.setHaptics(!settings.hapticsEnabled)}
                 />
-                {vm.errors.haptics ? (
-                  <FeedbackModal message={language === 'en' ? vm.errors.haptics : t('common.genericError')} />
-                ) : null}
+                {vm.errors.haptics ? <FeedbackNotice message={t(vm.errors.haptics)} /> : null}
               </SettingsSection>
             </View>
 

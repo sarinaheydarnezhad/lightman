@@ -7,7 +7,11 @@ import { speech } from '@/core/composition/speech';
 /** Shared by study and card details. A second press stops; a later press starts again. */
 export function usePronunciation(text: string, language: string) {
   const status = useSyncExternalStore(speech.subscribe, speech.getStatus, speech.getStatus);
-  const [error, setError] = useState<string | null>(null);
+  const [errorState, setError] = useState({ text, language, message: null as string | null });
+  const sameContent = errorState.text === text && errorState.language === language;
+  // Reset task-owned feedback when props change, before committing the next card.
+  if (!sameContent) setError({ text, language, message: null });
+  const error = sameContent ? errorState.message : null;
   const request = useRef(0);
 
   useEffect(() => {
@@ -21,7 +25,7 @@ export function usePronunciation(text: string, language: string) {
   const press = useCallback(async () => {
     const current = ++request.current;
     void haptics.selection();
-    setError(null);
+    setError({ text, language, message: null });
     if (speech.isSpeaking()) {
       await speech.stop();
       return;
@@ -35,9 +39,10 @@ export function usePronunciation(text: string, language: string) {
         accent: settings?.preferredSpeechAccent,
       });
       if (current === request.current && !started)
-        setError('Pronunciation is unavailable on this device.');
+        setError({ text, language, message: 'Pronunciation is unavailable on this device.' });
     } catch {
-      if (current === request.current) setError('Pronunciation is unavailable on this device.');
+      if (current === request.current)
+        setError({ text, language, message: 'Pronunciation is unavailable on this device.' });
     }
   }, [text, language]);
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 import { syncEngine } from '@/core/composition/sync';
 import { CloudSyncScreen } from './cloud-sync-screen';
@@ -49,6 +49,7 @@ const conflict = {
 };
 
 beforeEach(() => {
+  Object.assign(mockScope, { phase: 'ready', mode: 'account', userId: 'account', revision: 1 });
   jest.clearAllMocks();
   jest.mocked(engine.status).mockReset().mockResolvedValue(status);
   jest.mocked(engine.resolve).mockReset().mockResolvedValue(undefined);
@@ -60,44 +61,78 @@ beforeEach(() => {
     .mockResolvedValue({ latest: null, lastSuccessful: null });
 });
 
-test('failed changes and conflict resolution are queued in modals, not shown inline', async () => {
+test('a late status response cannot populate another account screen', async () => {
+  let finish!: (value: typeof status) => void;
+  jest.mocked(engine.status).mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  const view = render(<CloudSyncScreen />);
+  await waitFor(() => expect(engine.status).toHaveBeenCalledTimes(1));
+  Object.assign(mockScope, { userId: 'other-account', revision: 2 });
+  jest.mocked(engine.status).mockResolvedValue({ ...status, userId: 'other-account', pending: 2 });
+  view.rerender(<CloudSyncScreen />);
+  await screen.findByText('Changes waiting to sync: 2');
+  await act(async () => finish({ ...status, pending: 99, conflicts: [conflict] }));
+  expect(screen.queryByText('Changes waiting to sync: 99')).toBeNull();
+  expect(screen.queryByText('Conflict: card card-id')).toBeNull();
+  expect(screen.getByText('Changes waiting to sync: 2')).toBeTruthy();
+  expect(engine.resolve).not.toHaveBeenCalled();
+});
+
+test('repeated sync taps do not overlap a pending operation or enable conflict resolution', async () => {
+  let finish!: () => void;
+  jest.mocked(engine.status).mockResolvedValue({ ...status, conflicts: [conflict] });
+  jest.mocked(engine.syncNow).mockReturnValueOnce(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
+  render(<CloudSyncScreen />);
+  const sync = await screen.findByRole('button', { name: 'Sync now' });
+  fireEvent.press(sync);
+  fireEvent.press(sync);
+  expect(engine.syncNow).toHaveBeenCalledTimes(1);
+  const resolve = screen.getByRole('button', { name: 'Use server version' });
+  expect(resolve).toBeDisabled();
+  fireEvent.press(resolve);
+  expect(engine.resolve).not.toHaveBeenCalled();
+  await act(async () => finish());
+  expect(screen.getByRole('button', { name: 'Use server version' })).not.toBeDisabled();
+});
+
+test('failed changes and conflict choices remain visible together until verified recovery', async () => {
   jest.mocked(engine.status).mockResolvedValue({ ...status, failed: 2, conflicts: [conflict] });
   render(<CloudSyncScreen />);
   expect(await screen.findByText('2 changes need manual retry.')).toBeTruthy();
-  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
-  expect(screen.queryByRole('button', { name: 'Use server version' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
-  expect(screen.queryByText('2 changes need manual retry.')).toBeNull();
-  expect(screen.getByRole('button', { name: 'Use server version' })).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
   expect(screen.queryByTestId('feedback-modal')).toBeNull();
-  expect(screen.queryByRole('button', { name: 'Use server version' })).toBeNull();
-  fireEvent.press(screen.getByRole('button', { name: 'Conflict: card card-id' }));
-  expect(screen.getByTestId('feedback-modal')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Retry failed changes' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Use server version' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
   jest.mocked(engine.status).mockResolvedValue(status);
   fireEvent.press(screen.getByRole('button', { name: 'Keep my edit (retry)' }));
   await waitFor(() => expect(engine.resolve).toHaveBeenCalledWith('operation', 'local'));
-  await waitFor(() => expect(screen.queryByTestId('feedback-modal')).toBeNull());
+  await waitFor(() => expect(screen.queryByText('Conflict: card card-id')).toBeNull());
+  expect(screen.queryByRole('button', { name: 'Retry failed changes' })).toBeNull();
 });
 
-test('archived conflicts explain deletion inside the modal and cannot keep local edits', async () => {
+test('deleted conflicts keep their explanation and cannot keep local edits', async () => {
   jest.mocked(engine.status).mockResolvedValue({
     ...status,
     conflicts: [{ ...conflict, archived: true }],
   });
   render(<CloudSyncScreen />);
-  expect(await screen.findByTestId('feedback-modal')).toBeTruthy();
+  expect(await screen.findByText(/Deleted on another device/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: 'Keep my edit (retry)' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Use server version' })).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
-  expect(screen.queryByRole('button', { name: 'Use server version' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
 });
 
-test('retry remains available after dismissing a failure notice', async () => {
+test('retry remains available until failed changes are recovered', async () => {
   jest.mocked(engine.status).mockResolvedValue({ ...status, failed: 1 });
   render(<CloudSyncScreen />);
-  await screen.findByTestId('feedback-modal');
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  await screen.findByText('1 changes need manual retry.');
   jest.mocked(engine.status).mockResolvedValue(status);
   fireEvent.press(screen.getByRole('button', { name: 'Retry failed changes' }));
   await waitFor(() => expect(engine.retryFailed).toHaveBeenCalledTimes(1));
@@ -106,16 +141,20 @@ test('retry remains available after dismissing a failure notice', async () => {
   );
 });
 
-test('the same operation error can appear again after dismissal', async () => {
+test('unknown errors do not expose diagnostics and a later explicit attempt can recover', async () => {
   jest.mocked(engine.syncNow).mockRejectedValue(new Error('Connection failed.'));
   render(<CloudSyncScreen />);
   fireEvent.press(await screen.findByRole('button', { name: 'Sync now' }));
-  expect(await screen.findByText('Connection failed.')).toBeTruthy();
-  fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+  expect(
+    await screen.findByText('Unable to synchronize. Your offline changes are safe.'),
+  ).toBeTruthy();
   expect(screen.queryByText('Connection failed.')).toBeNull();
+  jest.mocked(engine.syncNow).mockResolvedValueOnce(undefined);
   fireEvent.press(screen.getByRole('button', { name: 'Sync now' }));
-  expect(await screen.findByText('Connection failed.')).toBeTruthy();
-  expect(engine.syncNow).toHaveBeenCalledTimes(2);
+  await waitFor(() => expect(engine.syncNow).toHaveBeenCalledTimes(2));
+  await waitFor(() =>
+    expect(screen.queryByText('Unable to synchronize. Your offline changes are safe.')).toBeNull(),
+  );
 });
 
 test('a request deadline uses the existing localized synchronization message', async () => {
@@ -129,12 +168,16 @@ test('a request deadline uses the existing localized synchronization message', a
   ).toBeTruthy();
 });
 
-test('resolution failures open an error modal after closing the conflict modal', async () => {
+test('resolution failures keep conflict choices and recovery visible without losing operation identity', async () => {
   jest.mocked(engine.status).mockResolvedValue({ ...status, conflicts: [conflict] });
   jest.mocked(engine.resolve).mockRejectedValue(new Error('Could not resolve conflict.'));
   render(<CloudSyncScreen />);
   fireEvent.press(await screen.findByRole('button', { name: 'Use server version' }));
-  expect(await screen.findByText('Could not resolve conflict.')).toBeTruthy();
-  expect(screen.getAllByTestId('feedback-modal')).toHaveLength(1);
-  expect(screen.queryByRole('button', { name: 'Use server version' })).toBeNull();
+  expect(
+    await screen.findByText('Unable to synchronize. Your offline changes are safe.'),
+  ).toBeTruthy();
+  expect(screen.queryByText('Could not resolve conflict.')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Use server version' })).toBeTruthy();
+  expect(engine.resolve).toHaveBeenCalledWith('operation', 'server');
+  expect(screen.queryByTestId('feedback-modal')).toBeNull();
 });

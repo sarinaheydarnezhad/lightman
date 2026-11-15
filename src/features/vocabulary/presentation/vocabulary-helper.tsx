@@ -10,7 +10,7 @@ import { Card } from '@/shared/ui/card';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import type { MessageKey } from '@/shared/localization/messages';
 import { Text } from '@/shared/ui/text';
-import { FeedbackModal } from '@/shared/ui/feedback-modal';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import type { SelectedDefinition } from '../application/merge-suggestion';
 
 const messages: Record<Exclude<DictionaryLookupResult['status'], 'found'>, MessageKey> = {
@@ -127,7 +127,7 @@ export function VocabularyHelper({
                   ))}
                 </View>
               ) : result ? (
-                <FeedbackModal message={t(messages[result.status])} tone="info" eventKey={result}>
+                <FeedbackNotice message={t(messages[result.status])} tone="info" eventKey={result}>
                   {!retried &&
                   ['offline', 'timeout', 'rate-limited', 'unavailable'].includes(result.status) ? (
                     <Button
@@ -136,7 +136,7 @@ export function VocabularyHelper({
                       onPress={() => void lookup(true)}
                     />
                   ) : null}
-                </FeedbackModal>
+                </FeedbackNotice>
               ) : null}
             </>
           ) : null}
@@ -167,7 +167,12 @@ function DefinitionChoice({
       ) : null}
       <Text style={deckContentStyle(meaning.definition, alignment)}>{meaning.definition}</Text>
       {meaning.examples.map((sample, index) => (
-        <Text key={`${index}-${sample}`} variant="bodySmall" tone="secondary" style={deckContentStyle(sample, alignment)}>
+        <Text
+          key={`${index}-${sample}`}
+          variant="bodySmall"
+          tone="secondary"
+          style={deckContentStyle(sample, alignment)}
+        >
           {sample}
         </Text>
       ))}

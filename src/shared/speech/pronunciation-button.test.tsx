@@ -86,7 +86,11 @@ test('unavailable voice reports an accessible message and card change stops spee
     </ThemeProvider>,
   );
   fireEvent.press(screen.getByRole('button', { name: 'Pronounce hello' }));
-  expect(await screen.findByText('Pronunciation is unavailable on this device.')).toBeTruthy();
+  expect(
+    await screen.findByText(
+      'Pronunciation is unavailable on this device. Check installed voices in device settings.',
+    ),
+  ).toBeTruthy();
   rerender(
     <ThemeProvider>
       <StudyCard card={makeCard({ id: 'new', frontText: 'next' })} {...props} />
@@ -94,6 +98,11 @@ test('unavailable voice reports an accessible message and card change stops spee
   );
   await waitFor(() => expect(speech.stop).toHaveBeenCalledTimes(1));
   expect(screen.getByRole('button', { name: 'Pronounce next' })).toBeTruthy();
+  expect(
+    screen.queryByText(
+      'Pronunciation is unavailable on this device. Check installed voices in device settings.',
+    ),
+  ).toBeNull();
 });
 
 test.each(['light', 'dark'] as const)(

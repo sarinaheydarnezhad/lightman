@@ -22,7 +22,7 @@ export function CardEditorScreen({
   cardId?: string;
   renderSaveAction?: (action: ReactNode) => ReactNode;
 }) {
-  const { t, language } = useLocalization();
+  const { t } = useLocalization();
   const { create, update } = useCardActions();
   const resource = useCardEditorViewModel(deckId, cardId);
   const mounted = useRef(true);
@@ -61,11 +61,7 @@ export function CardEditorScreen({
     return (
       <FeaturePlaceholder
         title={t('details.cardUnavailable')}
-        description={
-          language === 'en'
-            ? (resource.error ?? t('details.cardUnavailableHint'))
-            : t('details.cardUnavailableHint')
-        }
+        description={t('details.cardUnavailableHint')}
         onRetry={resource.refresh}
       >
         <Button

@@ -1,0 +1,9 @@
+{
+  "started": "2026-11-15T13:15:37.044Z",
+  "profile": "D:\\Lerona\\Frontend\\.tools\\refinement-browser-profile-2QQDkz",
+  "rendered": false,
+  "software": true,
+  "applicationLaunched": false,
+  "error": "CDP timeout: Browser.getVersion",
+  "finished": "2026-11-15T13:15:59.786Z"
+}

@@ -7,6 +7,7 @@ import type { ImportPreview, ImportSummary } from '../application/transfer-servi
 import { LocalizationProvider } from '@/shared/localization/localization-provider';
 import { translate, type UiLanguage } from '@/shared/localization/localization';
 import { ImportPreviewScreen } from './import-preview-screen';
+import { transferLocation } from './transfer-feedback';
 
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), replace: jest.fn(), canGoBack: jest.fn(() => true) },
@@ -86,7 +87,12 @@ test.each(['en', 'fa'] as const)(
     mount(language);
     expect(screen.getByText('Cards.csv')).toBeTruthy();
     expect(screen.getAllByLabelText(`${translate(language, 'form.front')} *`)).toHaveLength(2);
-    expect(screen.getByText('Row 4: Missing back')).toBeTruthy();
+    expect(
+      screen.getByText(
+        `${transferLocation('Row 4', (key, values) => translate(language, key, values))}: ${translate(language, 'transfer.invalidRow')}`,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Missing back')).toBeNull();
     const actions = screen.getByTestId('import-preview-actions');
     expect(actions.props.className).toContain(language === 'fa' ? 'flex-row-reverse' : 'flex-row');
     for (const key of ['transfer.approve', 'transfer.reject'] as const) {
@@ -182,7 +188,8 @@ test('failed approval preserves edits and allows retry', async () => {
   mount();
   fireEvent.changeText(screen.getAllByLabelText('Front *')[0]!, 'Edited hello');
   fireEvent.press(screen.getByRole('button', { name: 'Approve' }));
-  await screen.findByText('Storage unavailable');
+  await screen.findByText(translate('en', 'transfer.operationError'));
+  expect(screen.queryByText('Storage unavailable')).toBeNull();
   expect(router.back).not.toHaveBeenCalled();
   expect(transferService.cancel).not.toHaveBeenCalled();
   fireEvent.press(screen.getByRole('button', { name: 'Close' }));
