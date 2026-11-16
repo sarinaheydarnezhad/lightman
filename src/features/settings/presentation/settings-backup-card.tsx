@@ -128,13 +128,19 @@ export function SettingsBackupCard() {
         {t('backup.title')}
       </Text>
       {loading ? <LoadingState label={t('backup.loading')} /> : null}
-      <Text accessibilityLiveRegion="polite">{t(status)}</Text>
+      <Text variant="labelLarge" accessibilityLiveRegion="polite">
+        {t(status)}
+      </Text>
       {busy ? <LoadingState label={t('backup.progress')} /> : null}
       {successful?.completedAtUtc ? (
         <>
-          <Text>{t('backup.last', { time: localTime(successful.completedAtUtc) })}</Text>
-          <Text>{t('backup.expires', { time: localTime(successful.expiresAtUtc) })}</Text>
-          <Text>
+          <Text variant="bodySmall" tone="secondary">
+            {t('backup.last', { time: localTime(successful.completedAtUtc) })}
+          </Text>
+          <Text variant="bodySmall" tone="secondary">
+            {t('backup.expires', { time: localTime(successful.expiresAtUtc) })}
+          </Text>
+          <Text variant="bodySmall" tone="secondary">
             {Date.parse(successful.expiresAtUtc) <= now
               ? t('backup.expired')
               : t('backup.remaining', {
@@ -155,7 +161,9 @@ export function SettingsBackupCard() {
       {latest?.status === 'Failed' && !error && !busy ? (
         <FeedbackNotice message={t('backup.error')} eventKey={latest} />
       ) : null}
-      <Text tone="secondary">{t('backup.coverage')}</Text>
+      <Text variant="bodySmall" tone="secondary">
+        {t('backup.coverage')}
+      </Text>
       <Button
         label={t('backup.now')}
         loading={busy}

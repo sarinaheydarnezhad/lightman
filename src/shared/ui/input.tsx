@@ -71,7 +71,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           setFocused(false);
           onBlur?.(event);
         }}
-        className={`min-h-input rounded-md border bg-surface px-lg py-md text-bodyMedium text-primaryText ${error ? 'border-error' : focused ? 'border-primary' : 'border-border'} ${className ?? ''}`}
+        className={`min-h-input rounded-lg border bg-surface px-lg py-md text-bodyMedium text-primaryText ${error ? 'border-error' : focused ? 'border-primary' : 'border-border'} ${className ?? ''}`}
         style={[
           {
             fontFamily: fontFamilyForWeight('regular'),

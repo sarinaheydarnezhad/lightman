@@ -35,10 +35,10 @@ const permissionLabels: Record<NotificationPermissionState, MessageKey> = {
 function SettingsSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View className="gap-sm">
-      <Text variant="headingSmall" accessibilityRole="header">
+      <Text variant="labelLarge" tone="secondary" accessibilityRole="header">
         {title}
       </Text>
-      <Card className="py-xs">{children}</Card>
+      <Card className="gap-xs py-xs">{children}</Card>
     </View>
   );
 }
@@ -59,18 +59,16 @@ function SettingsRow({
   const Chevron = direction === 'rtl' ? ChevronLeft : ChevronRight;
   const content = (
     <View className="min-w-0 flex-1 gap-xs">
-      <Text variant="labelLarge">{label}</Text>
+      <Text variant="bodyMedium" weight="medium">
+        {label}
+      </Text>
       <Text variant="bodySmall" tone="secondary">
         {detail}
       </Text>
     </View>
   );
   if (!onPress) {
-    return (
-      <View className="min-h-listItem w-full flex-row items-center border-b border-border py-lg">
-        {content}
-      </View>
-    );
+    return <View className="min-h-listItem w-full flex-row items-center py-md">{content}</View>;
   }
   return (
     <Pressable
@@ -79,7 +77,7 @@ function SettingsRow({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
+      className={`min-h-listItem w-full items-center justify-between gap-md rounded-sm py-md focus:bg-surfaceElevated ${
         direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'
       }`}
       style={(state) =>
@@ -121,7 +119,7 @@ function SettingsSwitch({
       accessibilityState={{ checked: value, busy, disabled: busy || disabled }}
       disabled={busy || disabled}
       onPress={onChange}
-      className={`min-h-listItem w-full items-center justify-between gap-md border-b border-border py-lg ${
+      className={`min-h-listItem w-full items-center justify-between gap-md rounded-sm py-md focus:bg-surfaceElevated ${
         direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'
       }`}
       style={(state) =>
@@ -133,7 +131,9 @@ function SettingsSwitch({
       }
     >
       <View className="min-w-0 flex-1 gap-xs">
-        <Text variant="labelLarge">{label}</Text>
+        <Text variant="bodyMedium" weight="medium">
+          {label}
+        </Text>
         {description ? (
           <Text variant="bodySmall" tone="secondary">
             {description}
@@ -193,7 +193,7 @@ export function SettingsScreen() {
 
   return (
     <Screen scroll keyboardAware edges={tabScreenEdges}>
-      <View className="gap-2xl">
+      <View className="gap-xl">
         <ScreenHeader title={t('nav.settings')} description={t('settings.description')} />
         <SettingsAccountCard />
         {vm.loading && !settings ? <LoadingState label={t('settings.loading')} /> : null}
@@ -247,7 +247,7 @@ export function SettingsScreen() {
                     }}
                   />
                   {draftTime !== null ? (
-                    <Card className="gap-sm">
+                    <View className="gap-md py-md">
                       <Input
                         label={t('settings.reminderTime')}
                         value={draftTime}
@@ -271,7 +271,7 @@ export function SettingsScreen() {
                       <View className="flex-row flex-wrap gap-sm">
                         <Button
                           label={t('common.cancel')}
-                          variant="secondary"
+                          variant="tertiary"
                           disabled={!!vm.busy.time || !!vm.busy.reminder}
                           onPress={() => setDraftTime(null)}
                         />
@@ -282,7 +282,7 @@ export function SettingsScreen() {
                           onPress={() => void saveTime()}
                         />
                       </View>
-                    </Card>
+                    </View>
                   ) : null}
                 </>
               ) : null}
@@ -319,7 +319,7 @@ export function SettingsScreen() {
               </SettingsSection>
             </View>
 
-            <SettingsSection title={t('settings.about')}>
+            <SettingsSection title={t('settings.yourData')}>
               <SettingsRow
                 label={t('transfer.title')}
                 detail={t('transfer.description')}
@@ -330,16 +330,26 @@ export function SettingsScreen() {
                 detail={t('sync.description')}
                 onPress={() => router.push('/settings/cloud' as Href)}
               />
-              <SettingsRow label={t('settings.app')} detail={config.appName} />
-              <SettingsRow
-                label={t('settings.version')}
-                detail={config.appVersion ?? t('common.unavailable')}
-              />
-              {config.buildNumber ? (
-                <SettingsRow label={t('settings.build')} detail={config.buildNumber} />
-              ) : null}
-              <SettingsRow label={t('settings.yourData')} detail={t('settings.yourDataHint')} />
+              <Text variant="bodySmall" tone="secondary" className="py-md">
+                {t('settings.yourDataHint')}
+              </Text>
             </SettingsSection>
+            <View className="gap-sm">
+              <Text variant="labelLarge" tone="secondary" accessibilityRole="header">
+                {t('settings.about')}
+              </Text>
+              <Text variant="bodySmall" tone="secondary">
+                {config.appName}
+              </Text>
+              <Text variant="bodySmall" tone="secondary">
+                {t('settings.version')} · {config.appVersion ?? t('common.unavailable')}
+              </Text>
+              {config.buildNumber ? (
+                <Text variant="bodySmall" tone="secondary">
+                  {t('settings.build')} · {config.buildNumber}
+                </Text>
+              ) : null}
+            </View>
           </>
         ) : null}
         {__DEV__ ? (

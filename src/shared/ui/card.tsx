@@ -26,7 +26,7 @@ export function Card({
   ...props
 }: CardProps) {
   const elevation = useSurfaceStyle();
-  const classes = `rounded-lg border p-xl ${appearance[variant]} ${className ?? ''}`;
+  const classes = `${variant === 'elevated' ? 'rounded-lg p-xl' : 'rounded-md p-lg'} border ${appearance[variant]} ${className ?? ''}`;
 
   if (variant === 'interactive') {
     return (
@@ -38,7 +38,6 @@ export function Card({
         className={classes}
         disabled={disabled}
         style={(state) => [
-          elevation,
           typeof style === 'function' ? style(state) : style,
           {
             opacity: disabled
@@ -62,7 +61,7 @@ export function Card({
       accessibilityLabel={accessibilityLabel}
       className={classes}
       style={[
-        variant === 'outlined' ? undefined : elevation,
+        variant === 'elevated' ? elevation : undefined,
         typeof style === 'function' ? undefined : style,
       ]}
     >

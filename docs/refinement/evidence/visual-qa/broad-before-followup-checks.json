@@ -1,0 +1,20 @@
+[
+  {
+    "name": "tests",
+    "command": "pnpm.cmd test --testTimeout=20000 --json --outputFile=.tools/visual-refinement-final-tests.json",
+    "started": "2026-11-15T15:02:17.438Z",
+    "finished": "2026-11-15T15:22:45.063Z",
+    "log": ".tools/visual-refinement-final-tests.log",
+    "exitCode": 1,
+    "signal": null
+  },
+  {
+    "name": "typecheck",
+    "command": "pnpm.cmd typecheck",
+    "started": "2026-11-15T15:22:45.066Z",
+    "finished": "2026-11-15T15:24:16.210Z",
+    "log": ".tools/visual-refinement-final-typecheck.log",
+    "exitCode": 0,
+    "signal": null
+  }
+]

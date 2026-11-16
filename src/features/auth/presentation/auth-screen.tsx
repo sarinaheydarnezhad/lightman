@@ -15,6 +15,7 @@ import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Input } from '@/shared/ui/input';
 import { Button } from '@/shared/ui/button';
+import { Chip } from '@/shared/ui/chip';
 import { Text } from '@/shared/ui/text';
 
 type Mode = 'login' | 'register' | 'reset';
@@ -245,17 +246,17 @@ export function AuthScreen() {
           </FeedbackNotice>
         ) : (
           <>
-            <View className="gap-sm">
-              <Button
+            <View className="flex-row flex-wrap gap-sm">
+              <Chip
                 label={t('auth.passwordLogin')}
-                variant="secondary"
+                selected={mode === 'login'}
                 disabled={!!busy}
                 accessibilityState={{ selected: mode === 'login' }}
                 onPress={() => reset('login')}
               />
-              <Button
+              <Chip
                 label={t('auth.register')}
-                variant="secondary"
+                selected={mode === 'register'}
                 disabled={!!busy}
                 accessibilityState={{ selected: mode === 'register' }}
                 onPress={() => reset('register')}

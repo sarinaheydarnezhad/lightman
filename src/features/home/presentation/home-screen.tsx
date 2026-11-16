@@ -27,6 +27,11 @@ export function HomeScreen() {
   const spaciousText = fontScale > 1.3 || width < 350;
   const home = useHomeViewModel();
   const study = useStartStudy();
+  const totalToday = home.reviewedToday + home.dueCount;
+  const studyProgress =
+  totalToday > 0
+    ? home.reviewedToday / totalToday
+    : 0;
   const BrowseChevron = direction === 'rtl' ? ChevronLeft : ChevronRight;
 
   function openDeck(deckId: string) {
@@ -88,7 +93,7 @@ export function HomeScreen() {
                   </Text>
                 </View>
                 <View pointerEvents="none" importantForAccessibility="no-hide-descendants">
-                  <StudyEmblem />
+                  <StudyEmblem progress={studyProgress} />
                 </View>
               </View>
               {home.dueCount > 0 ? (
@@ -100,7 +105,7 @@ export function HomeScreen() {
               ) : (
                 <Button
                   label={home.cardCount > 0 ? t('common.browseDecks') : t('decks.create')}
-                  icon={ChevronRight}
+                  icon={BrowseChevron}
                   loading={study.starting}
                   onPress={() => router.push(home.cardCount > 0 ? '/decks' : '/decks/create')}
                 />

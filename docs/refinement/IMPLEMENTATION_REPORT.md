@@ -1,5 +1,17 @@
 # Integrated frontend implementation
 
+## Current visual completion — D-30, 2026-11-15
+
+Baseline is now committed frontend `5c51b346ea38cca37896588c493ccc72a12dbfb2` (`Design refinement 1`), clean at the start of D-30. The owner's latest instruction authorizes reversible source/screenshot-supported visual judgments without prior runtime reproduction. This supersedes the earlier stop/runtime-prerequisite statements below. The earlier integrated feedback, localization, accessibility and recovery work remains intact.
+
+Implemented: quieter ordinary Card/list surfaces and mobile gutters; distinct tertiary/navigation/secondary-destructive actions; Settings grouping/metadata/divider cleanup; subscription introduction/current status/radio durations/adjacent restrictions; structured always-visible logout disclosures; calmer Home with no fixed flame ring and corrected RTL navigation; targeted deck/card/analytics/auth/speech/backup hierarchy; reused theme variables at portal roots and scrollable review-system information. Four bilingual logout headings are added; existing safety disclosures, values, handlers, busy/consent/recovery guards and protected contracts remain. Palette, canonical typography/spacing/heights and Vazirmatn are unchanged.
+
+[VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md) records evidence, decisions, expected benefits and regression risks. [MANUAL_VISUAL_REVIEW_CHECKLIST.md](MANUAL_VISUAL_REVIEW_CHECKLIST.md) is the Android handoff. No current rendered acceptance or fabricated captures. V03/V04/V05 have source improvements, V08 has source reachability support, and V06 has a bounded theme-variable correction whose rendered outcome remains unresolved.
+
+Intermediate verification: typecheck and lint passed (one existing unused Sm2Scheduler warning); focused 6 suites/113 tests passed. Final full-source tests/typecheck/lint/architecture/format/diff checks are running; final counts are maintained in [FINAL_QA_REPORT.md](FINAL_QA_REPORT.md) and `evidence/visual-qa/`. Presentation-only assertions were updated for intentional hierarchy/role changes; financial, lifecycle, data and safety assertions retained. No backend/dependency/native/production changes, commit, deployment or release-readiness claim.
+
+## Archived D-28 implementation record
+
 Completed source-supported work on 2026-11-15 under owner authorization D-28. Stopped at the **final QA/release-review boundary**, with documented limitations. Evidence-dependent whole-screen visual/native work remains blocked, not accepted or silently closed. No release-readiness claim. Backend, business rules, security/payment contracts, learning algorithms and dependencies remain outside changes. No commits or deployment.
 
 ## Readiness and evidence

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from './button';
 import { Card } from './card';
 import { Text } from './text';
+import { useThemeVariables } from '@/shared/theme/theme-provider';
 
 export function ConfirmationPanel({
   title,
@@ -28,6 +29,7 @@ export function ConfirmationPanel({
   onConfirm: () => void;
 }) {
   const heading = useRef<View>(null);
+  const themeVariables = useThemeVariables();
 
   return (
     <Modal
@@ -46,12 +48,13 @@ export function ConfirmationPanel({
         if (target) AccessibilityInfo.setAccessibilityFocus(target);
       }}
     >
-      <SafeAreaView className="flex-1 justify-center bg-overlay/60 p-lg">
+      <SafeAreaView className="flex-1 justify-center bg-overlay/60 p-lg" style={themeVariables}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
           keyboardShouldPersistTaps="handled"
         >
           <Card
+            variant="elevated"
             className="gap-md"
             style={{ width: '100%', maxWidth: 480, alignSelf: 'center' }}
             accessibilityViewIsModal
@@ -73,7 +76,7 @@ export function ConfirmationPanel({
                 {error}
               </Text>
             ) : null}
-            <Button label={cancelLabel} variant="secondary" disabled={busy} onPress={onCancel} />
+            <Button label={cancelLabel} variant="tertiary" disabled={busy} onPress={onCancel} />
             <Button
               label={confirmLabel}
               variant={destructive ? 'destructive' : 'primary'}

@@ -5,7 +5,7 @@ import { storageScopes } from '@/core/composition/repositories';
 import { syncEngine } from '@/core/composition/sync';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
-import { Card } from '@/shared/ui/card';
+import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { LoadingState } from '@/shared/ui/loading-state';
@@ -63,48 +63,68 @@ export function LogoutScreen() {
       <Stack.Screen options={{ gestureEnabled: !busy, headerBackVisible: !busy }} />
       <Modal visible transparent animationType="fade" onRequestClose={cancel}>
         <Screen scroll testID="logout-confirmation">
-          <Card className="gap-md" accessibilityViewIsModal importantForAccessibility="yes">
+          <View className="gap-xl" accessibilityViewIsModal importantForAccessibility="yes">
             <Text variant="headingSmall" accessibilityRole="header">
               {t('logout.title')}
             </Text>
-            <Text>{t('logout.confirm')}</Text>
-            <Text variant="bodySmall" tone="secondary">
-              {t('logout.coverage')}
-            </Text>
-            <Text variant="bodySmall" tone="secondary">
-              {t('logout.retention')}
-            </Text>
+            <View className="gap-sm">
+              <Text variant="labelLarge" accessibilityRole="header">
+                {t('logout.consequencesHeading')}
+              </Text>
+              <Text>{t('logout.confirm')}</Text>
+            </View>
+            <View className="gap-sm">
+              <Text variant="labelLarge" accessibilityRole="header">
+                {t('logout.backupHeading')}
+              </Text>
+              <Text variant="bodySmall" tone="secondary">
+                {t('logout.coverage')}
+              </Text>
+            </View>
+            <View className="gap-sm">
+              <Text variant="labelLarge" accessibilityRole="header">
+                {t('logout.retentionHeading')}
+              </Text>
+              <Text variant="bodySmall" tone="secondary">
+                {t('logout.retention')}
+              </Text>
+            </View>
             {!syncEngine?.available ? (
               <Text tone="secondary">{t('logout.unavailable')}</Text>
             ) : null}
             {error ? (
-              <Text tone="error" accessibilityRole="alert">
-                {error === t('logout.backupFailed')
-                  ? error
-                  : `${t('logout.backupFailed')} ${error}`}
-              </Text>
+              <FeedbackNotice
+                title={t('logout.recoveryHeading')}
+                message={
+                  error === t('logout.backupFailed')
+                    ? error
+                    : `${t('logout.backupFailed')}\n\n${error}`
+                }
+              />
             ) : null}
             {busy ? (
               <LoadingState label={t(backingUp ? 'logout.syncing' : 'logout.signingOut')} />
             ) : null}
-            <Button
-              label={t('logout.withBackup')}
-              disabled={busy || !syncEngine?.available}
-              onPress={() => void logout(true)}
-            />
-            <Button
-              label={t('logout.withoutBackup')}
-              variant="destructive"
-              disabled={busy}
-              onPress={() => void logout(false)}
-            />
-            <Button
-              label={t('common.cancel')}
-              variant="secondary"
-              disabled={busy}
-              onPress={cancel}
-            />
-          </Card>
+            <View className="gap-md">
+              <Button
+                label={t('logout.withBackup')}
+                disabled={busy || !syncEngine?.available}
+                onPress={() => void logout(true)}
+              />
+              <Button
+                label={t('logout.withoutBackup')}
+                variant="destructive"
+                disabled={busy}
+                onPress={() => void logout(false)}
+              />
+              <Button
+                label={t('common.cancel')}
+                variant="tertiary"
+                disabled={busy}
+                onPress={cancel}
+              />
+            </View>
+          </View>
         </Screen>
       </Modal>
     </View>

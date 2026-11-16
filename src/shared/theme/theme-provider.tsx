@@ -48,3 +48,8 @@ export function useThemeMode(): ThemeMode {
 export function useThemeColors() {
   return palette[useThemeMode()];
 }
+
+/** Reapply current variables at portal roots outside the provider's DOM view. */
+export function useThemeVariables() {
+  return variables[useThemeMode()];
+}

@@ -1,11 +1,10 @@
 import { memo } from 'react';
-import { BookOpen, ChevronRight } from 'lucide-react-native';
+import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import type { Deck } from '@/features/decks/domain/deck';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors } from '@/shared/theme/theme-provider';
-import { useSurfaceStyle } from '@/shared/theme/use-surface-style';
 import { icons } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
 
@@ -22,9 +21,9 @@ export const DeckListItem = memo(function DeckListItem({
   accessibilityLabel?: string;
   onPress: (deckId: string) => void;
 }) {
-  const { t, number } = useLocalization();
+  const { t, number, direction } = useLocalization();
   const colors = useThemeColors();
-  const shadow = useSurfaceStyle();
+  const Chevron = direction === 'rtl' ? ChevronLeft : ChevronRight;
   const count =
     cardCount === 0
       ? t('cards.empty')
@@ -32,16 +31,11 @@ export const DeckListItem = memo(function DeckListItem({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        accessibilityLabel ?? t('decks.open', { name: deck.name, count })
-      }
+      accessibilityLabel={accessibilityLabel ?? t('decks.open', { name: deck.name, count })}
       accessibilityHint={t('decks.openHint')}
       onPress={() => onPress(deck.id)}
-      className="mb-md min-h-listItem flex-row items-center gap-xl rounded-lg border border-surface bg-surface p-lg"
-      style={(state) => [
-        shadow,
-        state.pressed ? { backgroundColor: colors.surfaceElevated } : undefined,
-      ]}
+      className={`mb-md min-h-listItem items-center gap-md rounded-md border border-transparent bg-surface p-lg focus:border-primary ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+      style={(state) => [state.pressed ? { backgroundColor: colors.surfaceElevated } : undefined]}
     >
       <View
         className="items-center justify-center rounded-md bg-primarySoft"
@@ -51,7 +45,7 @@ export const DeckListItem = memo(function DeckListItem({
         <BookOpen color={colors.decorativeIcon} size={icons.medium} />
       </View>
       <View className="min-w-0 flex-1 gap-xs">
-        <Text variant="headingSmall" numberOfLines={2}>
+        <Text variant="bodyLarge" weight="medium" numberOfLines={2}>
           {deck.name}
         </Text>
         {showCount ? (
@@ -60,7 +54,7 @@ export const DeckListItem = memo(function DeckListItem({
           </Text>
         ) : null}
       </View>
-      <ChevronRight color={colors.tertiaryText} size={icons.medium} />
+      <Chevron color={colors.tertiaryText} size={icons.medium} />
     </Pressable>
   );
 });

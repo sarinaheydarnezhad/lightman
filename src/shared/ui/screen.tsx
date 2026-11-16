@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { layout } from '@/shared/theme/tokens';
 import { ScreenBackdrop } from '@/shared/theme/screen-backdrop';
+import { useThemeVariables } from '@/shared/theme/theme-provider';
 
 type ScreenProps = PropsWithChildren<{
   scroll?: boolean;
@@ -27,11 +28,17 @@ export function Screen({
   edges = defaultEdges,
   header,
 }: ScreenProps) {
+  const themeVariables = useThemeVariables();
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={edges} testID={testID}>
+    <SafeAreaView
+      className="flex-1 bg-background"
+      style={themeVariables}
+      edges={edges}
+      testID={testID}
+    >
       <ScreenBackdrop />
       {header ? (
-        <View className="w-full px-xl pt-xl" style={contentStyle}>
+        <View className="w-full px-lg pt-xl sm:px-xl" style={contentStyle}>
           {header}
         </View>
       ) : null}
@@ -42,12 +49,12 @@ export function Screen({
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets={keyboardAware}
         >
-          <View className="w-full flex-1 px-xl py-xl" style={contentStyle}>
+          <View className="w-full flex-1 px-lg py-xl sm:px-xl" style={contentStyle}>
             {children}
           </View>
         </ScrollView>
       ) : (
-        <View className="flex-1 px-xl py-xl" style={contentStyle}>
+        <View className="flex-1 px-lg py-xl sm:px-xl" style={contentStyle}>
           {children}
         </View>
       )}

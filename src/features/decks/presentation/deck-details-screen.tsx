@@ -101,6 +101,11 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               {data.integrityIssues.map((issue) => issue.cardId).join(', ')}
             </Text>
           )}
+          <StudyOrderButton
+            label={t('study.start')}
+            loading={study.starting}
+            onStart={(order) => void study.start({ kind: 'specific-deck', deckId }, false, order)}
+          />
           <Button
             label={t('transfer.export')}
             variant="secondary"
@@ -108,12 +113,7 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               router.push(`/settings/transfer?deckId=${encodeURIComponent(deckId)}` as Href)
             }
           />
-          <StudyOrderButton
-            label={t('study.start')}
-            loading={study.starting}
-            onStart={(order) => void study.start({ kind: 'specific-deck', deckId }, false, order)}
-          />
-          <View className="gap-sm border-b border-border pb-xl">
+          <View className="gap-sm">
             <Badge
               label={t(data.cardCount === 1 ? 'common.singleCard' : 'common.cardCount', {
                 count: number(data.cardCount),

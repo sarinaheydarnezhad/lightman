@@ -1,0 +1,30 @@
+{
+  "typecheck": {
+    "command": "pnpm.cmd typecheck",
+    "exitCode": 0,
+    "log": ".tools/visual-refinement-typecheck-initial.log"
+  },
+  "lint": {
+    "command": "pnpm.cmd lint",
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 1,
+    "log": ".tools/visual-refinement-lint-initial.log"
+  },
+  "focused": {
+    "command": "pnpm.cmd test --runTestsByPath <six suites recorded in log> --testTimeout=20000 --silent --json --outputFile=.tools/visual-refinement-focused.json",
+    "exitCode": 0,
+    "log": ".tools/visual-refinement-focused.log"
+  },
+  "interruptedBroadRun": {
+    "completed": false,
+    "reason": "Stopped own session before completion to update obsolete settings metadata/divider and duplicate-title presentation assertions. No result claimed.",
+    "log": ".tools/visual-refinement-interrupted-full.log"
+  },
+  "tailwind": {
+    "command": "pnpm.cmd exec tailwindcss -i ./src/shared/theme/global.css -o .tools/visual-refinement.css",
+    "exitCode": 0,
+    "warning": "Browserslist database is outdated; no dependency/database update performed.",
+    "log": ".tools/visual-refinement-tailwind.log"
+  }
+}

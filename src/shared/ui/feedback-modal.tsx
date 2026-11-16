@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useThemeColors, useThemeVariables } from '@/shared/theme/theme-provider';
 import { Button } from './button';
 import { Card } from './card';
 import { Text } from './text';
@@ -50,6 +50,7 @@ export function FeedbackModal({
 }) {
   const { t } = useLocalization();
   const colors = useThemeColors();
+  const themeVariables = useThemeVariables();
   const [identity] = useState(() => Symbol('feedback'));
   const heading = useRef<View>(null);
   const hasMessage = !!message;
@@ -98,8 +99,9 @@ export function FeedbackModal({
         if (target) AccessibilityInfo.setAccessibilityFocus(target);
       }}
     >
-      <SafeAreaView className="flex-1 justify-center bg-overlay/60 p-lg">
+      <SafeAreaView className="flex-1 justify-center bg-overlay/60 p-lg" style={themeVariables}>
         <Card
+          variant="elevated"
           className="w-full gap-lg"
           style={{
             maxWidth: 480,

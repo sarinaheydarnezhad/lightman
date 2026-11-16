@@ -120,7 +120,7 @@ function CloudSyncContent({ scope }: { scope: StorageState }) {
 
   return (
     <Screen scroll keyboardAware>
-      <View className="gap-lg">
+      <View className="gap-xl">
         <PageTitle>{t('sync.title')}</PageTitle>
         <Text tone="secondary">{t('sync.description')}</Text>
         {scope.mode === 'guest' && <Text tone="secondary">{t('guest.explanation')}</Text>}
@@ -143,7 +143,7 @@ function CloudSyncContent({ scope }: { scope: StorageState }) {
                 />
                 <Button
                   label={t('sync.signOut')}
-                  variant="secondary"
+                  variant="tertiary"
                   disabled={busy}
                   onPress={() => router.push('/settings/logout' as import('expo-router').Href)}
                 />

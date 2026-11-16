@@ -55,7 +55,9 @@ export function StudyIllustration() {
   );
 }
 
-export function StudyEmblem() {
+export function StudyEmblem({ progress }: { progress: number }) {
+  const normalizedProgress = Math.max(0, Math.min(1, progress));
+  const circumference = 2 * Math.PI * 47;
   const colors = useThemeColors();
   const mode = useThemeMode();
   const gradient = `flame-${useId().replace(/:/g, '')}`;
@@ -82,14 +84,19 @@ export function StudyEmblem() {
         strokeOpacity={0.65}
         strokeWidth="10"
         strokeLinecap="round"
-        strokeDasharray="151 296"
+        strokeDasharray={`${circumference * normalizedProgress} ${circumference}`}
         transform="rotate(-90 56 56)"
       />
-      <Path
-        d="M55 30 C76 42 60 48 72 51 C88 77 67 88 53 85 C28 81 34 61 43 51 C46 59 55 45 55 30Z"
-        fill={`url(#${gradient})`}
-      />
-      <Path d="M56 53 C68 66 72 79 57 84 C44 84 43 73 50 65 C49 73 58 67 56 53Z" fill="#FFE798" />
-    </Svg>
+      <G opacity={normalizedProgress > 0 ? 1 : 0.4}>
+  <Path
+    d="M55 30 C76 42 60 48 72 51 C88 77 67 88 53 85 C28 81 34 61 43 51 C46 59 55 45 55 30Z"
+    fill={`url(#${gradient})`}
+  />
+  <Path
+    d="M56 53 C68 66 72 79 57 84 C44 84 43 73 50 65 C49 73 58 67 56 53Z"
+    fill="#FFE798"
+  />
+</G>
+  </Svg>
   );
 }

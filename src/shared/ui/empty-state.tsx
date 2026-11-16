@@ -16,7 +16,7 @@ export function EmptyState({
 }) {
   const colors = useThemeColors();
   return (
-    <View className="items-center gap-md py-2xl">
+    <View className="items-center gap-md py-xl">
       <View className="h-iconButton w-iconButton items-center justify-center rounded-md bg-primarySoft">
         <Icon color={colors.decorativeIcon} size={icons.medium} />
       </View>

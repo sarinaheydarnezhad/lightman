@@ -68,14 +68,14 @@ test.each(['fa', 'en'] as const)(
     expect(
       screen.getByText(translate(language, 'common.days', { count: formatNumber(3, language) })),
     ).toHaveStyle({
+      fontFamily: 'Vazirmatn-SemiBold',
+      fontWeight: 'normal',
+    });
+    expect(screen.getByText(formatNumber(48, language))).toHaveStyle({
       fontFamily: 'Vazirmatn-Bold',
       fontWeight: 'normal',
     });
-    for (const value of [
-      formatNumber(48, language),
-      formatNumber(75, language) + '%',
-      formatNumber(12, language),
-    ]) {
+    for (const value of [formatNumber(75, language) + '%', formatNumber(12, language)]) {
       expect(screen.getByText(value)).toHaveStyle({
         fontFamily: 'Vazirmatn-SemiBold',
         fontWeight: 'normal',

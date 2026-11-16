@@ -1,0 +1,47 @@
+[
+  {
+    "name": "tests",
+    "command": "pnpm.cmd test --testTimeout=20000 --json --outputFile=.tools/visual-refinement-final-tests.json",
+    "started": "2026-11-15T15:27:09.949Z",
+    "finished": "2026-11-15T15:57:03.173Z",
+    "log": ".tools/visual-refinement-final-tests.log",
+    "exitCode": 0,
+    "signal": null
+  },
+  {
+    "name": "typecheck",
+    "command": "pnpm.cmd typecheck",
+    "started": "2026-11-15T15:57:03.190Z",
+    "finished": "2026-11-15T15:59:00.561Z",
+    "log": ".tools/visual-refinement-final-typecheck.log",
+    "exitCode": 0,
+    "signal": null
+  },
+  {
+    "name": "lint",
+    "command": "pnpm.cmd lint",
+    "started": "2026-11-15T15:59:00.572Z",
+    "finished": "2026-11-15T16:02:25.502Z",
+    "log": ".tools/visual-refinement-final-lint.log",
+    "exitCode": 0,
+    "signal": null
+  },
+  {
+    "name": "architecture",
+    "command": "pnpm.cmd test --runTestsByPath test/architecture.test.ts --json --outputFile=.tools/visual-refinement-final-architecture.json",
+    "started": "2026-11-15T16:02:25.509Z",
+    "finished": "2026-11-15T16:03:08.899Z",
+    "log": ".tools/visual-refinement-final-architecture.log",
+    "exitCode": 0,
+    "signal": null
+  },
+  {
+    "name": "format",
+    "command": "pnpm.cmd format:check",
+    "started": "2026-11-15T16:03:08.902Z",
+    "finished": "2026-11-15T16:03:11.775Z",
+    "log": ".tools/visual-refinement-final-format.log",
+    "exitCode": 2,
+    "signal": null
+  }
+]

@@ -16,7 +16,7 @@ import { useSettingsViewModel } from './use-settings-view-model';
 
 export function AppearanceScreen() {
   const vm = useSettingsViewModel();
-  const { t } = useLocalization();
+  const { t, direction } = useLocalization();
   const colors = useThemeColors();
   return (
     <Screen scroll edges={stackScreenEdges}>
@@ -105,7 +105,9 @@ export function AppearanceScreen() {
                         />
                       </View>
                     </View>
-                    <View className="flex-row items-center justify-between gap-sm">
+                    <View
+                      className={`items-center justify-between gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+                    >
                       <Text variant="labelLarge">{t(`settings.theme.${value}`)}</Text>
                       {selected ? <CheckCircle2 color={colors.primary} size={20} /> : null}
                     </View>

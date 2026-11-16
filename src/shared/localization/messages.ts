@@ -33,10 +33,9 @@ export const en = {
   'sync.sessionUnconfirmed':
     'The server session status is unconfirmed. Check account access before continuing.',
   'sync.pendingChanges': 'Changes waiting to sync: {count}',
-  'transfer.csvHelp':
-    'A comma-separated text file. The first row is headers; Front and Back are required. Deck, Phonetic, Category, Examples, and other columns are optional.',
+  'transfer.csvHelp': 'A comma-separated text file. Put column headers in the first row.',
   'transfer.xlsxHelp':
-    'An Excel workbook. Put headers in the first row of a sheet; Front and Back are required. Additional columns are preserved.',
+    'An Excel workbook. Put column headers in the first row of a sheet. Additional columns are preserved.',
   'transfer.ankiHelp':
     'An Anki .apkg or .colpkg package. Cards and available fields are previewed before saving.',
   'transfer.operationError':
@@ -271,6 +270,10 @@ export const en = {
     'This transfer only adds separate copies and never replaces account data, so no backup is required. You can back up the account in Settings. Replacement and destructive merging are not supported.',
   'migration.backupAndCopy': 'Back Up Account and Confirm Copy',
   'logout.title': 'Log out?',
+  'logout.consequencesHeading': 'What changes on this device',
+  'logout.backupHeading': 'What the backup includes',
+  'logout.retentionHeading': 'Backup availability',
+  'logout.recoveryHeading': 'Before you continue',
   'logout.confirm':
     'Logging out opens an empty guest space and permanently removes guest learning data on this device. Account data stays private and is available when you sign in again; server data is not deleted.',
   'logout.withBackup': 'Back Up and Log Out',
@@ -521,8 +524,9 @@ export const en = {
   'transfer.share': 'Share / Save file',
   'transfer.save': 'Save file to device',
   'transfer.sample': 'Download Excel sample',
-  'transfer.requiredColumns':
-    'Front and Back are required. Deck, Phonetic, Category, Examples, and other columns are optional and preserved.',
+  'transfer.requiredColumns': 'Required columns:',
+  'transfer.optionalColumns': 'Optional columns:',
+  'transfer.additionalColumnsHint': 'Additional columns are also preserved.',
   'transfer.editHint':
     'Review, edit, or delete rows before importing. Choose or edit the Deck value for each row.',
   'transfer.deleteRow': 'Delete row',
@@ -964,11 +968,11 @@ export const fa: Dictionary = {
     'وضعیت نشست در سرور تأیید نشده است. پیش از ادامه، دسترسی به حساب را بررسی کن.',
   'sync.pendingChanges': 'تغییرات در انتظار همگام‌سازی: {count}',
   'transfer.csvHelp':
-    'فایل متنی با ستون‌های جداشده با ویرگول. ردیف اول عنوان ستون‌هاست؛ Front و Back لازم‌اند. Deck، Phonetic، Category، Examples و ستون‌های دیگر اختیاری‌اند.',
+    'فایل متنی با ستون‌های جداشده با ویرگول. عنوان ستون‌ها باید در ردیف اول قرار بگیرد.',
   'transfer.xlsxHelp':
-    'فایل Excel. عنوان ستون‌ها را در ردیف اول برگه بگذار؛ Front و Back لازم‌اند. ستون‌های اضافی حفظ می‌شوند.',
+    'فایل اکسل. عنوان ستون‌ها را در ردیف اول برگه قرار بده. ستون‌های اضافی نیز حفظ می‌شوند.',
   'transfer.ankiHelp':
-    'بستهٔ Anki با پسوند .apkg یا .colpkg. کارت‌ها و فیلدهای موجود پیش از ذخیره در پیش‌نمایش نشان داده می‌شوند.',
+    'بستهٔ کارت‌های انکی با پسوندهای \u2066.apkg\u2069 یا \u2066.colpkg\u2069. کارت‌ها پیش از ذخیره در پیش‌نمایش نمایش داده می‌شوند.',
   'transfer.operationError':
     'انجام عملیات فایل تأیید نشد. فایل و مقصد را بررسی کن و دوباره تلاش کن.',
   'transfer.invalidRow': 'این ردیف وارد نشد. متن‌های لازم، مثال‌ها و قالب آن را بررسی کن.',
@@ -1197,6 +1201,10 @@ export const fa: Dictionary = {
     'این انتقال فقط نسخه‌های جداگانه اضافه می‌کند و دادهٔ حساب را جایگزین نمی‌کند؛ پشتیبان اجباری نیست. می‌توانید در تنظیمات از حساب پشتیبان بگیرید. جایگزینی و ادغام مخرب پشتیبانی نمی‌شوند.',
   'migration.backupAndCopy': 'پشتیبان‌گیری از حساب و تأیید کپی',
   'logout.title': 'از حسابت خارج می‌شوی؟',
+  'logout.consequencesHeading': 'تغییرهای این دستگاه',
+  'logout.backupHeading': 'محتوای نسخه پشتیبان',
+  'logout.retentionHeading': 'دسترسی به نسخه پشتیبان',
+  'logout.recoveryHeading': 'پیش از ادامه',
   'logout.confirm':
     'پس از خروج، فضای مهمان خالی می‌شود و داده‌های آموزشی مهمان روی این دستگاه برای همیشه حذف می‌شوند. داده‌های حساب خصوصی می‌مانند و با ورود دوباره در دسترس خواهند بود؛ داده‌های سرور حذف نمی‌شوند.',
   'logout.withBackup': 'پشتیبان‌گیری و خروج',
@@ -1415,7 +1423,7 @@ export const fa: Dictionary = {
   'review.failed': '{count} نیازمند تمرین بیشتر',
   'review.again': 'مرور دوباره',
   'transfer.title': 'ورود / خروج فایل',
-  'transfer.description': 'انتقال محلی کارت‌ها با CSV، XLSX یا Anki APKG.',
+  'transfer.description': 'انتقال محلی کارت‌ها با فرمت‌های \u2066CSV\u2069، \u2066XLSX\u2069 و \u2066Anki APKG\u2069.',
   'transfer.import': 'ورود کارت‌ها',
   'transfer.importHint': 'پیش از ذخیره، پیش‌نمایش را بررسی کن. کارت‌های موجود بازنویسی نمی‌شوند.',
   'transfer.select': 'انتخاب فایل',
@@ -1438,9 +1446,10 @@ export const fa: Dictionary = {
   'transfer.allDecks': 'همهٔ دسته‌ها',
   'transfer.share': 'اشتراک‌گذاری / ذخیرهٔ فایل',
   'transfer.save': 'ذخیره در دستگاه',
-  'transfer.sample': 'دانلود نمونه Excel',
-  'transfer.requiredColumns':
-    'Front و Back الزامی هستند. ستون‌های Deck، Phonetic، Category، Examples و ستون‌های اضافی اختیاری و حفظ می‌شوند.',
+  'transfer.sample': 'دانلود نمونه \u2066Excel\u2069',
+  'transfer.requiredColumns': 'ستون‌های ضروری:',
+  'transfer.optionalColumns': 'ستون‌های اختیاری:',
+  'transfer.additionalColumnsHint': 'ستون‌های اضافی نیز حفظ می‌شوند.',
   'transfer.editHint': 'پیش از ورود، ردیف‌ها را بررسی، ویرایش یا حذف کن.',
   'transfer.deleteRow': 'حذف ردیف',
   'transfer.noDeck': 'دسته‌ای انتخاب نشده است؛ نام فایل استفاده می‌شود.',

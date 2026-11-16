@@ -1,0 +1,53 @@
+[
+  {
+    "name": "focused",
+    "source": ".tools/visual-refinement-focused.json",
+    "success": true,
+    "suites": {
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0
+    },
+    "tests": {
+      "total": 113,
+      "passed": 113,
+      "failed": 0,
+      "pending": 0,
+      "todo": 0
+    },
+    "started": "2026-11-15T14:49:48.619Z",
+    "suiteResults": [
+      {
+        "file": "src/features/settings/presentation/subscription-screen.test.tsx",
+        "status": "passed",
+        "failures": []
+      },
+      {
+        "file": "src/features/settings/presentation/logout-screen.test.tsx",
+        "status": "passed",
+        "failures": []
+      },
+      {
+        "file": "src/features/home/presentation/home-screen.test.tsx",
+        "status": "passed",
+        "failures": []
+      },
+      {
+        "file": "src/shared/ui/primitives.test.tsx",
+        "status": "passed",
+        "failures": []
+      },
+      {
+        "file": "src/features/settings/presentation/settings-account-card.test.tsx",
+        "status": "passed",
+        "failures": []
+      },
+      {
+        "file": "src/shared/ui/feedback-modal.test.tsx",
+        "status": "passed",
+        "failures": []
+      }
+    ]
+  }
+]

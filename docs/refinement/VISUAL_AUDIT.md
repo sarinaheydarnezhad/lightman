@@ -1,5 +1,7 @@
 # Visual and design-system audit
 
+Current D-30 disposition (2026-11-15): the owner now authorizes reversible source/screenshot-supported changes without prior runtime reproduction. V03/V04/V05 source refinements, V08 scroll/width support and a V06 theme-variable scope correction are implemented; rendered results remain unverified. See [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md) for the seven-image/current-source comparison, decisions and risks. Earlier deferral statements below retain their historical evidence scope and are superseded as implementation timing constraints.
+
 Implementation disposition, 2026-11-15: D-28 approves bounded refinements. Settings action and duration selection/submission roles, logical button-icon placement, localized showcase and confirmation-role support are implemented from source-confirmed semantics. Broad optical/enclosure/hero/spacing changes and historical portal-theme correction remain dependent on current rendered validation. No new app screenshot or eye-flow measurement was obtained. See IMPLEMENTATION_REPORT.md; original findings/evidence below are retained.
 
 2026-11-15. Source baseline: frontend `067e60cbfe38e78d06f1a084f78cfc9fed5c0423`. Review is source-based plus direct inspection of the three owner-supplied JPGs. No current app rendering, device measurements or eye tracking occurred. Standards and solutions below are proposals awaiting approval.

@@ -1,0 +1,176 @@
+{
+  "checked": "2026-11-15T15:09:02.888Z",
+  "baseline": "5c51b346ea38cca37896588c493ccc72a12dbfb2",
+  "changed": [
+    "docs/refinement/AUDIT_COVERAGE.md",
+    "docs/refinement/DECISION_LOG.md",
+    "docs/refinement/IMPLEMENTATION_REPORT.md",
+    "docs/refinement/PROGRAM_STATUS.md",
+    "docs/refinement/VISUAL_AUDIT.md",
+    "docs/visual-theme.md",
+    "src/features/analytics/presentation/analytics-screen.tsx",
+    "src/features/auth/presentation/auth-screen.tsx",
+    "src/features/auth/presentation/guest-data-screen.tsx",
+    "src/features/decks/presentation/card-details-screen.tsx",
+    "src/features/decks/presentation/card-list-item.tsx",
+    "src/features/decks/presentation/deck-details-screen.tsx",
+    "src/features/decks/presentation/deck-form.tsx",
+    "src/features/decks/presentation/deck-list-item.tsx",
+    "src/features/home/presentation/home-screen.test.tsx",
+    "src/features/home/presentation/home-screen.tsx",
+    "src/features/settings/presentation/appearance-screen.tsx",
+    "src/features/settings/presentation/cloud-sync-screen.tsx",
+    "src/features/settings/presentation/logout-screen.tsx",
+    "src/features/settings/presentation/settings-account-card.test.tsx",
+    "src/features/settings/presentation/settings-account-card.tsx",
+    "src/features/settings/presentation/settings-backup-card.tsx",
+    "src/features/settings/presentation/settings-screen.test.tsx",
+    "src/features/settings/presentation/settings-screen.tsx",
+    "src/features/settings/presentation/settings-subscription-card.tsx",
+    "src/features/settings/presentation/speech-settings-screen.tsx",
+    "src/features/settings/presentation/subscription-screen.test.tsx",
+    "src/features/settings/presentation/subscription-screen.tsx",
+    "src/features/study/presentation/review-distribution.tsx",
+    "src/features/study/presentation/study-order-button.tsx",
+    "src/shared/localization/messages.ts",
+    "src/shared/navigation/navigation.test.tsx",
+    "src/shared/theme/theme-provider.tsx",
+    "src/shared/ui/button.tsx",
+    "src/shared/ui/card.tsx",
+    "src/shared/ui/confirmation-panel.tsx",
+    "src/shared/ui/empty-state.tsx",
+    "src/shared/ui/feedback-modal.tsx",
+    "src/shared/ui/feedback-notice.tsx",
+    "src/shared/ui/input.tsx",
+    "src/shared/ui/screen.tsx"
+  ],
+  "added": [
+    "docs/refinement/FINAL_QA_REPORT.md",
+    "docs/refinement/MANUAL_VISUAL_REVIEW_CHECKLIST.md",
+    "docs/refinement/VISUAL_REFINEMENT_REPORT.md",
+    "docs/refinement/evidence/visual-qa/final-source.json",
+    "docs/refinement/evidence/visual-qa/inputs.json",
+    "docs/refinement/evidence/visual-qa/intermediate-checks.json",
+    "docs/refinement/evidence/visual-qa/reviewed-documents.json",
+    "docs/refinement/evidence/visual-qa/scope-review.json",
+    "docs/refinement/evidence/visual-qa/test-results.json",
+    "src/shared/ui/navigation-row.tsx"
+  ],
+  "protectedSourcePathsUnchanged": true,
+  "paletteAndCanonicalTokensUnchanged": true,
+  "backendStatus": "",
+  "asyncOperationBodies": [
+    {
+      "file": "src/features/auth/presentation/auth-screen.tsx",
+      "operations": [
+        {
+          "name": "submit",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/auth/presentation/guest-data-screen.tsx",
+      "operations": [
+        {
+          "name": "resolveSettings",
+          "unchanged": true
+        },
+        {
+          "name": "transfer",
+          "unchanged": true
+        },
+        {
+          "name": "discard",
+          "unchanged": true
+        },
+        {
+          "name": "logout",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/decks/presentation/card-details-screen.tsx",
+      "operations": [
+        {
+          "name": "remove",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/decks/presentation/deck-details-screen.tsx",
+      "operations": [
+        {
+          "name": "remove",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/decks/presentation/deck-form.tsx",
+      "operations": [
+        {
+          "name": "save",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/cloud-sync-screen.tsx",
+      "operations": [
+        {
+          "name": "perform",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/logout-screen.tsx",
+      "operations": [
+        {
+          "name": "logout",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/settings-account-card.tsx",
+      "operations": [
+        {
+          "name": "save",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/settings-backup-card.tsx",
+      "operations": [
+        {
+          "name": "backUp",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/settings-screen.tsx",
+      "operations": [
+        {
+          "name": "saveTime",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "file": "src/features/settings/presentation/subscription-screen.tsx",
+      "operations": [
+        {
+          "name": "pay",
+          "unchanged": true
+        }
+      ]
+    }
+  ],
+  "diffCheck": 0
+}

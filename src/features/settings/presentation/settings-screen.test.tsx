@@ -98,7 +98,7 @@ function expectControls(language: UiLanguage, enabled: boolean) {
     const classes = button.props.className.split(' ');
     expect(classes).toContain('w-full');
     expect(classes).toContain('justify-between');
-    expect(classes).toContain('py-lg');
+    expect(classes).toContain('py-md');
     expect(classes).toContain(direction === 'rtl' ? 'flex-row-reverse' : 'flex-row');
     expect(classes).not.toContain(direction === 'rtl' ? 'flex-row' : 'flex-row-reverse');
     expect(
@@ -108,33 +108,35 @@ function expectControls(language: UiLanguage, enabled: boolean) {
       within(button).UNSAFE_queryByType(direction === 'rtl' ? ChevronRight : ChevronLeft),
     ).toBeNull();
   }
-  for (const key of [
-    'settings.app',
-    'settings.version',
-    ...(config.buildNumber ? (['settings.build'] as const) : []),
-    'settings.yourData',
-  ] as const) {
-    const row = screen
+  expect(screen.getByText(config.appName)).toBeTruthy();
+  expect(
+    screen.getByText(
+      translate(language, 'settings.version') +
+        ' · ' +
+        (config.appVersion ?? translate(language, 'common.unavailable')),
+    ),
+  ).toBeTruthy();
+  if (config.buildNumber)
+    expect(
+      screen.getByText(translate(language, 'settings.build') + ' · ' + config.buildNumber),
+    ).toBeTruthy();
+  expect(
+    screen.getByRole('header', { name: translate(language, 'settings.yourData') }),
+  ).toBeTruthy();
+  expect(screen.getByText(translate(language, 'settings.yourDataHint'))).toBeTruthy();
+  // Grouping uses proximity; a trailing divider is no longer part of each row.
+  expect(
+    screen
       .UNSAFE_getAllByType(View)
-      .find(
-        (view) =>
-          view.props.className?.split(' ').includes('border-b') &&
-          within(view).queryByText(translate(language, key)),
-      );
-    expect(row).toBeDefined();
-    const classes = row!.props.className.split(' ');
-    expect(classes).toContain('flex-row');
-    expect(classes).toContain('items-center');
-    expect(classes).toContain('py-lg');
-    expect(classes).toContain('min-h-listItem');
-  }
+      .filter((view) => view.props.className?.split(' ').includes('border-b')),
+  ).toHaveLength(0);
   const toggles = screen.getAllByRole('switch');
   expect(toggles).toHaveLength(1);
   for (const toggle of toggles) {
     const classes = toggle.props.className.split(' ');
     expect(classes).toContain('w-full');
     expect(classes).toContain('justify-between');
-    expect(classes).toContain('py-lg');
+    expect(classes).toContain('py-md');
     expect(classes).toContain(direction === 'rtl' ? 'flex-row-reverse' : 'flex-row');
     expect(classes).not.toContain(direction === 'rtl' ? 'flex-row' : 'flex-row-reverse');
     expect(toggle.props.accessibilityState.checked).toBe(enabled);

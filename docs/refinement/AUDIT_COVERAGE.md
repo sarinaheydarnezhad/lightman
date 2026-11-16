@@ -1,5 +1,27 @@
 # Lerona Refinement — Initial Audit Coverage
 
+## Current source refinement coverage — D-30, 2026-11-15
+
+The owner's latest authorization permits source-supported visual completion without prior runtime reproduction; old blocking statements below describe earlier scope. All 26 routes/two layouts and embedded surfaces were considered through their current presentation/shared dependencies. Entire-product refinement is implemented where justified; a route need not be rewritten to receive shared surfaces, controls, gutters and portal fixes. The detailed decision/evidence/risk register is [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md).
+
+| Family                                  | Current source work / retained design                                                                                                       | Acceptance still required                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Home                                    | Greeting/art/count/CTA hierarchy; no fixed flame ring; statistics grouping; RTL chevrons                                                    | Empty/populated/narrow/large-text composition                                            |
+| Settings/account                        | Navigation role, section spacing, no trailing dividers, data versus metadata, reminder editor                                               | Guest/account/unknown/recovery and large text                                            |
+| Subscription                            | One stack title, intro/status/comparison hierarchy, radio durations, nearby restrictions/sign-in, quiet unavailable tier                    | All themes/languages, catalog/error/expired/provisional/pending/native purchase fixtures |
+| Logout/backup/cloud                     | Structured visible disclosures, safe/destructive/cancel hierarchy, quieter error body, status/date type                                     | Synthetic recovery, verified backup versus failed refresh, native credential lifecycle   |
+| Decks/cards                             | Quieter lists, logical direction, study before secondary export, subdued delete affordance; existing confirmations/fields/content preserved | Mixed scripts, content typography, quota/keyboard/scroll                                 |
+| Study/results                           | Shared surfaces, themed order popup, distribution direction; physical outcomes/real progress/reveal/results retained                        | Native gestures, text scaling, Back, focus and persistence                               |
+| Analytics                               | Metric/streak hierarchy, surface rhythm, UI direction; chronological LTR charts retained                                                    | No-history/null/populated/large text and spoken chart review                             |
+| Auth/name/guest                         | Auth mode chips; secondary discard affordance; shared portal/field/feedback improvements; gate/consent logic retained                       | Purpose-bound auth, synthetic ownership/conflict/recovery and focus                      |
+| Appearance/language/speech              | Directional preview label/check, preference chips; existing selection/persistence/capability guidance retained                              | Device preference/voice/permission and actual selected states                            |
+| Transfer/import/vocabulary              | Shared surface/control/feedback/portal refinements; task-specific layouts, file help/receipts/manual entry retained                         | Native picker/share/speech, partial results, long issues, external applications          |
+| Bootstrap/navigation/showcase/not-found | Shared Screen/error/control changes; navigation, actual recovery and four tabs retained                                                     | Loading/failure/retry, safe areas and accessibility                                      |
+
+Source-level light/dark and Persian/English review is complete for changed branches; palettes/font/bidi formatting and protected physical/chronological mappings are retained. Actual 360/390/430 viewport, four theme/language combinations, larger text and loading/empty/error/success/recovery rendering remain **unverified**. No historical checklist is bulk checked as a rendered pass. Final automated results are in [FINAL_QA_REPORT.md](FINAL_QA_REPORT.md). Native Myket/notifications/SQLite/accessibility remain separate; no ADB/connectivity investigation in this assignment.
+
+## Archived coverage records
+
 ## Implementation coverage — D-28, 2026-11-15
 
 All 26 route files/two layouts and nine features remain covered by source review and the existing automated navigation/contract suites where applicable. No route is marked native/rendered passed. The final change manifest and tests are in IMPLEMENTATION_REPORT.md. `evidence/implementation-source-index.json` hashes 240 non-test sources; `evidence/feedback-lifecycle.json` indexes 156 component/announcement/live-region/OS-reminder entries. These are source counts, not runtime state coverage. [FEEDBACK_LIFECYCLE.md](FEEDBACK_LIFECYCLE.md) defines their persistence, scope, recovery and announcement contracts.

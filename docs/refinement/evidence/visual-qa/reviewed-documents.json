@@ -1,0 +1,82 @@
+[
+  {
+    "path": "docs/refinement/AUDIT_COVERAGE.md",
+    "sha256": "f372bd9f42ed6fbb0bce26db42903fa5f7f0ce361cbb64b1996edd10e5c1d454"
+  },
+  {
+    "path": "docs/refinement/BASELINE_VERIFICATION.md",
+    "sha256": "3ad9cc4b6e2caab36498f18ad856d74e4b6dd3e6ae5fc1e7f6894a5022191aaf"
+  },
+  {
+    "path": "docs/refinement/DECISION_LOG.md",
+    "sha256": "2cb9e34e78c4acfd22c2ff99461f6a7f4d76ececedeac5ced9d7b343ae62bbf5"
+  },
+  {
+    "path": "docs/refinement/FEEDBACK_INVENTORY.md",
+    "sha256": "ff9d20d6685c9a9501cc8bd22ad9adc6c86a5defa46de4f2a52adc18c87eab53"
+  },
+  {
+    "path": "docs/refinement/FEEDBACK_LIFECYCLE.md",
+    "sha256": "5da8592d683990c180415f5d6cdc4c56abae575078ce16941ecfd3f9f96bbd5f"
+  },
+  {
+    "path": "docs/refinement/FEEDBACK_PRESENTATION_POLICY.md",
+    "sha256": "59a0487a44a14f4ae894fcaa8e3da962db8f399d6668ac0a08aada1e2f99b85e"
+  },
+  {
+    "path": "docs/refinement/FINAL_QA_REPORT.md",
+    "sha256": "2369e0639c0dfc0f776ca3119670fb76ab0c16f5f98a8638fda1d35a0e3271ca"
+  },
+  {
+    "path": "docs/refinement/IMPLEMENTATION_REPORT.md",
+    "sha256": "5f5f4241afb9857dc889fc98d9f9b70a331c17fb6e23672cdcdd6f01d4b3fe3c"
+  },
+  {
+    "path": "docs/refinement/LERONA_REFINEMENT_MASTER_PLAN.md",
+    "sha256": "697b98d45fb3b5ca3d92f939f8ec379c1d6512b8206aedeee2ab24f7bb4b9b78"
+  },
+  {
+    "path": "docs/refinement/MANUAL_VISUAL_REVIEW_CHECKLIST.md",
+    "sha256": "6e4faad6b2b4e58e018cb171f749e6433e34d5342e5d0fdd1bb35a72678f0f42"
+  },
+  {
+    "path": "docs/refinement/OPEN_QUESTIONS.md",
+    "sha256": "4027edad6c260de0b8351cd7137947be06af95221e3cead5b8ff61ac367c2690"
+  },
+  {
+    "path": "docs/refinement/PROGRAM_BRIEF.md",
+    "sha256": "076ebe46fa3a7248a2a71891ea05776471a2058b2138e0dfb236ab0048746983"
+  },
+  {
+    "path": "docs/refinement/PROGRAM_STATUS.md",
+    "sha256": "e568cfa45df1e68676815990c302847c52e46dbbf9bca1957444417f5a3fee33"
+  },
+  {
+    "path": "docs/refinement/RUNTIME_VERIFICATION_PLAN.md",
+    "sha256": "91041a4969f100c56fcf5d5730f58a5374e84e3af95f6a6f9b708f4f34a374ee"
+  },
+  {
+    "path": "docs/refinement/UX_WRITING_AUDIT.md",
+    "sha256": "589b92b54d3f53d6cd0bbf71fe121fe807ef0697316a290ba38543a132ee500e"
+  },
+  {
+    "path": "docs/refinement/UX_WRITING_GUIDELINES.md",
+    "sha256": "798f740e1cf0776b52914fb6ef232bc7eb9b94c4c01fc21be46be732659356ac"
+  },
+  {
+    "path": "docs/refinement/VISUAL_AUDIT.md",
+    "sha256": "bc284fb0676de9914ea346dcf419515263b1551b332ae8c88bda5268ed23ab61"
+  },
+  {
+    "path": "docs/refinement/VISUAL_DESIGN_GUIDELINES.md",
+    "sha256": "b5e0ee467c3fff22c16ace8a4d47a3868b564762c4a8e518f36d38a48dff0e56"
+  },
+  {
+    "path": "docs/refinement/VISUAL_REFINEMENT_REPORT.md",
+    "sha256": "65bff2a6517be8e9814e2b763fe241056dde3ee1c31536cf294c60b992dfd645"
+  },
+  {
+    "path": "docs/visual-theme.md",
+    "sha256": "1309079f6940733c8745b5ec6637d09e4c73fa4b52b1437e436e25f19b3e9358"
+  }
+]

@@ -16,12 +16,12 @@ export function SettingsSubscriptionCard() {
   const active = state.entitlements?.isActive === true;
   return (
     <Button
+      variant="primary"
       label={
         active
           ? t('subscription.current', { plan: t('account.plusPlan') })
           : t('subscription.title')
       }
-      variant="primary"
       onPress={() => router.push('/settings/subscription' as import('expo-router').Href)}
     />
   );

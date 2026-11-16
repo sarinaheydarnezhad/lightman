@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { FeedbackNotice } from '@/shared/ui/feedback-notice';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { BookOpen, Crown, Layers, RectangleHorizontal, type LucideIcon } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { syncEngine } from '@/core/composition/sync';
@@ -10,7 +10,6 @@ import { freeLearningLimits } from '@/core/access/learning-access';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Screen } from '@/shared/ui/screen';
-import { PageTitle } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -162,19 +161,13 @@ export function SubscriptionScreen() {
     });
   return (
     <Screen edges={stackScreenEdges} scroll testID="plus-paywall">
-      <View className="gap-lg">
-        <PageTitle>{t('paywall.title')}</PageTitle>
-        {!access.isAccount ? (
-          <Text variant="bodySmall" tone="secondary">
-            {t('account.purchaseLoginHint')}
-          </Text>
-        ) : null}
-        <Card variant="outlined" style={{ backgroundColor: colors.primarySoft }}>
+      <View className="gap-xl">
+        <View>
           <View
             className={`items-start gap-lg ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
           >
             <View className="min-w-0 flex-1 gap-sm">
-              <Text variant="headingSmall" weight="bold" accessibilityRole="header">
+              <Text variant="headingMedium" accessibilityRole="header">
                 {t('paywall.introTitle')}
               </Text>
               <Text variant="bodySmall" tone="secondary">
@@ -184,19 +177,39 @@ export function SubscriptionScreen() {
             <View
               accessible={false}
               importantForAccessibility="no-hide-descendants"
-              className="min-h-iconButton min-w-iconButton items-center justify-center rounded-full bg-surface"
+              className="pt-xs"
             >
               <Crown size={icons.large} color={colors.primary} />
             </View>
           </View>
-        </Card>
+        </View>
 
-        <Card
-          variant="outlined"
-          className="gap-lg"
-          style={{ backgroundColor: colors.surface }}
-          testID="free-plan"
-        >
+        {access.isAccount ? (
+          <Card className="gap-sm" testID="current-subscription">
+            <Text
+              variant="labelLarge"
+              tone={active ? 'success' : 'primary'}
+              accessibilityLiveRegion="polite"
+            >
+              {t('paywall.status', { status })}
+            </Text>
+            {starts && Number.isFinite(Date.parse(starts)) ? (
+              <Text variant="bodySmall" tone="secondary">
+                {t('subscription.startDate', { date: localDate(starts) })}
+              </Text>
+            ) : null}
+            {expires && Number.isFinite(Date.parse(expires)) ? (
+              <Text variant="bodySmall" tone="secondary">
+                {t('subscription.endDate', { date: localDate(expires) })}
+              </Text>
+            ) : null}
+            {state.provisional && active ? (
+              <Text tone="warning">{t('access.provisional')}</Text>
+            ) : null}
+          </Card>
+        ) : null}
+
+        <View className="gap-md" testID="free-plan">
           <Text variant="headingSmall" accessibilityRole="header">
             {t('account.freePlan')}
           </Text>
@@ -211,14 +224,9 @@ export function SubscriptionScreen() {
             />
             <PlanFeature icon={BookOpen} label={t('paywall.freeStudy')} />
           </View>
-        </Card>
+        </View>
 
-        <Card
-          variant="outlined"
-          className="gap-lg"
-          style={{ backgroundColor: colors.surface, borderColor: colors.primary }}
-          testID="plus-plan"
-        >
+        <Card className="gap-lg" testID="plus-plan">
           <View
             className={`flex-wrap items-center justify-between gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
           >
@@ -227,20 +235,6 @@ export function SubscriptionScreen() {
             </Text>
             <Badge label={t('account.plusPlan')} variant="primary" />
           </View>
-          {access.isAccount ? (
-            <View className="gap-sm">
-              <Text accessibilityLiveRegion="polite">{t('paywall.status', { status })}</Text>
-              {starts && Number.isFinite(Date.parse(starts)) ? (
-                <Text>{t('subscription.startDate', { date: localDate(starts) })}</Text>
-              ) : null}
-              {expires && Number.isFinite(Date.parse(expires)) ? (
-                <Text>{t('subscription.endDate', { date: localDate(expires) })}</Text>
-              ) : null}
-              {state.provisional && active ? (
-                <Text tone="warning">{t('access.provisional')}</Text>
-              ) : null}
-            </View>
-          ) : null}
           <View className="gap-md">
             <PlanFeature icon={Layers} label={t('paywall.plusDecks')} />
             <PlanFeature icon={RectangleHorizontal} label={t('paywall.plusCards')} />
@@ -248,8 +242,29 @@ export function SubscriptionScreen() {
           </View>
         </Card>
 
+        {restriction ? (
+          <FeedbackNotice
+            title={t('paywall.reason')}
+            tone="warning"
+            message={[
+              restriction.operation === 'study' ? t('paywall.studyReason') : null,
+              restriction.decks ? t('paywall.deckReason') : null,
+              restriction.cards ? t('paywall.cardReason') : null,
+            ]
+              .filter(Boolean)
+              .join('\n')}
+          />
+        ) : null}
+        {subscription?.status === 'Expired' ? (
+          <FeedbackNotice message={t('paywall.expired')} tone="info" />
+        ) : null}
+        {details.loading ? <LoadingState label={t('subscription.loading')} /> : null}
+        {details.error ? (
+          <FeedbackNotice message={t('paywall.statusError')} onRetry={details.refresh} />
+        ) : null}
+
         {!active ? (
-          <Card variant="outlined" className="gap-md" style={{ backgroundColor: colors.surface }}>
+          <View className="gap-lg">
             <Text variant="headingSmall" accessibilityRole="header">
               {t('paywall.choose')}
             </Text>
@@ -267,47 +282,78 @@ export function SubscriptionScreen() {
                 />
               </View>
             ) : null}
-            {!catalog.loading && !catalog.error
-              ? prices.map((price) => {
-                  const total = t(
-                    price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price',
-                    {
-                      months: number(price.durationMonths),
-                      amount: amount(price.priceToman),
-                    },
-                  );
-                  const monthly = t('paywall.perMonth', {
-                    amount: amount(price.priceToman / price.durationMonths),
-                  });
-                  const discount = regularMonthlyPrice
-                    ? Math.round(
-                        (1 - price.priceToman / (regularMonthlyPrice * price.durationMonths)) * 100,
-                      )
-                    : 0;
-                  const savings =
-                    discount > 0 && discount < 100
-                      ? ` · ${t('paywall.discount', { percent: number(discount) })}`
-                      : '';
-                  return (
-                    <Button
-                      key={price.durationMonths}
-                      testID={`plus-plan-${price.durationMonths}`}
-                      label={price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`}
-                      variant="secondary"
-                      style={
-                        selected?.durationMonths === price.durationMonths
-                          ? { borderColor: colors.primary }
-                          : undefined
-                      }
-                      accessibilityState={{
-                        selected: selected?.durationMonths === price.durationMonths,
-                      }}
-                      disabled={paymentBusy}
-                      onPress={() => setSelectedMonths(price.durationMonths)}
-                    />
-                  );
-                })
-              : null}
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={t('paywall.choose')}
+              className="gap-sm"
+            >
+              {!catalog.loading && !catalog.error
+                ? prices.map((price) => {
+                    const total = t(
+                      price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price',
+                      {
+                        months: number(price.durationMonths),
+                        amount: amount(price.priceToman),
+                      },
+                    );
+                    const monthly = t('paywall.perMonth', {
+                      amount: amount(price.priceToman / price.durationMonths),
+                    });
+                    const discount = regularMonthlyPrice
+                      ? Math.round(
+                          (1 - price.priceToman / (regularMonthlyPrice * price.durationMonths)) *
+                            100,
+                        )
+                      : 0;
+                    const savings =
+                      discount > 0 && discount < 100
+                        ? ` · ${t('paywall.discount', { percent: number(discount) })}`
+                        : '';
+                    return (
+                      <Pressable
+                        key={price.durationMonths}
+                        testID={`plus-plan-${price.durationMonths}`}
+                        accessibilityRole="radio"
+                        accessibilityLabel={
+                          price.durationMonths === 1 ? total : `${total}\n${monthly}${savings}`
+                        }
+                        className={`min-h-button items-center gap-md rounded-md border p-lg focus:border-primary ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'} ${selected?.durationMonths === price.durationMonths ? 'border-primary bg-surfaceElevated' : 'border-border bg-surface'}`}
+                        accessibilityState={{
+                          checked: selected?.durationMonths === price.durationMonths,
+                          disabled: paymentBusy,
+                        }}
+                        disabled={paymentBusy}
+                        onPress={() => setSelectedMonths(price.durationMonths)}
+                      >
+                        <View className="min-w-0 flex-1 gap-xs">
+                          <Text variant="labelLarge">{total}</Text>
+                          {price.durationMonths > 1 ? (
+                            <Text variant="bodySmall" tone="secondary">
+                              {monthly}
+                            </Text>
+                          ) : null}
+                          {savings ? (
+                            <Text variant="bodySmall" tone="accent">
+                              {t('paywall.discount', { percent: number(discount) })}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <View
+                          className={`h-6 w-6 items-center justify-center rounded-full border ${selected?.durationMonths === price.durationMonths ? 'border-primary' : 'border-border'}`}
+                          accessible={false}
+                          importantForAccessibility="no-hide-descendants"
+                        >
+                          {selected?.durationMonths === price.durationMonths ? (
+                            <Text variant="labelMedium" tone="accent">
+                              {'\u2713'}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })
+                : null}
+            </View>
             {selected && !catalog.loading && !catalog.error ? (
               <Text variant="labelLarge" testID="selected-plan">
                 {t(selected.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
@@ -323,8 +369,17 @@ export function SubscriptionScreen() {
                 })}
               </Text>
             ) : null}
+            {!access.isAccount ? (
+              <View className="gap-md">
+                <Text variant="bodySmall" tone="secondary">
+                  {t('account.purchaseLoginHint')}
+                </Text>
+                <Button label={t('sync.signIn')} onPress={() => router.push('/auth')} />
+              </View>
+            ) : null}
             <Button
               label={t(paymentAvailable ? 'paywall.purchase' : 'paywall.purchaseUnavailable')}
+              variant={access.isAccount ? 'primary' : 'secondary'}
               disabled={
                 !paymentAvailable ||
                 !access.isAccount ||
@@ -367,9 +422,12 @@ export function SubscriptionScreen() {
                 />
               </View>
             ) : null}
-          </Card>
+          </View>
         ) : null}
 
+        {!access.isAccount && active ? (
+          <Button label={t('sync.signIn')} onPress={() => router.push('/auth')} />
+        ) : null}
         {paymentAvailable && access.isAccount ? (
           <Button
             label={t('payment.recover')}
@@ -392,46 +450,24 @@ export function SubscriptionScreen() {
           />
         ) : null}
 
-        <Card
-          variant="outlined"
-          className="gap-md"
-          style={{ backgroundColor: colors.surface }}
-          testID="premium-plan"
-        >
+        <View className="gap-md" testID="premium-plan">
           <View
             className={`flex-wrap items-center justify-between gap-sm ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
           >
-            <Text variant="headingSmall" accessibilityRole="header" className="flex-shrink">
+            <Text
+              variant="labelLarge"
+              tone="secondary"
+              accessibilityRole="header"
+              className="flex-shrink"
+            >
               {t('paywall.premiumPlan')}
             </Text>
             <Badge label={t('paywall.premiumStatus')} />
           </View>
-          <Text tone="secondary">{t('access.premiumUnavailable')}</Text>
-        </Card>
-
-        {restriction ? (
-          <FeedbackNotice
-            title={t('paywall.reason')}
-            tone="warning"
-            message={[
-              restriction.operation === 'study' ? t('paywall.studyReason') : null,
-              restriction.decks ? t('paywall.deckReason') : null,
-              restriction.cards ? t('paywall.cardReason') : null,
-            ]
-              .filter(Boolean)
-              .join('\n')}
-          />
-        ) : null}
-        {subscription?.status === 'Expired' ? (
-          <FeedbackNotice message={t('paywall.expired')} tone="info" />
-        ) : null}
-        {details.loading ? <LoadingState label={t('subscription.loading')} /> : null}
-        {details.error ? (
-          <FeedbackNotice message={t('paywall.statusError')} onRetry={details.refresh} />
-        ) : null}
-        {!access.isAccount ? (
-          <Button label={t('sync.signIn')} variant="primary" onPress={() => router.push('/auth')} />
-        ) : null}
+          <Text variant="bodySmall" tone="secondary">
+            {t('access.premiumUnavailable')}
+          </Text>
+        </View>
       </View>
     </Screen>
   );

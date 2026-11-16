@@ -285,7 +285,9 @@ test.each(['en', 'fa'] as const)(
         await screen.findByRole('button', { name: translate(language, 'subscription.title') }),
       );
       const title = translate(language, 'paywall.title');
-      expect(await screen.findByRole('header', { name: title })).toBeTruthy();
+      expect(
+        await screen.findByRole('header', { name: translate(language, 'paywall.introTitle') }),
+      ).toBeTruthy();
       expect(rendered.getPathname()).toBe('/settings/subscription');
       expect(
         screen

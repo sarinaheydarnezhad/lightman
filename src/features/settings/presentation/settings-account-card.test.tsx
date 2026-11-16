@@ -148,7 +148,7 @@ test.each([
     name: translate(language, 'subscription.title'),
   });
   expect(subscription.props.className.split(' ')).toContain(
-    mode === 'guest' ? 'bg-surface' : 'bg-primary',
+    mode === 'guest' ? 'border-border' : 'border-primary',
   );
   if (mode === 'guest') {
     expect(
@@ -189,7 +189,7 @@ test.each(['en', 'fa'] as const)('active Plus settings stays compact in %s', asy
     plan: translate(language, 'account.plusPlan'),
   });
   const subscription = await screen.findByRole('button', { name: label });
-  expect(subscription.props.className.split(' ')).toContain('bg-primary');
+  expect(subscription.props.className.split(' ')).toContain('border-primary');
   fireEvent.press(subscription);
   expect(router.push).toHaveBeenCalledWith('/settings/subscription');
   expect(screen.getAllByRole('button')).toHaveLength(3);
@@ -333,7 +333,7 @@ test.each([false, true])(
     await screen.findByText(account.phoneNumber!);
     const label = paid ? 'Subscription (Plus)' : 'Subscription';
     const button = await screen.findByRole('button', { name: label });
-    expect(button.props.className.split(' ')).toContain('bg-primary');
+    expect(button.props.className.split(' ')).toContain('border-primary');
     expect(screen.queryByTestId('feedback-modal')).toBeNull();
   },
 );
@@ -356,7 +356,7 @@ test('entitlement invalidation removes the paid label immediately', async () => 
   expect(screen.queryByRole('button', { name: 'Subscription (Plus)' })).toBeNull();
   expect(screen.getByRole('button', { name: 'Subscription' })).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Subscription' }).props.className.split(' ')).toContain(
-    'bg-primary',
+    'border-primary',
   );
 });
 
@@ -471,3 +471,31 @@ test('pending name saves block duplicate submissions and ignore responses after 
   expect(screen.queryByTestId('feedback-modal')).toBeNull();
   expect(screen.getByText(nextAccount.displayName)).toBeTruthy();
 });
+
+test.each(['en', 'fa'] as const)(
+  'account header groups details above ordered actions in %s',
+  async (language) => {
+    setLanguage(language);
+    mockState = { phase: 'ready', mode: 'account', userId: account.id, revision: 1 };
+    render(<SettingsAccountCard />);
+    await screen.findByText(account.displayName);
+    const header = screen.getByTestId('account-header');
+    expect(header).toHaveStyle({ flexDirection: language === 'fa' ? 'row-reverse' : 'row' });
+    expect(within(header).getByText(account.displayName)).toBeTruthy();
+    expect(within(header).getByText(account.phoneNumber!)).toHaveStyle({
+      writingDirection: 'ltr',
+      textAlign: language === 'fa' ? 'right' : 'left',
+    });
+    expect(screen.getByTestId('account-divider')).toBeTruthy();
+    expect(screen.getAllByRole('button').map((button) => button.props.accessibilityLabel)).toEqual([
+      translate(language, 'account.editName'),
+      translate(language, 'subscription.title'),
+      translate(language, 'account.logout'),
+    ]);
+    fireEvent.press(screen.getByRole('button', { name: translate(language, 'account.editName') }));
+    expect(screen.getByTestId('account-header')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: translate(language, 'common.cancel') }).props.className,
+    ).toContain('border-border');
+  },
+);

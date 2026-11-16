@@ -12,6 +12,7 @@ import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
 import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { Input } from '@/shared/ui/input';
+import { FeedbackModal } from '@/shared/ui/feedback-modal';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
 import { Text } from '@/shared/ui/text';
@@ -102,30 +103,26 @@ export function ImportPreviewScreen() {
     );
 
   if (summary)
-    return (
-      <Screen scroll edges={stackScreenEdges} testID="import-result-screen">
-        <View className="gap-lg">
-          <ScreenHeader title={t('transfer.preview')} />
-          <FeedbackNotice
-            tone="info"
-            eventKey={summary}
-            message={t('transfer.summary', {
-              imported: summary.imported,
-              duplicates: summary.duplicatesSkipped,
-              invalid: summary.invalidSkipped,
-            })}
-          >
-            {summary.issues.slice(0, 20).map((issue, index) => (
-              <Text key={index} variant="bodySmall" tone="error">
-                {transferLocation(issue.location, t)}:{' '}
-                {t(transferFeedbackKey(issue.message, 'transfer.invalidRow'))}
-              </Text>
-            ))}
-          </FeedbackNotice>
-          <Button label={t('common.close')} onPress={leave} />
-        </View>
-      </Screen>
-    );
+  return (
+    <FeedbackModal
+      title={t('transfer.preview')}
+      tone="success"
+      eventKey={summary}
+      onDismiss={leave}
+      message={t('transfer.summary', {
+        imported: summary.imported,
+        duplicates: summary.duplicatesSkipped,
+        invalid: summary.invalidSkipped,
+      })}
+    >
+      {summary.issues.slice(0, 20).map((issue, index) => (
+        <Text key={index} variant="bodySmall" tone="error">
+          {transferLocation(issue.location, t)}:{' '}
+          {t(transferFeedbackKey(issue.message, 'transfer.invalidRow'))}
+        </Text>
+      ))}
+    </FeedbackModal>
+  );
 
   return (
     <Screen edges={stackScreenEdges} testID="import-preview-screen">

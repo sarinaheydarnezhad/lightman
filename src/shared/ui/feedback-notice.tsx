@@ -46,11 +46,11 @@ export function FeedbackNotice({
   return (
     <View className="gap-sm rounded-sm bg-surfaceElevated p-lg" testID="feedback-notice">
       {title ? (
-        <Text variant="headingSmall" accessibilityRole="header">
+        <Text variant="headingSmall" tone={tone} accessibilityRole="header">
           {title}
         </Text>
       ) : null}
-      <Text tone={tone} accessibilityLiveRegion="polite">
+      <Text tone={title ? 'primary' : tone} accessibilityLiveRegion="polite">
         {message}
       </Text>
       {children}

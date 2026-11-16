@@ -332,7 +332,7 @@ function GuestDataContent({ embedded }: { embedded: boolean }) {
             <>
               <Button
                 label={t('migration.discard')}
-                variant="destructive"
+                variant="destructiveSecondary"
                 disabled={busy}
                 onPress={() => {
                   if (!submitting.current) setConfirmDiscard(true);

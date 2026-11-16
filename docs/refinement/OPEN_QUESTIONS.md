@@ -1,5 +1,7 @@
 # Lerona Refinement — Open Questions and Source Conflicts
 
+Current D-30 disposition (2026-11-15): lack of runtime reproduction no longer blocks reasonable reversible source/screenshot-supported visual implementation. Seven current supplied images were compared with source; their exact build/font/device provenance remains unknown. The source completion and candidate portal-theme correction are documented in [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md). Actual rendered/modal/accessibility/native/provider acceptance remains unresolved. No further ADB/browser investigation or routine design approval is needed for this assignment; stop after final checks, ready for manual review. Older runtime-prerequisite statements below are superseded for implementation timing.
+
 ## Current implementation disposition — D-28, 2026-11-15
 
 The owner approved the plan/standards and frontend implementation, with explicit safety and evidence boundaries. Earlier “implementation is not approved” paragraphs below are historical. The working glossary and WCAG/Android principles are approved; exact device/OS/assistive versions and outcome-label terminology remain open. Both missing Persian keys are implemented; dictionary coverage/UTF-8/interpolation checks now enforce parity. The two dynamic `{unit}` differences remain intentional explicit-card wording, not silently changed domain terminology.

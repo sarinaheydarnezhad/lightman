@@ -311,13 +311,14 @@ test.each([
   expect(screen.getByText(translate(locale, 'account.purchaseLoginHint'))).toHaveStyle({
     writingDirection: resolveDirection(locale),
   });
-  const title = translate(locale, 'paywall.title');
+  const title = translate(locale, 'paywall.introTitle');
+  expect(screen.queryByText(translate(locale, 'paywall.title'))).toBeNull();
   expect(screen.getByRole('header', { name: title }).props.allowFontScaling).toBe(true);
   expect(screen.getByText(translate(locale, 'paywall.introTitle'))).toBeTruthy();
   const freePlan = screen.getByTestId('free-plan');
   const plusPlan = screen.getByTestId('plus-plan');
   const premiumPlan = screen.getByTestId('premium-plan');
-  expect(premiumPlan).toHaveStyle({ backgroundColor: palette[mode].surface });
+  expect(premiumPlan.props.className).not.toContain('border');
   expect(
     within(premiumPlan).getByRole('header', { name: translate(locale, 'paywall.premiumPlan') }),
   ).toBeTruthy();
@@ -326,11 +327,8 @@ test.each([
   ).toBeTruthy();
   expect(within(premiumPlan).getByText(translate(locale, 'paywall.premiumStatus'))).toBeTruthy();
   expect(within(premiumPlan).queryAllByRole('button')).toHaveLength(0);
-  expect(freePlan).toHaveStyle({ backgroundColor: palette[mode].surface });
-  expect(plusPlan).toHaveStyle({
-    backgroundColor: palette[mode].surface,
-    borderColor: palette[mode].primary,
-  });
+  expect(freePlan.props.className).not.toContain('border');
+  expect(plusPlan.props.className.split(' ')).toContain('bg-surface');
   expect(
     within(freePlan).getByRole('header', { name: translate(locale, 'account.freePlan') }),
   ).toBeTruthy();
@@ -411,7 +409,8 @@ test.each(['en', 'fa'] as const)(
       locale === 'fa' ? `\u2066${formatNumber(value, locale)}\u2069` : formatNumber(value, locale);
     render(<SubscriptionScreen />);
     const first = await screen.findByTestId('plus-plan-1');
-    expect(first.props.accessibilityState.selected).toBe(true);
+    expect(first.props.accessibilityState).toMatchObject({ checked: true });
+    expect(first.props.accessibilityRole).toBe('radio');
     expect(
       screen.getByText(translate(locale, 'paywall.monthPrice', { amount: amount(70000) })),
     ).toBeTruthy();
@@ -421,11 +420,11 @@ test.each(['en', 'fa'] as const)(
       [12, 420000, 35000, 50],
     ] as const) {
       const label = `${translate(locale, 'access.price', { months: formatNumber(months, locale), amount: amount(total) })}\n${translate(locale, 'paywall.perMonth', { amount: amount(monthly) })} · ${translate(locale, 'paywall.discount', { percent: formatNumber(discount, locale) })}`;
-      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: label })).toBeTruthy();
     }
     fireEvent.press(screen.getByTestId('plus-plan-6'));
-    expect(screen.getByTestId('plus-plan-6').props.accessibilityState.selected).toBe(true);
-    expect(screen.getByTestId('plus-plan-1').props.accessibilityState.selected).toBe(false);
+    expect(screen.getByTestId('plus-plan-6').props.accessibilityState.checked).toBe(true);
+    expect(screen.getByTestId('plus-plan-1').props.accessibilityState.checked).toBe(false);
     expect(screen.getByTestId('selected-plan').props.children).toBe(
       translate(locale, 'paywall.total', {
         months: formatNumber(6, locale),
@@ -436,14 +435,14 @@ test.each(['en', 'fa'] as const)(
       translate(locale, 'paywall.perMonth', { amount: amount(49000) }),
     );
     fireEvent.press(screen.getByTestId('plus-plan-12'));
-    expect(screen.getByTestId('plus-plan-12').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('plus-plan-12').props.accessibilityState.checked).toBe(true);
     expect(screen.getByTestId('selected-plan-monthly').props.children).toBe(
       translate(locale, 'paywall.perMonth', { amount: amount(35000) }),
     );
     expect(
-      StyleSheet.flatten(screen.getByText(translate(locale, 'paywall.title')).props.style),
+      StyleSheet.flatten(screen.getByText(translate(locale, 'paywall.introTitle')).props.style),
     ).toMatchObject({
-      fontFamily: 'Vazirmatn-Bold',
+      fontFamily: 'Vazirmatn-SemiBold',
       fontWeight: 'normal',
       writingDirection: resolveDirection(locale),
       textAlign: locale === 'fa' ? 'right' : 'left',
@@ -484,9 +483,16 @@ test.each(['fa', 'en'] as const)(
           `${price.durationMonths} ${price.durationMonths === 1 ? 'month' : 'months'}: ${formatted[index]} toman`,
         );
       }
-      expect(screen.getByText(label)).toHaveStyle({ writingDirection: resolveDirection(locale) });
+      expect(
+        within(button).getByText(
+          translate(locale, price.durationMonths === 1 ? 'paywall.monthPrice' : 'access.price', {
+            months: formatNumber(price.durationMonths, locale),
+            amount: locale === 'fa' ? `\u2066${formatted[index]}\u2069` : formatted[index]!,
+          }),
+        ),
+      ).toHaveStyle({ writingDirection: resolveDirection(locale) });
       fireEvent.press(button);
-      expect(button.props.accessibilityState.selected).toBe(true);
+      expect(button.props.accessibilityState.checked).toBe(true);
       expect(screen.getByTestId('selected-plan').props.children).toBe(
         translate(locale, price.durationMonths === 1 ? 'paywall.monthTotal' : 'paywall.total', {
           months: formatNumber(price.durationMonths, locale),

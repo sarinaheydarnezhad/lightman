@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { FeedbackNotice } from '@/shared/ui/feedback-notice';
 import { View } from 'react-native';
+import { UserRound } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { storageScopes } from '@/core/composition/repositories';
 import { syncEngine } from '@/core/composition/sync';
@@ -8,7 +9,7 @@ import type { AccountProfile } from '@/core/sync/cloud-client';
 import { useFocusedResource } from '@/shared/navigation/use-focused-resource';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { useThemeColors } from '@/shared/theme/theme-provider';
-import { spacing } from '@/shared/theme/tokens';
+import { heights, icons, radii, spacing } from '@/shared/theme/tokens';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -17,7 +18,9 @@ import { Text } from '@/shared/ui/text';
 import { SettingsSubscriptionCard } from './settings-subscription-card';
 
 function AccountNameEditor({ profile }: { profile: AccountProfile }) {
-  const { t } = useLocalization();
+  const { t, direction } = useLocalization();
+  const colors = useThemeColors();
+  const textAlign = direction === 'rtl' ? 'right' : 'left';
   const [savedName, setSavedName] = useState(profile.displayName);
   const [name, setName] = useState(profile.displayName);
   const [editing, setEditing] = useState(false);
@@ -61,50 +64,93 @@ function AccountNameEditor({ profile }: { profile: AccountProfile }) {
   }
 
   return (
-    <View className="gap-sm">
-      {editing ? (
-        <>
-          <Input
-            label={t('onboarding.nameLabel')}
-            error={error === 'invalid' ? t('onboarding.nameInvalid') : undefined}
-            value={name}
-            onChangeText={(value) => {
-              setName(value);
-              setError(null);
-            }}
-            disabled={saving}
-            maxLength={120}
-            autoComplete="name"
-            autoCapitalize="words"
-            returnKeyType="done"
-            onSubmitEditing={() => void save()}
-          />
-          <Button label={t('account.saveName')} loading={saving} onPress={() => void save()} />
-          <Button
-            label={t('common.cancel')}
-            variant="tertiary"
-            disabled={saving}
-            onPress={() => {
-              setName(savedName);
-              setError(null);
-              setEditing(false);
-            }}
-          />
-        </>
-      ) : (
-        <>
-          <Text variant="labelLarge">{savedName || t('account.noUsername')}</Text>
+    <>
+      <View
+        testID="account-header"
+        style={{
+          flexDirection: direction === 'rtl' ? 'row-reverse' : 'row',
+          alignItems: 'center',
+          gap: spacing.md,
+        }}
+      >
+        <View
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={{
+            width: heights.button,
+            height: heights.button,
+            borderRadius: radii.full,
+            backgroundColor: colors.primarySoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <UserRound size={icons.large} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: spacing.xs }}>
+          <Text variant="headingSmall" style={{ textAlign }}>
+            {savedName || t('account.noUsername')}
+          </Text>
+          {profile.phoneNumber || profile.email ? (
+            <Text
+              variant="bodySmall"
+              tone="secondary"
+              style={{ textAlign, writingDirection: 'ltr' }}
+            >
+              {profile.phoneNumber || profile.email}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <View
+        testID="account-divider"
+        style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.xs }}
+      />
+      <View className="gap-md">
+        {editing ? (
+          <>
+            <Input
+              label={t('onboarding.nameLabel')}
+              error={error === 'invalid' ? t('onboarding.nameInvalid') : undefined}
+              value={name}
+              onChangeText={(value) => {
+                setName(value);
+                setError(null);
+              }}
+              disabled={saving}
+              maxLength={120}
+              autoComplete="name"
+              autoCapitalize="words"
+              returnKeyType="done"
+              onSubmitEditing={() => void save()}
+            />
+            <Button label={t('account.saveName')} loading={saving} onPress={() => void save()} />
+            <Button
+              label={t('common.cancel')}
+              variant="secondary"
+              disabled={saving}
+              onPress={() => {
+                setName(savedName);
+                setError(null);
+                setEditing(false);
+              }}
+            />
+          </>
+        ) : (
           <Button
             label={t('account.editName')}
             variant="secondary"
             onPress={() => setEditing(true)}
           />
-        </>
-      )}
-      {error === 'save' ? (
-        <FeedbackNotice message={t('onboarding.nameSaveError')} onDismiss={() => setError(null)} />
-      ) : null}
-    </View>
+        )}
+        {error === 'save' ? (
+          <FeedbackNotice
+            message={t('onboarding.nameSaveError')}
+            onDismiss={() => setError(null)}
+          />
+        ) : null}
+      </View>
+    </>
   );
 }
 
@@ -122,12 +168,7 @@ function AccountDetails({ userId }: { userId: string }) {
     <>
       {profile.loading ? <LoadingState label={t('account.loading')} /> : null}
       {profile.data && !profile.error ? (
-        <>
-          <AccountNameEditor key={profile.data.displayName} profile={profile.data} />
-          {profile.data.phoneNumber || profile.data.email ? (
-            <Text variant="labelLarge">{profile.data.phoneNumber || profile.data.email}</Text>
-          ) : null}
-        </>
+        <AccountNameEditor key={profile.data.displayName} profile={profile.data} />
       ) : null}
       {profile.error ? (
         <FeedbackNotice

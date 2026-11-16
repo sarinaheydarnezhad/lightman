@@ -1,5 +1,7 @@
 # Lerona unified experience refinement master plan
 
+Current D-30 continuation (2026-11-15): source-supported visual completion is authorized without prior runtime reproduction. Shared and screen-level work previously deferred for visual evidence is now implemented where justified; see [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md), [FINAL_QA_REPORT.md](FINAL_QA_REPORT.md) and [MANUAL_VISUAL_REVIEW_CHECKLIST.md](MANUAL_VISUAL_REVIEW_CHECKLIST.md). Earlier disposition tables below are historical. Runtime/native acceptance and protected-contract gates remain open; no deployment/release readiness.
+
 ## Approved execution update — 2026-11-15
 
 Owner decision D-28 approves this plan and standards subject to whole-screen composition, contextual feedback lifecycles, editorial discipline and protected contracts. The draft/approval language below is the original proposal, superseded for authorized frontend work. No backend, business-rule, security/payment-contract, algorithm, dependency, production or deployment authority is implied. See IMPLEMENTATION_REPORT.md for actual execution and final QA limits.

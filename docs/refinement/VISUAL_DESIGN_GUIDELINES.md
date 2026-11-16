@@ -1,5 +1,7 @@
 # Approved visual design guidelines
 
+Current authority D-30 (2026-11-15): the owner permits reasonable reversible source/screenshot-supported visual changes without prior runtime reproduction. This supersedes the older implementation prerequisite below, while preserving all brand and protected-contract constraints. Decisions and risks are in [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md); actual rendered eye flow, optical alignment, contrast and accessibility still require manual verification.
+
 Approval update, 2026-11-15: owner decision D-28 approves these standards, subject to the integrated implementation requirements. Whole-screen composition must be evaluated; make the smallest effective changes. Runtime-dependent optical/layout hypotheses need rendered validation before implementation. The draft wording below records the original proposal and its evidence limits. Accessibility references are approved working criteria; exact native device/OS coverage remains open.
 
 2026-11-15. Draft, awaiting owner approval; no implementation. Direction: Modern Calm Minimalism in the service of “Learn intelligently, progress calmly.” Preserve purple identity, intentional neutral charcoal dark theme, Vazirmatn and semantic token architecture.

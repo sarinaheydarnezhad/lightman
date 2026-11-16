@@ -17,7 +17,7 @@ import { useAnalyticsViewModel } from './use-analytics-view-model';
 const windows: AnalyticsWindow[] = [7, 30, 90];
 
 export function AnalyticsScreen() {
-  const { t, number } = useLocalization();
+  const { t, number, direction } = useLocalization();
   const { fontScale, width } = useWindowDimensions();
   const stackMetrics = fontScale >= 1.4 || width < 360;
   const analytics = useAnalyticsViewModel();
@@ -61,7 +61,7 @@ export function AnalyticsScreen() {
             {data.hasHistory ? (
               <>
                 <View
-                  className="gap-xs rounded-lg border border-surface bg-surface p-xl"
+                  className="gap-xs rounded-md bg-surface p-lg"
                   accessible
                   accessibilityLabel={t('analytics.streakA11y', {
                     current: t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
@@ -75,7 +75,7 @@ export function AnalyticsScreen() {
                   <Text variant="bodySmall" tone="secondary">
                     {t('analytics.currentStreak')}
                   </Text>
-                  <Text variant="headingLarge">
+                  <Text variant="headingMedium">
                     {t(data.currentStreak === 1 ? 'common.day' : 'common.days', {
                       count: number(data.currentStreak),
                     })}
@@ -88,9 +88,15 @@ export function AnalyticsScreen() {
                     })}
                   </Text>
                 </View>
-                <View className={stackMetrics ? 'gap-xl' : 'flex-row gap-xl'}>
+                <View
+                  className={
+                    stackMetrics
+                      ? 'gap-lg'
+                      : `gap-lg ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`
+                  }
+                >
                   <View
-                    className="min-w-0 flex-1 gap-xs rounded-lg bg-surface p-lg"
+                    className="min-w-0 flex-1 gap-xs rounded-md bg-surface p-lg"
                     accessible
                     accessibilityLabel={t('analytics.cardsTodayA11y', {
                       count: number(data.cardsReviewedToday),
@@ -99,10 +105,10 @@ export function AnalyticsScreen() {
                     <Text variant="bodySmall" tone="secondary">
                       {t('analytics.cardsToday')}
                     </Text>
-                    <Text variant="headingMedium">{number(data.cardsReviewedToday)}</Text>
+                    <Text variant="headingLarge">{number(data.cardsReviewedToday)}</Text>
                   </View>
                   <View
-                    className="min-w-0 flex-1 gap-xs rounded-lg bg-surface p-lg"
+                    className="min-w-0 flex-1 gap-xs rounded-md bg-surface p-lg"
                     accessible
                     accessibilityLabel={t('analytics.retentionA11y', {
                       value:

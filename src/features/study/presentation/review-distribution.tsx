@@ -9,7 +9,7 @@ export function ReviewDistribution({
 }: {
   distributions: readonly SchedulerDistributionGroup[];
 }) {
-  const { t, number, language } = useLocalization();
+  const { t, number, language, direction } = useLocalization();
   return (
     <Card className="gap-md">
       <Text variant="headingSmall" accessibilityRole="header">
@@ -26,7 +26,7 @@ export function ReviewDistribution({
           {distribution.sections.map((section) => (
             <View
               key={section.key}
-              className="flex-row justify-between gap-md"
+              className={`justify-between gap-md ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
               accessible
               accessibilityLabel={t('review.sectionA11y', {
                 label: section.localizedLabels?.[language] ?? section.label,

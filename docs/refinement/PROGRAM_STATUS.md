@@ -1,5 +1,15 @@
 # Lerona Refinement — Program Status
 
+## Current visual completion — D-30, 2026-11-15
+
+Source-supported visual implementation is complete for final automated verification and manual review. D-30 supersedes the older runtime-prerequisite/stop statements below; runtime absence does not prevent these reversible changes. Current starting commit: `5c51b346ea38cca37896588c493ccc72a12dbfb2`, initially clean. Previous feedback/localization/accessibility/recovery improvements are preserved.
+
+Shared foundations and targeted compositions across Home, Settings/subscription/logout, content navigation, analytics, auth/speech, backup and portals are refined. [VISUAL_REFINEMENT_REPORT.md](VISUAL_REFINEMENT_REPORT.md) records decisions/risks; [MANUAL_VISUAL_REVIEW_CHECKLIST.md](MANUAL_VISUAL_REVIEW_CHECKLIST.md) supports Android review. No current screenshots/rendered/optical/accessibility acceptance is claimed. V06 historical reproduction and native/runtime checks remain open.
+
+Focused regression: 113/113 tests, 6/6 suites; intermediate typecheck/lint passed, one existing warning. Final full-source verification is running and will be reported in [FINAL_QA_REPORT.md](FINAL_QA_REPORT.md). No further ADB, browser troubleshooting or development server launches. No protected behavior/backend/dependency change, commit, deployment or release readiness.
+
+## Archived program records
+
 ## Active implementation — 2026-11-15
 
 Current position: **stopped at final QA/release review, with documented limitations**. Source-supported packages A–E are implemented and automated regression checks completed; evidence-dependent optical/whole-screen changes and historical theme reproduction are still blocked. D-28 is the governing frontend implementation authority; archived preparation/audit-only statements below are superseded for this assignment.

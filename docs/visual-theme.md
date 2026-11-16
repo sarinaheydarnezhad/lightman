@@ -1,5 +1,11 @@
 # Visual theme
 
+## Current composition refinement — D-30, 2026-11-15
+
+The owner authorizes source-supported visual refinement without prior runtime reproduction. The palette, Vazirmatn assets and canonical typography/spacing/height tokens are retained. Ordinary/interactive cards now use 16px padding and 18px radius without shadows; explicitly elevated dialog surfaces retain 24px padding/radius and elevation. Screen gutters use 16px on mobile and 24px from the existing `sm` breakpoint. Buttons keep their 54px minimum height and use 12px control radius, with distinct tertiary/navigation/outlined-destructive roles.
+
+Home no longer displays the fixed decorative flame ring. Subscription duration choices are radio controls; current status and task actions have distinct hierarchy. Settings and logout use proximity and structured sections instead of redundant borders/enclosures. Existing variables are reapplied at portal roots to address the source-supported web inheritance mechanism; actual rendered dark-modal contrast remains unverified. Earlier `New.png` and flame-ring descriptions below are historical, not current targets or acceptance evidence. See [visual refinement report](refinement/VISUAL_REFINEMENT_REPORT.md), [final QA](refinement/FINAL_QA_REPORT.md) and [manual Android checklist](refinement/MANUAL_VISUAL_REVIEW_CHECKLIST.md).
+
 ## Refinement update — 2026-11-15
 
 Owner-approved direction is Modern Calm Minimalism, preserving purple, neutral charcoal dark surfaces and Vazirmatn. Existing color, typography, spacing and surface tokens remain unchanged in this implementation. Source-confirmed action roles now distinguish guest subscription navigation from sign-in and duration selection from purchase submission; icon placement follows interface direction. The showcase includes localized contextual feedback and confirmation roles. Inline validation/resource/recovery states replace many modal notices; see [app-feedback](app-feedback.md).

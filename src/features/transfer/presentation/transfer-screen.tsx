@@ -30,7 +30,7 @@ const formatHelp = [
 ] as const;
 
 export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
-  const { t } = useLocalization();
+  const { t, direction } = useLocalization();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckId, setDeckId] = useState(initialDeckId);
   const [format, setFormat] = useState<TransferFormat>('csv');
@@ -40,6 +40,10 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
   const [loaded, setLoaded] = useState(false);
   const active = useRef(false);
   const mounted = useRef(true);
+  const importTextStyle = {
+    textAlign: direction === 'rtl' ? 'right' : 'left',
+    writingDirection: direction,
+  } as const;
 
   useEffect(() => {
     mounted.current = true;
@@ -94,14 +98,53 @@ export function TransferScreen({ initialDeckId }: { initialDeckId?: string }) {
       <View className="gap-2xl">
         <ScreenHeader title={t('transfer.title')} description={t('transfer.description')} />
         <Card className="gap-md">
-          <Text variant="headingSmall">{t('transfer.import')}</Text>
-          <Text tone="secondary">{t('transfer.importHint')}</Text>
-          <Text variant="bodySmall">{t('transfer.requiredColumns')}</Text>
-          {formatHelp.map(([name, description]) => (
-            <Text key={name} variant="bodySmall" tone="secondary">
-              {name}: {t(description)}
-            </Text>
-          ))}
+          <Text variant="headingSmall" style={importTextStyle}>
+            {t('transfer.import')}
+          </Text>
+          <Text tone="secondary" style={importTextStyle}>
+            {t('transfer.importHint')}
+          </Text>
+          <View className="gap-lg py-sm">
+            <View className="gap-sm">
+              <Text variant="bodySmall" style={importTextStyle}>
+                {t('transfer.requiredColumns')}
+              </Text>
+              <Text
+                variant="bodySmall"
+                weight="semibold"
+                style={{ ...importTextStyle, writingDirection: 'ltr' }}
+              >
+                Front, Back
+              </Text>
+            </View>
+            <View className="gap-sm">
+              <Text variant="bodySmall" style={importTextStyle}>
+                {t('transfer.optionalColumns')}
+              </Text>
+              <Text
+                variant="bodySmall"
+                weight="semibold"
+                style={{ ...importTextStyle, writingDirection: 'ltr' }}
+              >
+                Deck, Phonetic, Category, Examples
+              </Text>
+              <Text variant="bodySmall" tone="secondary" style={importTextStyle}>
+                {t('transfer.additionalColumnsHint')}
+              </Text>
+            </View>
+          </View>
+          <View className="gap-lg border-t border-border pt-lg">
+            {formatHelp.map(([name, description]) => (
+              <View key={name} className="gap-sm">
+                <Text weight="bold" style={{ ...importTextStyle, writingDirection: 'ltr' }}>
+                  {name}
+                </Text>
+                <Text variant="bodySmall" tone="secondary" style={importTextStyle}>
+                  {t(description)}
+                </Text>
+              </View>
+            ))}
+          </View>
           <Button
             label={t('transfer.sample')}
             variant="secondary"

@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { StudyOrder } from '../domain/study-order';
 import { useLocalization } from '@/shared/localization/localization-provider';
-import { useThemeColors } from '@/shared/theme/theme-provider';
+import { useThemeColors, useThemeVariables } from '@/shared/theme/theme-provider';
 import { heights, interaction, radii } from '@/shared/theme/tokens';
 import { Text } from '@/shared/ui/text';
 
@@ -68,6 +68,7 @@ export function StudyOrderButton({
 }) {
   const { t, direction } = useLocalization();
   const colors = useThemeColors();
+  const themeVariables = useThemeVariables();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const anchor = useRef<View>(null);
@@ -129,7 +130,14 @@ export function StudyOrderButton({
           disabled={unavailable}
           activeColor={activeColor}
           onPress={() => onStart('random')}
-          style={[styles.startAction, { flexDirection: rtl ? 'row-reverse' : 'row' }]}
+          style={[
+  styles.startAction,
+  {
+    flexDirection: rtl ? 'row-reverse' : 'row',
+    paddingLeft: rtl ? 16 : 65,
+    paddingRight: rtl ? 65 : 16,
+  },
+]}
         >
           {loading ? <ActivityIndicator size="small" color={foreground} /> : null}
           <Text variant="labelLarge" align="center" style={{ color: foreground, flexShrink: 1 }}>
@@ -155,7 +163,7 @@ export function StudyOrderButton({
           style={styles.orderAction}
         >
           <ChevronDown
-            size={22}
+            size={18}
             color={foreground}
             style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
           />
@@ -167,7 +175,7 @@ export function StudyOrderButton({
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        <View style={{ flex: 1 }} accessibilityViewIsModal>
+        <View style={[themeVariables, { flex: 1 }]} accessibilityViewIsModal>
           <Pressable
             style={{ position: 'absolute', inset: 0 }}
             accessibilityRole="button"
@@ -263,7 +271,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  orderAction: { width: 56, alignItems: 'center', justifyContent: 'center' },
-  separator: { width: 1, marginVertical: 14, opacity: 0.2 },
+  orderAction: { width: 48, alignItems: 'center', justifyContent: 'center' },
+  separator: { width: 1, marginVertical: 18, opacity: 0.15 },
   icon: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
 });
