@@ -42,15 +42,14 @@ export function CardListScreen({ deckId }: { deckId: string }) {
   );
 
   return (
-    <Screen edges={stackScreenEdges}>
+    <Screen scroll={false} edges={stackScreenEdges}>
       <FlatList
         data={loading || error ? [] : cards}
         keyExtractor={(card) => card.id}
         renderItem={renderItem}
         contentContainerClassName="pb-3xl"
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="none"
         ListHeaderComponent={
           <View className="gap-lg pb-md">
             <ScreenHeader

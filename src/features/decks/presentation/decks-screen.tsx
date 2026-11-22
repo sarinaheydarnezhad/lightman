@@ -35,14 +35,13 @@ export function DecksScreen() {
   );
 
   return (
-    <Screen edges={tabScreenEdges}>
+    <Screen scroll={false} edges={tabScreenEdges}>
       <FlatList
         data={loading || error ? [] : decks}
         keyExtractor={(deck) => deck.id}
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="none"
         contentContainerClassName="pb-3xl"
         ListHeaderComponent={
           <View className="gap-lg pb-md">

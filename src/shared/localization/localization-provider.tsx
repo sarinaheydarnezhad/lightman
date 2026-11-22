@@ -9,6 +9,7 @@ import {
 import { View } from 'react-native';
 
 import { application } from '@/core/composition/application';
+import { DEFAULT_UI_LANGUAGE } from '@/core/composition/default-settings';
 import {
   formatNumber,
   resolveDirection,
@@ -27,10 +28,10 @@ type Localization = {
 };
 
 const defaultLocalization: Localization = {
-  language: 'en',
-  direction: 'ltr',
-  t: (key, values) => translate('en', key, values),
-  number: (value) => formatNumber(value, 'en'),
+  language: DEFAULT_UI_LANGUAGE,
+  direction: resolveDirection(DEFAULT_UI_LANGUAGE),
+  t: (key, values) => translate(DEFAULT_UI_LANGUAGE, key, values),
+  number: (value) => formatNumber(value, DEFAULT_UI_LANGUAGE),
 };
 const LocalizationContext = createContext(defaultLocalization);
 
@@ -42,7 +43,9 @@ export function LocalizationProvider({
     application.settings.subscribe,
     application.settings.snapshot,
   )?.language;
-  const [savedLanguage, setSavedLanguage] = useState(() => resolveUiLanguage(tag));
+  const [savedLanguage, setSavedLanguage] = useState(() =>
+    resolveUiLanguage(tag ?? DEFAULT_UI_LANGUAGE),
+  );
   const currentLanguage = tag ? resolveUiLanguage(tag) : savedLanguage;
   if (currentLanguage !== savedLanguage) setSavedLanguage(currentLanguage);
   const language = languageOverride ?? currentLanguage;

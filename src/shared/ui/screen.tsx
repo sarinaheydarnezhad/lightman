@@ -1,11 +1,12 @@
 import { type PropsWithChildren, type ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { layout } from '@/shared/theme/tokens';
 import { ScreenBackdrop } from '@/shared/theme/screen-backdrop';
 import { useThemeVariables } from '@/shared/theme/theme-provider';
 
 type ScreenProps = PropsWithChildren<{
+  /** Set false when the screen has its own scrolling container, such as a FlatList. */
   scroll?: boolean;
   keyboardAware?: boolean;
   testID?: string;
@@ -22,8 +23,8 @@ const contentStyle = {
 
 export function Screen({
   children,
-  scroll = false,
-  keyboardAware = false,
+  scroll = true,
+  keyboardAware = true,
   testID,
   edges = defaultEdges,
   header,
@@ -42,22 +43,29 @@ export function Screen({
           {header}
         </View>
       ) : null}
-      {scroll ? (
-        <ScrollView
-          contentContainerClassName="flex-grow items-center"
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={keyboardAware}
-        >
-          <View className="w-full flex-1 px-lg py-xl sm:px-xl" style={contentStyle}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        enabled={keyboardAware && (Platform.OS === 'android' || (Platform.OS === 'ios' && !scroll))}
+        behavior={Platform.OS === 'android' ? 'height' : 'padding'}
+      >
+        {scroll ? (
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerClassName="flex-grow items-center"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            automaticallyAdjustKeyboardInsets={keyboardAware && Platform.OS === 'ios'}
+          >
+            <View className="w-full flex-grow px-lg py-xl sm:px-xl" style={contentStyle}>
+              {children}
+            </View>
+          </ScrollView>
+        ) : (
+          <View className="flex-1 px-lg py-xl sm:px-xl" style={contentStyle}>
             {children}
           </View>
-        </ScrollView>
-      ) : (
-        <View className="flex-1 px-lg py-xl sm:px-xl" style={contentStyle}>
-          {children}
-        </View>
-      )}
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

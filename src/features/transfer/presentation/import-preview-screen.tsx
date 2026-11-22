@@ -125,7 +125,7 @@ export function ImportPreviewScreen() {
   );
 
   return (
-    <Screen edges={stackScreenEdges} testID="import-preview-screen">
+    <Screen scroll={false} edges={stackScreenEdges} testID="import-preview-screen">
       <Stack.Screen options={{ gestureEnabled: !busy, headerBackVisible: !busy }} />
       <View className="flex-1 gap-md">
         <FlatList
@@ -135,8 +135,7 @@ export function ImportPreviewScreen() {
           keyExtractor={(row) => row.location}
           contentContainerStyle={{ gap: spacing.md, paddingBottom: spacing.md }}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="none"
           ListHeaderComponent={
             <View className="gap-lg">
               <ScreenHeader title={t('transfer.preview')} description={preview.fileName} />

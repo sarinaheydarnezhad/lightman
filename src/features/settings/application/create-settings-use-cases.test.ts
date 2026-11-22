@@ -96,7 +96,7 @@ test('reminder schedules first, commits after success, reschedules on time chang
   await settings.setReminderEnabled(true);
   expect(settings.snapshot()?.dailyReminderEnabled).toBe(true);
   await settings.setReminderTime(localTime('18:45'));
-  expect(notifications.scheduleDailyReminder).toHaveBeenLastCalledWith('18:45', 'en');
+  expect(notifications.scheduleDailyReminder).toHaveBeenLastCalledWith('18:45', 'fa');
   expect(settings.snapshot()?.dailyReminderTime).toBe('18:45');
   await settings.setReminderEnabled(false);
   expect(notifications.cancelDailyReminder).toHaveBeenCalledTimes(1);
@@ -137,7 +137,7 @@ test('reconciliation reschedules a missing enabled reminder, without permission 
   await repository.update({ ...defaultSettings(), dailyReminderEnabled: true });
   notifications.getScheduledReminder.mockResolvedValueOnce(null);
   await settings.reconcileReminder();
-  expect(notifications.scheduleDailyReminder).toHaveBeenCalledWith(localTime('09:00'), 'en');
+  expect(notifications.scheduleDailyReminder).toHaveBeenCalledWith(localTime('09:00'), 'fa');
   expect(notifications.requestPermission).not.toHaveBeenCalled();
   expect(settings.snapshot()?.dailyReminderEnabled).toBe(true);
 });
@@ -187,7 +187,7 @@ test('generic application updates cannot bypass reminder scheduling', async () =
   const { repository, notifications, settings } = setup();
   await repository.update(defaultSettings());
   await settings.update({ dailyReminderEnabled: true, theme: 'dark' });
-  expect(notifications.scheduleDailyReminder).toHaveBeenCalledWith(localTime('09:00'), 'en');
+  expect(notifications.scheduleDailyReminder).toHaveBeenCalledWith(localTime('09:00'), 'fa');
   expect(settings.snapshot()).toMatchObject({ dailyReminderEnabled: true, theme: 'dark' });
 });
 
