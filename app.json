@@ -4,13 +4,13 @@
     "slug": "lerona",
     "scheme": "lerona",
     "icon": "./assets/icon.jpg",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.example.lerona",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "deploymentTarget": "16.4",
       "privacyManifests": {
         "NSPrivacyAccessedAPITypes": [
@@ -31,7 +31,7 @@
     },
     "android": {
       "package": "com.lerona.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -75,9 +75,9 @@
       "typedRoutes": true
     },
     "splash": {
-      "image": "./assets/lerona-splash.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#161321"
+      "backgroundColor": "#F6F5FD"
     },
     "extra": {
       "router": {
