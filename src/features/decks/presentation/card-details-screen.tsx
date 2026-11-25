@@ -8,16 +8,18 @@ import { speech } from '@/core/composition/speech';
 import { PronunciationButton } from '@/shared/speech/pronunciation-button';
 import { stackScreenEdges } from '@/shared/navigation/safe-area';
 import { Button } from '@/shared/ui/button';
+import { Card } from '@/shared/ui/card';
 import { ConfirmationPanel } from '@/shared/ui/confirmation-panel';
 import { FeaturePlaceholder } from '@/shared/ui/feature-placeholder';
 import { LoadingState } from '@/shared/ui/loading-state';
 import { Screen } from '@/shared/ui/screen';
 import { ScreenHeader } from '@/shared/ui/screen-header';
+import { Text } from '@/shared/ui/text';
 import { CardContent } from './card-content';
 import { useCardActions, useCardDetailsViewModel } from './use-cards-view-model';
 
 export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: string }) {
-  const { t } = useLocalization();
+  const { t, number } = useLocalization();
   useFocusEffect(useCallback(() => () => void speech.stop(), []));
   const { data, loading, error, refresh } = useCardDetailsViewModel(cardId, deckId);
   const { remove: deleteCard } = useCardActions();
@@ -80,6 +82,9 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
       </FeaturePlaceholder>
     );
 
+  const studied = data.reviewState?.totalReviews ?? 0;
+  const knew = data.reviewState?.totalSuccesses ?? 0;
+
   return (
     <Screen scroll edges={stackScreenEdges}>
       <View className="gap-2xl pb-3xl">
@@ -94,6 +99,14 @@ export function CardDetailsScreen({ deckId, cardId }: { deckId: string; cardId: 
             description={t('details.fromDeck', { name: data.deck.name })}
           />
           <CardContent deck={data.deck} content={data.card} />
+          <Card className="gap-sm">
+            <Text variant="headingSmall" accessibilityRole="header">
+              {t('review.cardHistory')}
+            </Text>
+            <Text>{t('review.cardStudied', { count: number(studied) })}</Text>
+            <Text>{t('review.cardKnew', { count: number(knew) })}</Text>
+            <Text>{t('review.cardDidNotKnow', { count: number(studied - knew) })}</Text>
+          </Card>
           <View className="items-start">
             <PronunciationButton text={data.card.frontText} language={data.deck.language} />
           </View>

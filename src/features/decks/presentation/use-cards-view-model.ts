@@ -20,21 +20,20 @@ export function useCardListViewModel(
   search: string,
   category: string | null,
   sort: CardSort = 'recently-updated',
+  reviewSection?: string,
 ) {
   const resource = useFocusedResource(
     useCallback(async () => {
       const snapshot = await application.getCardListSnapshot(deckId, {
         search: search.trim() || undefined,
         category: category ?? undefined,
+        reviewSection,
       });
       return {
-        deck: snapshot.deck,
+        ...snapshot,
         cards: sortCards(snapshot.cards, sort),
-        categories: snapshot.categories,
-        totalCount: snapshot.totalCount,
-        integrityIssues: snapshot.integrityIssues,
       };
-    }, [deckId, search, category, sort]),
+    }, [deckId, search, category, sort, reviewSection]),
   );
   return {
     ...resource,
@@ -49,7 +48,11 @@ export function useCardDetailsViewModel(cardId: string, deckId: string) {
     useCallback(async () => {
       const card = await application.getCard(cardId);
       if (card.deckId !== deckId) throw new AppError('not-found', 'Card not found.');
-      return { card, deck: await application.getDeck(deckId) };
+      const [deck, reviewState] = await Promise.all([
+        application.getDeck(deckId),
+        application.getReviewState(cardId),
+      ]);
+      return { card, deck, reviewState };
     }, [cardId, deckId]),
   );
 }

@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import type { SchedulerDistributionGroup } from '../domain/review-engine';
 import { useLocalization } from '@/shared/localization/localization-provider';
 import { Card } from '@/shared/ui/card';
@@ -6,10 +6,13 @@ import { Text } from '@/shared/ui/text';
 
 export function ReviewDistribution({
   distributions,
+  onSelectSection,
 }: {
   distributions: readonly SchedulerDistributionGroup[];
+  onSelectSection?: (key: string) => void;
 }) {
   const { t, number, language, direction } = useLocalization();
+  const SectionRow = onSelectSection ? Pressable : View;
   return (
     <Card className="gap-md">
       <Text variant="headingSmall" accessibilityRole="header">
@@ -24,10 +27,12 @@ export function ReviewDistribution({
             {distribution.localizedLabels?.[language] ?? distribution.label}
           </Text>
           {distribution.sections.map((section) => (
-            <View
+            <SectionRow
               key={section.key}
-              className={`justify-between gap-md ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
+              className={`justify-between gap-md ${onSelectSection ? 'min-h-11 items-center rounded-md border border-border px-sm' : ''} ${direction === 'rtl' ? 'flex-row-reverse' : 'flex-row'}`}
               accessible
+              accessibilityRole={onSelectSection ? 'button' : undefined}
+              {...(onSelectSection ? { onPress: () => onSelectSection(section.key) } : {})}
               accessibilityLabel={t('review.sectionA11y', {
                 label: section.localizedLabels?.[language] ?? section.label,
                 count: number(section.count),
@@ -38,7 +43,7 @@ export function ReviewDistribution({
                 {section.localizedLabels?.[language] ?? section.label}
               </Text>
               <Text variant="labelLarge">{number(section.count)}</Text>
-            </View>
+            </SectionRow>
           ))}
         </View>
       ))}

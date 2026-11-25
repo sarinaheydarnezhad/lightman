@@ -130,7 +130,12 @@ export function DeckDetailsScreen({ deckId }: { deckId: string }) {
               })}
             </Text>
           </View>
-          <ReviewDistribution distributions={[data.distribution]} />
+          <ReviewDistribution
+            distributions={[data.distribution]}
+            onSelectSection={(reviewSection) =>
+              router.push({ pathname: '/decks/[deckId]/cards', params: { deckId, reviewSection } })
+            }
+          />
           <Card className="gap-sm">
             <Text variant="labelLarge">{t('details.readingPreview')}</Text>
             <Text variant={deckTypography[deck.typographySize]} style={contentStyle}>

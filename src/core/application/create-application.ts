@@ -280,7 +280,10 @@ export function createApplication(
     },
     async getCardListSnapshot(
       deckId: string,
-      options: { search?: string; category?: string } = {},
+      {
+        reviewSection,
+        ...options
+      }: { search?: string; category?: string; reviewSection?: string } = {},
     ) {
       const deck = await getDeck(deckId);
       const [cardList, categories, totalCount, integrityIssues] = await Promise.all([
@@ -289,7 +292,29 @@ export function createApplication(
         persistence(() => cards.countByDeck(deckId)),
         cards.listIntegrityIssues?.(deckId) ?? Promise.resolve([]),
       ]);
-      return { deck, cards: cardList, categories, totalCount, integrityIssues };
+      const snapshot = { deck, cards: cardList, categories, totalCount, integrityIssues };
+      if (!reviewSection) return { ...snapshot, section: undefined };
+
+      const scheduler = reviewEngine.getScheduler(deck.reviewSystem);
+      const section = scheduler.getDistribution([]).find(({ key }) => key === reviewSection);
+      if (!section) throw new AppError('not-found', 'Review section not found.');
+
+      const deckCards =
+        options.search || options.category
+          ? await persistence(() => cards.listByDeck(deckId))
+          : cardList;
+      const states = await persistence(() => reviews.listStates(deckCards.map(({ id }) => id)));
+      const matchingIds = new Set(
+        states
+          .filter((state) => scheduler.getReviewStatus(state).key === section.key)
+          .map(({ cardId }) => cardId),
+      );
+      return {
+        ...snapshot,
+        section,
+        cards: cardList.filter(({ id }) => matchingIds.has(id)),
+        totalCount: matchingIds.size,
+      };
     },
     async updateCard(id: string, changes: UpdateCardInput): Promise<Card> {
       const card = await getCard(id);

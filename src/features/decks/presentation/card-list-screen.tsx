@@ -18,15 +18,24 @@ import { Text } from '@/shared/ui/text';
 import { CardListItem } from './card-list-item';
 import { useCardListViewModel } from './use-cards-view-model';
 
-export function CardListScreen({ deckId }: { deckId: string }) {
-  const { t, number } = useLocalization();
+export function CardListScreen({
+  deckId,
+  reviewSection,
+}: {
+  deckId: string;
+  reviewSection?: string;
+}) {
+  const { t, number, language } = useLocalization();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const { data, cards, categories, totalCount, loading, error, refresh } = useCardListViewModel(
     deckId,
     search,
     category,
+    undefined,
+    reviewSection,
   );
+  const section = data?.section;
   const openCard = useCallback(
     (cardId: string) =>
       router.push({
@@ -54,7 +63,9 @@ export function CardListScreen({ deckId }: { deckId: string }) {
           <View className="gap-lg pb-md">
             <ScreenHeader
               title={data?.deck.name ?? t('nav.cards')}
-              description={t('cards.description')}
+              description={
+                section?.localizedLabels?.[language] ?? section?.label ?? t('cards.description')
+              }
             />
             {!!data?.integrityIssues?.length && (
               <Text accessibilityRole="alert">
@@ -137,8 +148,14 @@ export function CardListScreen({ deckId }: { deckId: string }) {
           ) : (
             <View className="gap-md">
               <EmptyState
-                title={t(totalCount === 0 ? 'cards.empty' : 'cards.noMatch')}
-                description={t(totalCount === 0 ? 'cards.emptyHint' : 'cards.noMatchHint')}
+                title={t(totalCount === 0 && !section ? 'cards.empty' : 'cards.noMatch')}
+                description={t(
+                  section && totalCount === 0
+                    ? 'review.sectionEmpty'
+                    : totalCount === 0
+                      ? 'cards.emptyHint'
+                      : 'cards.noMatchHint',
+                )}
                 icon={totalCount === 0 ? BookOpen : Search}
               />
               {totalCount > 0 ? (
@@ -151,7 +168,7 @@ export function CardListScreen({ deckId }: { deckId: string }) {
                   }}
                 />
               ) : null}
-              {totalCount === 0 ? (
+              {totalCount === 0 && !section ? (
                 <Button
                   label={t('cards.add')}
                   onPress={() =>

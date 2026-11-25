@@ -162,7 +162,8 @@ beforeAll(async () => {
   await seedDevelopmentData(repositories);
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await application.settings.setLanguage(languageTag('en'));
   jest.mocked(getPermissionsAsync).mockResolvedValue({ granted: true, status: 'granted' } as never);
   jest
     .mocked(requestPermissionsAsync)
@@ -663,6 +664,23 @@ test('card list opens from deck details, searches and filters without mixing dec
   fireEvent.changeText(screen.getByLabelText('Search cards'), 'nowhere');
   expect(await screen.findByRole('header', { name: 'No matching cards' })).toBeTruthy();
 }, 60_000);
+
+test('a deck box opens only its cards and card details show recorded review totals', async () => {
+  const { deck, cards } = await studyFixture(2);
+  const review = { deckId: deck.id, cardId: cards[0]!.id, studySessionId: 'box-review' };
+  await application.reviewCard({ ...review, result: 'failure' });
+  await application.reviewCard({ ...review, result: 'success' });
+
+  renderRouter(routes, { initialUrl: `/decks/${deck.id}` });
+  fireEvent.press(await screen.findByRole('button', { name: 'Box 2: 1 active card' }));
+  const card = await screen.findByRole('button', { name: /Open Study word 1 card/ });
+  expect(screen.queryByRole('button', { name: /Open Study word 2 card/ })).toBeNull();
+  fireEvent.press(card);
+  expect(await screen.findByRole('header', { name: 'Review history' })).toBeTruthy();
+  expect(screen.getByText('Times studied: 2')).toBeTruthy();
+  expect(screen.getByText('Knew it: 1')).toBeTruthy();
+  expect(screen.getByText('Didn’t know it: 1')).toBeTruthy();
+});
 
 test('an empty deck has a card action and invalid card routes show a retry', async () => {
   const rendered = renderRouter(routes, { initialUrl: '/decks/fresh-collection/cards' });
